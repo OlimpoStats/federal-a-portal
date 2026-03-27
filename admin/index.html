@@ -184,7 +184,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 </select>
               </div>
               <div><label>Partido</label>
-                <select id="sel-partido" onchange="erMostrar()">
+                <select id="sel-partido" onchange="selPartidoChanged()">
                   <option value="">— Primero elegí zona y fecha —</option>
                 </select>
               </div>
@@ -435,6 +435,10 @@ function actualizarPartidos(){
   });
 }
 
+function selPartidoChanged(){
+  // reservado para acciones futuras al elegir partido
+}
+
 function irPaso1(){
   document.getElementById("paso1").style.display="";
   document.getElementById("paso2").style.display="none";
@@ -585,22 +589,6 @@ async function callClaude(prompt, imageB64){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({image: imageB64, prompt: prompt})
-  });
-  const data = await resp.json();
-  const raw = data.content.map(c=>c.text||"").join("").trim();
-  const clean = raw.replace(/```json|```/g,"").trim();
-  return JSON.parse(clean);
-}
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",
-      max_tokens:2000,
-      messages:[{role:"user",content:[
-        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:imageB64}},
-        {type:"text",text:prompt}
-      ]}]
-    })
   });
   const data = await resp.json();
   const raw = data.content.map(c=>c.text||"").join("").trim();
