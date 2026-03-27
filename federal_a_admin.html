@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Federal A — Panel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0a0a0a;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--green:#2a7a4a;--red:#7a2a2a;--blue:#1a3a6a;}
@@ -397,6 +398,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 </style>
 
 <script>
+// ── SUPABASE ──
+const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // ── FIXTURE DATA (mismos datos que el portal) ──
 const FIXTURE = {"Zona A":{"1":[{"local":"El Linqueño","visitante":"Sp. Las Parejas"},{"local":"Independiente (Ch)","visitante":"Atlético Escobar"},{"local":"Sp. Belgrano","visitante":"9 de Julio (Rafaela)"},{"local":"Douglas Haig","visitante":"Gimnasia (Ch)"},{"local":"Defensores (VR)","visitante":"Gimnasia (CDU)"}],"2":[{"local":"Defensores (VR)","visitante":"El Linqueño"},{"local":"Gimnasia (CDU)","visitante":"Douglas Haig"},{"local":"Gimnasia (Ch)","visitante":"Sp. Belgrano"},{"local":"9 de Julio (Rafaela)","visitante":"Independiente (Ch)"},{"local":"Atlético Escobar","visitante":"Sp. Las Parejas"}],"3":[{"local":"El Linqueño","visitante":"Atlético Escobar"},{"local":"Sp. Las Parejas","visitante":"9 de Julio (Rafaela)"},{"local":"Independiente (Ch)","visitante":"Gimnasia (Ch)"},{"local":"Sp. Belgrano","visitante":"Gimnasia (CDU)"},{"local":"Douglas Haig","visitante":"Defensores (VR)"}],"4":[{"local":"Douglas Haig","visitante":"El Linqueño"},{"local":"Defensores (VR)","visitante":"Sp. Belgrano"},{"local":"Gimnasia (CDU)","visitante":"Independiente (Ch)"},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas"},{"local":"9 de Julio (Rafaela)","visitante":"Atlético Escobar"}],"5":[{"local":"El Linqueño","visitante":"9 de Julio (Rafaela)"},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)"},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)"},{"local":"Independiente (Ch)","visitante":"Defensores (VR)"},{"local":"Sp. Belgrano","visitante":"Douglas Haig"}]},"Zona B":{"1":[{"local":"Sarmiento (R)","visitante":"Juv. Antoniana"},{"local":"Boca Unidos","visitante":"Sarmiento (LB)"},{"local":"Tucumán Central","visitante":"Bartolomé Mitre"},{"local":"San Martín (F)","visitante":"Defensores (PV)"}],"2":[{"local":"Defensores (PV)","visitante":"Tucumán Central"},{"local":"Bartolomé Mitre","visitante":"Boca Unidos"},{"local":"Sarmiento (LB)","visitante":"Sarmiento (R)"},{"local":"Juv. Antoniana","visitante":"Sol de América (F)"}]},"Zona C":{"1":[{"local":"Costa Brava","visitante":"FADEP"},{"local":"Huracán LH","visitante":"Argentino (MM)"},{"local":"San Martín (M)","visitante":"Juv. Unida (SL)"},{"local":"Atenas (RC)","visitante":"Cipolletti"}]},"Zona D":{"1":[{"local":"Kimberley","visitante":"Villa Mitre"},{"local":"Sol de Mayo","visitante":"Germinal"},{"local":"Gmo. Brown (PM)","visitante":"Santamarina"},{"local":"Olimpo","visitante":"Alvarado"}]}};
 
@@ -630,20 +635,82 @@ function updateJugador(containerId, idx, field, value){
 }
 
 // ── CONFIRMAR ──
-function confirmarCarga(){
-  // En producción: POST a backend con planillaLocal, planillaVisit, scores, partidoActual
-  console.log("Guardando:", {
-    partido: partidoActual,
-    scoreLocal: document.getElementById("score-local").value,
-    scoreVisit: document.getElementById("score-visit").value,
-    local: planillaLocal,
-    visitante: planillaVisit
-  });
-  document.getElementById("paso3").style.display="none";
-  document.getElementById("paso4").style.display="";
-  document.getElementById("confirmado-txt").textContent=
-    `${partidoActual.local} ${document.getElementById("score-local").value} — ${document.getElementById("score-visit").value} ${partidoActual.visit} guardado correctamente.`;
-  setStep(4);
+async function confirmarCarga(){
+  const glLocal = parseInt(document.getElementById("score-local").value)||0;
+  const glVisit = parseInt(document.getElementById("score-visit").value)||0;
+
+  try {
+    // 1. Asegurar que los equipos existen en la BD
+    async function upsertEquipo(nombre, zona){
+      const {data} = await sb.from("equipos").select("id").eq("nombre", nombre).single();
+      if(data) return data.id;
+      const {data:nuevo} = await sb.from("equipos").insert({nombre, zona}).select("id").single();
+      return nuevo.id;
+    }
+    const localId  = await upsertEquipo(partidoActual.local, partidoActual.zona);
+    const visitId  = await upsertEquipo(partidoActual.visit, partidoActual.zona);
+
+    // 2. Guardar o actualizar partido
+    const {data:partidoDB, error:epErr} = await sb.from("partidos").upsert({
+      zona: partidoActual.zona,
+      fecha: parseInt(partidoActual.fecha),
+      equipo_local_id: localId,
+      equipo_visitante_id: visitId,
+      equipo_local_nombre: partidoActual.local,
+      equipo_visitante_nombre: partidoActual.visit,
+      goles_local: glLocal,
+      goles_visitante: glVisit,
+      jugado: true,
+    }, {onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"}).select("id").single();
+    if(epErr) throw epErr;
+    const partidoId = partidoDB.id;
+
+    // 3. Guardar jugadores y eventos por cada planilla
+    async function guardarPlanilla(jugadores, equipoId){
+      for(const j of jugadores){
+        if(!j.id_federal && !j.id) continue;
+        const idFederal = String(j.id_federal || j.id);
+        // Upsert jugador
+        const {data:jDB} = await sb.from("jugadores").upsert({
+          id_federal: idFederal,
+          nombre: j.nombre,
+          nombre_display: j.nombre,
+          equipo_id: equipoId,
+        }, {onConflict:"id_federal"}).select("id").single();
+        if(!jDB) continue;
+        // Insertar planilla
+        const {data:pDB} = await sb.from("planillas").insert({
+          partido_id: partidoId,
+          jugador_id: jDB.id,
+          equipo_id: equipoId,
+          numero_camiseta: j.numero,
+          titular: j.titular,
+        }).select("id").single();
+        if(!pDB) continue;
+        // Insertar eventos
+        for(const ev of (j.eventos||[])){
+          await sb.from("eventos").insert({
+            planilla_id: pDB.id,
+            tipo: ev.tipo,
+            minuto: ev.minuto,
+            extra: String(ev.extra||""),
+          });
+        }
+      }
+    }
+    await guardarPlanilla(planillaLocal.jugadores||[], localId);
+    await guardarPlanilla(planillaVisit.jugadores||[], visitId);
+
+    document.getElementById("paso3").style.display="none";
+    document.getElementById("paso4").style.display="";
+    document.getElementById("confirmado-txt").textContent=
+      `${partidoActual.local} ${glLocal} — ${glVisit} ${partidoActual.visit} guardado correctamente en la base de datos.`;
+    setStep(4);
+
+  } catch(err){
+    showFlash("Error al guardar: "+err.message, "err");
+    console.error(err);
+  }
 }
 
 function resetTodo(){
@@ -695,7 +762,22 @@ function erMostrar(){
   document.getElementById("er-visit").textContent=p.visitante;
   document.getElementById("er-form").style.display="";
 }
-function erGuardar(){alert("Resultado guardado (en producción se actualizaría la base de datos).");}
+async function erGuardar(){
+  const zona=document.getElementById("er-zona").value;
+  const fecha=document.getElementById("er-fecha").value;
+  const idx=document.getElementById("er-partido").value;
+  const p=FIXTURE[zona][fecha][parseInt(idx)];
+  const gl=parseInt(document.getElementById("er-gl").value)||0;
+  const gv=parseInt(document.getElementById("er-gv").value)||0;
+  const {error} = await sb.from("partidos").upsert({
+    zona, fecha:parseInt(fecha),
+    equipo_local_nombre: p.local,
+    equipo_visitante_nombre: p.visitante,
+    goles_local: gl, goles_visitante: gv, jugado: true,
+  },{onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"});
+  if(error) alert("Error: "+error.message);
+  else alert(`✓ Guardado: ${p.local} ${gl}—${gv} ${p.visitante}`);
+}
 
 // ── HORARIOS Y STREAMS ──
 const HORARIOS={};
@@ -761,11 +843,18 @@ function renderEscudos(){
     </div>`;
   }).join("");
 }
-function subirEscudo(e,team){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{escudoData[team]=ev.target.result;renderEscudos();};
-  r.readAsDataURL(f);
+async function subirEscudo(e, team){
+  const f=e.target.files[0]; if(!f) return;
+  // Subir al storage de Supabase
+  const fileName = team.replace(/[^a-z0-9]/gi,'_').toLowerCase()+".png";
+  const {error: upErr} = await sb.storage.from("escudos").upload(fileName, f, {upsert:true, contentType: f.type});
+  if(upErr){ alert("Error subiendo: "+upErr.message); return; }
+  const {data: urlData} = sb.storage.from("escudos").getPublicUrl(fileName);
+  const url = urlData.publicUrl;
+  // Guardar URL en la tabla equipos
+  await sb.from("equipos").upsert({nombre: team, escudo_url: url},{onConflict:"nombre"});
+  escudoData[team]=url;
+  renderEscudos();
 }
 </script>
 </body>

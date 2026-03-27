@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Federal A 2026</title>
+<title>Ascenso Federal — Portal Oficial</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0e0e0e;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--win:#1e5c35;--loss:#5c1e1e;--draw:#3a3a3a;}
@@ -54,34 +55,48 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .badge-ec{background:#0a1f0a;color:#5dba7d;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
 
 /* partidos */
-.zona-lbl{font-size:10px;color:#3a3a3a;text-transform:uppercase;letter-spacing:1px;margin:.6rem 0 .28rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
-.partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.55rem .85rem;margin-bottom:.3rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem;transition:border-color .15s;}
+.zona-lbl{font-size:11px;color:#3a3a3a;text-transform:uppercase;letter-spacing:1px;margin:.7rem 0 .3rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+.partido-wrap{margin-bottom:.5rem;}
+.partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem;transition:border-color .15s;}
 .partido:hover{border-color:rgba(255,255,255,0.14);}
-.eq{display:flex;align-items:center;gap:.35rem;}
+.eq{display:flex;align-items:center;gap:.4rem;}
 .eq.vis{flex-direction:row-reverse;}
-.esc{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--muted);flex-shrink:0;}
-.eqn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;line-height:1.1;}
+.esc{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--muted);flex-shrink:0;overflow:hidden;}
+.esc img{width:100%;height:100%;object-fit:contain;}
+.eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;}
 .eq.vis .eqn{text-align:right;}
-.res{text-align:center;min-width:60px;}
-.score{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;}
+.res{text-align:center;min-width:64px;}
+.score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
-.vs{font-size:10px;color:#444;letter-spacing:1px;font-weight:600;}
+.vs{font-size:11px;color:#444;letter-spacing:1px;font-weight:600;}
+.goleadores{font-size:12px;color:var(--muted);padding:.2rem .9rem .4rem;display:flex;justify-content:space-between;}
+.gol-local{text-align:left;flex:1;}
+.gol-visit{text-align:right;flex:1;}
+.gol-min{color:var(--accent);font-size:11px;}
+.stream-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;text-decoration:none;flex-shrink:0;transition:border-color .15s;}
+.stream-btn:hover{border-color:#e8453a;}
+.ficha-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-decoration:none;flex-shrink:0;cursor:pointer;font-size:16px;transition:border-color .15s;}
+.ficha-btn:hover{border-color:rgba(255,255,255,.3);}
 
-/* tablas simplificadas */
+/* tablas */
 .tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:.7rem;}
 .tabla-mini table{width:100%;border-collapse:collapse;}
-.tabla-mini thead th{background:var(--surface2);padding:.38rem .5rem;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);}
+.tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);}
 .tabla-mini thead th:nth-child(2){text-align:left;}
 .tabla-mini tbody tr{border-bottom:1px solid var(--border);}
 .tabla-mini tbody tr:last-child{border-bottom:none;}
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
-.tabla-mini tbody td{padding:.42rem .5rem;text-align:center;font-size:11px;}
+.tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;}
 .tabla-mini tbody td:nth-child(2){text-align:left;}
-.pos{font-size:10px;color:var(--muted);}
-.pos.top{color:var(--accent);font-weight:700;}
-.pts{font-weight:700;}
-.tr-eq{display:flex;align-items:center;gap:.3rem;}
-.me{width:16px;height:16px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:var(--muted);flex-shrink:0;}
+.pos{font-size:12px;font-weight:700;color:var(--muted);}
+.pos.clasif{color:#4caf50;}
+.pos.quinto{color:#e8c44a;}
+.pos.noclasif{color:#c0504d;}
+.pts{font-weight:700;font-size:14px;}
+.tr-eq{display:flex;align-items:center;gap:.4rem;}
+.me{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--muted);flex-shrink:0;overflow:hidden;}
+.me img{width:100%;height:100%;object-fit:contain;}
+.tabla-quintos-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:.9rem 0 .3rem;border-top:1px solid var(--border);padding-top:.75rem;}
 
 /* zona tabs */
 .ztabs{display:flex;gap:.35rem;margin-bottom:.85rem;flex-wrap:wrap;}
@@ -117,11 +132,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <button class="modal-close" onclick="toggleModal()">&#10005;</button>
-    <div class="modal-title">Iniciar sesión</div>
+    <div class="modal-title" id="modal-titulo">Iniciar sesión</div>
     <input type="email" placeholder="Correo electrónico" id="inp-email">
     <input type="password" placeholder="Contraseña" id="inp-pass">
-    <button class="modal-btn">Ingresar</button>
-    <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer">Registrate</span></div>
+    <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
+    <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="registrarUsuario()">Registrate</span></div>
   </div>
 </div>
 
@@ -159,13 +174,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="page" id="page-foro">
   <div style="max-width:700px;">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:.75rem;">Iniciá sesión para participar en el foro</div>
-      <textarea placeholder="Escribí tu mensaje..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;" disabled></textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:.6rem;">
-        <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>
-      </div>
+      <div id="foro-input-area"></div>
     </div>
-    <!-- mensajes de ejemplo -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
       <div style="background:var(--surface2);padding:.55rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Mensajes recientes</div>
       <div id="foro-msgs"></div>
@@ -199,6 +209,121 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <script>
+// ── SUPABASE ──
+const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Carga partidos desde Supabase y los mezcla con el fixture local
+async function cargarPartidosDesdeDB(){
+  try {
+    const {data, error} = await sb.from("partidos").select("*");
+    if(error || !data) return;
+    data.forEach(p => {
+      if(!p.zona || !p.fecha) return;
+      const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
+      if(!ms) return;
+      const match = ms.find(m => m.local === p.equipo_local_nombre && m.visitante === p.equipo_visitante_nombre);
+      if(!match) return;
+      if(p.jugado){ match.gl = p.goles_local; match.gv = p.goles_visitante; }
+      if(p.hora || p.stream_url){
+        const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+        PARTIDO_META[key] = {hora: p.hora||"", stream: p.stream_url||""};
+      }
+    });
+  } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
+}
+
+// Carga escudos desde Supabase
+async function cargarEscudos(){
+  try {
+    const {data} = await sb.from("equipos").select("nombre, escudo_url");
+    if(!data) return;
+    data.forEach(eq => { if(eq.escudo_url) ESCUDOS[eq.nombre] = eq.escudo_url; });
+  } catch(e){}
+}
+
+// Auth — manejo de sesión
+let usuarioActual = null;
+sb.auth.onAuthStateChange((event, session) => {
+  usuarioActual = session?.user || null;
+  actualizarIconoUsuario();
+  if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
+});
+
+function actualizarIconoUsuario(){
+  const btn = document.getElementById("user-btn");
+  if(!btn) return;
+  if(usuarioActual){
+    btn.style.borderColor = "var(--accent)";
+    btn.title = "Mi cuenta";
+  } else {
+    btn.style.borderColor = "";
+    btn.title = "Iniciar sesión";
+  }
+}
+
+async function loginConEmail(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signInWithPassword({email, password: pass});
+  if(error){
+    if(error.message.includes("Invalid")) alert("Email o contraseña incorrectos");
+    else alert(error.message);
+  } else { toggleModal(); }
+}
+
+async function registrarUsuario(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signUp({email, password: pass});
+  if(error) alert(error.message);
+  else alert("¡Registrado! Revisá tu mail para confirmar la cuenta.");
+}
+
+async function cerrarSesion(){
+  await sb.auth.signOut();
+  toggleModal();
+}
+
+// Foro desde Supabase
+async function cargarMensajesForo(){
+  try {
+    const {data} = await sb.from("mensajes_foro")
+      .select("texto, created_at, usuarios(username)")
+      .order("created_at", {ascending: false})
+      .limit(50);
+    if(!data){ renderForoLocal(); return; }
+    const msgs = data.map(m => ({
+      user: m.usuarios?.username || "Anónimo",
+      tiempo: tiempoRelativo(m.created_at),
+      texto: m.texto
+    }));
+    renderForoMsgs(msgs);
+  } catch(e){ renderForoLocal(); }
+}
+
+async function publicarMensaje(){
+  if(!usuarioActual){ toggleModal(); return; }
+  const txt = document.getElementById("foro-input").value.trim();
+  if(!txt) return;
+  const {data: userData} = await sb.from("usuarios").select("id").eq("auth_id", usuarioActual.id).single();
+  if(!userData){ alert("Completá tu perfil primero"); return; }
+  const {error} = await sb.from("mensajes_foro").insert({usuario_id: userData.id, texto: txt});
+  if(!error){ document.getElementById("foro-input").value=""; cargarMensajesForo(); }
+}
+
+function tiempoRelativo(ts){
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if(diff < 60) return "ahora";
+  if(diff < 3600) return `hace ${Math.floor(diff/60)}min`;
+  if(diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
+}
+
+const ESCUDOS = {};
 const FIXTURE = {"Zona A":{"1":[{"local":"El Linqueño","visitante":"Sp. Las Parejas","gl":1,"gv":0},{"local":"Independiente (Ch)","visitante":"Atlético Escobar","gl":2,"gv":1},{"local":"Sp. Belgrano","visitante":"9 de Julio (Rafaela)","gl":3,"gv":0},{"local":"Douglas Haig","visitante":"Gimnasia (Ch)","gl":2,"gv":1},{"local":"Defensores (VR)","visitante":"Gimnasia (CDU)","gl":2,"gv":1}],"2":[{"local":"Defensores (VR)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Las Parejas","gl":null,"gv":null}],"3":[{"local":"El Linqueño","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Defensores (VR)","gl":null,"gv":null}],"4":[{"local":"Douglas Haig","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Atlético Escobar","gl":null,"gv":null}],"5":[{"local":"El Linqueño","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Douglas Haig","gl":null,"gv":null}],"6":[{"local":"Sp. Belgrano","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"7":[{"local":"El Linqueño","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null}],"8":[{"local":"Independiente (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"9":[{"local":"El Linqueño","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Independiente (Ch)","gl":null,"gv":null}],"10":[{"local":"Sp. Las Parejas","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Defensores (VR)","gl":null,"gv":null}],"11":[{"local":"El Linqueño","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Atlético Escobar","gl":null,"gv":null}],"12":[{"local":"Atlético Escobar","visitante":"El Linqueño","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Douglas Haig","gl":null,"gv":null}],"13":[{"local":"El Linqueño","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"14":[{"local":"9 de Julio (Rafaela)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Belgrano","gl":null,"gv":null}],"15":[{"local":"El Linqueño","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"16":[{"local":"Gimnasia (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Independiente (Ch)","gl":null,"gv":null}],"17":[{"local":"El Linqueño","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null}],"18":[{"local":"Gimnasia (CDU)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null}]},"Zona B":{"1":[{"local":"Sarmiento (R)","visitante":"Juv. Antoniana","gl":1,"gv":3},{"local":"Boca Unidos","visitante":"Sarmiento (LB)","gl":3,"gv":1},{"local":"Tucumán Central","visitante":"Bartolomé Mitre","gl":1,"gv":0},{"local":"San Martín (F)","visitante":"Defensores (PV)","gl":2,"gv":1}],"2":[{"local":"Defensores (PV)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sol de América (F)","gl":null,"gv":null}],"3":[{"local":"Sol de América (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"San Martín (F)","gl":null,"gv":null}],"4":[{"local":"San Martín (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"5":[{"local":"Juv. Antoniana","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Tucumán Central","gl":null,"gv":null}],"6":[{"local":"Tucumán Central","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"7":[{"local":"Sarmiento (LB)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Boca Unidos","gl":null,"gv":null}],"8":[{"local":"Boca Unidos","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"9":[{"local":"Bartolomé Mitre","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Sarmiento (R)","gl":null,"gv":null}],"10":[{"local":"Juv. Antoniana","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"San Martín (F)","gl":null,"gv":null}],"11":[{"local":"Tucumán Central","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"12":[{"local":"Sarmiento (LB)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Tucumán Central","gl":null,"gv":null}],"13":[{"local":"Boca Unidos","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"14":[{"local":"Bartolomé Mitre","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Boca Unidos","gl":null,"gv":null}],"15":[{"local":"Sarmiento (R)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"16":[{"local":"Defensores (PV)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Sarmiento (R)","gl":null,"gv":null}],"17":[{"local":"Sol de América (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Defensores (PV)","gl":null,"gv":null}],"18":[{"local":"San Martín (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sol de América (F)","gl":null,"gv":null}]},"Zona C":{"1":[{"local":"Costa Brava","visitante":"FADEP","gl":3,"gv":0},{"local":"Huracán LH","visitante":"Argentino (MM)","gl":0,"gv":0},{"local":"San Martín (M)","visitante":"Juv. Unida (SL)","gl":0,"gv":0},{"local":"Atenas (RC)","visitante":"Cipolletti","gl":3,"gv":1}],"2":[{"local":"Cipolletti","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"FADEP","visitante":"Dep. Rincón","gl":null,"gv":null}],"3":[{"local":"Dep. Rincón","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Cipolletti","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Atenas (RC)","gl":null,"gv":null}],"4":[{"local":"Atenas (RC)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"FADEP","gl":null,"gv":null}],"5":[{"local":"FADEP","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"San Martín (M)","gl":null,"gv":null}],"6":[{"local":"San Martín (M)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Cipolletti","visitante":"FADEP","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Argentino (MM)","gl":null,"gv":null}],"7":[{"local":"Argentino (MM)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"FADEP","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Huracán LH","gl":null,"gv":null}],"8":[{"local":"Huracán LH","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"FADEP","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"9":[{"local":"Juv. Unida (SL)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"FADEP","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Costa Brava","gl":null,"gv":null}],"10":[{"local":"FADEP","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Atenas (RC)","gl":null,"gv":null}],"11":[{"local":"San Martín (M)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"FADEP","gl":null,"gv":null}],"12":[{"local":"Argentino (MM)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"San Martín (M)","gl":null,"gv":null}],"13":[{"local":"Huracán LH","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"FADEP","visitante":"Argentino (MM)","gl":null,"gv":null}],"14":[{"local":"Juv. Unida (SL)","visitante":"FADEP","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Huracán LH","gl":null,"gv":null}],"15":[{"local":"Costa Brava","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"FADEP","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"16":[{"local":"Cipolletti","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"FADEP","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Costa Brava","gl":null,"gv":null}],"17":[{"local":"Dep. Rincón","visitante":"Huracán LH","gl":null,"gv":null},{"local":"FADEP","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Cipolletti","gl":null,"gv":null}],"18":[{"local":"Atenas (RC)","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"FADEP","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Dep. Rincón","gl":null,"gv":null}]},"Zona D":{"1":[{"local":"Kimberley","visitante":"Villa Mitre","gl":1,"gv":0},{"local":"Sol de Mayo","visitante":"Germinal","gl":1,"gv":1},{"local":"Gmo. Brown (PM)","visitante":"Santamarina","gl":2,"gv":2},{"local":"Olimpo","visitante":"Alvarado","gl":2,"gv":0}],"2":[{"local":"Alvarado","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Santamarina","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Germinal","visitante":"Kimberley","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Círculo Dep.","gl":null,"gv":null}],"3":[{"local":"Círculo Dep.","visitante":"Germinal","gl":null,"gv":null},{"local":"Kimberley","visitante":"Santamarina","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Alvarado","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Olimpo","gl":null,"gv":null}],"4":[{"local":"Olimpo","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Alvarado","visitante":"Kimberley","gl":null,"gv":null},{"local":"Santamarina","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Germinal","visitante":"Villa Mitre","gl":null,"gv":null}],"5":[{"local":"Villa Mitre","visitante":"Santamarina","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Alvarado","gl":null,"gv":null},{"local":"Kimberley","visitante":"Olimpo","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"6":[{"local":"Gmo. Brown (PM)","visitante":"Kimberley","gl":null,"gv":null},{"local":"Olimpo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Alvarado","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Santamarina","visitante":"Germinal","gl":null,"gv":null}],"7":[{"local":"Germinal","visitante":"Alvarado","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Olimpo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Kimberley","visitante":"Sol de Mayo","gl":null,"gv":null}],"8":[{"local":"Sol de Mayo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Olimpo","visitante":"Germinal","gl":null,"gv":null},{"local":"Alvarado","visitante":"Santamarina","gl":null,"gv":null}],"9":[{"local":"Santamarina","visitante":"Olimpo","gl":null,"gv":null},{"local":"Germinal","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Kimberley","gl":null,"gv":null}],"10":[{"local":"Villa Mitre","visitante":"Kimberley","gl":null,"gv":null},{"local":"Germinal","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Alvarado","visitante":"Olimpo","gl":null,"gv":null}],"11":[{"local":"Gmo. Brown (PM)","visitante":"Alvarado","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Kimberley","visitante":"Germinal","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Villa Mitre","gl":null,"gv":null}],"12":[{"local":"Germinal","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Santamarina","visitante":"Kimberley","gl":null,"gv":null},{"local":"Alvarado","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Olimpo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"13":[{"local":"Sol de Mayo","visitante":"Olimpo","gl":null,"gv":null},{"local":"Kimberley","visitante":"Alvarado","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Santamarina","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Germinal","gl":null,"gv":null}],"14":[{"local":"Santamarina","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Alvarado","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Olimpo","visitante":"Kimberley","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Sol de Mayo","gl":null,"gv":null}],"15":[{"local":"Kimberley","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Olimpo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Alvarado","gl":null,"gv":null},{"local":"Germinal","visitante":"Santamarina","gl":null,"gv":null}],"16":[{"local":"Alvarado","visitante":"Germinal","gl":null,"gv":null},{"local":"Olimpo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Kimberley","gl":null,"gv":null}],"17":[{"local":"Círculo Dep.","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Germinal","visitante":"Olimpo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Alvarado","gl":null,"gv":null}],"18":[{"local":"Olimpo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Germinal","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Kimberley","visitante":"Círculo Dep.","gl":null,"gv":null}]}};
 
 const ZONAS=["Zona A","Zona B","Zona C","Zona D"];
@@ -243,6 +368,14 @@ function fechaInteligente(){
   return 18; // todas jugadas, mostrar la última
 }
 
+function escudoHTML(nombre, size='esc'){
+  const url = ESCUDOS[nombre];
+  const i = ini(nombre);
+  return url
+    ? `<div class="${size}"><img src="${url}" alt="${nombre}"></div>`
+    : `<div class="${size}">${i}</div>`;
+}
+
 function renderPartidos(f){
   document.getElementById("fnum").textContent="Fecha "+f;
   const todosJugados=ZONAS.every(z=>(FIXTURE[z][String(f)]||[]).every(m=>m.gl!==null));
@@ -259,43 +392,135 @@ function renderPartidos(f){
     html+=`<div class="zona-lbl">${z}</div>`;
     ms.forEach(m=>{
       const meta=PARTIDO_META[getMetaKey(z,f,m.local,m.visitante)]||{};
-      // Centro: resultado o hora programada
       let centro;
       if(m.gl!==null){
         centro=`<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`;
       } else if(meta.hora){
-        centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">HS</div></div>`;
+        centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">HS</div></div>`;
       } else {
         centro=`<div class="vs">VS</div>`;
       }
-      // Botón de stream (fuera de la caja del partido)
-      const streamBtn=meta.stream
-        ?`<a href="${meta.stream}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;text-decoration:none;flex-shrink:0;transition:border-color .15s" title="Ver transmisión en vivo" onmouseover="this.style.borderColor='#e8453a'" onmouseout="this.style.borderColor='#5a1a1a'"><svg width="16" height="16" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
-        :`<div style="width:36px;flex-shrink:0"></div>`;
-      html+=`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;">
-        <div class="partido" style="flex:1">
-          <div class="eq"><div class="esc">${ini(m.local)}</div><div class="eqn">${m.local}</div></div>
-          <div class="res">${centro}</div>
-          <div class="eq vis"><div class="esc">${ini(m.visitante)}</div><div class="eqn">${m.visitante}</div></div>
+      // Goleadores del partido
+      const golesLocal = (m.goleadores||[]).filter(g=>g.equipo==="local");
+      const golesVisit = (m.goleadores||[]).filter(g=>g.equipo==="visitante");
+      const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
+      const goleadoresHTML = hayGoles ? `<div class="goleadores">
+        <div class="gol-local">${golesLocal.map(g=>`${g.nombre} <span class="gol-min">${g.minuto}'</span>`).join(' · ')}</div>
+        <div class="gol-visit">${golesVisit.map(g=>`<span class="gol-min">${g.minuto}'</span> ${g.nombre}`).join(' · ')}</div>
+      </div>` : "";
+      // Botones fuera de la caja
+      const streamBtn = meta.stream
+        ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
+        : `<div style="width:32px;flex-shrink:0"></div>`;
+      const fichaKey = `${z}_${f}_${m.local}_${m.visitante}`;
+      const fichaBtn = `<div class="ficha-btn" title="${m.gl!==null?'Ver ficha del partido':'Planilla pendiente de carga'}" onclick="verFicha('${fichaKey}',${m.gl!==null})">📄</div>`;
+      html+=`<div class="partido-wrap">
+        <div style="display:flex;align-items:stretch;gap:.4rem">
+          <div class="partido" style="flex:1">
+            <div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
+            <div class="res">${centro}</div>
+            <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.3rem;justify-content:center">
+            ${streamBtn}
+            ${fichaBtn}
+          </div>
         </div>
-        ${streamBtn}
+        ${goleadoresHTML}
       </div>`;
     });
   });
   document.getElementById("partidos-cont").innerHTML=html;
 }
 
+function verFicha(key, tienePlanilla){
+  if(tienePlanilla){
+    alert("Próximamente: ficha completa del partido con planillas, goles y estadísticas.");
+  } else {
+    alert("Planilla pendiente de carga.");
+  }
+}
+
 function renderTablas(){
+  // Zona A clasifica top 5, resto top 4. Quintos de B/C/D arman tabla propia.
+  const clasificados = {"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
   let html="";
+  const quintosRows=[];
+
   ZONAS.forEach(z=>{
     const rows=calcTabla(z);
-    html+=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#3a3a3a;margin:.6rem 0 .25rem;">${z}</p>`;
-    html+=`<div class="tabla-mini"><table><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>Pts</th></tr></thead><tbody>`;
+    const clasif=clasificados[z];
+    html+=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#3a3a3a;margin:.65rem 0 .28rem;">${z}</p>`;
+    html+=`<div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+        <th title="Head to head">H2H</th>
+      </tr></thead><tbody>`;
     rows.forEach((r,i)=>{
-      html+=`<tr><td><span class="pos ${i<2?'top':''}">${i+1}</span></td><td><div class="tr-eq"><div class="me">${ini(r.n)}</div><span>${r.n}</span></div></td><td>${r.pj}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+      const pos=i+1;
+      const dif=r.gf-r.gc;
+      let posClass="noclasif";
+      if(pos<=clasif) posClass="clasif";
+      else if(pos===5&&z!=="Zona A") posClass="quinto";
+      html+=`<tr>
+        <td><span class="pos ${posClass}">${pos}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span></div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td>
+        <td>${r.g}</td>
+        <td>${r.e}</td>
+        <td>${r.p}</td>
+        <td>${r.gf}</td>
+        <td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td style="color:var(--muted)">—</td>
+      </tr>`;
+      // Guardar quinto de B/C/D
+      if(pos===5 && z!=="Zona A") quintosRows.push({...r, zona:z});
     });
     html+=`</tbody></table></div>`;
   });
+
+  // Tabla de quintos
+  if(quintosRows.length>0){
+    quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    html+=`<p class="tabla-quintos-hdr">Tabla de quintos</p>`;
+    html+=`<div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left">Equipo</th>
+        <th>Zona</th>
+        <th>Pts</th>
+        <th>PJ</th>
+        <th>G</th><th>E</th><th>P</th>
+        <th>GF</th><th>GC</th><th>+/-</th>
+      </tr></thead><tbody>`;
+    quintosRows.forEach((r,i)=>{
+      const dif=r.gf-r.gc;
+      const posClass=i===0?"clasif":"noclasif";
+      html+=`<tr>
+        <td><span class="pos ${posClass}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span></div></td>
+        <td style="font-size:11px;color:var(--muted)">${r.zona.replace("Zona ","")}</td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td>
+        <td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+
   document.getElementById("tablas-cont").innerHTML=html;
 }
 
@@ -331,16 +556,31 @@ function goPage(id,el){
 function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
 function closeModalOutside(e){if(e.target===document.getElementById("modal-overlay"))toggleModal();}
 
-const foroMsgs=[
-  {user:"Hincha Belgrano",tiempo:"hace 2h",texto:"Sp. Belgrano arrancó muy bien, 3 puntos en casa. La defensa estuvo sólida."},
-  {user:"Del_Norte_23",tiempo:"hace 4h",texto:"Boca Unidos goleó 3-1, se viene fuerte esta zona B. Cuidado con Juv. Antoniana también."},
-  {user:"FederalFan",tiempo:"hace 6h",texto:"Costa Brava goleó 3-0 en la zona C, prometedor arranque para el sur."},
-  {user:"ElLinqueño10",tiempo:"ayer",texto:"El Linqueño ganó en casa, a seguir sumando. Vamos carajo!"},
-];
-function renderForo(){
-  document.getElementById("foro-msgs").innerHTML=foroMsgs.map(m=>`
+function renderForoLocal(){
+  const msgs=[
+    {user:"Hincha Belgrano",tiempo:"hace 2h",texto:"Sp. Belgrano arrancó muy bien, 3 puntos en casa."},
+    {user:"Del_Norte_23",tiempo:"hace 4h",texto:"Boca Unidos goleó 3-1, se viene fuerte esta zona B."},
+    {user:"FederalFan",tiempo:"hace 6h",texto:"Costa Brava goleó 3-0 en la zona C, prometedor arranque."},
+    {user:"ElLinqueño10",tiempo:"ayer",texto:"El Linqueño ganó en casa, a seguir sumando. Vamos!"},
+  ];
+  renderForoMsgs(msgs);
+}
+
+function renderForoMsgs(msgs){
+  const logueado = !!usuarioActual;
+  const inputArea = logueado
+    ? `<textarea id="foro-input" placeholder="Escribí tu mensaje..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;"></textarea>
+       <div style="display:flex;justify-content:flex-end;margin-top:.6rem;gap:.6rem;">
+         <button onclick="cerrarSesion()" style="background:transparent;color:var(--muted);font-size:13px;border:none;cursor:pointer;">Cerrar sesión</button>
+         <button onclick="publicarMensaje()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Publicar</button>
+       </div>`
+    : `<div style="font-size:13px;color:var(--muted);margin-bottom:.75rem;">Iniciá sesión para participar en el foro</div>
+       <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>`;
+
+  document.getElementById("foro-input-area").innerHTML = inputArea;
+  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
     <div style="padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;">
-      <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;">${m.user[0]}</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;">${m.user[0].toUpperCase()}</div>
       <div style="flex:1;">
         <div style="display:flex;gap:.6rem;align-items:baseline;margin-bottom:.25rem;">
           <span style="font-size:13px;font-weight:600;">${m.user}</span>
@@ -350,11 +590,18 @@ function renderForo(){
       </div>
     </div>`).join("");
 }
-renderForo();
-const fechaInicio = fechaInteligente();
-fechaActual = fechaInicio;
-renderPartidos(fechaInicio);
-renderTablas();
+
+function renderForo(){ cargarMensajesForo(); }
+// ── INIT ──
+async function init(){
+  await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
+  renderForo();
+  const f = fechaInteligente();
+  fechaActual = f;
+  renderPartidos(f);
+  renderTablas();
+}
+init();
 </script>
 </body>
 </html>
