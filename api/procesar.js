@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const { image, prompt } = req.body;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=AIzaSyDFvTIw_hFZtjKAND_cNDyN3WVTfb3pt1s`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDFvTIw_hFZtjKAND_cNDyN3WVTfb3pt1s`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
