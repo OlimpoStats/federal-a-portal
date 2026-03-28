@@ -16,13 +16,14 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { inline_data: { mime_type: "image/jpeg", data: image } },
+              { inline_data: { mime_type: "image/png", data: image } },
               { text: prompt }
             ]
           }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 2000,
+            maxOutputTokens: 3000,
+            responseMimeType: "application/json"
           }
         })
       }
@@ -34,12 +35,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data.error?.message || "Error de Gemini" });
     }
 
-    // Extraer texto de la respuesta de Gemini
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    // Devolver en formato compatible con el admin
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+
     res.status(200).json({
-      content: [{ type: "text", text }]
+      content: [{ type: "text", text: text }]
     });
 
   } catch (err) {
