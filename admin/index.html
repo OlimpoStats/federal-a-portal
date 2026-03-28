@@ -268,6 +268,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 <div style="font-size:11px;color:var(--muted);">Visitante</div>
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;">
+              <div><label>Estadio</label><input type="text" id="partido-estadio" placeholder="Nombre del estadio"></div>
+              <div><label>Árbitro principal</label><input type="text" id="partido-arbitro" placeholder="Nombre y apellido"></div>
+              <div><label>Juez de línea 1</label><input type="text" id="partido-juez1" placeholder="Nombre y apellido"></div>
+              <div><label>Juez de línea 2</label><input type="text" id="partido-juez2" placeholder="Nombre y apellido"></div>
+              <div><label>Cuarto árbitro</label><input type="text" id="partido-cuarto" placeholder="Nombre y apellido"></div>
+            </div>
           </div>
         </div>
 
@@ -312,7 +319,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <div class="form-row">
             <div><label>Zona</label><select id="er-zona" onchange="erActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
             <div><label>Fecha</label><select id="er-fecha" onchange="erActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
-            <div><label>Partido</label><select id="er-partido"><option>— Elegí zona y fecha —</option></select></div>
+            <div><label>Partido</label><select id="er-partido" onchange="erMostrar()"><option value="">— Elegí zona y fecha —</option></select></div>
           </div>
           <div id="er-form" style="display:none;margin-top:1rem;">
             <div class="result-box">
@@ -683,6 +690,11 @@ async function confirmarCarga(){
       goles_local: glLocal,
       goles_visitante: glVisit,
       jugado: true,
+      estadio: document.getElementById("partido-estadio").value||null,
+      arbitro: document.getElementById("partido-arbitro").value||null,
+      juez1: document.getElementById("partido-juez1").value||null,
+      juez2: document.getElementById("partido-juez2").value||null,
+      cuarto_arbitro: document.getElementById("partido-cuarto").value||null,
     }, {onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"}).select("id").single();
     if(epErr) throw epErr;
     const partidoId = partidoDB.id;
@@ -767,21 +779,23 @@ function erActualizar(){
   const zona=document.getElementById("er-zona").value;
   const fecha=document.getElementById("er-fecha").value;
   const sel=document.getElementById("er-partido");
-  sel.innerHTML="";
+  sel.innerHTML='<option value="">— Seleccioná partido —</option>';
+  document.getElementById("er-form").style.display="none";
   if(!zona||!fecha)return;
   const ps=(FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
   ps.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.local+" vs "+p.visitante;sel.appendChild(o);});
-  erMostrar();
 }
 function erMostrar(){
   const zona=document.getElementById("er-zona").value;
   const fecha=document.getElementById("er-fecha").value;
   const idx=document.getElementById("er-partido").value;
   if(!zona||!fecha||idx===""){document.getElementById("er-form").style.display="none";return;}
-  const p=(FIXTURE[zona]&&FIXTURE[zona][fecha]&&FIXTURE[zona][fecha][idx]);
+  const p=(FIXTURE[zona]&&FIXTURE[zona][fecha]&&FIXTURE[zona][fecha][parseInt(idx)]);
   if(!p)return;
   document.getElementById("er-local").textContent=p.local;
   document.getElementById("er-visit").textContent=p.visitante;
+  document.getElementById("er-gl").value=0;
+  document.getElementById("er-gv").value=0;
   document.getElementById("er-form").style.display="";
 }
 async function erGuardar(){
@@ -828,15 +842,22 @@ function hsMostrar(){
   document.getElementById("hs-form").style.display="";
   actualizarPreviewStream();
 }
-function hsGuardar(){
+async function hsGuardar(){
   const zona=document.getElementById("hs-zona").value;
   const fecha=document.getElementById("hs-fecha").value;
   const idx=document.getElementById("hs-partido").value;
+  if(!zona||!fecha||idx===""){alert("Seleccioná zona, fecha y partido");return;}
   const p=FIXTURE[zona][fecha][parseInt(idx)];
-  const key=`${zona}_${fecha}_${p.local}_${p.visitante}`;
-  HORARIOS[key]={hora:document.getElementById("hs-hora").value,stream:document.getElementById("hs-stream").value};
-  actualizarPreviewStream();
-  alert("✓ Guardado: "+p.local+" vs "+p.visitante);
+  const hora=document.getElementById("hs-hora").value;
+  const stream=document.getElementById("hs-stream").value;
+  const {error}=await sb.from("partidos").upsert({
+    zona, fecha:parseInt(fecha),
+    equipo_local_nombre:p.local,
+    equipo_visitante_nombre:p.visitante,
+    hora, stream_url:stream,
+  },{onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"});
+  if(error) alert("Error: "+error.message);
+  else { actualizarPreviewStream(); alert("✓ Guardado: "+p.local+" vs "+p.visitante); }
 }
 function actualizarPreviewStream(){
   const url=document.getElementById("hs-stream").value;
