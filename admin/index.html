@@ -122,8 +122,33 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .escudo-card input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .escudo-img{width:56px;height:56px;object-fit:contain;margin:0 auto .5rem;display:block;}
 .escudo-placeholder{width:56px;height:56px;background:var(--surface3);border:1px dashed var(--border);border-radius:50%;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#333;}
-.escudo-name{font-size:11px;color:var(--muted);font-weight:500;}
-</style>
+/* tarjetas como cuadrados */
+.ev-am-sq{display:inline-block;width:11px;height:14px;background:#e8c44a;border-radius:2px;vertical-align:middle;}
+.ev-ro-sq{display:inline-block;width:11px;height:14px;background:#e57373;border-radius:2px;vertical-align:middle;}
+.ev-2am-sq{display:inline-flex;gap:1px;vertical-align:middle;}
+/* cambios coloreados */
+.ev-entra{color:#4caf50;font-weight:600;}
+.ev-sale{color:#e57373;font-weight:600;}
+/* editor de eventos */
+.ev-editor{margin-top:.4rem;padding:.4rem .6rem;background:var(--surface3);border-radius:6px;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;}
+.ev-tag{display:inline-flex;align-items:center;gap:.3rem;padding:2px 7px;border-radius:4px;font-size:11px;background:var(--surface2);border:1px solid var(--border);}
+.ev-tag .del-ev{cursor:pointer;color:#e57373;font-size:13px;line-height:1;margin-left:2px;}
+.ev-tag .del-ev:hover{color:#ff5252;}
+.add-ev-btn{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer;}
+.add-ev-btn:hover{border-color:var(--accent);}
+/* autocomplete */
+.autocomplete-wrap{position:relative;}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:50;max-height:160px;overflow-y:auto;display:none;}
+.autocomplete-list.open{display:block;}
+.ac-item{padding:.4rem .75rem;font-size:13px;cursor:pointer;}
+.ac-item:hover{background:var(--surface3);color:var(--accent);}
+/* abm */
+.abm-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.abm-row{display:flex;align-items:center;gap:.75rem;padding:.55rem 1rem;border-bottom:1px solid var(--border);font-size:13px;}
+.abm-row:last-child{border-bottom:none;}
+.abm-name{flex:1;}
+.abm-del{background:none;border:none;color:#e57373;cursor:pointer;font-size:16px;padding:0 .25rem;}
+.abm-del:hover{color:#ff5252;}
 </head>
 <body>
  
@@ -143,6 +168,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Clubes</div>
     <div class="sb-item" onclick="goPanel('escudos')"><span class="sb-icon">🛡️</span>Escudos</div>
     <div class="sb-item" onclick="goPanel('jugadores')"><span class="sb-icon">👤</span>Jugadores</div>
+    <div class="sb-section">ABM</div>
+    <div class="sb-item" onclick="goPanel('abm-arbitros')"><span class="sb-icon">🧑‍⚖️</span>Árbitros</div>
+    <div class="sb-item" onclick="goPanel('abm-estadios')"><span class="sb-icon">🏟️</span>Estadios</div>
     <div class="sb-section">Foro</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
   </div>
@@ -269,11 +297,31 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;">
-              <div><label>Estadio</label><input type="text" id="partido-estadio" placeholder="Nombre del estadio"></div>
-              <div><label>Árbitro principal</label><input type="text" id="partido-arbitro" placeholder="Nombre y apellido"></div>
-              <div><label>Juez de línea 1</label><input type="text" id="partido-juez1" placeholder="Nombre y apellido"></div>
-              <div><label>Juez de línea 2</label><input type="text" id="partido-juez2" placeholder="Nombre y apellido"></div>
-              <div><label>Cuarto árbitro</label><input type="text" id="partido-cuarto" placeholder="Nombre y apellido"></div>
+              <div class="autocomplete-wrap">
+                <label>Estadio</label>
+                <input type="text" id="partido-estadio" placeholder="Nombre del estadio" oninput="acInput(this,'estadios','partido-estadio')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-estadio"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>Árbitro principal</label>
+                <input type="text" id="partido-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-arbitro')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-arbitro"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>Juez de línea 1</label>
+                <input type="text" id="partido-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez1')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-juez1"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>Juez de línea 2</label>
+                <input type="text" id="partido-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez2')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-juez2"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>Cuarto árbitro</label>
+                <input type="text" id="partido-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-cuarto')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-cuarto"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -393,6 +441,32 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="panel" id="panel-jugadores">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
       <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Los jugadores se agregan automáticamente al cargar planillas. Acá podrás buscarlos por ID o nombre.</div></div>
+    </div>
+ 
+    <!-- ===================== ABM ÁRBITROS ===================== -->
+    <div class="panel" id="panel-abm-arbitros">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Árbitros</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá el plantel de árbitros. Pueden actuar como árbitro principal, línea 1, línea 2 o cuarto árbitro.</p>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-body" style="display:flex;gap:.75rem;">
+          <input type="text" id="arb-nuevo" placeholder="Nombre completo del árbitro" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="agregarArbitro()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="abm-list" id="arb-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+    </div>
+ 
+    <!-- ===================== ABM ESTADIOS ===================== -->
+    <div class="panel" id="panel-abm-estadios">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Estadios</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá los estadios del torneo.</p>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-body" style="display:flex;gap:.75rem;">
+          <input type="text" id="est-nuevo" placeholder="Nombre del estadio" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="agregarEstadio()">+ Agregar</button>
+        </div>
+      </div>
+      <div class="abm-list" id="est-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
     </div>
  
     <!-- ===================== FORO ADMIN ===================== -->
@@ -635,6 +709,48 @@ function contarGoles(jugadores, side){
 }
  
 // ── RENDER PLANILLA ──
+function apellido(nombre){
+  // Devuelve el apellido (última palabra) del nombre display
+  if(!nombre) return "?";
+  const parts = nombre.trim().split(" ");
+  return parts[parts.length-1];
+}
+ 
+function renderEvento(e, containerId, jIdx, eIdx){
+  const minStr = `${e.minuto}'`;
+  let inner = "";
+  if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"){
+    const icon = e.tipo==="gol_contra"?"⚽(GC)":e.tipo==="gol_penal"?"⚽(P)":"⚽";
+    const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":"ev-gol";
+    inner=`<span class="evento-chip ${cls}">${icon} ${minStr}</span>`;
+  } else if(e.tipo==="amarilla"){
+    inner=`<span class="evento-chip ev-am"><span class="ev-am-sq"></span> ${minStr}</span>`;
+  } else if(e.tipo==="roja"){
+    inner=`<span class="evento-chip ev-ro"><span class="ev-ro-sq"></span> ${minStr}</span>`;
+  } else if(e.tipo==="doble_amarilla"){
+    inner=`<span class="evento-chip ev-ro"><span class="ev-2am-sq"><span class="ev-am-sq"></span><span class="ev-ro-sq"></span></span> ${minStr}</span>`;
+  } else if(e.tipo==="cambio_entra"){
+    const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+    // Buscar apellido del que sale por número de camiseta
+    const saleNum = e.extra;
+    const saleJug = arr ? arr.find(j=>String(j.numero)===String(saleNum)) : null;
+    const saleNombre = saleJug ? apellido(saleJug.nombre) : (saleNum||"?");
+    inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:var(--muted)">(${saleNombre})</span></span>`;
+  } else if(e.tipo==="cambio_sale"){
+    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span></span>`;
+  } else {
+    inner=`<span class="evento-chip ev-cam">? ${minStr}</span>`;
+  }
+  // Wrapper con botón eliminar
+  if(containerId && jIdx!==undefined && eIdx!==undefined){
+    return `<span style="display:inline-flex;align-items:center;gap:2px;margin:1px">
+      ${inner}
+      <span class="del-ev" onclick="eliminarEvento('${containerId}',${jIdx},${eIdx})" title="Eliminar">×</span>
+    </span>`;
+  }
+  return inner;
+}
+ 
 function renderPlanilla(containerId, jugadores){
   if(!jugadores||!jugadores.length){
     document.getElementById(containerId).innerHTML='<p style="color:var(--muted);font-size:13px;">No se encontraron jugadores.</p>';
@@ -642,44 +758,107 @@ function renderPlanilla(containerId, jugadores){
   }
   let html=`<table class="planilla">
     <thead><tr>
-      <th>#</th><th>ID</th><th>Nota</th><th>Nombre a mostrar</th><th>Titular</th><th>Eventos</th>
+      <th>#</th><th>ID</th><th>Nombre a mostrar</th><th>Titular</th><th>Eventos</th><th style="width:80px">Agregar</th>
     </tr></thead><tbody>`;
   jugadores.forEach((j,i)=>{
-    const notaBadge=j.nota==="AR"?`<span class="badge-gk">AR</span>`:j.nota==="CP"?`<span class="badge-cap">CP</span>`:"—";
-    const eventoHtml=(j.eventos||[]).map(e=>renderEvento(e)).join(" ")||"—";
+    const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
     html+=`<tr>
       <td><input type="number" value="${j.numero||""}" style="width:40px;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="font-size:11px;color:var(--muted);font-family:monospace">${j.id||"—"}</td>
-      <td>${notaBadge}</td>
-      <td>
-        <input type="text" value="${j.nombre||""}" style="min-width:180px;font-weight:500;" 
-          placeholder="Nombre a mostrar en el portal"
-          onchange="editarNombre('${containerId}',${i},this.value)"
-          title="Este es el nombre que verán los hinchas en el portal">
-      </td>
-      <td style="text-align:center;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"Titular":"Sup."}</td>
-      <td>${eventoHtml}</td>
+      <td><input type="text" value="${j.nombre||""}" style="min-width:160px;font-weight:500;"
+        onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="text-align:center;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"Tit.":"Sup."}</td>
+      <td>${eventosHtml}</td>
+      <td><button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})">+ Evento</button></td>
     </tr>`;
   });
-  html+=`</tbody></table>
-  <p style="font-size:11px;color:var(--muted);margin-top:.5rem;">* Podés editar el nombre antes de confirmar. El ID es el identificador único del jugador y no se puede cambiar.</p>`;
+  html+=`</tbody></table>`;
   document.getElementById(containerId).innerHTML=html;
 }
  
-function renderEvento(e){
-  const tipos={
-    "gol":["ev-gol","⚽"],
-    "gol_penal":["ev-pen","⚽(P)"],
-    "gol_contra":["ev-gc","⚽(GC)"],
-    "amarilla":["ev-am","🟡"],
-    "roja":["ev-ro","🔴"],
-    "doble_amarilla":["ev-ro","🟡🔴"],
-    "cambio_entra":["ev-cam","↑"],
-    "cambio_sale":["ev-cam","↓"],
-  };
-  const [cls,icon]=tipos[e.tipo]||["ev-cam","?"];
-  const extra=e.extra?` (${e.extra})`:"";
-  return `<span class="evento-chip ${cls}">${icon} ${e.minuto}'${extra}</span>`;
+// ── AGREGAR / ELIMINAR EVENTOS ──
+function eliminarEvento(containerId, jIdx, eIdx){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  arr[jIdx].eventos.splice(eIdx,1);
+  renderPlanilla(containerId, arr);
+}
+ 
+function abrirAgregarEvento(containerId, jIdx){
+  const tipos=[
+    {v:"gol",l:"⚽ Gol"},
+    {v:"gol_penal",l:"⚽(P) Gol penal"},
+    {v:"gol_contra",l:"⚽(GC) Gol en contra"},
+    {v:"amarilla",l:"🟨 Amarilla"},
+    {v:"roja",l:"🟥 Roja"},
+    {v:"doble_amarilla",l:"🟨🟥 Doble amarilla"},
+    {v:"cambio_entra",l:"↑ Entra (cambio)"},
+    {v:"cambio_sale",l:"↓ Sale (cambio)"},
+    {v:"asistencia",l:"👟 Asistencia"},
+  ];
+  const tipoOpts = tipos.map(t=>`<option value="${t.v}">${t.l}</option>`).join("");
+  const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center" id="modal-ev">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:340px;max-width:95vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Agregar evento</div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Tipo</label>
+      <select id="ev-tipo" style="width:100%;margin-bottom:.75rem" onchange="toggleExtras()">
+        ${tipoOpts}
+      </select>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto</label>
+      <input type="number" id="ev-minuto" placeholder="ej: 45" min="1" max="120" style="width:100%;margin-bottom:.75rem">
+      <div id="ev-extra-wrap" style="display:none">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem" id="ev-extra-lbl">Jugador que sale (nro camiseta)</label>
+        <input type="text" id="ev-extra" style="width:100%;margin-bottom:.75rem">
+      </div>
+      <div id="ev-asist-wrap" style="display:none">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Asistente (nombre del jugador)</label>
+        <input type="text" id="ev-asist" style="width:100%;margin-bottom:.75rem" placeholder="Buscar jugador...">
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarModalEv()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmarEvento('${containerId}',${jIdx})">Agregar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  toggleExtras();
+}
+ 
+function toggleExtras(){
+  const tipo=document.getElementById("ev-tipo")?.value;
+  const extraWrap=document.getElementById("ev-extra-wrap");
+  const asistWrap=document.getElementById("ev-asist-wrap");
+  const extraLbl=document.getElementById("ev-extra-lbl");
+  if(!extraWrap) return;
+  if(tipo==="cambio_entra"){
+    extraWrap.style.display="";
+    if(extraLbl) extraLbl.textContent="Jugador que sale (nro camiseta)";
+    if(asistWrap) asistWrap.style.display="none";
+  } else if(tipo==="asistencia"){
+    if(extraWrap) extraWrap.style.display="none";
+    if(asistWrap) asistWrap.style.display="";
+  } else {
+    extraWrap.style.display="none";
+    if(asistWrap) asistWrap.style.display="none";
+  }
+}
+ 
+function cerrarModalEv(){
+  document.getElementById("modal-ev")?.remove();
+}
+ 
+function confirmarEvento(containerId, jIdx){
+  const tipo=document.getElementById("ev-tipo").value;
+  const minuto=parseInt(document.getElementById("ev-minuto").value)||0;
+  const extra=document.getElementById("ev-extra")?.value||"";
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
+  arr[jIdx].eventos.push({tipo, minuto, extra});
+  // Ordenar por minuto
+  arr[jIdx].eventos.sort((a,b)=>a.minuto-b.minuto);
+  cerrarModalEv();
+  renderPlanilla(containerId, arr);
 }
  
 function updateJugador(containerId, idx, field, value){
@@ -940,8 +1119,106 @@ async function subirEscudo(e, team){
   alert("✓ Escudo guardado para "+team);
 }
  
-// ── INIT ADMIN ──
+// ── ABM ÁRBITROS Y ESTADIOS ──
+const CACHE = {arbitros:[], estadios:[]};
+ 
+async function cargarABM(){
+  try {
+    const [ra, re] = await Promise.all([
+      sb.from("arbitros").select("id,nombre").order("nombre"),
+      sb.from("estadios").select("id,nombre").order("nombre")
+    ]);
+    CACHE.arbitros = ra.data||[];
+    CACHE.estadios = re.data||[];
+    renderABMLista("arb-lista", CACHE.arbitros, "arbitros");
+    renderABMLista("est-lista", CACHE.estadios, "estadios");
+  } catch(e){ console.log("ABM error", e); }
+}
+ 
+function renderABMLista(elId, items, tabla){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  if(!items.length){ el.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin registros aún.</div>'; return; }
+  el.innerHTML = items.map(it=>`
+    <div class="abm-row">
+      <span class="abm-name">${it.nombre}</span>
+      <button class="abm-del" onclick="eliminarABM('${tabla}',${it.id})" title="Eliminar">×</button>
+    </div>`).join("");
+}
+ 
+async function agregarArbitro(){
+  const nombre = document.getElementById("arb-nuevo").value.trim();
+  if(!nombre) return;
+  const {data,error} = await sb.from("arbitros").insert({nombre}).select("id,nombre").single();
+  if(error){ alert("Error: "+error.message); return; }
+  CACHE.arbitros.push(data);
+  CACHE.arbitros.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  renderABMLista("arb-lista", CACHE.arbitros, "arbitros");
+  document.getElementById("arb-nuevo").value="";
+}
+ 
+async function agregarEstadio(){
+  const nombre = document.getElementById("est-nuevo").value.trim();
+  if(!nombre) return;
+  const {data,error} = await sb.from("estadios").insert({nombre}).select("id,nombre").single();
+  if(error){ alert("Error: "+error.message); return; }
+  CACHE.estadios.push(data);
+  CACHE.estadios.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  renderABMLista("est-lista", CACHE.estadios, "estadios");
+  document.getElementById("est-nuevo").value="";
+}
+ 
+async function eliminarABM(tabla, id){
+  if(!confirm("¿Eliminar este registro?")) return;
+  await sb.from(tabla).delete().eq("id", id);
+  CACHE[tabla] = CACHE[tabla].filter(i=>i.id!==id);
+  const elId = tabla==="arbitros"?"arb-lista":"est-lista";
+  renderABMLista(elId, CACHE[tabla], tabla);
+}
+ 
+// ── AUTOCOMPLETE ──
+function acInput(input, tabla, fieldId){
+  const q = input.value.toLowerCase().trim();
+  const listEl = document.getElementById("ac-"+fieldId);
+  if(!listEl) return;
+  if(!q){ listEl.classList.remove("open"); return; }
+  const items = CACHE[tabla].filter(i=>i.nombre.toLowerCase().includes(q));
+  if(!items.length){ listEl.classList.remove("open"); return; }
+  listEl.innerHTML = items.slice(0,8).map(i=>
+    `<div class="ac-item" onclick="acSelect('${fieldId}','${i.nombre.replace(/'/g,"\\'")}')">
+      ${i.nombre}
+    </div>`
+  ).join("");
+  listEl.classList.add("open");
+}
+ 
+function acSelect(fieldId, nombre){
+  const input = document.getElementById(fieldId);
+  if(input) input.value = nombre;
+  const listEl = document.getElementById("ac-"+fieldId);
+  if(listEl) listEl.classList.remove("open");
+}
+ 
+// Cerrar autocomplete al click fuera
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".autocomplete-wrap")){
+    document.querySelectorAll(".autocomplete-list").forEach(l=>l.classList.remove("open"));
+  }
+});
+ 
+// Al guardar árbitro/estadio nuevo si no existe al confirmar partido
+async function upsertABMSiNuevo(tabla, nombre){
+  if(!nombre) return;
+  const existe = CACHE[tabla].find(i=>i.nombre.toLowerCase()===nombre.toLowerCase());
+  if(!existe){
+    const {data} = await sb.from(tabla).upsert({nombre},{onConflict:"nombre"}).select("id,nombre").single();
+    if(data){ CACHE[tabla].push(data); CACHE[tabla].sort((a,b)=>a.nombre.localeCompare(b.nombre)); }
+  }
+}
+ 
+// ── INIT ──
 cargarEscudosDesdeDB();
+cargarABM();
 </script>
 </body>
 </html>
