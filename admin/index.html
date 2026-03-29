@@ -10,12 +10,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0a0a0a;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--green:#2a7a4a;--red:#7a2a2a;--blue:#1a3a6a;}
 body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
-
+ 
 .hdr{background:#0d0d0d;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:54px;}
 .logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:1px;color:var(--accent);}
 .logo span{color:#fff;}
 .admin-badge{background:#2a1a00;color:var(--accent);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;}
-
+ 
 .layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 54px);}
 .sidebar{background:#0d0d0d;border-right:1px solid var(--border);padding:1rem 0;}
 .sb-section{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#333;padding:.4rem 1.25rem;margin-top:.5rem;}
@@ -23,16 +23,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .sb-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
 .sb-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(232,196,74,0.05);}
 .sb-icon{font-size:14px;width:16px;text-align:center;}
-
+ 
 .content{padding:1.5rem;overflow-y:auto;}
 .panel{display:none;}
 .panel.active{display:block;}
-
+ 
 /* cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.25rem;}
 .card-hdr{background:var(--surface2);padding:.65rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;}
 .card-body{padding:1rem;}
-
+ 
 /* steps */
 .steps{display:flex;gap:0;margin-bottom:1.5rem;}
 .step{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:var(--surface2);border:1px solid var(--border);flex:1;position:relative;}
@@ -42,7 +42,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .step.active-step .step-n{background:var(--accent);border-color:var(--accent);color:#111;}
 .step-label{font-size:11px;color:var(--muted);font-weight:500;}
 .step.active-step .step-label{color:var(--text);}
-
+ 
 /* selects & inputs */
 select,input[type=text],input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;width:100%;}
 select:focus,input:focus{border-color:var(--accent);}
@@ -50,7 +50,7 @@ select option{background:#1e1e1e;}
 label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-weight:500;}
 .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 .form-row.two{grid-template-columns:1fr 1fr;}
-
+ 
 /* upload zones */
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.75rem;}
 .upload-zone{border:2px dashed var(--border);border-radius:8px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
@@ -61,7 +61,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .upload-label{font-size:13px;color:var(--muted);margin-bottom:.25rem;}
 .upload-sub{font-size:11px;color:#444;}
 .upload-preview{width:100%;max-height:200px;object-fit:contain;border-radius:4px;margin-top:.5rem;}
-
+ 
 /* buttons */
 .btn{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:.55rem 1.25rem;border-radius:6px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.5rem;}
 .btn-primary{background:var(--accent);color:#111;}
@@ -71,11 +71,11 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .btn-secondary:hover{border-color:rgba(255,255,255,0.2);}
 .btn-danger{background:#3a1010;color:#e57373;border:1px solid #5a2020;}
 .btn-sm{font-size:12px;padding:.35rem .75rem;}
-
+ 
 /* spinner */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
+ 
 /* planilla table */
 .planilla-wrap{overflow-x:auto;}
 .planilla{width:100%;border-collapse:collapse;font-size:12px;}
@@ -93,28 +93,28 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-am{border-color:#5a4a0a;background:#1a1500;color:#e8c44a;}
 .ev-ro{border-color:#5a1a1a;background:#1a0808;color:#e57373;}
 .ev-cam{border-color:#3a3a3a;background:#111;color:#aaa;}
-
+ 
 /* resultado box */
 .result-box{display:flex;align-items:center;gap:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;}
 .team-side{flex:1;text-align:center;}
 .team-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;margin-bottom:.35rem;}
 .score-input{width:60px;height:48px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--accent);}
 .score-sep{font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--muted);padding:0 .5rem;}
-
+ 
 /* confirm bar */
 .confirm-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-top:1rem;}
 .confirm-info{font-size:13px;color:var(--muted);}
-
+ 
 /* result flash */
 .flash{padding:.75rem 1rem;border-radius:6px;font-size:13px;font-weight:500;margin-bottom:1rem;display:none;}
 .flash.ok{background:#0a1a0d;border:1px solid #1e5c35;color:#5dba7d;display:block;}
 .flash.err{background:#1a0808;border:1px solid #5a1a1a;color:#e57373;display:block;}
-
+ 
 /* loading overlay */
 .loading-overlay{display:none;position:absolute;inset:0;background:rgba(10,10,10,.8);border-radius:8px;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;z-index:5;}
 .loading-overlay.on{display:flex;}
 .loading-text{font-size:13px;color:var(--muted);}
-
+ 
 /* escudos grid */
 .escudos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;}
 .escudo-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem;text-align:center;cursor:pointer;transition:border-color .15s;position:relative;}
@@ -153,13 +153,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 </style>
 </head>
 <body>
-
+ 
 <div class="hdr">
   <div class="logo">FEDERAL <span>A</span></div>
   <div class="admin-badge">ADMIN</div>
   <div style="margin-left:auto;font-size:12px;color:var(--muted);">Panel de administración</div>
 </div>
-
+ 
 <div class="layout">
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -176,14 +176,14 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Foro</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
   </div>
-
+ 
   <!-- CONTENT -->
   <div class="content">
-
+ 
     <!-- ===================== CARGAR PLANILLA ===================== -->
     <div class="panel active" id="panel-cargar">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Cargar planilla de partido</h2>
-
+ 
       <!-- steps -->
       <div class="steps">
         <div class="step active-step" id="step1"><div class="step-n">1</div><div class="step-label">Seleccionar partido</div></div>
@@ -191,7 +191,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
         <div class="step" id="step3"><div class="step-n">3</div><div class="step-label">Revisar y editar</div></div>
         <div class="step" id="step4"><div class="step-n">4</div><div class="step-label">Confirmar</div></div>
       </div>
-
+ 
       <!-- PASO 1: seleccionar partido -->
       <div id="paso1">
         <div class="card">
@@ -225,7 +225,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
         </div>
       </div>
-
+ 
       <!-- PASO 2: subir imágenes -->
       <div id="paso2" style="display:none;">
         <div class="card">
@@ -263,11 +263,11 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
         </div>
       </div>
-
+ 
       <!-- PASO 3: revisar -->
       <div id="paso3" style="display:none;">
         <div id="flash-msg" class="flash"></div>
-
+ 
         <div class="card" style="position:relative;">
           <div class="loading-overlay" id="loading-overlay">
             <div style="font-size:28px;">🤖</div>
@@ -327,19 +327,19 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             </div>
           </div>
         </div>
-
+ 
         <!-- planilla local -->
         <div class="card" style="position:relative;">
           <div class="card-hdr"><span id="title-plan-local">Planilla local</span></div>
           <div class="card-body planilla-wrap" id="tabla-local"></div>
         </div>
-
+ 
         <!-- planilla visitante -->
         <div class="card">
           <div class="card-hdr"><span id="title-plan-visit">Planilla visitante</span></div>
           <div class="card-body planilla-wrap" id="tabla-visit"></div>
         </div>
-
+ 
         <div class="confirm-bar">
           <div class="confirm-info">Revisá los datos antes de confirmar. Una vez guardado, las stats de cada jugador se actualizan automáticamente.</div>
           <div style="display:flex;gap:.6rem;">
@@ -348,7 +348,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
         </div>
       </div>
-
+ 
       <!-- PASO 4: confirmado -->
       <div id="paso4" style="display:none;">
         <div style="text-align:center;padding:3rem 2rem;">
@@ -359,7 +359,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
         </div>
       </div>
     </div>
-
+ 
     <!-- ===================== EDITAR RESULTADOS ===================== -->
     <div class="panel" id="panel-resultados">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Editar resultados manualmente</h2>
@@ -386,7 +386,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
         </div>
       </div>
     </div>
-
+ 
     <!-- ===================== HORARIOS Y STREAMS ===================== -->
     <div class="panel" id="panel-horarios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Horarios y transmisiones</h2>
@@ -431,20 +431,20 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
         </div>
       </div>
     </div>
-
+ 
     <!-- ===================== ESCUDOS ===================== -->
     <div class="panel" id="panel-escudos">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Escudos de clubes</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente).</p>
       <div class="escudos-grid" id="escudos-grid"></div>
     </div>
-
+ 
     <!-- ===================== JUGADORES ===================== -->
     <div class="panel" id="panel-jugadores">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
       <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Los jugadores se agregan automáticamente al cargar planillas. Acá podrás buscarlos por ID o nombre.</div></div>
     </div>
-
+ 
     <!-- ===================== ABM ÁRBITROS ===================== -->
     <div class="panel" id="panel-abm-arbitros">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Árbitros</h2>
@@ -457,7 +457,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       </div>
       <div class="abm-list" id="arb-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
     </div>
-
+ 
     <!-- ===================== ABM ESTADIOS ===================== -->
     <div class="panel" id="panel-abm-estadios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Estadios</h2>
@@ -470,28 +470,28 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       </div>
       <div class="abm-list" id="est-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
     </div>
-
+ 
     <!-- ===================== FORO ADMIN ===================== -->
     <div class="panel" id="panel-foro-admin">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
       <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Próximamente: lista de mensajes del foro con opción de eliminar o bloquear usuarios.</div></div>
     </div>
-
+ 
   </div>
 </div>
-
+ 
 <script>
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
-
+ 
 // ── FIXTURE (cargado desde Supabase) ──
 let FIXTURE = {}; // zona -> fecha -> [{local, visitante, id, estado, ...}]
 let EQUIPOS_INFO = {}; // nombre -> {id, estadio_id, estadio_nombre, tecnico_id, tecnico_nombre}
-
+ 
 const ALL_TEAMS = ["El Linqueño","Sp. Las Parejas","Independiente (Ch)","Atlético Escobar","Sp. Belgrano","9 de Julio (Rafaela)","Douglas Haig","Gimnasia (Ch)","Defensores (VR)","Gimnasia (CDU)","Sarmiento (R)","Juv. Antoniana","Boca Unidos","Sarmiento (LB)","Tucumán Central","Bartolomé Mitre","San Martín (F)","Defensores (PV)","Sol de América (F)","Costa Brava","FADEP","Huracán LH","Argentino (MM)","San Martín (M)","Juv. Unida (SL)","Atenas (RC)","Cipolletti","Dep. Rincón","Kimberley","Villa Mitre","Sol de Mayo","Germinal","Gmo. Brown (PM)","Santamarina","Olimpo","Alvarado","Círculo Dep."];
-
+ 
 async function cargarFixture(){
   try {
     const {data, error} = await sb.from("fixture").select("*").order("fecha").order("zona");
@@ -521,7 +521,7 @@ async function cargarFixture(){
     poblarSelectoresZona();
   } catch(e){ console.error("Error cargando fixture:", e); }
 }
-
+ 
 async function cargarEquiposInfo(){
   try {
     const {data} = await sb.from("equipos")
@@ -535,7 +535,7 @@ async function cargarEquiposInfo(){
     });
   } catch(e){}
 }
-
+ 
 function poblarSelectoresZona(){
   // Actualizar todos los selectores de zona en el admin
   const zonas = Object.keys(FIXTURE).sort();
@@ -547,11 +547,11 @@ function poblarSelectoresZona(){
       zonas.map(z=>`<option${val===z?" selected":""}>${z}</option>`).join("");
   });
 }
-
+ 
 let imgLocalB64=null, imgVisitB64=null;
 let partidoActual=null;
 let planillaLocal={jugadores:[]}, planillaVisit={jugadores:[]};
-
+ 
 // ── NAVEGACIÓN ──
 function goPanel(id){
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
@@ -561,7 +561,7 @@ function goPanel(id){
   if(id==="escudos") renderEscudos();
   if(id==="abm-arbitros"||id==="abm-estadios") cargarABM();
 }
-
+ 
 // ── PASO 1 ──
 function actualizarPartidos(){
   const zona=document.getElementById("sel-zona").value;
@@ -576,18 +576,18 @@ function actualizarPartidos(){
     sel.appendChild(o);
   });
 }
-
+ 
 function selPartidoChanged(){
   // reservado para acciones futuras al elegir partido
 }
-
+ 
 function irPaso1(){
   document.getElementById("paso1").style.display="";
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso3").style.display="none";
   setStep(1);
 }
-
+ 
 function irPaso2(){
   const zona=document.getElementById("sel-zona").value;
   const fecha=document.getElementById("sel-fecha").value;
@@ -619,12 +619,7 @@ function irPaso2(){
   document.getElementById("paso3").style.display="none";
   setStep(2);
 }
-  document.getElementById("paso1").style.display="none";
-  document.getElementById("paso2").style.display="";
-  document.getElementById("paso3").style.display="none";
-  setStep(2);
-}
-
+ 
 // ── UPLOAD ──
 function dragOver(e,id){e.preventDefault();document.getElementById(id).classList.add("drag");}
 function dragLeave(id){document.getElementById(id).classList.remove("drag");}
@@ -636,7 +631,7 @@ function dropFile(e,side){
   if(f)handleFile(f,side);
 }
 function fileSelected(e,side){if(e.target.files[0])handleFile(e.target.files[0],side);}
-
+ 
 function handleFile(file,side){
   const reader=new FileReader();
   reader.onload=ev=>{
@@ -654,11 +649,11 @@ function handleFile(file,side){
   };
   reader.readAsDataURL(file);
 }
-
+ 
 // ── PEGAR DESDE PORTAPAPELES (Ctrl+V) ──
 // Al estar en el paso 2, Ctrl+V pega en la zona activa (local primero, visitante si ya tiene local)
 let pasteTarget = "local"; // próxima zona a rellenar con paste
-
+ 
 document.addEventListener("paste", async (e)=>{
   // Solo funcionar en el paso 2
   if(document.getElementById("paso2").style.display==="none") return;
@@ -677,7 +672,7 @@ document.addEventListener("paste", async (e)=>{
   zone.style.borderColor="var(--accent)";
   setTimeout(()=>zone.style.borderColor="",800);
 });
-
+ 
 // ── PROCESAR CON IA ──
 async function procesarImagenes(){
   document.getElementById("paso2").style.display="none";
@@ -688,9 +683,9 @@ async function procesarImagenes(){
   document.getElementById("title-plan-local").textContent="Planilla — "+partidoActual.local;
   document.getElementById("title-plan-visit").textContent="Planilla — "+partidoActual.visit;
   document.getElementById("loading-overlay").classList.add("on");
-
+ 
   const prompt=`Sos un extractor de datos de planillas oficiales del torneo Federal A de fútbol argentino.
-
+ 
 La imagen tiene una tabla con estas columnas exactas, de izquierda a derecha:
 - "Núm." (o similar): número de orden en la lista, del 1 al 20. Los jugadores 1 a 11 son TITULARES, del 12 en adelante son SUPLENTES.
 - "Núm" (sin punto): ID numérico del jugador, siempre de 6 o 7 dígitos. Es el identificador único del jugador. Leelo con cuidado, no lo confundas con el número de orden.
@@ -705,13 +700,13 @@ La imagen tiene una tabla con estas columnas exactas, de izquierda a derecha:
   * Dos rectángulos (amarillo+rojo) → tipo "doble_amarilla"
   * Ícono de engranaje ⚙️ o flecha de salida → tipo "cambio_sale" con el minuto indicado
   * Ícono de flechas circulares 🔄 o flecha de entrada → tipo "cambio_entra". El número entre paréntesis después del minuto es el número de camiseta del jugador que SALE. Ej: "63'(5)" significa entra en el minuto 63 y reemplaza al #5.
-
+ 
 IMPORTANTE:
 - El campo "id" es el número de 6-7 dígitos de la segunda columna, NO el número de orden.
 - Si un jugador tiene cambio_sale, también buscá quién entra (cambio_entra) en otra fila.
 - Contá los goles (tipo "gol" y "gol_penal") para calcular "goles_equipo". NO contés gol_contra como gol propio.
 - Los goles en contra ("gol_contra") suman al rival, NO a este equipo.
-
+ 
 Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto extra:
 {
   "goles_equipo": 2,
@@ -721,32 +716,32 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto extra:
     {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]}
   ]
 }`;
-
+ 
   try {
     // Process local image
     document.getElementById("loading-text").textContent="Procesando planilla de "+partidoActual.local+"...";
     planillaLocal = await callClaude(prompt, imgLocalB64);
-
+ 
     document.getElementById("loading-text").textContent="Procesando planilla de "+partidoActual.visit+"...";
     planillaVisit = await callClaude(prompt, imgVisitB64);
-
+ 
     // Auto-calculate score from events
     const glLocal = planillaLocal.goles_equipo ?? contarGoles(planillaLocal.jugadores, "local");
     const glVisit = planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores, "visitante");
     document.getElementById("score-local").value = glLocal;
     document.getElementById("score-visit").value = glVisit;
-
+ 
     renderPlanilla("tabla-local", planillaLocal.jugadores||[]);
     renderPlanilla("tabla-visit", planillaVisit.jugadores||[]);
     document.getElementById("loading-overlay").classList.remove("on");
-
+ 
   } catch(err){
     document.getElementById("loading-overlay").classList.remove("on");
     showFlash("Error al procesar: "+err.message, "err");
     console.error(err);
   }
 }
-
+ 
 async function callClaude(prompt, imageB64){
   const resp = await fetch("/api/procesar",{
     method:"POST",
@@ -778,14 +773,14 @@ async function callClaude(prompt, imageB64){
     catch(e2){ throw new Error("No se pudo parsear la respuesta de IA. Intentá de nuevo."); }
   }
 }
-
+ 
 function contarGoles(jugadores, side){
   if(!jugadores)return 0;
   return jugadores.reduce((acc,j)=>{
     return acc + (j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal").length;
   },0);
 }
-
+ 
 // ── RENDER PLANILLA ──
 function apellido(nombre){
   // Devuelve el apellido (última palabra) del nombre display
@@ -793,7 +788,7 @@ function apellido(nombre){
   const parts = nombre.trim().split(" ");
   return parts[parts.length-1];
 }
-
+ 
 function renderEvento(e, containerId, jIdx, eIdx){
   const minStr = `${e.minuto}'`;
   let inner = "";
@@ -828,7 +823,7 @@ function renderEvento(e, containerId, jIdx, eIdx){
   }
   return inner;
 }
-
+ 
 function renderPlanilla(containerId, jugadores){
   if(!jugadores||!jugadores.length){
     document.getElementById(containerId).innerHTML='<p style="color:var(--muted);font-size:13px;">No se encontraron jugadores.</p>';
@@ -853,7 +848,7 @@ function renderPlanilla(containerId, jugadores){
   html+=`</tbody></table>`;
   document.getElementById(containerId).innerHTML=html;
 }
-
+ 
 // ── AGREGAR / ELIMINAR EVENTOS ──
 function eliminarEvento(containerId, jIdx, eIdx){
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
@@ -861,7 +856,7 @@ function eliminarEvento(containerId, jIdx, eIdx){
   arr[jIdx].eventos.splice(eIdx,1);
   renderPlanilla(containerId, arr);
 }
-
+ 
 function abrirAgregarEvento(containerId, jIdx){
   const tipos=[
     {v:"gol",l:"⚽ Gol"},
@@ -901,7 +896,7 @@ function abrirAgregarEvento(containerId, jIdx){
   document.body.insertAdjacentHTML("beforeend", html);
   toggleExtras();
 }
-
+ 
 function toggleExtras(){
   const tipo=document.getElementById("ev-tipo")?.value;
   const extraWrap=document.getElementById("ev-extra-wrap");
@@ -920,11 +915,11 @@ function toggleExtras(){
     if(asistWrap) asistWrap.style.display="none";
   }
 }
-
+ 
 function cerrarModalEv(){
   document.getElementById("modal-ev")?.remove();
 }
-
+ 
 function confirmarEvento(containerId, jIdx){
   const tipo=document.getElementById("ev-tipo").value;
   const minuto=parseInt(document.getElementById("ev-minuto").value)||0;
@@ -938,12 +933,59 @@ function confirmarEvento(containerId, jIdx){
   cerrarModalEv();
   renderPlanilla(containerId, arr);
 }
-
+ 
 function updateJugador(containerId, idx, field, value){
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(arr&&arr[idx]) arr[idx][field]=value;
 }
-
+ 
+// ── HELPERS PARA CONFIRMAR ──
+async function upsertEquipo(nombre, zona){
+  const {data} = await sb.from("equipos").select("id").eq("nombre", nombre).single();
+  if(data) return data.id;
+  const {data:nuevo} = await sb.from("equipos").insert({nombre, zona}).select("id").single();
+  return nuevo?.id;
+}
+ 
+async function guardarPlanilla(jugadores, equipoId, partidoId){
+  if(!jugadores||!jugadores.length) return;
+  // Borrar planilla previa de este partido/equipo
+  const {data:prevPlan} = await sb.from("planillas")
+    .select("id").eq("partido_id", partidoId).eq("equipo_id", equipoId);
+  if(prevPlan?.length){
+    const ids = prevPlan.map(p=>p.id);
+    await sb.from("eventos").delete().in("planilla_id", ids);
+    await sb.from("planillas").delete().eq("partido_id", partidoId).eq("equipo_id", equipoId);
+  }
+  for(const j of jugadores){
+    const idFederal = String(j.id_federal||j.id||"");
+    if(!idFederal) continue;
+    const {data:jDB} = await sb.from("jugadores").upsert({
+      id_federal: idFederal,
+      nombre: j.nombre,
+      nombre_display: j.nombre,
+      equipo_id: equipoId,
+    }, {onConflict:"id_federal"}).select("id").single();
+    if(!jDB) continue;
+    const {data:pDB} = await sb.from("planillas").insert({
+      partido_id: partidoId,
+      jugador_id: jDB.id,
+      equipo_id: equipoId,
+      numero_camiseta: j.numero,
+      titular: j.titular||false,
+    }).select("id").single();
+    if(!pDB) continue;
+    for(const ev of (j.eventos||[])){
+      await sb.from("eventos").insert({
+        planilla_id: pDB.id,
+        tipo: ev.tipo,
+        minuto: ev.minuto||0,
+        extra: String(ev.extra||""),
+      });
+    }
+  }
+}
+ 
 // ── CONFIRMAR ──
 async function confirmarCarga(){
   const glLocal = parseInt(document.getElementById("score-local").value)||0;
@@ -953,9 +995,9 @@ async function confirmarCarga(){
   const juez1 = document.getElementById("partido-juez1").value||null;
   const juez2 = document.getElementById("partido-juez2").value||null;
   const cuarto = document.getElementById("partido-cuarto").value||null;
-
+ 
   try {
-    // 1. Actualizar fixture (tabla madre) con resultado y detalles
+    // 1. Actualizar fixture (tabla madre)
     const {error:fxErr} = await sb.from("fixture").update({
       goles_local: glLocal,
       goles_visitante: glVisit,
@@ -963,8 +1005,8 @@ async function confirmarCarga(){
       estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
     }).eq("id", partidoActual.fixtureId);
     if(fxErr) throw fxErr;
-
-    // 2. Guardar también en tabla partidos para compatibilidad
+ 
+    // 2. Guardar en tabla partidos para compatibilidad
     const {data:partidoDB, error:epErr} = await sb.from("partidos").upsert({
       zona: partidoActual.zona,
       fecha: parseInt(partidoActual.fecha),
@@ -978,83 +1020,35 @@ async function confirmarCarga(){
     }, {onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"}).select("id").single();
     if(epErr) throw epErr;
     const partidoId = partidoDB.id;
-
+ 
     // 3. Upsert equipos
-    async function upsertEquipo(nombre, zona){
-      const {data} = await sb.from("equipos").select("id").eq("nombre", nombre).single();
-      if(data) return data.id;
-      const {data:nuevo} = await sb.from("equipos").insert({nombre, zona}).select("id").single();
-      return nuevo?.id;
-    }
     const localId = await upsertEquipo(partidoActual.local, partidoActual.zona);
     const visitId = await upsertEquipo(partidoActual.visit, partidoActual.zona);
-
-    // 4. Guardar árbitros/estadios nuevos si no existen
+ 
+    // 4. Guardar árbitros/estadios nuevos
     await upsertABMSiNuevo("arbitros", arbitro);
     await upsertABMSiNuevo("arbitros", juez1);
     await upsertABMSiNuevo("arbitros", juez2);
     await upsertABMSiNuevo("arbitros", cuarto);
     await upsertABMSiNuevo("estadios", estadio);
-
-    // 5. Guardar planillas — borrar previas y reinsertar
-    async function guardarPlanilla(jugadores, equipoId){
-      if(!jugadores||!jugadores.length) return;
-      // Borrar planilla previa de este partido/equipo
-      const {data:prevPlan} = await sb.from("planillas")
-        .select("id").eq("partido_id", partidoId).eq("equipo_id", equipoId);
-      if(prevPlan?.length){
-        const ids = prevPlan.map(p=>p.id);
-        await sb.from("eventos").delete().in("planilla_id", ids);
-        await sb.from("planillas").delete().eq("partido_id", partidoId).eq("equipo_id", equipoId);
-      }
-      for(const j of jugadores){
-        const idFederal = String(j.id_federal||j.id||"");
-        if(!idFederal) continue;
-        // Upsert jugador
-        const {data:jDB} = await sb.from("jugadores").upsert({
-          id_federal: idFederal,
-          nombre: j.nombre,
-          nombre_display: j.nombre,
-          equipo_id: equipoId,
-        }, {onConflict:"id_federal"}).select("id").single();
-        if(!jDB) continue;
-        // Insertar planilla
-        const {data:pDB} = await sb.from("planillas").insert({
-          partido_id: partidoId,
-          jugador_id: jDB.id,
-          equipo_id: equipoId,
-          numero_camiseta: j.numero,
-          titular: j.titular||false,
-        }).select("id").single();
-        if(!pDB) continue;
-        // Insertar eventos
-        for(const ev of (j.eventos||[])){
-          await sb.from("eventos").insert({
-            planilla_id: pDB.id,
-            tipo: ev.tipo,
-            minuto: ev.minuto||0,
-            extra: String(ev.extra||""),
-          });
-        }
-      }
-    }
-    if(localId) await guardarPlanilla(planillaLocal.jugadores||[], localId);
-    if(visitId) await guardarPlanilla(planillaVisit.jugadores||[], visitId);
-
+ 
+    // 5. Guardar planillas
+    if(localId) await guardarPlanilla(planillaLocal.jugadores||[], localId, partidoId);
+    if(visitId) await guardarPlanilla(planillaVisit.jugadores||[], visitId, partidoId);
+ 
     document.getElementById("paso3").style.display="none";
     document.getElementById("paso4").style.display="";
     document.getElementById("confirmado-txt").textContent=
       `${partidoActual.local} ${glLocal} — ${glVisit} ${partidoActual.visit} guardado correctamente.`;
     setStep(4);
-    // Refrescar fixture local
     await cargarFixture();
-
+ 
   } catch(err){
     showFlash("Error al guardar: "+err.message, "err");
     console.error(err);
   }
 }
-
+ 
 function resetTodo(){
   imgLocalB64=null;imgVisitB64=null;
   planillaLocal={jugadores:[]};planillaVisit={jugadores:[]};
@@ -1069,7 +1063,7 @@ function resetTodo(){
   ["zone-local","zone-visit"].forEach(id=>document.getElementById(id).classList.remove("has-img"));
   setStep(1);
 }
-
+ 
 function setStep(n){
   [1,2,3,4].forEach(i=>{
     const el=document.getElementById("step"+i);
@@ -1078,12 +1072,12 @@ function setStep(n){
     else if(i===n) el.classList.add("active-step");
   });
 }
-
+ 
 function showFlash(msg,type){
   const f=document.getElementById("flash-msg");
   f.textContent=msg;f.className="flash "+type;
 }
-
+ 
 // ── EDITAR RESULTADOS ──
 function erActualizar(){
   const zona=document.getElementById("er-zona").value;
@@ -1124,7 +1118,7 @@ async function erGuardar(){
   if(error) alert("Error: "+error.message);
   else alert(`✓ Guardado: ${p.local} ${gl}—${gv} ${p.visitante}`);
 }
-
+ 
 // ── HORARIOS Y STREAMS ──
 const HORARIOS={};
 function hsActualizar(){
@@ -1183,15 +1177,15 @@ function actualizarPreviewStream(){
   else prev.style.display="none";
 }
 document.addEventListener("input",e=>{if(e.target.id==="hs-stream")actualizarPreviewStream();});
-
+ 
 // ── EDITAR NOMBRE EN PLANILLA ──
 function editarNombre(containerId,idx,valor){
   const arr=containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(arr&&arr[idx])arr[idx].nombre=valor;
 }
-
+ 
 const escudoData={};
-
+ 
 async function cargarEscudosDesdeDB(){
   try {
     const {data} = await sb.from("equipos").select("nombre, escudo_url");
@@ -1199,7 +1193,7 @@ async function cargarEscudosDesdeDB(){
     data.forEach(eq=>{ if(eq.escudo_url) escudoData[eq.nombre]=eq.escudo_url; });
   } catch(e){ console.log("Sin escudos en BD", e); }
 }
-
+ 
 function renderEscudos(){
   const grid=document.getElementById("escudos-grid");
   grid.innerHTML=ALL_TEAMS.map(t=>{
@@ -1212,7 +1206,7 @@ function renderEscudos(){
     </div>`;
   }).join("");
 }
-
+ 
 async function subirEscudo(e, team){
   const f=e.target.files[0]; if(!f) return;
   const fileName = team.replace(/[^a-z0-9]/gi,'_').toLowerCase()+".png";
@@ -1225,10 +1219,10 @@ async function subirEscudo(e, team){
   renderEscudos();
   alert("✓ Escudo guardado para "+team);
 }
-
+ 
 // ── ABM ÁRBITROS Y ESTADIOS ──
 const CACHE = {arbitros:[], estadios:[], tecnicos:[]};
-
+ 
 async function cargarABM(){
   try {
     const [ra, re, rt] = await Promise.all([
@@ -1243,7 +1237,7 @@ async function cargarABM(){
     renderABMLista("est-lista", CACHE.estadios, "estadios");
   } catch(e){ console.log("ABM error", e); }
 }
-
+ 
 function renderABMLista(elId, items, tabla){
   const el = document.getElementById(elId);
   if(!el) return;
@@ -1254,7 +1248,7 @@ function renderABMLista(elId, items, tabla){
       <button class="abm-del" onclick="eliminarABM('${tabla}',${it.id})" title="Eliminar">×</button>
     </div>`).join("");
 }
-
+ 
 async function agregarArbitro(){
   const nombre = document.getElementById("arb-nuevo").value.trim();
   if(!nombre) return;
@@ -1265,7 +1259,7 @@ async function agregarArbitro(){
   renderABMLista("arb-lista", CACHE.arbitros, "arbitros");
   document.getElementById("arb-nuevo").value="";
 }
-
+ 
 async function agregarEstadio(){
   const nombre = document.getElementById("est-nuevo").value.trim();
   if(!nombre) return;
@@ -1276,7 +1270,7 @@ async function agregarEstadio(){
   renderABMLista("est-lista", CACHE.estadios, "estadios");
   document.getElementById("est-nuevo").value="";
 }
-
+ 
 async function eliminarABM(tabla, id){
   if(!confirm("¿Eliminar este registro?")) return;
   await sb.from(tabla).delete().eq("id", id);
@@ -1284,7 +1278,7 @@ async function eliminarABM(tabla, id){
   const elId = tabla==="arbitros"?"arb-lista":"est-lista";
   renderABMLista(elId, CACHE[tabla], tabla);
 }
-
+ 
 // ── AUTOCOMPLETE ──
 function acInput(input, tabla, fieldId){
   const q = input.value.toLowerCase().trim();
@@ -1300,21 +1294,21 @@ function acInput(input, tabla, fieldId){
   ).join("");
   listEl.classList.add("open");
 }
-
+ 
 function acSelect(fieldId, nombre){
   const input = document.getElementById(fieldId);
   if(input) input.value = nombre;
   const listEl = document.getElementById("ac-"+fieldId);
   if(listEl) listEl.classList.remove("open");
 }
-
+ 
 // Cerrar autocomplete al click fuera
 document.addEventListener("click", e=>{
   if(!e.target.closest(".autocomplete-wrap")){
     document.querySelectorAll(".autocomplete-list").forEach(l=>l.classList.remove("open"));
   }
 });
-
+ 
 // Al guardar árbitro/estadio nuevo si no existe al confirmar partido
 async function upsertABMSiNuevo(tabla, nombre){
   if(!nombre) return;
@@ -1324,7 +1318,7 @@ async function upsertABMSiNuevo(tabla, nombre){
     if(data){ CACHE[tabla].push(data); CACHE[tabla].sort((a,b)=>a.nombre.localeCompare(b.nombre)); }
   }
 }
-
+ 
 // ── INIT ──
 cargarEscudosDesdeDB();
 cargarABM();
