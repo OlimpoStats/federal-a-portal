@@ -214,9 +214,32 @@ const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// Carga partidos desde Supabase y los mezcla con el fixture local
+// Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
   try {
+    // Fuente principal: fixture
+    const {data:fixtureData, error:fixtureErr} = await sb
+      .from("fixture")
+      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url");
+    if(!fixtureErr && fixtureData){
+      fixtureData.forEach(p => {
+        if(!p.zona || !p.fecha) return;
+        const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
+        if(!ms) return;
+        const match = ms.find(m => m.local === p.equipo_local && m.visitante === p.equipo_visitante);
+        if(!match) return;
+        if(p.goles_local !== null && p.goles_visitante !== null){
+          match.gl = p.goles_local;
+          match.gv = p.goles_visitante;
+        }
+        if(p.dia || p.hora || p.stream_url){
+          const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
+          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || ""};
+        }
+      });
+    }
+
+    // Compatibilidad: overlay desde partidos (si hubiera filas viejas no reflejadas en fixture)
     const {data, error} = await sb.from("partidos").select("*");
     if(error || !data) return;
     data.forEach(p => {
@@ -225,10 +248,18 @@ async function cargarPartidosDesdeDB(){
       if(!ms) return;
       const match = ms.find(m => m.local === p.equipo_local_nombre && m.visitante === p.equipo_visitante_nombre);
       if(!match) return;
-      if(p.jugado){ match.gl = p.goles_local; match.gv = p.goles_visitante; }
-      if(p.hora || p.stream_url){
+      if(match.gl === null && p.goles_local !== null && p.goles_visitante !== null){
+        match.gl = p.goles_local;
+        match.gv = p.goles_visitante;
+      }
+      if(p.dia || p.hora || p.stream_url){
         const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
-        PARTIDO_META[key] = {hora: p.hora||"", stream: p.stream_url||""};
+        const prev = PARTIDO_META[key] || {};
+        PARTIDO_META[key] = {
+          dia: prev.dia || p.dia || "",
+          hora: prev.hora || p.hora || "",
+          stream: prev.stream || p.stream_url || ""
+        };
       }
     });
   } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
@@ -354,7 +385,7 @@ function calcTabla(zona){
 // Datos extra por partido: hora programada y stream URL
 // Clave: "ZonaX_f_local_visitante" — se puede cargar desde el admin
 const PARTIDO_META = {
-  // Ejemplo: "Zona A_1_El Linqueño_Sp. Las Parejas": {hora:"15:30", stream:"https://youtube.com/..."}
+  // Ejemplo: "Zona A_1_El Linqueño_Sp. Las Parejas": {dia:"2026-04-01", hora:"15:30", stream:"https://youtube.com/..."}
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -396,7 +427,8 @@ function renderPartidos(f){
       if(m.gl!==null){
         centro=`<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`;
       } else if(meta.hora){
-        centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">HS</div></div>`;
+        const diaTxt = meta.dia ? String(meta.dia).split("-").reverse().join("/") : "";
+        centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">${diaTxt ? diaTxt + " · " : ""}HS</div></div>`;
       } else {
         centro=`<div class="vs">VS</div>`;
       }
@@ -538,7 +570,12 @@ function renderFxCont(){
     const ms=FIXTURE[fxZona][String(f)]||[];
     html+=`<div class="zona-lbl">Fecha ${f}</div>`;
     ms.forEach(m=>{
-      const r=m.gl!==null?`<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`:`<div class="vs">VS</div>`;
+      const meta=PARTIDO_META[getMetaKey(fxZona,f,m.local,m.visitante)]||{};
+      const r=m.gl!==null
+        ? `<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`
+        : (meta.hora
+          ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">${meta.dia ? String(meta.dia).split("-").reverse().join("/") + " · " : ""}HS</div></div>`
+          : `<div class="vs">VS</div>`);
       html+=`<div class="partido"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
     });
   }
