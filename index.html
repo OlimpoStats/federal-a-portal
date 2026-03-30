@@ -591,10 +591,65 @@ function renderForoMsgs(msgs){
     </div>`).join("");
 }
 
+async function diagnosticoIntegridad(){
+  try {
+    const teams = new Set();
+    Object.values(FIXTURE).forEach(fechas => {
+      Object.values(fechas).forEach(partidos => {
+        partidos.forEach(p => {
+          teams.add(p.local);
+          teams.add(p.visitante);
+        });
+      });
+    });
+
+    const sinEscudo = [...teams].filter(t => !ESCUDOS[t]);
+    if (sinEscudo.length) {
+      console.warn("[Diagnóstico] Equipos sin escudo:", sinEscudo.length, sinEscudo);
+    } else {
+      console.info("[Diagnóstico] Todos los equipos del fixture tienen escudo.");
+    }
+
+    const fixtureKeys = new Set();
+    Object.entries(FIXTURE).forEach(([zona, fechas]) => {
+      Object.entries(fechas).forEach(([fecha, partidos]) => {
+        partidos.forEach(p => {
+          fixtureKeys.add(`${zona}|${fecha}|${p.local}|${p.visitante}`);
+        });
+      });
+    });
+
+    const { data, error } = await sb
+      .from("partidos")
+      .select("zona, fecha, equipo_local_nombre, equipo_visitante_nombre")
+      .limit(1000);
+
+    if (error || !data) {
+      console.warn("[Diagnóstico] No se pudo leer tabla partidos:", error?.message || "sin datos");
+      return;
+    }
+
+    const noMatchean = data.filter(p => {
+      const key = `${p.zona}|${p.fecha}|${p.equipo_local_nombre}|${p.equipo_visitante_nombre}`;
+      return !fixtureKeys.has(key);
+    });
+
+    if (noMatchean.length) {
+      console.warn("[Diagnóstico] Partidos en DB que no matchean con FIXTURE:", noMatchean.length, noMatchean);
+    } else {
+      console.info("[Diagnóstico] Todos los partidos de DB matchean con FIXTURE.");
+    }
+  } catch (e) {
+    console.warn("[Diagnóstico] Error:", e);
+  }
+}
+
+
 function renderForo(){ cargarMensajesForo(); }
 // ── INIT ──
 async function init(){
   await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
+  await diagnosticoIntegridad();
   renderForo();
   const f = fechaInteligente();
   fechaActual = f;
@@ -602,6 +657,7 @@ async function init(){
   renderTablas();
 }
 init();
+
 </script>
 </body>
 </html>
