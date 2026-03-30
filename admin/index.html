@@ -964,31 +964,17 @@ async function upsertEquipo(nombre, zona){
 
 async function buscarFixtureId(zona, fecha, local, visitante){
   const f = parseInt(fecha, 10);
-
-  // Intento 1: columnas "equipo_local_nombre / equipo_visitante_nombre"
-  let r1 = await sb
+  const { data, error } = await sb
     .from("fixture")
     .select("id")
     .eq("zona", zona)
     .eq("fecha", f)
-    .eq("equipo_local_nombre", local)
-    .eq("equipo_visitante_nombre", visitante)
+    .eq("equipo_local", local)
+    .eq("equipo_visitante", visitante)
     .maybeSingle();
 
-  if (!r1.error && r1.data?.id) return r1.data.id;
-
-  // Intento 2: columnas "local / visitante"
-  let r2 = await sb
-    .from("fixture")
-    .select("id")
-    .eq("zona", zona)
-    .eq("fecha", f)
-    .eq("local", local)
-    .eq("visitante", visitante)
-    .maybeSingle();
-
-  if (r2.error) throw r2.error;
-  return r2.data?.id || null;
+  if (error) throw error;
+  return data?.id || null;
 }
 
 
