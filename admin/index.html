@@ -953,7 +953,7 @@ function updateJugador(containerId, idx, field, value){
   if(arr&&arr[idx]) arr[idx][field]=value;
 }
 
-<script>
+
 // ── HELPERS PARA CONFIRMAR ──
 async function upsertEquipo(nombre, zona){
   const {data} = await sb.from("equipos").select("id").eq("nombre", nombre).single();
@@ -1411,8 +1411,6 @@ async function upsertABMSiNuevo(tabla, nombre){
     if(data){ CACHE[tabla].push(data); CACHE[tabla].sort((a,b)=>a.nombre.localeCompare(b.nombre)); }
   }
 }
-</script>
-
   
 // ── INIT ──
 cargarEscudosDesdeDB();
