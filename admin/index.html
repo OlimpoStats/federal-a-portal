@@ -953,6 +953,7 @@ function updateJugador(containerId, idx, field, value){
   if(arr&&arr[idx]) arr[idx][field]=value;
 }
 
+<script>
 // ── HELPERS PARA CONFIRMAR ──
 async function upsertEquipo(nombre, zona){
   const {data} = await sb.from("equipos").select("id").eq("nombre", nombre).single();
@@ -961,40 +962,85 @@ async function upsertEquipo(nombre, zona){
   return nuevo?.id;
 }
 
+async function buscarFixtureId(zona, fecha, local, visitante){
+  const {data, error} = await sb
+    .from("fixture")
+    .select("id")
+    .eq("zona", zona)
+    .eq("fecha", parseInt(fecha, 10))
+    .eq("local", local)
+    .eq("visitante", visitante)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.id || null;
+}
+
+async function upsertPartido(payload){
+  if (payload.fixture_id){
+    const {data, error} = await sb
+      .from("partidos")
+      .upsert(payload, { onConflict: "fixture_id" })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data?.id || null;
+  }
+
+  const {data, error} = await sb
+    .from("partidos")
+    .upsert(payload, { onConflict: "zona,fecha,equipo_local_nombre,equipo_visitante_nombre" })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data?.id || null;
+}
+
 async function guardarPlanilla(jugadores, equipoId, partidoId){
-  if(!jugadores||!jugadores.length) return;
-  // Borrar planilla previa de este partido/equipo
-  const {data:prevPlan} = await sb.from("planillas")
-    .select("id").eq("partido_id", partidoId).eq("equipo_id", equipoId);
+  if(!jugadores || !jugadores.length) return;
+
+  const {data:prevPlan} = await sb
+    .from("planillas")
+    .select("id")
+    .eq("partido_id", partidoId)
+    .eq("equipo_id", equipoId);
+
   if(prevPlan?.length){
-    const ids = prevPlan.map(p=>p.id);
+    const ids = prevPlan.map(p => p.id);
     await sb.from("eventos").delete().in("planilla_id", ids);
     await sb.from("planillas").delete().eq("partido_id", partidoId).eq("equipo_id", equipoId);
   }
+
   for(const j of jugadores){
-    const idFederal = String(j.id_federal||j.id||"");
+    const idFederal = String(j.id_federal || j.id || "");
     if(!idFederal) continue;
+
     const {data:jDB} = await sb.from("jugadores").upsert({
       id_federal: idFederal,
       nombre: j.nombre,
       nombre_display: j.nombre,
       equipo_id: equipoId,
-    }, {onConflict:"id_federal"}).select("id").single();
+    }, { onConflict:"id_federal" }).select("id").single();
+
     if(!jDB) continue;
+
     const {data:pDB} = await sb.from("planillas").insert({
       partido_id: partidoId,
       jugador_id: jDB.id,
       equipo_id: equipoId,
       numero_camiseta: j.numero,
-      titular: j.titular||false,
+      titular: !!j.titular,
     }).select("id").single();
+
     if(!pDB) continue;
-    for(const ev of (j.eventos||[])){
+
+    for(const ev of (j.eventos || [])){
       await sb.from("eventos").insert({
         planilla_id: pDB.id,
         tipo: ev.tipo,
-        minuto: ev.minuto||0,
-        extra: String(ev.extra||""),
+        minuto: ev.minuto || 0,
+        extra: String(ev.extra || ""),
       });
     }
   }
@@ -1002,200 +1048,235 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
 
 // ── CONFIRMAR ──
 async function confirmarCarga(){
-  const glLocal = parseInt(document.getElementById("score-local").value)||0;
-  const glVisit = parseInt(document.getElementById("score-visit").value)||0;
-  const estadio = document.getElementById("partido-estadio").value||null;
-  const arbitro = document.getElementById("partido-arbitro").value||null;
-  const juez1 = document.getElementById("partido-juez1").value||null;
-  const juez2 = document.getElementById("partido-juez2").value||null;
-  const cuarto = document.getElementById("partido-cuarto").value||null;
+  const glLocal = parseInt(document.getElementById("score-local").value) || 0;
+  const glVisit = parseInt(document.getElementById("score-visit").value) || 0;
+  const estadio = document.getElementById("partido-estadio").value || null;
+  const arbitro = document.getElementById("partido-arbitro").value || null;
+  const juez1 = document.getElementById("partido-juez1").value || null;
+  const juez2 = document.getElementById("partido-juez2").value || null;
+  const cuarto = document.getElementById("partido-cuarto").value || null;
 
   try {
-    // 1. Actualizar fixture (tabla madre)
-    const {error:fxErr} = await sb.from("fixture").update({
-      goles_local: glLocal,
-      goles_visitante: glVisit,
-      estado: "jugado",
-      estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
-    }).eq("id", partidoActual.fixtureId);
-    if(fxErr) throw fxErr;
+    let fixtureId = partidoActual?.fixtureId || null;
+    if (!fixtureId){
+      fixtureId = await buscarFixtureId(partidoActual.zona, partidoActual.fecha, partidoActual.local, partidoActual.visit);
+      partidoActual.fixtureId = fixtureId;
+    }
 
-    // 2. Guardar en tabla partidos para compatibilidad
-    const {data:partidoDB, error:epErr} = await sb.from("partidos").upsert({
+    if (fixtureId){
+      const {error:fxErr} = await sb.from("fixture").update({
+        goles_local: glLocal,
+        goles_visitante: glVisit,
+        estado: "jugado",
+        estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
+      }).eq("id", fixtureId);
+      if (fxErr) throw fxErr;
+    }
+
+    const partidoPayload = {
       zona: partidoActual.zona,
-      fecha: parseInt(partidoActual.fecha),
+      fecha: parseInt(partidoActual.fecha, 10),
       equipo_local_nombre: partidoActual.local,
       equipo_visitante_nombre: partidoActual.visit,
       goles_local: glLocal,
       goles_visitante: glVisit,
       jugado: true,
       estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
-      fixture_id: partidoActual.fixtureId,
-    }, {onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"}).select("id").single();
-    if(epErr) throw epErr;
-    const partidoId = partidoDB.id;
+      fixture_id: fixtureId,
+    };
 
-    // 3. Upsert equipos
+    const partidoId = await upsertPartido(partidoPayload);
+
     const localId = await upsertEquipo(partidoActual.local, partidoActual.zona);
     const visitId = await upsertEquipo(partidoActual.visit, partidoActual.zona);
 
-    // 4. Guardar árbitros/estadios nuevos
     await upsertABMSiNuevo("arbitros", arbitro);
     await upsertABMSiNuevo("arbitros", juez1);
     await upsertABMSiNuevo("arbitros", juez2);
     await upsertABMSiNuevo("arbitros", cuarto);
     await upsertABMSiNuevo("estadios", estadio);
 
-    // 5. Guardar planillas
-    if(localId) await guardarPlanilla(planillaLocal.jugadores||[], localId, partidoId);
-    if(visitId) await guardarPlanilla(planillaVisit.jugadores||[], visitId, partidoId);
+    if(localId) await guardarPlanilla(planillaLocal.jugadores || [], localId, partidoId);
+    if(visitId) await guardarPlanilla(planillaVisit.jugadores || [], visitId, partidoId);
 
-    document.getElementById("paso3").style.display="none";
-    document.getElementById("paso4").style.display="";
-    document.getElementById("confirmado-txt").textContent=
+    document.getElementById("paso3").style.display = "none";
+    document.getElementById("paso4").style.display = "";
+    document.getElementById("confirmado-txt").textContent =
       `${partidoActual.local} ${glLocal} — ${glVisit} ${partidoActual.visit} guardado correctamente.`;
     setStep(4);
     await cargarFixture();
 
   } catch(err){
-    showFlash("Error al guardar: "+err.message, "err");
+    showFlash("Error al guardar: " + err.message, "err");
     console.error(err);
   }
 }
 
-function resetTodo(){
-  imgLocalB64=null;imgVisitB64=null;
-  planillaLocal={jugadores:[]};planillaVisit={jugadores:[]};
-  partidoActual=null;
-  document.getElementById("paso4").style.display="none";
-  document.getElementById("paso1").style.display="";
-  document.getElementById("btn-procesar").disabled=true;
-  ["preview-local","preview-visit"].forEach(id=>{
-    document.getElementById(id).style.display="none";
-    document.getElementById(id).src="";
-  });
-  ["zone-local","zone-visit"].forEach(id=>document.getElementById(id).classList.remove("has-img"));
-  setStep(1);
-}
-
-function setStep(n){
-  [1,2,3,4].forEach(i=>{
-    const el=document.getElementById("step"+i);
-    el.classList.remove("active-step","done");
-    if(i<n) el.classList.add("done");
-    else if(i===n) el.classList.add("active-step");
-  });
-}
-
-function showFlash(msg,type){
-  const f=document.getElementById("flash-msg");
-  f.textContent=msg;f.className="flash "+type;
-}
-
 // ── EDITAR RESULTADOS ──
 function erActualizar(){
-  const zona=document.getElementById("er-zona").value;
-  const fecha=document.getElementById("er-fecha").value;
-  const sel=document.getElementById("er-partido");
-  sel.innerHTML='<option value="">— Seleccioná partido —</option>';
-  document.getElementById("er-form").style.display="none";
-  if(!zona||!fecha)return;
-  const ps=(FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
-  ps.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.local+" vs "+p.visitante;sel.appendChild(o);});
+  const zona = document.getElementById("er-zona").value;
+  const fecha = document.getElementById("er-fecha").value;
+  const sel = document.getElementById("er-partido");
+  sel.innerHTML = '<option value="">— Seleccioná partido —</option>';
+  document.getElementById("er-form").style.display = "none";
+  if(!zona || !fecha) return;
+  const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
+  ps.forEach((p,i)=>{
+    const o = document.createElement("option");
+    o.value = i;
+    o.textContent = p.local + " vs " + p.visitante;
+    sel.appendChild(o);
+  });
 }
+
 function erMostrar(){
-  const zona=document.getElementById("er-zona").value;
-  const fecha=document.getElementById("er-fecha").value;
-  const idx=document.getElementById("er-partido").value;
-  if(!zona||!fecha||idx===""){document.getElementById("er-form").style.display="none";return;}
-  const p=(FIXTURE[zona]&&FIXTURE[zona][fecha]&&FIXTURE[zona][fecha][parseInt(idx)]);
-  if(!p)return;
-  document.getElementById("er-local").textContent=p.local;
-  document.getElementById("er-visit").textContent=p.visitante;
-  document.getElementById("er-gl").value=0;
-  document.getElementById("er-gv").value=0;
-  document.getElementById("er-form").style.display="";
+  const zona = document.getElementById("er-zona").value;
+  const fecha = document.getElementById("er-fecha").value;
+  const idx = document.getElementById("er-partido").value;
+  if(!zona || !fecha || idx === ""){
+    document.getElementById("er-form").style.display = "none";
+    return;
+  }
+  const p = FIXTURE[zona]?.[fecha]?.[parseInt(idx, 10)];
+  if(!p) return;
+  document.getElementById("er-local").textContent = p.local;
+  document.getElementById("er-visit").textContent = p.visitante;
+  document.getElementById("er-gl").value = 0;
+  document.getElementById("er-gv").value = 0;
+  document.getElementById("er-form").style.display = "";
 }
+
 async function erGuardar(){
-  const zona=document.getElementById("er-zona").value;
-  const fecha=document.getElementById("er-fecha").value;
-  const idx=document.getElementById("er-partido").value;
-  const p=FIXTURE[zona][fecha][parseInt(idx)];
-  const gl=parseInt(document.getElementById("er-gl").value)||0;
-  const gv=parseInt(document.getElementById("er-gv").value)||0;
-  const {error} = await sb.from("partidos").upsert({
-    zona, fecha:parseInt(fecha),
-    equipo_local_nombre: p.local,
-    equipo_visitante_nombre: p.visitante,
-    goles_local: gl, goles_visitante: gv, jugado: true,
-  },{onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"});
-  if(error) alert("Error: "+error.message);
-  else alert(`✓ Guardado: ${p.local} ${gl}—${gv} ${p.visitante}`);
+  const zona = document.getElementById("er-zona").value;
+  const fecha = document.getElementById("er-fecha").value;
+  const idx = document.getElementById("er-partido").value;
+  const p = FIXTURE[zona][fecha][parseInt(idx, 10)];
+  const gl = parseInt(document.getElementById("er-gl").value) || 0;
+  const gv = parseInt(document.getElementById("er-gv").value) || 0;
+
+  try {
+    const fixtureId = await buscarFixtureId(zona, fecha, p.local, p.visitante);
+
+    if (fixtureId){
+      const {error:fxErr} = await sb.from("fixture").update({
+        goles_local: gl,
+        goles_visitante: gv,
+        estado: "jugado",
+      }).eq("id", fixtureId);
+      if (fxErr) throw fxErr;
+    }
+
+    await upsertPartido({
+      zona,
+      fecha: parseInt(fecha, 10),
+      equipo_local_nombre: p.local,
+      equipo_visitante_nombre: p.visitante,
+      goles_local: gl,
+      goles_visitante: gv,
+      jugado: true,
+      fixture_id: fixtureId,
+    });
+
+    alert(`✓ Guardado: ${p.local} ${gl}—${gv} ${p.visitante}`);
+  } catch (error){
+    alert("Error: " + error.message);
+  }
 }
 
 // ── HORARIOS Y STREAMS ──
 const HORARIOS={};
+
 function hsActualizar(){
-  const zona=document.getElementById("hs-zona").value;
-  const fecha=document.getElementById("hs-fecha").value;
-  const sel=document.getElementById("hs-partido");
-  sel.innerHTML='<option value="">— Seleccioná —</option>';
-  document.getElementById("hs-form").style.display="none";
-  if(!zona||!fecha)return;
-  const ps=(FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
-  ps.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.local+" vs "+p.visitante;sel.appendChild(o);});
+  const zona = document.getElementById("hs-zona").value;
+  const fecha = document.getElementById("hs-fecha").value;
+  const sel = document.getElementById("hs-partido");
+  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  document.getElementById("hs-form").style.display = "none";
+  if(!zona || !fecha) return;
+  const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
+  ps.forEach((p,i)=>{
+    const o=document.createElement("option");
+    o.value=i;
+    o.textContent=p.local+" vs "+p.visitante;
+    sel.appendChild(o);
+  });
 }
+
 function hsMostrar(){
   const zona=document.getElementById("hs-zona").value;
   const fecha=document.getElementById("hs-fecha").value;
   const idx=document.getElementById("hs-partido").value;
-  if(!zona||!fecha||idx===""){document.getElementById("hs-form").style.display="none";return;}
-  const p=(FIXTURE[zona]&&FIXTURE[zona][fecha]&&FIXTURE[zona][fecha][parseInt(idx)]);
-  if(!p)return;
-  const key=`${zona}_${fecha}_${p.local}_${p.visitante}`;
-  const prev=HORARIOS[key]||{};
-  document.getElementById("hs-titulo").textContent=p.local+" vs "+p.visitante+" — Fecha "+fecha;
-  document.getElementById("hs-hora").value=prev.hora||"";
-  document.getElementById("hs-dia").value=prev.dia||"";
-  document.getElementById("hs-stream").value=prev.stream||"";
-  document.getElementById("hs-form").style.display="";
+  if(!zona||!fecha||idx===""){
+    document.getElementById("hs-form").style.display="none";
+    return;
+  }
+  const p = FIXTURE[zona]?.[fecha]?.[parseInt(idx,10)];
+  if(!p) return;
+  const key = `${zona}_${fecha}_${p.local}_${p.visitante}`;
+  const prev = HORARIOS[key] || {};
+  document.getElementById("hs-titulo").textContent = p.local+" vs "+p.visitante+" — Fecha "+fecha;
+  document.getElementById("hs-hora").value = prev.hora || "";
+  document.getElementById("hs-dia").value = prev.dia || "";
+  document.getElementById("hs-stream").value = prev.stream || "";
+  document.getElementById("hs-form").style.display = "";
   actualizarPreviewStream();
 }
+
 async function hsGuardar(){
   const zona=document.getElementById("hs-zona").value;
   const fecha=document.getElementById("hs-fecha").value;
   const idx=document.getElementById("hs-partido").value;
-  if(!zona||!fecha||idx===""){alert("Seleccioná zona, fecha y partido");return;}
-  const p=FIXTURE[zona][fecha][parseInt(idx)];
+  if(!zona || !fecha || idx===""){
+    alert("Seleccioná zona, fecha y partido");
+    return;
+  }
+
+  const p=FIXTURE[zona][fecha][parseInt(idx,10)];
   const hora=document.getElementById("hs-hora").value;
   const dia=document.getElementById("hs-dia").value;
   const stream=document.getElementById("hs-stream").value;
-  const {error}=await sb.from("partidos").upsert({
-    zona, fecha:parseInt(fecha),
-    equipo_local_nombre:p.local,
-    equipo_visitante_nombre:p.visitante,
-    hora, dia, stream_url:stream,
-  },{onConflict:"zona,fecha,equipo_local_nombre,equipo_visitante_nombre"});
-  if(error) alert("Error: "+error.message);
-  else {
+
+  try {
+    const fixtureId = await buscarFixtureId(zona, fecha, p.local, p.visitante);
+
+    await upsertPartido({
+      zona,
+      fecha: parseInt(fecha,10),
+      equipo_local_nombre: p.local,
+      equipo_visitante_nombre: p.visitante,
+      hora,
+      dia,
+      stream_url: stream,
+      fixture_id: fixtureId,
+    });
+
     const key=`${zona}_${fecha}_${p.local}_${p.visitante}`;
     HORARIOS[key]={hora,dia,stream};
     actualizarPreviewStream();
     alert("✓ Guardado: "+p.local+" vs "+p.visitante);
+  } catch (error){
+    alert("Error: " + error.message);
   }
 }
+
 function actualizarPreviewStream(){
   const url=document.getElementById("hs-stream").value;
   const prev=document.getElementById("hs-preview");
-  if(url){prev.style.display="";document.getElementById("hs-preview-link").href=url;}
-  else prev.style.display="none";
+  if(url){
+    prev.style.display="";
+    document.getElementById("hs-preview-link").href=url;
+  } else {
+    prev.style.display="none";
+  }
 }
-document.addEventListener("input",e=>{if(e.target.id==="hs-stream")actualizarPreviewStream();});
+document.addEventListener("input",e=>{
+  if(e.target.id==="hs-stream") actualizarPreviewStream();
+});
 
 // ── EDITAR NOMBRE EN PLANILLA ──
 function editarNombre(containerId,idx,valor){
-  const arr=containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
-  if(arr&&arr[idx])arr[idx].nombre=valor;
+  const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+  if(arr && arr[idx]) arr[idx].nombre=valor;
 }
 
 const escudoData={};
@@ -1316,14 +1397,12 @@ function acSelect(fieldId, nombre){
   if(listEl) listEl.classList.remove("open");
 }
 
-// Cerrar autocomplete al click fuera
 document.addEventListener("click", e=>{
   if(!e.target.closest(".autocomplete-wrap")){
     document.querySelectorAll(".autocomplete-list").forEach(l=>l.classList.remove("open"));
   }
 });
 
-// Al guardar árbitro/estadio nuevo si no existe al confirmar partido
 async function upsertABMSiNuevo(tabla, nombre){
   if(!nombre) return;
   const existe = CACHE[tabla].find(i=>i.nombre.toLowerCase()===nombre.toLowerCase());
@@ -1332,7 +1411,9 @@ async function upsertABMSiNuevo(tabla, nombre){
     if(data){ CACHE[tabla].push(data); CACHE[tabla].sort((a,b)=>a.nombre.localeCompare(b.nombre)); }
   }
 }
+</script>
 
+  
 // ── INIT ──
 cargarEscudosDesdeDB();
 cargarABM();
