@@ -539,7 +539,7 @@ function renderFxCont(){
     html+=`<div class="zona-lbl">Fecha ${f}</div>`;
     ms.forEach(m=>{
       const r=m.gl!==null?`<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`:`<div class="vs">VS</div>`;
-      html+=`<div class="partido"><div class="eq"><div class="esc">${ini(m.local)}</div><div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis"><div class="esc">${ini(m.visitante)}</div><div class="eqn">${m.visitante}</div></div></div>`;
+      html+=`<div class="partido"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
     });
   }
   document.getElementById("fx-cont").innerHTML=html;
