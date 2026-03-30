@@ -68,7 +68,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .esc img{width:100%;height:100%;object-fit:contain;}
 .eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;}
 .eq.vis .eqn{text-align:right;}
-.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:20px;padding:0 6px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;}
+.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:24px;padding:0 8px;border-radius:999px;background:var(--accent);border:1px solid var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#111;letter-spacing:.4px;}
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
@@ -245,27 +245,45 @@ async function cargarPartidosDesdeDB(){
 
     // Compatibilidad: overlay desde partidos (si hubiera filas viejas no reflejadas en fixture)
     const {data, error} = await sb.from("partidos").select("*");
-    if(error || !data) return;
-    data.forEach(p => {
-      if(!p.zona || !p.fecha) return;
-      const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
-      if(!ms) return;
-      const match = ms.find(m => m.local === p.equipo_local_nombre && m.visitante === p.equipo_visitante_nombre);
-      if(!match) return;
-      if(match.gl === null && p.goles_local !== null && p.goles_visitante !== null){
-        match.gl = p.goles_local;
-        match.gv = p.goles_visitante;
+    if(!error && data){
+      data.forEach(p => {
+        if(!p.zona || !p.fecha) return;
+        const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
+        if(!ms) return;
+        const match = ms.find(m => m.local === p.equipo_local_nombre && m.visitante === p.equipo_visitante_nombre);
+        if(!match) return;
+        if(match.gl === null && p.goles_local !== null && p.goles_visitante !== null){
+          match.gl = p.goles_local;
+          match.gv = p.goles_visitante;
+        }
+        if(p.dia || p.hora || p.stream_url){
+          const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+          const prev = PARTIDO_META[key] || {};
+          PARTIDO_META[key] = {
+            dia: prev.dia || p.dia || "",
+            hora: prev.hora || p.hora || "",
+            stream: prev.stream || p.stream_url || ""
+          };
+        }
+      });
+    }
+
+    const {data:planillasRows, error:plErr} = await sb.from("planillas").select("partido_id");
+    if(!plErr && planillasRows?.length){
+      const ids = [...new Set(planillasRows.map(x => x.partido_id).filter(Boolean))];
+      if(ids.length){
+        const {data:partidosPlanilla, error:ppErr} = await sb
+          .from("partidos")
+          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre")
+          .in("id", ids);
+        if(!ppErr && partidosPlanilla){
+          partidosPlanilla.forEach(p => {
+            const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+            PLANILLA_CARGADA[key] = true;
+          });
+        }
       }
-      if(p.dia || p.hora || p.stream_url){
-        const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
-        const prev = PARTIDO_META[key] || {};
-        PARTIDO_META[key] = {
-          dia: prev.dia || p.dia || "",
-          hora: prev.hora || p.hora || "",
-          stream: prev.stream || p.stream_url || ""
-        };
-      }
-    });
+    }
   } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
 }
 
@@ -391,6 +409,7 @@ function calcTabla(zona){
 const PARTIDO_META = {
   // Ejemplo: "Zona A_1_El Linqueño_Sp. Las Parejas": {dia:"2026-04-01", hora:"15:30", stream:"https://youtube.com/..."}
 };
+const PLANILLA_CARGADA = {};
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
 function letraZona(z){ return (z || "").replace("Zona ","").trim(); }
@@ -472,7 +491,7 @@ function renderPartidos(f){
     if(m.gl!==null){
       centro=`<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`;
     } else if(meta.hora){
-      centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">${meta.dia ? String(meta.dia).split("-").reverse().join("/") : ""}</div></div>`;
+      centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:#f0f0f0;letter-spacing:.5px">${meta.dia ? String(meta.dia).split("-").reverse().join("/") : ""}</div></div>`;
     } else {
       centro=`<div class="vs">VS</div>`;
     }
@@ -489,7 +508,10 @@ function renderPartidos(f){
       ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
       : `<div style="width:32px;flex-shrink:0"></div>`;
     const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
-    const fichaBtn = `<div class="ficha-btn" title="${m.gl!==null?'Ver ficha del partido':'Planilla pendiente de carga'}" onclick="verFicha('${fichaKey}',${m.gl!==null})">📄</div>`;
+    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
+    const fichaBtn = m.gl!==null
+      ? `<div class="ficha-btn" title="${tienePlanilla?'Ver ficha del partido':'Planilla pendiente de carga'}" onclick="verFicha('${fichaKey}',${tienePlanilla})">📄</div>`
+      : `<div style="width:32px;flex-shrink:0"></div>`;
     const zonaShort = letraZona(zona);
 
     html+=`<div class="partido-wrap">
@@ -619,7 +641,7 @@ function renderFxCont(){
       const r=m.gl!==null
         ? `<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`
         : (meta.hora
-          ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:var(--muted);letter-spacing:.5px">${meta.dia ? String(meta.dia).split("-").reverse().join("/") : ""}</div></div>`
+          ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div><div style="font-size:9px;color:#f0f0f0;letter-spacing:.5px">${meta.dia ? String(meta.dia).split("-").reverse().join("/") : ""}</div></div>`
           : `<div class="vs">VS</div>`);
       html+=`<div class="partido"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
     });
