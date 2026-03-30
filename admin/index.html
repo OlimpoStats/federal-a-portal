@@ -373,14 +373,14 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <div><label>Partido</label><select id="er-partido" onchange="erMostrar()"><option value="">— Elegí zona y fecha —</option></select></div>
           </div>
           <div id="er-form" style="display:none;margin-top:1rem;">
-            <div class="result-box">
-              <div class="team-side"><div class="team-name" id="er-local">—</div><div style="font-size:11px;color:var(--muted);">Local</div></div>
-              <div style="display:flex;align-items:center;">
-                <input type="number" class="score-input" id="er-gl" min="0" value="0">
-                <div class="score-sep">—</div>
-                <input type="number" class="score-input" id="er-gv" min="0" value="0">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;margin-bottom:.75rem;">
+              <div style="display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:.6rem;align-items:center;">
+                <div id="er-local" style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
+                <label for="er-gl" style="margin:0;color:var(--muted);font-size:11px;">GL</label>
+                <input type="number" id="er-gl" min="0" value="0" style="width:70px;text-align:center;font-weight:700;">
+                <input type="number" id="er-gv" min="0" value="0" style="width:70px;text-align:center;font-weight:700;">
+                <div id="er-visit" style="font-size:14px;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
               </div>
-              <div class="team-side"><div class="team-name" id="er-visit">—</div><div style="font-size:11px;color:var(--muted);">Visitante</div></div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:.5rem;">
               <button class="btn btn-secondary btn-sm" onclick="erAbrirEditorCompleto()">Editar eventos y planillas</button>
@@ -548,6 +548,24 @@ async function cargarFixture(){
         juez2: p.juez2,
         cuarto_arbitro: p.cuarto_arbitro,
       });
+    });
+
+    // Overlay con datos de "partidos" para compatibilidad (si fixture aun no tiene esos campos completos)
+    const {data:partidosCompat} = await sb.from("partidos").select("zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro");
+    (partidosCompat || []).forEach(pc => {
+      const lista = FIXTURE[pc.zona]?.[String(pc.fecha)] || [];
+      const m = lista.find(x => x.local === pc.equipo_local_nombre && x.visitante === pc.equipo_visitante_nombre);
+      if(!m) return;
+      if(m.goles_local == null && pc.goles_local != null) m.goles_local = pc.goles_local;
+      if(m.goles_visitante == null && pc.goles_visitante != null) m.goles_visitante = pc.goles_visitante;
+      if(!m.dia && pc.dia) m.dia = pc.dia;
+      if(!m.hora && pc.hora) m.hora = pc.hora;
+      if(!m.stream_url && pc.stream_url) m.stream_url = pc.stream_url;
+      if(!m.estadio && pc.estadio) m.estadio = pc.estadio;
+      if(!m.arbitro && pc.arbitro) m.arbitro = pc.arbitro;
+      if(!m.juez1 && pc.juez1) m.juez1 = pc.juez1;
+      if(!m.juez2 && pc.juez2) m.juez2 = pc.juez2;
+      if(!m.cuarto_arbitro && pc.cuarto_arbitro) m.cuarto_arbitro = pc.cuarto_arbitro;
     });
     console.log(`Fixture cargado: ${allData.length} partidos, ${Object.keys(FIXTURE).length} zonas`);
     poblarSelectoresZona();
@@ -1023,13 +1041,31 @@ async function buscarFixtureId(zona, fecha, local, visitante){
 
 async function upsertPartido(payload){
   if (payload.fixture_id){
-    const {data, error} = await sb
+    const {data:existFx, error:selFxErr} = await sb
       .from("partidos")
-      .upsert(payload, { onConflict: "fixture_id" })
+      .select("id")
+      .eq("fixture_id", payload.fixture_id)
+      .maybeSingle();
+    if(selFxErr) throw selFxErr;
+
+    if(existFx?.id){
+      const {data:updFx, error:updFxErr} = await sb
+        .from("partidos")
+        .update(payload)
+        .eq("id", existFx.id)
+        .select("id")
+        .single();
+      if(updFxErr) throw updFxErr;
+      return updFx?.id || existFx.id;
+    }
+
+    const {data:insFx, error:insFxErr} = await sb
+      .from("partidos")
+      .insert(payload)
       .select("id")
       .single();
-    if (error) throw error;
-    return data?.id || null;
+    if(insFxErr) throw insFxErr;
+    return insFx?.id || null;
   }
 
   const {data:existente, error:selErr} = await sb
