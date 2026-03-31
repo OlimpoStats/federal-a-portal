@@ -174,8 +174,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-section">Partidos</div>
-    <div class="sb-item active" onclick="goPanel('cargar')"><span class="sb-icon">📤</span>Cargar planilla</div>
-    <div class="sb-item" onclick="goPanel('resultados')"><span class="sb-icon">⚽</span>Editar partidos</div>
+    <div class="sb-item active" onclick="goPanel('partidos')"><span class="sb-icon">⚽</span>Partidos</div>
     <div class="sb-item" onclick="goPanel('horarios')"><span class="sb-icon">📅</span>Programación</div>
     <div class="sb-section">Clubes</div>
     <div class="sb-item" onclick="goPanel('escudos')"><span class="sb-icon">🛡️</span>Escudos</div>
@@ -192,24 +191,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
   <!-- CONTENT -->
   <div class="content">
 
-    <!-- ===================== CARGAR PLANILLA ===================== -->
-    <div class="panel active" id="panel-cargar">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Cargar planilla de partido</h2>
+    <!-- ===================== PARTIDOS (merged) ===================== -->
+    <div class="panel active" id="panel-partidos">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Partidos</h2>
 
-      <!-- steps -->
-      <div class="steps">
-        <div class="step active-step" id="step1"><div class="step-n">1</div><div class="step-label">Seleccionar partido</div></div>
-        <div class="step" id="step2"><div class="step-n">2</div><div class="step-label">Subir imágenes</div></div>
-        <div class="step" id="step3"><div class="step-n">3</div><div class="step-label">Revisar y editar</div></div>
-        <div class="step" id="step4"><div class="step-n">4</div><div class="step-label">Confirmar</div></div>
-      </div>
-
-      <!-- PASO 1: seleccionar partido -->
+      <!-- Paso 1: Seleccionar partido -->
       <div id="paso1">
         <div class="card">
           <div class="card-hdr">Seleccionar partido</div>
           <div class="card-body">
-            <div class="form-row">
+            <div class="form-row two">
               <div><label>Zona</label>
                 <select id="sel-zona" onchange="actualizarPartidos()">
                   <option value="">— Zona —</option>
@@ -226,28 +217,51 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 </select>
               </div>
             </div>
-            <!-- Grid visual de partidos -->
-            <div id="partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;"></div>
-            <!-- Select oculto para compatibilidad -->
+            <div id="partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
             <select id="sel-partido" style="display:none" onchange="selPartidoChanged()">
               <option value="">— Primero elegí zona y fecha —</option>
             </select>
             <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
               <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
               <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
-                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar</button>
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar</button>
+                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
+                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar planilla</button>
                 <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
               </div>
             </div>
+
+            <!-- Result editor (shown when partido selected and has result) -->
+            <div id="er-form-inline" style="display:none;margin-top:.75rem;padding:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:.5rem;">Resultado</div>
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                <span id="er-local-inline" style="font-size:14px;font-weight:600;flex:1;text-align:right;">—</span>
+                <input type="number" id="er-gl-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
+                <span style="color:var(--muted);">—</span>
+                <input type="number" id="er-gv-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
+                <span id="er-visit-inline" style="font-size:14px;font-weight:600;flex:1;">—</span>
+              </div>
+              <div style="text-align:right;display:flex;gap:.5rem;justify-content:flex-end;">
+                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">📋 Cargar planilla</button>
+                <button class="btn btn-primary btn-sm" onclick="erGuardarInline()">Guardar resultado</button>
+              </div>
+            </div>
+
             <div style="text-align:right;margin-top:.5rem;">
-              <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">Siguiente →</button>
+              <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()" style="display:none;">Siguiente →</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- PASO 2: subir imágenes -->
+      <!-- steps -->
+      <div class="steps" id="steps-bar" style="display:none;">
+        <div class="step active-step" id="step1"><div class="step-n">1</div><div class="step-label">Seleccionar</div></div>
+        <div class="step" id="step2"><div class="step-n">2</div><div class="step-label">Subir imágenes</div></div>
+        <div class="step" id="step3"><div class="step-n">3</div><div class="step-label">Revisar y editar</div></div>
+        <div class="step" id="step4"><div class="step-n">4</div><div class="step-label">Confirmar</div></div>
+      </div>
+
+      <!-- Paso 2: subir imágenes -->
       <div id="paso2" style="display:none;">
         <div class="card">
           <div class="card-hdr" id="paso2-titulo">Subir planillas</div>
@@ -260,7 +274,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                   <input type="file" accept="image/*" onchange="fileSelected(event,'local')">
                   <div class="upload-icon">📄</div>
                   <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
-                  <div class="upload-sub">PNG, JPG o captura de pantalla pegada</div>
+                  <div class="upload-sub">PNG, JPG o captura pegada</div>
                   <img id="preview-local" class="upload-preview" style="display:none;">
                 </div>
               </div>
@@ -270,7 +284,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                   <input type="file" accept="image/*" onchange="fileSelected(event,'visitante')">
                   <div class="upload-icon">📄</div>
                   <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
-                  <div class="upload-sub">PNG, JPG o captura de pantalla pegada</div>
+                  <div class="upload-sub">PNG, JPG o captura pegada</div>
                   <img id="preview-visit" class="upload-preview" style="display:none;">
                 </div>
               </div>
@@ -400,40 +414,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <button class="btn btn-primary" onclick="resetTodo()">Cargar otro partido</button>
         </div>
       </div>
+
     </div>
 
-    <!-- ===================== EDITAR PARTIDOS ===================== -->
-    <div class="panel" id="panel-resultados">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Editar partidos</h2>
-      <div class="card">
-        <div class="card-hdr">Seleccionar partido</div>
-        <div class="card-body">
-          <div class="form-row two">
-            <div><label>Zona</label><select id="er-zona" onchange="erActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
-            <div><label>Fecha</label><select id="er-fecha" onchange="erActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
-          </div>
-          <div id="er-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
-          <select id="er-partido" style="display:none" onchange="erMostrar()"><option value="">—</option></select>
-          <div id="er-form" style="display:none;margin-top:1rem;">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;margin-bottom:.75rem;">
-              <div style="display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:.6rem;align-items:center;">
-                <div id="er-local" style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
-                <label for="er-gl" style="margin:0;color:var(--muted);font-size:11px;">GL</label>
-                <input type="number" id="er-gl" min="0" value="0" style="width:70px;text-align:center;font-weight:700;">
-                <input type="number" id="er-gv" min="0" value="0" style="width:70px;text-align:center;font-weight:700;">
-                <div id="er-visit" style="font-size:14px;font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:flex-end;gap:.5rem;">
-              <button class="btn btn-secondary btn-sm" onclick="erAbrirEditorCompleto()">Editar eventos y planillas</button>
-              <button class="btn btn-primary btn-sm" onclick="erGuardar()">Guardar resultado</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================== HORARIOS Y STREAMS ===================== -->
+<!-- ===================== HORARIOS Y STREAMS ===================== -->
     <div class="panel" id="panel-horarios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
@@ -805,29 +789,68 @@ function actualizarEstadoPlanillaSeleccion(){
   const txt = document.getElementById("sel-planilla-status-text");
   const actions = document.getElementById("sel-planilla-status-actions");
   const nextBtn = document.getElementById("btn-sel-siguiente");
-  if(!box || !txt || !actions || !nextBtn) return;
+  const erFormInline = document.getElementById("er-form-inline");
+  if(!box || !txt || !actions) return;
 
   const sel = obtenerPartidoSeleccionado();
   if(!sel){
     box.style.display = "none";
-    actions.style.display = "none";
-    nextBtn.textContent = "Siguiente →";
+    if(erFormInline) erFormInline.style.display = "none";
+    if(nextBtn) nextBtn.style.display = "none";
     return;
   }
 
-  const tienePlanilla = sel.p?.id ? FIXTURE_CON_PLANILLA.has(String(sel.p.id)) : false;
+  const p = sel.p;
+  const tienePlanilla = p?.id ? FIXTURE_CON_PLANILLA.has(String(p.id)) : false;
+  const tieneResultado = p?.goles_local != null;
+
   box.style.display = "";
   if(tienePlanilla){
-    txt.textContent = "Este partido ya tiene planilla cargada. Podés editarla o reemplazarla desde cero.";
-    txt.style.color = "#e8c44a";
+    txt.textContent = "✅ Planilla cargada.";
+    txt.style.color = "#5dba7d";
     actions.style.display = "flex";
-    nextBtn.textContent = "Reemplazar →";
+    if(nextBtn) nextBtn.style.display = "none";
   } else {
-    txt.textContent = "Partido sin planilla cargada. Podés continuar con una carga nueva.";
+    txt.textContent = "Sin planilla. Podés cargarla con IA o editar manualmente.";
     txt.style.color = "var(--muted)";
     actions.style.display = "none";
-    nextBtn.textContent = "Siguiente →";
+    if(nextBtn){ nextBtn.style.display = ""; nextBtn.textContent = "📋 Cargar planilla →"; }
   }
+
+  // Show inline result editor
+  if(erFormInline){
+    erFormInline.style.display = "";
+    const erLocal = document.getElementById("er-local-inline");
+    const erVisit = document.getElementById("er-visit-inline");
+    const erGl = document.getElementById("er-gl-inline");
+    const erGv = document.getElementById("er-gv-inline");
+    if(erLocal) erLocal.textContent = p.local;
+    if(erVisit) erVisit.textContent = p.visitante;
+    if(erGl) erGl.value = p.goles_local ?? 0;
+    if(erGv) erGv.value = p.goles_visitante ?? 0;
+  }
+}
+
+async function erGuardarInline(){
+  const sel = obtenerPartidoSeleccionado();
+  if(!sel){ alert("Seleccioná un partido."); return; }
+  const p = sel.p;
+  const gl = parseInt(document.getElementById("er-gl-inline").value)||0;
+  const gv = parseInt(document.getElementById("er-gv-inline").value)||0;
+  try {
+    const fixtureId = p.id;
+    if(fixtureId){
+      await sb.from("fixture").update({goles_local:gl, goles_visitante:gv}).eq("id", fixtureId);
+    }
+    await upsertPartido({
+      zona: sel.zona, fecha: parseInt(sel.fecha),
+      equipo_local_nombre: p.local, equipo_visitante_nombre: p.visitante,
+      goles_local: gl, goles_visitante: gv, jugado: true, fixture_id: fixtureId,
+    });
+    await cargarFixture();
+    actualizarPartidos();
+    showFlash(`✓ ${p.local} ${gl}—${gv} ${p.visitante}`, "ok");
+  } catch(e){ alert("Error: "+e.message); }
 }
 
 function cargarDatosPartidoSeleccionadoEnUI(sel){
@@ -1347,8 +1370,10 @@ function abrirAgregarEvento(containerId, jIdx){
       <select id="ev-tipo" style="width:100%;margin-bottom:.75rem" onchange="toggleExtras()">
         ${tipoOpts}
       </select>
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto (ej: 45 o 90+3)</label>
-      <input type="text" id="ev-minuto" placeholder="ej: 45 o 90+3" style="width:100%;margin-bottom:.75rem">
+      <div id="ev-minuto-wrap">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto (ej: 45 o 90+3)</label>
+        <input type="text" id="ev-minuto" placeholder="ej: 45 o 90+3" style="width:100%;margin-bottom:.75rem">
+      </div>
       <div id="ev-extra-wrap" style="display:none">
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem" id="ev-extra-lbl">Jugador que sale (nro camiseta)</label>
         <input type="text" id="ev-extra" style="width:100%;margin-bottom:.75rem">
@@ -1372,7 +1397,16 @@ function toggleExtras(){
   const extraWrap=document.getElementById("ev-extra-wrap");
   const asistWrap=document.getElementById("ev-asist-wrap");
   const extraLbl=document.getElementById("ev-extra-lbl");
+  const minutoWrap=document.getElementById("ev-minuto-wrap");
   if(!extraWrap) return;
+  // Toggle capitán doesn't need minuto or extra
+  if(tipo==="toggle_capitan"){
+    if(minutoWrap) minutoWrap.style.display="none";
+    extraWrap.style.display="none";
+    if(asistWrap) asistWrap.style.display="none";
+    return;
+  }
+  if(minutoWrap) minutoWrap.style.display="";
   if(tipo==="cambio_entra"){
     extraWrap.style.display="";
     if(extraLbl) extraLbl.textContent="Jugador que sale (nro camiseta)";
@@ -1923,7 +1957,7 @@ async function erAbrirEditorCompleto(){
   renderPlanilla("tabla-local", planillaLocal.jugadores || []);
   renderPlanilla("tabla-visit", planillaVisit.jugadores || []);
 
-  goPanel("cargar");
+  goPanel("partidos");
   document.getElementById("paso1").style.display = "none";
   document.getElementById("paso2").style.display = "none";
   document.getElementById("paso3").style.display = "";
