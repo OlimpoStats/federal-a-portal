@@ -318,6 +318,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 <div style="font-size:11px;color:var(--muted);">Visitante</div>
               </div>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+              <div>
+                <label>Fecha del partido</label>
+                <input type="date" id="partido-dia" style="width:100%">
+              </div>
+              <div>
+                <label>Hora</label>
+                <input type="text" id="partido-hora" placeholder="ej: 15:30" maxlength="5" style="width:100%">
+              </div>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;">
               <div class="autocomplete-wrap">
                 <label>Estadio</label>
@@ -796,6 +806,8 @@ function cargarDatosPartidoSeleccionadoEnUI(sel){
   document.getElementById("partido-juez1").value = p.juez1 || "";
   document.getElementById("partido-juez2").value = p.juez2 || "";
   document.getElementById("partido-cuarto").value = p.cuarto_arbitro || "";
+  document.getElementById("partido-dia").value = p.dia || "";
+  document.getElementById("partido-hora").value = p.hora || "";
   // DT por defecto desde vinculación del equipo
   const infoLocal = EQUIPOS_INFO[p.local]||{};
   const infoVisit = EQUIPOS_INFO[p.visitante]||{};
@@ -1161,9 +1173,17 @@ function renderEvento(e, containerId, jIdx, eIdx){
     const saleNum = e.extra;
     const saleJug = arr ? arr.find(j=>String(j.numero)===String(saleNum)) : null;
     const saleNombre = saleJug ? apellido(saleJug.nombre) : (saleNum||"?");
-    inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr} <span style="font-size:10px;">(${saleNombre})</span></span></span>`;
+    inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:#e57373;">(${saleNombre})</span></span>`;
   } else if(e.tipo==="cambio_sale"){
-    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span></span>`;
+    const _arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+    const _miNum = String(_arr?.[jIdx]?.numero || "");
+    const _entrante = _arr ? _arr.find(j =>
+      (j.eventos||[]).some(ev => ev.tipo==="cambio_entra" && String(ev.extra)===_miNum)
+    ) : null;
+    const _nombreEntra = _entrante ? apellido(_entrante.nombre) : (e.extra||"?");
+    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span> <span style="font-size:10px;color:#e57373;">(${_nombreEntra})</span></span>`;
+  } else if(e.tipo==="asistencia"){
+    inner=`<span class="evento-chip ev-gol" style="border-color:#2a6a8a;background:#0a1520;color:#5daadd;">👟 ${minStr}</span>`;
   } else {
     inner=`<span class="evento-chip ev-cam">? ${minStr}</span>`;
   }
@@ -1195,13 +1215,20 @@ function renderPlanilla(containerId, jugadores){
     const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
     const trStyle = j.titular ? "" : "opacity:.85;";
     html+=`<tr style="${trStyle}">
-      <td style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);">${j.numero||"—"}</td>
+      <td><input type="number" value="${j.numero||""}" style="width:38px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="font-size:10px;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${j.id||""}">${j.id||"—"}</td>
-      <td><input type="text" value="${j.nombre||""}" style="width:100%;font-weight:500;font-size:12px;padding:2px 4px;"
-        onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="display:flex;align-items:center;gap:3px;">
+        ${j.nota==="CP"?'<span class="badge-cap" style="flex-shrink:0">CP</span>':''}
+        ${j.nota==="AR"?'<span class="badge-gk" style="flex-shrink:0">AR</span>':''}
+        <input type="text" value="${j.nombre||""}" style="width:100%;font-weight:500;font-size:12px;padding:2px 4px;"
+          onchange="editarNombre('${containerId}',${i},this.value)">
+      </td>
       <td style="text-align:center;font-size:10px;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
       <td>${eventosHtml}</td>
-      <td><button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})">+ev</button></td>
+      <td style="white-space:nowrap;">
+        <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})">+ev</button>
+        <button class="add-ev-btn" style="margin-top:2px;color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})">👟</button>
+      </td>
     </tr>`;
   });
   html+=`</tbody></table>`;
@@ -1226,7 +1253,6 @@ function abrirAgregarEvento(containerId, jIdx){
     {v:"doble_amarilla",l:"🟨🟥 Doble amarilla"},
     {v:"cambio_entra",l:"↑ Entra (cambio)"},
     {v:"cambio_sale",l:"↓ Sale (cambio)"},
-    {v:"asistencia",l:"👟 Asistencia"},
   ];
   const tipoOpts = tipos.map(t=>`<option value="${t.v}">${t.l}</option>`).join("");
   const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center" id="modal-ev">
@@ -1277,6 +1303,73 @@ function toggleExtras(){
 
 function cerrarModalEv(){
   document.getElementById("modal-ev")?.remove();
+}
+
+function abrirAsistencia(containerId, jIdx){
+  // Collect all goals from both planillas
+  const todos = [];
+  ["local","visit"].forEach(side => {
+    const pl = side==="local" ? planillaLocal : planillaVisit;
+    const equipo = side==="local" ? (partidoActual?.local||"Local") : (partidoActual?.visit||"Visitante");
+    (pl.jugadores||[]).forEach(j => {
+      (j.eventos||[]).forEach(ev => {
+        if(ev.tipo==="gol"||ev.tipo==="gol_penal"){
+          todos.push({nombre:j.nombre, equipo, minuto:ev.minuto, side});
+        }
+      });
+    });
+  });
+  todos.sort((a,b)=>a.minuto-b.minuto);
+
+  if(!todos.length){
+    alert("No hay goles registrados aún. Primero cargá los goles.");
+    return;
+  }
+
+  const items = todos.map((g,gi)=>
+    `<div onclick="selAsistencia(${gi})" id="asist-opt-${gi}" style="padding:.5rem .75rem;border-radius:6px;cursor:pointer;border:1px solid var(--border);margin-bottom:.35rem;display:flex;justify-content:space-between;align-items:center;">
+      <span><strong>${g.nombre}</strong> <span style="color:var(--muted);font-size:11px;">(${g.equipo})</span></span>
+      <span style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;">${g.minuto}'</span>
+    </div>`
+  ).join("");
+
+  const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center" id="modal-asist">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:380px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:.5rem;">👟 Cargar asistencia</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">Seleccioná el gol al que este jugador asistió:</div>
+      <div style="overflow-y:auto;flex:1;" id="asist-lista">${items}</div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-asist').remove()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" id="asist-confirmar" disabled onclick="confirmarAsistencia('${containerId}',${jIdx})">✓ Confirmar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  window._asistGoals = todos;
+  window._asistSelected = null;
+}
+
+function selAsistencia(gi){
+  document.querySelectorAll("[id^=asist-opt-]").forEach(el=>{
+    el.style.background = "";
+    el.style.borderColor = "var(--border)";
+  });
+  const el = document.getElementById("asist-opt-"+gi);
+  if(el){ el.style.background="rgba(232,196,74,0.1)"; el.style.borderColor="var(--accent)"; }
+  window._asistSelected = gi;
+  document.getElementById("asist-confirmar").disabled = false;
+}
+
+function confirmarAsistencia(containerId, jIdx){
+  const g = window._asistGoals?.[window._asistSelected];
+  if(!g){ alert("Seleccioná un gol."); return; }
+  const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
+  arr[jIdx].eventos.push({tipo:"asistencia", minuto:g.minuto, extra:g.nombre});
+  arr[jIdx].eventos.sort((a,b)=>(a.minuto||0)-(b.minuto||0));
+  document.getElementById("modal-asist").remove();
+  renderPlanilla(containerId, arr);
 }
 
 function confirmarEvento(containerId, jIdx){
@@ -1517,6 +1610,8 @@ async function confirmarCarga(){
   const juez1 = document.getElementById("partido-juez1").value || null;
   const juez2 = document.getElementById("partido-juez2").value || null;
   const cuarto = document.getElementById("partido-cuarto").value || null;
+  const dia = document.getElementById("partido-dia").value || null;
+  const hora = document.getElementById("partido-hora").value || null;
 
   try {
     let fixtureId = partidoActual?.fixtureId || null;
@@ -1533,6 +1628,7 @@ async function confirmarCarga(){
         goles_visitante: glVisit,
         estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
         dt_local: _dtLocal, dt_visitante: _dtVisit,
+        dia, hora,
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
@@ -1678,6 +1774,8 @@ async function erAbrirEditorCompleto(){
   document.getElementById("partido-juez1").value = p.juez1 || "";
   document.getElementById("partido-juez2").value = p.juez2 || "";
   document.getElementById("partido-cuarto").value = p.cuarto_arbitro || "";
+  document.getElementById("partido-dia").value = p.dia || "";
+  document.getElementById("partido-hora").value = p.hora || "";
   document.getElementById("score-local").value = p.goles_local ?? 0;
   document.getElementById("score-visit").value = p.goles_visitante ?? 0;
 
