@@ -628,7 +628,7 @@ async function verFicha(key, tienePlanilla){
         const capStr = esCapitan ? ` <span style="color:var(--accent);font-size:11px;font-weight:700;">(C)</span>` : "";
         return `<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);min-height:30px;box-sizing:border-box;">
           <span style="font-size:13px;color:#bbb;width:20px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';font-weight:600;">${pl.numero_camiseta||""}</span>
-          <span style="font-size:${nombreSize};flex:1;line-height:1.3;font-family:'Barlow',sans-serif;">${nombre}${capStr}</span>
+          <span style="font-size:${nombreSize};flex:1;line-height:1.3;font-family:'Barlow',sans-serif;${!esTitular&&!evs.length?'color:var(--muted);':''}">${nombre}${capStr}</span>
           <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${chips.join("")}</span>
         </div>`;
       };
@@ -665,7 +665,7 @@ async function verFicha(key, tienePlanilla){
       const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
 
       const cambiosSec = cambios.length ? `
-        <div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
+        <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
           ${secHeader("CAMBIOS")}
           ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.35rem;min-height:24px;">
             <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;flex-shrink:0;">${c.minuto}'</span>
@@ -728,7 +728,7 @@ async function verFicha(key, tienePlanilla){
       const min = String(g.minuto||"");
       return `<div style="font-size:12px;margin:.2rem 0;line-height:1.3;">
         ${g.icon} <strong style="color:#f0f0f0;">${g.nombre}</strong> <span style="color:var(--accent);font-family:'Barlow Condensed';font-weight:700;">${min}'</span>
-        ${g.asist?`<span style="color:var(--muted);font-size:11px;"> (${g.asist})</span>`:""}
+        ${g.asist?`<span style="color:#888;font-size:11px;"> (${g.asist})</span>`:""}
       </div>`;
     }).join("");
 
@@ -763,13 +763,26 @@ async function verFicha(key, tienePlanilla){
           <div style="width:80px;flex-shrink:0;"></div>
           <div style="flex:1;text-align:left;">${renderGoles(golesVisit)}</div>
         </div>
-        ${estadioLine?`<div style="font-size:13px;color:#ccc;margin:.3rem 0;">🏟️ <strong>${estadioLine}</strong></div>`:""}
+        <div style="margin-top:.75rem;"></div>
+        ${partido.estadio?`<div style="font-size:13px;color:#ccc;margin:.15rem 0;">🏟️ <strong>${partido.estadio}</strong></div>`:""}
+        ${(diaStr||partido.hora)?`<div style="font-size:13px;color:#ccc;margin:.15rem 0;">📅 ${[diaStr,partido.hora].filter(Boolean).join(" — ")}</div>`:""}
         ${partido.arbitro?`<div style="font-size:13px;color:#ccc;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div>${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
-        <div>${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
+        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
+        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
       </div>`;
+    // After render, equalize cambios/tarjetas sections height
+    setTimeout(()=>{
+      const alignSections = (cls) => {
+        const els = document.querySelectorAll('.'+cls);
+        if(els.length < 2) return;
+        const maxH = Math.max(...[...els].map(e=>e.offsetHeight));
+        els.forEach(e=>e.style.minHeight=maxH+'px');
+      };
+      alignSections('ficha-cambios-sec');
+      alignSections('ficha-tarjetas-sec');
+    }, 50);
 
   } catch(e){
     fichaCont.innerHTML = `<div style="color:#e57373;padding:2rem;">Error: ${e.message}</div>`;
