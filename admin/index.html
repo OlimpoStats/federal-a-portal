@@ -483,8 +483,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="panel" id="panel-jugadores">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
       <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1" oninput="buscarJugadores()">
+        <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+          <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1;min-width:200px;" oninput="buscarJugadores()">
+          <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
         </div>
       </div>
       <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
@@ -1335,6 +1336,20 @@ function renderPlanilla(containerId, jugadores){
       </td>
     </tr>`;
   });
+  // Check if less than 20 players and add "add player" row
+  const faltanTitulares = Math.max(0, 11 - jugadores.filter(j=>j.titular).length);
+  const faltanSuplentes = Math.max(0, 9 - jugadores.filter(j=>!j.titular).length);
+  const faltan = faltanTitulares + faltanSuplentes;
+  if(faltan > 0){
+    html+=`<tr style="background:rgba(232,196,74,0.05);">
+      <td colspan="6" style="padding:.5rem .6rem;">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--accent);">⚠️ Faltan ${faltan} jugador${faltan!==1?"es":""} (${faltanTitulares} titular${faltanTitulares!==1?"es":""}, ${faltanSuplentes} suplente${faltanSuplentes!==1?"s":""})</span>
+          <button class="add-ev-btn" style="color:var(--accent);border-color:var(--accent);" onclick="abrirAgregarJugadorPlanilla('${containerId}')">+ Agregar jugador</button>
+        </div>
+      </td>
+    </tr>`;
+  }
   html+=`</tbody></table>`;
   document.getElementById(containerId).innerHTML=html;
 }
@@ -1419,6 +1434,113 @@ function toggleExtras(){
 
 function cerrarModalEv(){
   document.getElementById("modal-ev")?.remove();
+}
+
+function abrirAgregarJugadorPlanilla(containerId){
+  const esTitular = containerId === "tabla-local" 
+    ? (planillaLocal.jugadores||[]).filter(j=>j.titular).length < 11
+    : (planillaVisit.jugadores||[]).filter(j=>j.titular).length < 11;
+
+  const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;" id="modal-add-jug">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:400px;max-width:95vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Agregar jugador</div>
+      <div style="margin-bottom:.75rem;">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Buscar por ID Federal o nombre</label>
+        <input type="text" id="add-jug-buscar" placeholder="Escribí ID o nombre..." style="width:100%;margin-bottom:.5rem;" oninput="buscarJugadorParaPlanilla()">
+        <div id="add-jug-resultados" style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;display:none;"></div>
+      </div>
+      <div style="margin-bottom:.75rem;">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">O creá uno nuevo</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+          <input type="text" id="add-jug-id" placeholder="ID Federal" style="width:100%;">
+          <input type="text" id="add-jug-nombre" placeholder="Nombre" style="width:100%;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+          <input type="text" id="add-jug-numero" placeholder="Nro camiseta" style="width:100%;">
+          <select id="add-jug-titular" style="width:100%;">
+            <option value="true" ${esTitular?"selected":""}>Titular</option>
+            <option value="false" ${!esTitular?"selected":""}>Suplente</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-add-jug').remove()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmarAgregarJugadorPlanilla('${containerId}')">Agregar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  document.getElementById("add-jug-buscar").focus();
+}
+
+async function buscarJugadorParaPlanilla(){
+  const q = (document.getElementById("add-jug-buscar")?.value||"").trim().toLowerCase();
+  const res = document.getElementById("add-jug-resultados");
+  if(!res) return;
+  if(!q){ res.style.display="none"; return; }
+
+  // Search in cache first
+  let found = JUGADORES_CACHE.filter(j =>
+    (j.nombre_display||j.nombre||"").toLowerCase().includes(q) ||
+    String(j.id_federal||"").includes(q)
+  );
+
+  // Also search DB if cache is empty or insufficient
+  if(found.length === 0){
+    const {data} = await sb.from("jugadores")
+      .select("id, id_federal, nombre, nombre_display")
+      .or(`nombre_display.ilike.%${q}%,nombre.ilike.%${q}%,id_federal.eq.${q}`)
+      .limit(10);
+    found = data || [];
+  }
+
+  if(!found.length){ res.style.display="none"; return; }
+  res.style.display = "block";
+  res.innerHTML = found.slice(0,8).map(j=>`
+    <div style="padding:.4rem .65rem;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);"
+         onmouseover="this.style.background='var(--surface3)'" 
+         onmouseout="this.style.background=''"
+         onclick="selJugadorParaPlanilla('${String(j.id_federal||"")}','${(j.nombre_display||j.nombre||"").replace(/'/g,"\'")}')">
+      <span style="font-family:monospace;font-size:11px;color:var(--muted);">${j.id_federal||"—"}</span>
+      <span style="margin-left:.5rem;">${j.nombre_display||j.nombre||"—"}</span>
+    </div>`).join("");
+}
+
+function selJugadorParaPlanilla(idFederal, nombre){
+  const idInput = document.getElementById("add-jug-id");
+  const nomInput = document.getElementById("add-jug-nombre");
+  if(idInput) idInput.value = idFederal;
+  if(nomInput) nomInput.value = nombre;
+  const res = document.getElementById("add-jug-resultados");
+  if(res) res.style.display = "none";
+}
+
+function confirmarAgregarJugadorPlanilla(containerId){
+  const id_federal = document.getElementById("add-jug-id")?.value.trim();
+  const nombre = document.getElementById("add-jug-nombre")?.value.trim();
+  const numero = document.getElementById("add-jug-numero")?.value.trim();
+  const titular = document.getElementById("add-jug-titular")?.value === "true";
+
+  if(!id_federal || !nombre){ alert("ID Federal y nombre son obligatorios."); return; }
+
+  const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+  arr.push({
+    numero: parseInt(numero)||"",
+    id: id_federal,
+    id_federal,
+    nombre: formatearNombre(nombre) || nombre,
+    titular,
+    es_capitan: false,
+    eventos: [],
+  });
+  arr.sort((a,b) => {
+    if(a.titular && !b.titular) return -1;
+    if(!a.titular && b.titular) return 1;
+    return (Number(a.numero)||99) - (Number(b.numero)||99);
+  });
+
+  document.getElementById("modal-add-jug")?.remove();
+  renderPlanilla(containerId, arr);
 }
 
 function abrirAsistencia(containerId, jIdx){
@@ -2450,6 +2572,19 @@ function renderJugadores(jugadores){
   </div>`;
 }
 
+function abrirCrearJugador(){
+  document.getElementById("jug-edit-id").value = "";
+  document.getElementById("jug-edit-idfederal").value = "";
+  document.getElementById("jug-edit-nombre").value = "";
+  document.getElementById("jug-edit-display").value = "";
+  const sel = document.getElementById("jug-edit-equipo");
+  sel.innerHTML = '<option value="">— Sin club —</option>' +
+    ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
+  // Change modal title
+  document.querySelector("#jug-modal div div:first-child").textContent = "Nuevo jugador";
+  document.getElementById("jug-modal").style.display = "flex";
+}
+
 function abrirEditJugador(id){
   const j = JUGADORES_CACHE.find(x => x.id === id);
   if(!j) return;
@@ -2458,9 +2593,9 @@ function abrirEditJugador(id){
   document.getElementById("jug-edit-nombre").value = j.nombre || "";
   document.getElementById("jug-edit-display").value = j.nombre_display || "";
   const sel = document.getElementById("jug-edit-equipo");
-  // populate options
   sel.innerHTML = '<option value="">— Sin club —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}" ${j.equipos?.nombre===t?"selected":""}>${t}</option>`).join("");
+  document.querySelector("#jug-modal div div:first-child").textContent = "Editar jugador";
   document.getElementById("jug-modal").style.display = "flex";
 }
 
@@ -2472,13 +2607,23 @@ async function guardarJugador(){
   const id = document.getElementById("jug-edit-id").value;
   const id_federal = document.getElementById("jug-edit-idfederal").value.trim();
   const nombre = document.getElementById("jug-edit-nombre").value.trim();
-  const nombre_display = document.getElementById("jug-edit-display").value.trim();
+  const nombre_display = document.getElementById("jug-edit-display").value.trim() || nombre;
   const equipoNombre = document.getElementById("jug-edit-equipo").value;
   const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : null;
 
-  const {error} = await sb.from("jugadores").update({
-    id_federal, nombre, nombre_display: nombre_display || nombre, equipo_id
-  }).eq("id", id);
+  let error;
+  if(id){
+    // Update existing
+    ({error} = await sb.from("jugadores").update({
+      id_federal, nombre, nombre_display, equipo_id
+    }).eq("id", id));
+  } else {
+    // Create new
+    if(!id_federal){ alert("El ID federal es obligatorio."); return; }
+    ({error} = await sb.from("jugadores").insert({
+      id_federal, nombre, nombre_display, equipo_id
+    }));
+  }
 
   if(error){ alert("Error: " + error.message); return; }
   cerrarEditJugador();
