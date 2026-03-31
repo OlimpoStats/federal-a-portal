@@ -384,7 +384,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <div class="confirm-info">Revisá los datos antes de confirmar. Una vez guardado, las stats de cada jugador se actualizan automáticamente.</div>
           <div style="display:flex;gap:.6rem;">
             <button class="btn btn-secondary" onclick="irPaso2()">← Volver</button>
-            <button class="btn btn-primary" onclick="confirmarCarga()">✓ Confirmar y guardar</button>
+            <button class="btn btn-secondary" onclick="guardarBorrador()" title="Guarda los datos sin marcar el partido como jugado">💾 Borrador</button>
+            <button class="btn btn-primary" onclick="confirmarCarga()">✓ Publicar planilla</button>
           </div>
         </div>
       </div>
@@ -1090,16 +1091,19 @@ function formatearNombre(raw){
   if(!raw) return "";
   const s = raw.trim();
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-  // Si tiene coma: "APELLIDO, NOMBRE1 NOMBRE2" → "Nombre1 Apellido"
+  // Con coma: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" → "Nombre1 Apellido1"
   if(s.includes(",")){
-    const [apellido, nombres] = s.split(",").map(x => x.trim());
+    const [apellidos, nombres] = s.split(",").map(x => x.trim());
     const primerNombre = nombres.split(/\s+/)[0];
-    return cap(primerNombre) + " " + cap(apellido);
+    const primerApellido = apellidos.split(/\s+/)[0]; // siempre el primero
+    return cap(primerNombre) + " " + cap(primerApellido);
   }
-  // Sin coma: primer y último token
+  // Sin coma: "Nombre1 Nombre2 Apellido1 Apellido2" → tomar [0] y [mitad]
   const partes = s.split(/\s+/).filter(Boolean);
   if(partes.length === 1) return cap(partes[0]);
-  return cap(partes[0]) + " " + cap(partes[partes.length - 1]);
+  if(partes.length === 2) return cap(partes[0]) + " " + cap(partes[1]);
+  // Más de 2: primer token como nombre, segundo token como apellido
+  return cap(partes[0]) + " " + cap(partes[1]);
 }
 
 function normalizarPlanilla(planilla, equipo){
@@ -1173,7 +1177,7 @@ function renderEvento(e, containerId, jIdx, eIdx){
     const saleNum = e.extra;
     const saleJug = arr ? arr.find(j=>String(j.numero)===String(saleNum)) : null;
     const saleNombre = saleJug ? apellido(saleJug.nombre) : (saleNum||"?");
-    inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:#e57373;">(${saleNombre})</span></span>`;
+    inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:#4caf50;">(${saleNombre})</span></span>`;
   } else if(e.tipo==="cambio_sale"){
     const _arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
     const _miNum = String(_arr?.[jIdx]?.numero || "");
@@ -1204,30 +1208,29 @@ function renderPlanilla(containerId, jugadores){
   }
   let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
     <thead><tr>
-      <th style="width:34px">#</th>
-      <th style="width:68px">ID Federal</th>
-      <th style="width:170px">Nombre</th>
-      <th style="width:30px">T</th>
-      <th>Eventos</th>
-      <th style="width:42px"></th>
+      <th style="width:32px">#</th>
+      <th style="width:62px">ID</th>
+      <th style="width:150px">Nombre</th>
+      <th style="width:24px">T</th>
+      <th style="width:220px">Eventos</th>
+      <th style="width:56px"></th>
     </tr></thead><tbody>`;
   jugadores.forEach((j,i)=>{
     const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
     const trStyle = j.titular ? "" : "opacity:.85;";
     html+=`<tr style="${trStyle}">
-      <td><input type="number" value="${j.numero||""}" style="width:38px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:38px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="font-size:10px;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${j.id||""}">${j.id||"—"}</td>
       <td style="display:flex;align-items:center;gap:3px;">
         ${j.nota==="CP"?'<span class="badge-cap" style="flex-shrink:0">CP</span>':''}
-        ${j.nota==="AR"?'<span class="badge-gk" style="flex-shrink:0">AR</span>':''}
         <input type="text" value="${j.nombre||""}" style="width:100%;font-weight:500;font-size:12px;padding:2px 4px;"
           onchange="editarNombre('${containerId}',${i},this.value)">
       </td>
       <td style="text-align:center;font-size:10px;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
-      <td>${eventosHtml}</td>
-      <td style="white-space:nowrap;">
-        <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})">+ev</button>
-        <button class="add-ev-btn" style="margin-top:2px;color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})">👟</button>
+      <td style="overflow:hidden;max-width:220px;">${eventosHtml}</td>
+      <td style="white-space:nowrap;text-align:center;">
+        <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})" title="Agregar evento">+</button>
+        <button class="add-ev-btn" style="color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})" title="Agregar asistencia">👟</button>
       </td>
     </tr>`;
   });
@@ -1602,7 +1605,11 @@ async function cargarPlanillasExistentes(){
 }
 
 // ── CONFIRMAR ──
-async function confirmarCarga(){
+async function guardarBorrador(){
+  await confirmarCarga(false);
+}
+
+async function confirmarCarga(publicar=true){
   const glLocal = parseInt(document.getElementById("score-local").value) || 0;
   const glVisit = parseInt(document.getElementById("score-visit").value) || 0;
   const estadio = document.getElementById("partido-estadio").value || null;
@@ -1643,7 +1650,7 @@ async function confirmarCarga(){
       equipo_visitante_nombre: partidoActual.visit,
       goles_local: glLocal,
       goles_visitante: glVisit,
-      jugado: true,
+      jugado: publicar,
       estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
       dt_local: dtLocal, dt_visitante: dtVisit,
       fixture_id: fixtureId,
@@ -1666,8 +1673,9 @@ async function confirmarCarga(){
 
     document.getElementById("paso3").style.display = "none";
     document.getElementById("paso4").style.display = "";
-    document.getElementById("confirmado-txt").textContent =
-      `${partidoActual.local} ${glLocal} — ${glVisit} ${partidoActual.visit} guardado correctamente.`;
+    document.getElementById("confirmado-txt").textContent = publicar
+      ? `${partidoActual.local} ${glLocal} — ${glVisit} ${partidoActual.visit} publicado correctamente.`
+      : `Borrador guardado para ${partidoActual.local} vs ${partidoActual.visit}. Podés seguir editando.`;
     setStep(4);
     if(fixtureId) FIXTURE_CON_PLANILLA.add(String(fixtureId));
     await cargarFixture();
