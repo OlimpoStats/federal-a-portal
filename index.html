@@ -832,16 +832,18 @@ async function verFicha(key, tienePlanilla){
           <!-- Fila 2: goles (fila separada, marcador vacío) -->
           ${(golesLocal.length||golesVisit.length)?`<tr>
             <td style="text-align:right;vertical-align:top;padding-right:10px;">
-              ${golesLocal.map(g=>{
-                const min=String(g.minuto||"");
-                const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
-                return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
-                  <span style="font-size:13px;">${g.icon}</span>
-                  <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                  <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                  ${asist}
-                </div>`;
-              }).join("")}
+              <div style="display:inline-block;text-align:left;">
+                ${golesLocal.map(g=>{
+                  const min=String(g.minuto||"");
+                  const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                    ${asist}
+                  </div>`;
+                }).join("")}
+              </div>
             </td>
             <td></td>
             <td style="text-align:left;vertical-align:top;padding-left:10px;">
