@@ -1321,18 +1321,15 @@ function renderPlanilla(containerId, jugadores){
     </tr></thead><tbody>`;
   jugadores.forEach((j,i)=>{
     const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
-    const trStyle = j.titular ? "" : "opacity:.85;";
-    html+=`<tr style="${trStyle}">
-      <td><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:38px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
-      <td style="font-size:10px;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${j.id||""}">${j.id||"—"}</td>
-      <td>
-        ${j.nota==="CP"?'<span class="badge-cap" style="margin-right:3px;">CP</span>':''}
-        <input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.nota==="CP"?"32px":"0px"});font-weight:500;font-size:12px;padding:2px 4px;"
-          onchange="editarNombre('${containerId}',${i},this.value)">
-      </td>
-      <td style="text-align:center;font-size:10px;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
+    const trBg = j.titular ? "" : "background:rgba(255,255,255,0.015);";
+    const cpBadge = j.es_capitan ? '<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px;margin-right:4px;vertical-align:middle;font-family:Barlow,sans-serif;font-weight:700;">CP</span>' : "";
+    html+=`<tr style="${trBg}">
+      <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="width:68px;font-size:11px;color:var(--muted);font-family:'Barlow',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${j.id||""}">${j.id||"—"}</td>
+      <td style="min-width:140px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="width:24px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
       <td style="overflow:hidden;max-width:220px;">${eventosHtml}</td>
-      <td style="white-space:nowrap;text-align:center;">
+      <td style="width:56px;white-space:nowrap;text-align:center;">
         <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})" title="Agregar evento">+</button>
         <button class="add-ev-btn" style="color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})" title="Agregar asistencia">👟</button>
       </td>
@@ -1511,6 +1508,15 @@ function confirmarEvento(containerId, jIdx){
   const extra=document.getElementById("ev-extra")?.value||"";
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
+  // Toggle capitán: handle before pushing anything
+  if(tipo==="toggle_capitan"){
+    arr.forEach(j=>{ j.es_capitan=false; });
+    arr[jIdx].es_capitan=true;
+    cerrarModalEv();
+    renderPlanilla(containerId, arr);
+    return;
+  }
+
   if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
   arr[jIdx].eventos.push({tipo, minuto, extra});
 
