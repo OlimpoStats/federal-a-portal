@@ -176,7 +176,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Partidos</div>
     <div class="sb-item active" onclick="goPanel('cargar')"><span class="sb-icon">📤</span>Cargar planilla</div>
     <div class="sb-item" onclick="goPanel('resultados')"><span class="sb-icon">⚽</span>Editar partidos</div>
-    <div class="sb-item" onclick="goPanel('horarios')"><span class="sb-icon">📡</span>Horarios y streams</div>
+    <div class="sb-item" onclick="goPanel('horarios')"><span class="sb-icon">📅</span>Programación</div>
     <div class="sb-section">Clubes</div>
     <div class="sb-item" onclick="goPanel('escudos')"><span class="sb-icon">🛡️</span>Escudos</div>
     <div class="sb-item" onclick="goPanel('jugadores')"><span class="sb-icon">👤</span>Jugadores</div>
@@ -407,11 +407,12 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div class="card">
         <div class="card-hdr">Seleccionar partido</div>
         <div class="card-body">
-          <div class="form-row">
+          <div class="form-row two">
             <div><label>Zona</label><select id="er-zona" onchange="erActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
             <div><label>Fecha</label><select id="er-fecha" onchange="erActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
-            <div><label>Partido</label><select id="er-partido" onchange="erMostrar()"><option value="">— Elegí zona y fecha —</option></select></div>
           </div>
+          <div id="er-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
+          <select id="er-partido" style="display:none" onchange="erMostrar()"><option value="">—</option></select>
           <div id="er-form" style="display:none;margin-top:1rem;">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;margin-bottom:.75rem;">
               <div style="display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:.6rem;align-items:center;">
@@ -433,20 +434,21 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 
     <!-- ===================== HORARIOS Y STREAMS ===================== -->
     <div class="panel" id="panel-horarios">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Horarios y transmisiones</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Configurá el horario y el link de YouTube para cada partido. Cuando no hay resultado cargado, el portal muestra la hora automáticamente.</p>
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Cargá día, hora, árbitros y transmisión para cada partido programado.</p>
       <div class="card">
         <div class="card-hdr">Seleccionar partido</div>
         <div class="card-body">
-          <div class="form-row">
+          <div class="form-row two">
             <div><label>Zona</label><select id="hs-zona" onchange="hsActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
             <div><label>Fecha</label><select id="hs-fecha" onchange="hsActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
-            <div><label>Partido</label><select id="hs-partido" onchange="hsMostrar()"><option value="">— Elegí zona y fecha —</option></select></div>
           </div>
+          <div id="hs-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
+          <select id="hs-partido" style="display:none" onchange="hsMostrar()"><option value="">—</option></select>
           <div id="hs-form" style="display:none;margin-top:1rem;">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
               <div style="font-size:14px;font-weight:600;margin-bottom:.85rem;" id="hs-titulo">—</div>
-              <div class="form-row">
+              <div class="form-row two">
                 <div>
                   <label>Día del partido</label>
                   <input type="date" id="hs-dia">
@@ -455,10 +457,32 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                   <label>Horario</label>
                   <input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="5">
                 </div>
-                <div>
-                  <label>Link de transmisión</label>
-                  <input type="text" id="hs-stream" placeholder="https://youtube.com/live/...">
+              </div>
+              <div class="form-row two">
+                <div class="autocomplete-wrap">
+                  <label>Árbitro principal</label>
+                  <input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off">
+                  <div class="autocomplete-list" id="ac-hs-arbitro"></div>
                 </div>
+                <div class="autocomplete-wrap">
+                  <label>Juez de línea 1</label>
+                  <input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off">
+                  <div class="autocomplete-list" id="ac-hs-juez1"></div>
+                </div>
+                <div class="autocomplete-wrap">
+                  <label>Juez de línea 2</label>
+                  <input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off">
+                  <div class="autocomplete-list" id="ac-hs-juez2"></div>
+                </div>
+                <div class="autocomplete-wrap">
+                  <label>Cuarto árbitro</label>
+                  <input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off">
+                  <div class="autocomplete-list" id="ac-hs-cuarto"></div>
+                </div>
+              </div>
+              <div>
+                <label>Link de transmisión</label>
+                <input type="text" id="hs-stream" placeholder="https://youtube.com/live/...">
               </div>
               <div style="text-align:right;margin-top:.5rem;">
                 <button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button>
@@ -1692,15 +1716,31 @@ function erActualizar(){
   const zona = document.getElementById("er-zona").value;
   const fecha = document.getElementById("er-fecha").value;
   const sel = document.getElementById("er-partido");
-  sel.innerHTML = '<option value="">— Seleccioná partido —</option>';
+  const grid = document.getElementById("er-partidos-grid");
+  sel.innerHTML = '<option value="">—</option>';
+  if(grid) grid.innerHTML = "";
   document.getElementById("er-form").style.display = "none";
   if(!zona || !fecha) return;
   const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
   ps.forEach((p,i)=>{
     const o = document.createElement("option");
-    o.value = i;
-    o.textContent = p.local + " vs " + p.visitante;
+    o.value = i; o.textContent = p.local + " vs " + p.visitante;
     sel.appendChild(o);
+    if(!grid) return;
+    const resultado = (p.goles_local!=null) ? `${p.goles_local}–${p.goles_visitante}` : (p.hora||"Sin programar");
+    const color = p.goles_local!=null ? "#1a3a6a" : "var(--border)";
+    const escL = escudoData[p.local]?`<img src="${escudoData[p.local]}" style="width:18px;height:18px;object-fit:contain;">` : "";
+    const escV = escudoData[p.visitante]?`<img src="${escudoData[p.visitante]}" style="width:18px;height:18px;object-fit:contain;">` : "";
+    const card = document.createElement("div");
+    card.className = "partido-card";
+    card.innerHTML = `<div class="pc-teams">${escL}<span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span>${escV}</div><div class="pc-estado" style="border-color:${color};color:${p.goles_local!=null?"#5daadd":"var(--muted)"}">${resultado}</div>`;
+    card.onclick = ()=>{
+      document.querySelectorAll("#er-partidos-grid .partido-card").forEach(c=>c.classList.remove("selected"));
+      card.classList.add("selected");
+      sel.value = i;
+      erMostrar();
+    };
+    grid.appendChild(card);
   });
 }
 
@@ -1806,15 +1846,30 @@ function hsActualizar(){
   const zona = document.getElementById("hs-zona").value;
   const fecha = document.getElementById("hs-fecha").value;
   const sel = document.getElementById("hs-partido");
-  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  const grid = document.getElementById("hs-partidos-grid");
+  sel.innerHTML = '<option value="">—</option>';
+  if(grid) grid.innerHTML = "";
   document.getElementById("hs-form").style.display = "none";
   if(!zona || !fecha) return;
   const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
   ps.forEach((p,i)=>{
     const o=document.createElement("option");
-    o.value=i;
-    o.textContent=p.local+" vs "+p.visitante;
+    o.value=i; o.textContent=p.local+" vs "+p.visitante;
     sel.appendChild(o);
+    if(!grid) return;
+    const estado = p.hora ? `${p.dia||""} ${p.hora}`.trim() : "Sin programar";
+    const escL = escudoData[p.local]?`<img src="${escudoData[p.local]}" style="width:18px;height:18px;object-fit:contain;">` : "";
+    const escV = escudoData[p.visitante]?`<img src="${escudoData[p.visitante]}" style="width:18px;height:18px;object-fit:contain;">` : "";
+    const card = document.createElement("div");
+    card.className = "partido-card";
+    card.innerHTML = `<div class="pc-teams">${escL}<span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span>${escV}</div><div class="pc-estado">${estado}</div>`;
+    card.onclick = ()=>{
+      document.querySelectorAll("#hs-partidos-grid .partido-card").forEach(c=>c.classList.remove("selected"));
+      card.classList.add("selected");
+      sel.value = i;
+      hsMostrar();
+    };
+    grid.appendChild(card);
   });
 }
 
@@ -1831,9 +1886,13 @@ function hsMostrar(){
   const key = `${zona}_${fecha}_${p.local}_${p.visitante}`;
   const prev = HORARIOS[key] || { hora: p.hora || "", dia: p.dia || "", stream: p.stream_url || "" };
   document.getElementById("hs-titulo").textContent = p.local+" vs "+p.visitante+" — Fecha "+fecha;
-  document.getElementById("hs-hora").value = prev.hora || "";
-  document.getElementById("hs-dia").value = prev.dia || "";
-  document.getElementById("hs-stream").value = prev.stream || "";
+  document.getElementById("hs-hora").value = prev.hora || p.hora || "";
+  document.getElementById("hs-dia").value = prev.dia || p.dia || "";
+  document.getElementById("hs-stream").value = prev.stream || p.stream_url || "";
+  document.getElementById("hs-arbitro").value = p.arbitro || "";
+  document.getElementById("hs-juez1").value = p.juez1 || "";
+  document.getElementById("hs-juez2").value = p.juez2 || "";
+  document.getElementById("hs-cuarto").value = p.cuarto_arbitro || "";
   document.getElementById("hs-form").style.display = "";
   actualizarPreviewStream();
 }
@@ -1859,9 +1918,18 @@ async function hsGuardar(){
       return;
     }
 
+    const arbitro = document.getElementById("hs-arbitro").value || null;
+    const juez1 = document.getElementById("hs-juez1").value || null;
+    const juez2 = document.getElementById("hs-juez2").value || null;
+    const cuarto = document.getElementById("hs-cuarto").value || null;
     const {error:fxErr} = await sb.from("fixture").update({
-      dia, hora, stream_url: stream
+      dia, hora, stream_url: stream, arbitro, juez1, juez2, cuarto_arbitro: cuarto, estado: "programado"
     }).eq("id", fixtureId);
+    // Save arbitros to cache if new
+    await upsertABMSiNuevo("arbitros", arbitro);
+    await upsertABMSiNuevo("arbitros", juez1);
+    await upsertABMSiNuevo("arbitros", juez2);
+    await upsertABMSiNuevo("arbitros", cuarto);
     if (fxErr) throw fxErr;
 
     const key=`${zona}_${fecha}_${p.local}_${p.visitante}`;
