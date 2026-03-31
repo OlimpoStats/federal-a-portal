@@ -764,19 +764,17 @@ async function verFicha(key, tienePlanilla){
     const golesLocal = recogerGoles(localPlanilla);
     const golesVisit = recogerGoles(visitPlanilla);
 
-    const renderGoles = (goles, align="left") => {
+    const renderGoles = (goles) => {
       if(!goles.length) return "";
-      const isRight = align === "right";
-      return `<div style="display:flex;flex-direction:column;align-items:${isRight?"flex-end":"flex-start"};">` +
-      goles.map(g=>{
+      return goles.map(g=>{
         const min = String(g.minuto||"");
-        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;">
-          <span style="font-size:14px;line-height:1;">${g.icon}</span>
+        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+          <span style="font-size:14px;line-height:1;flex-shrink:0;">${g.icon}</span>
           <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
           <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
           ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:2px;">(${g.asist})</span>`:""}
         </div>`;
-      }).join("") + "</div>";
+      }).join("");
     };
     
     // Get escudos
@@ -813,9 +811,14 @@ async function verFicha(key, tienePlanilla){
           </div>
         </div>
         <div style="display:flex;justify-content:center;gap:2rem;margin-bottom:.5rem;align-items:flex-start;">
-          <div style="flex:1;text-align:right;">${renderGoles(golesLocal,"right")}</div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:flex-end;">
+              <div>${renderGoles(golesLocal)}</div>
+              <div style="width:36px;flex-shrink:0;margin-left:.5rem;"></div>
+            </div>
+          </div>
           <div style="width:80px;flex-shrink:0;"></div>
-          <div style="flex:1;">${renderGoles(golesVisit,"left")}</div>
+          <div style="flex:1;">${renderGoles(golesVisit)}</div>
         </div>
         <div style="margin-top:.75rem;"></div>
         ${(estadioLine||diaHoraStr)?`<div style="font-size:13px;color:#ccc;margin:.35rem 0;">
