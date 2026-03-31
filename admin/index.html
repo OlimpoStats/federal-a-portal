@@ -138,7 +138,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .add-ev-btn:hover{border-color:var(--accent);}
 /* autocomplete */
 .autocomplete-wrap{position:relative;}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:50;max-height:160px;overflow-y:auto;display:none;}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
 .autocomplete-list.open{display:block;}
 .ac-item{padding:.4rem .75rem;font-size:13px;cursor:pointer;}
 .ac-item:hover{background:var(--surface3);color:var(--accent);}
@@ -546,8 +546,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Árbitros</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá el plantel de árbitros. Pueden actuar como árbitro principal, línea 1, línea 2 o cuarto árbitro.</p>
       <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="arb-nuevo" placeholder="Nombre completo del árbitro" style="flex:1">
+        <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+          <input type="text" id="arb-filtro" placeholder="🔍 Buscar árbitro..." style="flex:1;min-width:160px;" oninput="filtrarABM('arb')">
+          <input type="text" id="arb-nuevo" placeholder="Nombre completo del árbitro" style="flex:1;min-width:160px;">
           <button class="btn btn-primary btn-sm" onclick="agregarArbitro()">+ Agregar</button>
         </div>
       </div>
@@ -560,7 +561,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá los estadios del torneo.</p>
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="est-nuevo" placeholder="Nombre del estadio" style="flex:1">
+          <input type="text" id="est-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('est')">
+          <input type="text" id="est-nuevo" placeholder="Nombre del estadio" style="flex:1;min-width:140px;">
           <button class="btn btn-primary btn-sm" onclick="agregarEstadio()">+ Agregar</button>
         </div>
       </div>
@@ -573,7 +575,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Carga y mantenimiento de directores tecnicos por club.</p>
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="tec-nuevo" placeholder="Nombre del director tecnico" style="flex:1">
+          <input type="text" id="tec-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('tec')">
+          <input type="text" id="tec-nuevo" placeholder="Nombre del director tecnico" style="flex:1;min-width:140px;">
           <button class="btn btn-primary btn-sm" onclick="agregarTecnico()">+ Agregar</button>
         </div>
       </div>
@@ -1340,13 +1343,14 @@ function eliminarEvento(containerId, jIdx, eIdx){
 function abrirAgregarEvento(containerId, jIdx){
   const tipos=[
     {v:"gol",l:"⚽ Gol"},
-    {v:"gol_penal",l:"⚽(P) Gol penal"},
-    {v:"gol_contra",l:"⚽(GC) Gol en contra"},
+    {v:"gol_penal",l:"🥅 Gol penal"},
+    {v:"gol_contra",l:"🚫 Gol en contra"},
     {v:"amarilla",l:"🟨 Amarilla"},
     {v:"roja",l:"🟥 Roja"},
     {v:"doble_amarilla",l:"🟨🟥 Doble amarilla"},
     {v:"cambio_entra",l:"↑ Entra (cambio)"},
     {v:"cambio_sale",l:"↓ Sale (cambio)"},
+    {v:"toggle_capitan",l:"🏅 Asignar/quitar capitán"},
   ];
   const tipoOpts = tipos.map(t=>`<option value="${t.v}">${t.l}</option>`).join("");
   const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center" id="modal-ev">
@@ -1356,8 +1360,8 @@ function abrirAgregarEvento(containerId, jIdx){
       <select id="ev-tipo" style="width:100%;margin-bottom:.75rem" onchange="toggleExtras()">
         ${tipoOpts}
       </select>
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto</label>
-      <input type="number" id="ev-minuto" placeholder="ej: 45" min="1" max="120" style="width:100%;margin-bottom:.75rem">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto (ej: 45 o 90+3)</label>
+      <input type="text" id="ev-minuto" placeholder="ej: 45 o 90+3" style="width:100%;margin-bottom:.75rem">
       <div id="ev-extra-wrap" style="display:none">
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem" id="ev-extra-lbl">Jugador que sale (nro camiseta)</label>
         <input type="text" id="ev-extra" style="width:100%;margin-bottom:.75rem">
@@ -1466,16 +1470,49 @@ function confirmarAsistencia(containerId, jIdx){
   renderPlanilla(containerId, arr);
 }
 
+function parsearMinuto(val){
+  // Accepts "45", "90+3", "45+1" etc
+  const s = String(val||"").trim();
+  if(s.includes("+")) return s; // keep as string like "90+3"
+  return parseInt(s)||0;
+}
+
+function minuteToNumber(val){
+  // For stats: 90+x counts as 90, others as-is
+  const s = String(val||"");
+  if(s.includes("+")) return 90;
+  return parseInt(s)||0;
+}
+
 function confirmarEvento(containerId, jIdx){
   const tipo=document.getElementById("ev-tipo").value;
-  const minuto=parseInt(document.getElementById("ev-minuto").value)||0;
+  const minuto=parsearMinuto(document.getElementById("ev-minuto").value);
   const extra=document.getElementById("ev-extra")?.value||"";
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
   if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
   arr[jIdx].eventos.push({tipo, minuto, extra});
-  // Ordenar por minuto
-  arr[jIdx].eventos.sort((a,b)=>a.minuto-b.minuto);
+
+  // Auto-add cambio_sale to the player leaving when cambio_entra is added
+  if(tipo==="cambio_entra" && extra){
+    const numSale = String(extra).trim();
+    const titular = arr.find(j => j.titular && String(j.numero)===numSale);
+    if(titular){
+      if(!titular.eventos) titular.eventos=[];
+      const yaTiene = titular.eventos.some(e=>e.tipo==="cambio_sale");
+      if(!yaTiene){
+        titular.eventos.push({tipo:"cambio_sale", minuto, extra:String(arr[jIdx].numero||"")});
+      }
+    }
+  }
+
+  // Sort all eventos by minuto
+  arr.forEach(j=>{
+    if(j.eventos) j.eventos.sort((a,b)=>{
+      const ma = minuteToNumber(a.minuto), mb = minuteToNumber(b.minuto);
+      return ma-mb;
+    });
+  });
   cerrarModalEv();
   renderPlanilla(containerId, arr);
 }
@@ -2084,6 +2121,14 @@ async function cargarABM(){
   } catch(e){ console.log("ABM error", e); }
 }
 
+function filtrarABM(prefijo){
+  const q = (document.getElementById(prefijo+"-filtro")?.value||"").toLowerCase().trim();
+  const tabla = prefijo==="arb"?"arbitros":prefijo==="est"?"estadios":"tecnicos";
+  const listaId = prefijo+"-lista";
+  const filtered = q ? CACHE[tabla].filter(i=>i.nombre.toLowerCase().includes(q)) : CACHE[tabla];
+  renderABMLista(listaId, filtered, tabla);
+}
+
 function renderABMLista(elId, items, tabla){
   const el = document.getElementById(elId);
   if(!el) return;
@@ -2141,15 +2186,16 @@ function acInput(input, tabla, fieldId){
   const q = input.value.toLowerCase().trim();
   const listEl = document.getElementById("ac-"+fieldId);
   if(!listEl) return;
-  if(!q){ listEl.classList.remove("open"); return; }
+  if(!q){ listEl.classList.remove("open"); listEl._activeIdx=-1; return; }
   const items = CACHE[tabla].filter(i=>i.nombre.toLowerCase().includes(q));
   if(!items.length){ listEl.classList.remove("open"); return; }
-  listEl.innerHTML = items.slice(0,8).map(i=>
-    `<div class="ac-item" onclick="acSelect('${fieldId}','${i.nombre.replace(/'/g,"\\'")}')">
+  listEl.innerHTML = items.slice(0,8).map((i,idx)=>
+    `<div class="ac-item" data-idx="${idx}" onclick="acSelect('${fieldId}','${i.nombre.replace(/'/g,"\'")}')">
       ${i.nombre}
     </div>`
   ).join("");
   listEl.classList.add("open");
+  listEl._activeIdx = -1;
 }
 
 function acSelect(fieldId, nombre){
@@ -2163,6 +2209,22 @@ document.addEventListener("click", e=>{
   if(!e.target.closest(".autocomplete-wrap")){
     document.querySelectorAll(".autocomplete-list").forEach(l=>l.classList.remove("open"));
   }
+});
+
+document.addEventListener("keydown", e=>{
+  const openList = document.querySelector(".autocomplete-list.open");
+  if(!openList) return;
+  const acItems = openList.querySelectorAll(".ac-item");
+  if(!acItems.length) return;
+  let idx = openList._activeIdx ?? -1;
+  if(e.key==="ArrowDown"){ e.preventDefault(); idx=Math.min(idx+1,acItems.length-1); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); idx=Math.max(idx-1,0); }
+  else if(e.key==="Enter"&&idx>=0){ e.preventDefault(); acItems[idx].click(); return; }
+  else if(e.key==="Escape"){ openList.classList.remove("open"); return; }
+  else return;
+  openList._activeIdx=idx;
+  acItems.forEach((el,i)=>el.style.background=i===idx?"rgba(232,196,74,0.15)":"");
+  if(acItems[idx]) acItems[idx].scrollIntoView({block:"nearest"});
 });
 
 async function upsertABMSiNuevo(tabla, nombre){
