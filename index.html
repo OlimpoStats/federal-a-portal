@@ -580,7 +580,7 @@ async function verFicha(key, tienePlanilla){
 
     // Get planillas
     const {data:planillas} = await sb.from("planillas")
-      .select("id, equipo_id, numero_camiseta, titular, jugadores(id_federal, nombre_display, nombre), equipos(nombre)")
+      .select("id, equipo_id, numero_camiseta, titular, es_capitan, jugadores(id_federal, nombre_display, nombre), equipos(nombre)")
       .eq("partido_id", partido.id)
       .order("numero_camiseta");
 
@@ -594,66 +594,168 @@ async function verFicha(key, tienePlanilla){
       evByPlanilla[ev.planilla_id].push(ev);
     });
 
-    const renderEquipo = (nombre, jugadoresEquipo) => {
+    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre) => {
       if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;">Sin planilla cargada.</div>';
       const titulares = jugadoresEquipo.filter(j=>j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
       const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
 
-      const renderJug = (pl) => {
-        const evs = evByPlanilla[pl.id] || [];
+      // Build all events map by jugador for cross-reference
+      const todosJugadores = [...titulares, ...suplentes];
+
+      const renderJug = (pl, esTitular) => {
+        const evs = (evByPlanilla[pl.id] || []).sort((a,b)=>(a.minuto||0)-(b.minuto||0));
         const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
+        const esCapitan = pl.es_capitan;
         const chips = evs.map(ev => {
-          if(ev.tipo==="gol") return '<span style="font-size:12px;">⚽</span>';
-          if(ev.tipo==="gol_penal") return '<span style="font-size:12px;">🥅</span>';
-          if(ev.tipo==="gol_contra") return '<span style="font-size:12px;">🚫</span>';
-          if(ev.tipo==="amarilla") return '<span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;vertical-align:middle;"></span>';
-          if(ev.tipo==="roja") return '<span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;vertical-align:middle;"></span>';
-          if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:11px;">↑${ev.minuto}'</span>`;
+          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
+            const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
+            return `<span style="display:inline-flex;align-items:center;gap:3px;">${icon}<span style="color:var(--accent);font-size:11px;">${ev.minuto}'</span></span>`;
+          }
+          if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;"></span><span style="font-size:11px;color:var(--muted);">${ev.minuto}'</span></span>`;
+          if(ev.tipo==="roja") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;"></span><span style="font-size:11px;color:var(--muted);">${ev.minuto}'</span></span>`;
+          if(ev.tipo==="cambio_entra"){
+            const saleNum = ev.extra;
+            const salePl = todosJugadores.find(j=>String(j.numero_camiseta)===String(saleNum));
+            const saleNombre = salePl ? (salePl.jugadores?.nombre_display||salePl.jugadores?.nombre||"").split(" ").pop() : "";
+            return `<span style="color:#4caf50;font-size:11px;">↑${ev.minuto}'${saleNombre?" "+saleNombre:""}</span>`;
+          }
           if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;">↓${ev.minuto}'</span>`;
-          if(ev.tipo==="asistencia") return '<span style="font-size:12px;">👟</span>';
+          if(ev.tipo==="asistencia") return `<span style="font-size:12px;">👟</span>`;
           return "";
-        }).join(" ");
-        return `<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-          <span style="font-size:11px;color:var(--muted);width:20px;text-align:right;">${pl.numero_camiseta||""}</span>
-          <span style="font-size:13px;flex:1;">${nombre}</span>
-          <span>${chips}</span>
+        }).join("  ");
+
+        const nombreSize = esTitular ? "15px" : "13px";
+        return `<div style="display:flex;align-items:center;gap:.6rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:11px;color:var(--muted);width:18px;text-align:right;flex-shrink:0;">${pl.numero_camiseta||""}</span>
+          <span style="font-size:${nombreSize};flex:1;${esCapitan?"font-weight:600;":""}">
+            ${esCapitan?'<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 3px;margin-right:3px;vertical-align:middle;">CP</span>':""}
+            ${nombre}
+          </span>
+          <span style="display:flex;align-items:center;gap:6px;">${chips}</span>
         </div>`;
       };
 
+      // Collect cambios for summary
+      const cambios = [];
+      suplentes.forEach(sup => {
+        const entradaEv = (evByPlanilla[sup.id]||[]).find(e=>e.tipo==="cambio_entra");
+        if(!entradaEv) return;
+        const salePl = todosJugadores.find(j=>String(j.numero_camiseta)===String(entradaEv.extra));
+        const saleNombre = salePl ? (salePl.jugadores?.nombre_display||salePl.jugadores?.nombre||"?") : "?";
+        const entraNombre = sup.jugadores?.nombre_display||sup.jugadores?.nombre||"?";
+        cambios.push({minuto:entradaEv.minuto, entra:entraNombre, sale:saleNombre});
+      });
+      cambios.sort((a,b)=>a.minuto-b.minuto);
+
+      // Collect tarjetas
+      const tarjetas = [];
+      todosJugadores.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="amarilla"||ev.tipo==="roja"||ev.tipo==="doble_amarilla"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            const icon = ev.tipo==="roja"?'<span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;vertical-align:middle;"></span>':'<span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;vertical-align:middle;"></span>';
+            tarjetas.push({minuto:ev.minuto, nombre, icon});
+          }
+        });
+      });
+      tarjetas.sort((a,b)=>a.minuto-b.minuto);
+
+      const cambiosSec = cambios.length ? `
+        <div style="margin-top:.75rem;padding-top:.5rem;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">CAMBIOS</div>
+          ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;color:var(--text);">
+            <span style="color:var(--accent);font-weight:600;">${c.minuto}'</span>
+            <span style="color:#4caf50;margin-left:4px;">${c.entra}</span>
+            <span style="color:var(--muted);margin:0 4px;">⇄</span>
+            <span style="color:#e57373;">${c.sale}</span>
+          </div>`).join("")}
+        </div>` : "";
+
+      const tarjetasSec = tarjetas.length ? `
+        <div style="margin-top:.75rem;padding-top:.5rem;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">TARJETAS</div>
+          ${tarjetas.map(t=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;">
+            ${t.icon}
+            <span>${t.nombre}</span>
+            <span style="color:var(--accent);margin-left:2px;">${t.minuto}'</span>
+          </div>`).join("")}
+        </div>` : "";
+
       return `
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">TITULARES</div>
-        ${titulares.map(renderJug).join("")}
-        ${suplentes.length?`<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:.65rem 0 .35rem;">SUPLENTES</div>${suplentes.map(renderJug).join("")}`:""}
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">👕 TITULARES</div>
+        ${titulares.map(j=>renderJug(j,true)).join("")}
+        ${dtNombre?`<div style="font-size:12px;color:var(--muted);padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">👔 <span style="color:var(--text);">${dtNombre}</span></div>`:""}
+        ${suplentes.length?`<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:.65rem 0 .35rem;">SUPLENTES</div>${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
+        ${cambiosSec}
+        ${tarjetasSec}
       `;
     };
 
     const localPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_local_nombre);
     const visitPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_visitante_nombre);
 
+    // Collect goles for header display
+    const recogerGoles = (planillaArr) => {
+      const goles = [];
+      planillaArr.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            // Find asistencia for same minuto
+            const asist = (evByPlanilla[pl.id]||[]).find(e=>e.tipo==="asistencia"&&e.minuto===ev.minuto);
+            // Also check other players for asistencia with this minuto
+            let asistNombre = "";
+            if(!asist){
+              planillaArr.forEach(pl2=>{
+                (evByPlanilla[pl2.id]||[]).forEach(e2=>{
+                  if(e2.tipo==="asistencia"&&e2.minuto===ev.minuto){
+                    asistNombre = pl2.jugadores?.nombre_display||pl2.jugadores?.nombre||"";
+                  }
+                });
+              });
+            } else {
+              asistNombre = asist.extra || "";
+            }
+            const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
+            goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, contra:ev.tipo==="gol_contra"});
+          }
+        });
+      });
+      return goles.sort((a,b)=>a.minuto-b.minuto);
+    };
+
+    const golesLocal = recogerGoles(localPlanilla);
+    const golesVisit = recogerGoles(visitPlanilla);
+
+    const renderGoles = (goles) => goles.map(g=>
+      `<div style="font-size:12px;margin:.2rem 0;">
+        ${g.icon} <span style="color:#f0f0f0;">${g.nombre}</span> <span style="color:var(--accent);">${g.minuto}'</span>
+        ${g.asist?`<span style="color:var(--muted);font-size:11px;"> (${g.asist})</span>`:""}
+      </div>`
+    ).join("");
+
     const diaStr = partido.dia ? new Date(partido.dia+"T12:00:00").toLocaleDateString("es-AR",{day:"numeric",month:"long"}) : "";
 
     fichaCont.innerHTML = `
       <div style="text-align:center;margin-bottom:1rem;">
         <div style="font-size:12px;color:var(--muted);">${partido.zona} — Fecha ${partido.fecha}${diaStr?" · "+diaStr:""}${partido.hora?" · "+partido.hora:""}</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:.75rem 0;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;flex:1;text-align:right;">${partido.equipo_local_nombre}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;color:var(--accent);">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;flex:1;text-align:left;">${partido.equipo_visitante_nombre}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:.75rem;margin:.75rem 0;">
+          <div style="flex:1;text-align:right;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">${partido.equipo_local_nombre}</div>
+            <div style="text-align:right;">${renderGoles(golesLocal)}</div>
+          </div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;color:var(--accent);flex-shrink:0;">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
+          <div style="flex:1;text-align:left;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">${partido.equipo_visitante_nombre}</div>
+            <div>${renderGoles(golesVisit)}</div>
+          </div>
         </div>
         ${partido.estadio?`<div style="font-size:12px;color:var(--muted);">🏟️ ${partido.estadio}</div>`:""}
-        ${partido.arbitro?`<div style="font-size:12px;color:var(--muted);">🧑‍⚖️ ${partido.arbitro}</div>`:""}
+        ${partido.arbitro?`<div style="font-size:12px;color:var(--muted);">🧑‍⚖️ ${partido.arbitro}${partido.juez1?" · "+partido.juez1:""}${partido.juez2?" · "+partido.juez2:""}${partido.cuarto_arbitro?" · "+partido.cuarto_arbitro:""}</div>`:""}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);">${partido.equipo_local_nombre}</div>
-          ${partido.dt_local?`<div style="font-size:11px;color:var(--muted);margin-bottom:.5rem;">DT: ${partido.dt_local}</div>`:""}
-          ${renderEquipo(partido.equipo_local_nombre, localPlanilla)}
-        </div>
-        <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);">${partido.equipo_visitante_nombre}</div>
-          ${partido.dt_visitante?`<div style="font-size:11px;color:var(--muted);margin-bottom:.5rem;">DT: ${partido.dt_visitante}</div>`:""}
-          ${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla)}
-        </div>
+        <div>${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
+        <div>${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
       </div>`;
 
   } catch(e){
