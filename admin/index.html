@@ -806,16 +806,6 @@ function resetTodo(){
   irPaso1();
 }
 
-function setStep(n){
-  [1,2,3,4].forEach(i=>{
-    const el=document.getElementById("step"+i);
-    if(!el) return;
-    el.classList.remove("active-step","done");
-    if(i<n) el.classList.add("done");
-    else if(i===n) el.classList.add("active-step");
-  });
-}
-  
 // ── UPLOAD ──
 function dragOver(e,id){e.preventDefault();document.getElementById(id).classList.add("drag");}
 function dragLeave(id){document.getElementById(id).classList.remove("drag");}
@@ -886,33 +876,37 @@ async function procesarImagenes(){
 
   const prompt=`Sos un extractor de datos de planillas oficiales del torneo Federal A de fútbol argentino.
 
-La imagen tiene una tabla con estas columnas exactas, de izquierda a derecha:
-- "Núm." (o similar): número de orden en la lista, del 1 al 20. Los jugadores 1 a 11 son TITULARES, del 12 en adelante son SUPLENTES.
-- "Núm" (sin punto): ID numérico del jugador, siempre de 6 o 7 dígitos. Es el identificador único del jugador. Leelo con cuidado, no lo confundas con el número de orden.
-- Columna de badges de color: puede aparecer un badge naranja "AR" (arquero) o verde "CP" (capitán). Si no hay badge, la nota es vacía.
-- "Jugador": nombre en formato "APELLIDO, NOMBRE1 NOMBRE2". Convertilo a "Nombre1 Apellido" (solo primer nombre, capitalización normal). Ejemplo: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo". "FERREYRA, MARTIN IGNACIO" → "Martin Ferreyra".
-- Columna de eventos (a la derecha del nombre): puede contener uno o más íconos seguidos de minuto y apostrofe. Los íconos son:
-  * Pelota de fútbol ⚽ o ícono de gol → tipo "gol"
-  * Pelota con "P" o ícono distinto de penal → tipo "gol_penal"  
-  * Pelota con flecha o autoGol → tipo "gol_contra"
-  * Rectángulo amarillo 🟡 → tipo "amarilla"
-  * Rectángulo rojo 🔴 → tipo "roja"
-  * Dos rectángulos (amarillo+rojo) → tipo "doble_amarilla"
-  * Ícono de engranaje ⚙️ o flecha de salida → tipo "cambio_sale" con el minuto indicado
-  * Ícono de flechas circulares 🔄 o flecha de entrada → tipo "cambio_entra". El número entre paréntesis después del minuto es el número de camiseta del jugador que SALE. Ej: "63'(5)" significa entra en el minuto 63 y reemplaza al #5.
+La imagen tiene una tabla con estas columnas, de izquierda a derecha:
+- "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
+- "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
+- Badge de color (opcional): naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
+- "Jugador": nombre en formato "APELLIDO, NOMBRE1 NOMBRE2". Convertí a "Nombre1 Apellido" (solo primer nombre). Ej: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo".
+- Columna de eventos (derecha del nombre): íconos con minuto y apóstrofe.
 
-IMPORTANTE:
-- El campo "id" es el número de 6-7 dígitos de la segunda columna, NO el número de orden.
-- Si un jugador tiene cambio_sale, también buscá quién entra (cambio_entra) en otra fila.
-- Contá los goles (tipo "gol" y "gol_penal") para calcular "goles_equipo". NO contés gol_contra como gol propio.
-- Los goles en contra ("gol_contra") suman al rival, NO a este equipo.
+ÍCONOS DE EVENTOS - LEELOS CON EXTREMA ATENCIÓN:
 
-Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto extra:
+1. RUEDA DENTADA / ENGRANAJE (ícono circular con dientes) seguido de minuto → tipo "gol". Este es el ícono de GOL en esta planilla. Ej: rueda⚙ 67' = gol en el minuto 67.
+
+2. RECTÁNGULO AMARILLO VERTICAL seguido de minuto → tipo "amarilla". Ej: 🟨 83' = amarilla en el 83.
+
+3. RECTÁNGULO ROJO VERTICAL seguido de minuto → tipo "roja".
+
+4. FLECHAS CIRCULARES VERDES (ícono de refresh/recarga en color verde) seguido de minuto y número entre paréntesis → tipo "cambio_entra". SOLO aparece en SUPLENTES (filas 12-20). El número entre paréntesis es el número de camiseta del titular que SALE. Ej: flechas 63'(5) = entra en el 63 reemplazando al jugador #5.
+
+REGLAS CRÍTICAS:
+- La RUEDA DENTADA = GOL siempre. NUNCA es un cambio.
+- Las FLECHAS VERDES = cambio_entra siempre. SOLO en suplentes.
+- NO existe "cambio_sale" en esta planilla. No lo uses nunca.
+- Un titular puede tener gol + amarilla en distintos minutos: son dos eventos separados.
+- Contá los goles (tipo "gol") para "goles_equipo".
+
+Respondé ÚNICAMENTE con JSON válido, sin markdown:
 {
   "goles_equipo": 2,
   "jugadores": [
     {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "Juan Lungarzo", "titular": true, "eventos": []},
-    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"cambio_sale","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
+    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
+    {"numero": 11, "id": 3185627, "nota": "", "nombre": "Diego Ramirez", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
     {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]}
   ]
 }`;
@@ -1054,15 +1048,8 @@ function renderEvento(e, containerId, jIdx, eIdx){
     const saleJug = arr ? arr.find(j=>String(j.numero)===String(saleNum)) : null;
     const saleNombre = saleJug ? apellido(saleJug.nombre) : (saleNum||"?");
     inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:var(--muted)">(${saleNombre})</span></span>`;
-} else if(e.tipo==="cambio_sale"){
-    // Buscar quién entra en reemplazo (tiene extra = número de camiseta del que sale)
-    const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
-    const miNumero = String(arr?.[jIdx]?.numero || "");
-    const entrante = arr ? arr.find(j =>
-      (j.eventos||[]).some(ev => ev.tipo==="cambio_entra" && String(ev.extra)===miNumero)
-    ) : null;
-    const nombreEntrante = entrante ? apellido(entrante.nombre) : "?";
-    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span> <span style="font-size:10px;color:var(--muted)">(${nombreEntrante})</span></span>`;
+  } else if(e.tipo==="cambio_sale"){
+    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span></span>`;
   } else {
     inner=`<span class="evento-chip ev-cam">? ${minStr}</span>`;
   }
@@ -1118,7 +1105,6 @@ function abrirAgregarEvento(containerId, jIdx){
     {v:"roja",l:"🟥 Roja"},
     {v:"doble_amarilla",l:"🟨🟥 Doble amarilla"},
     {v:"cambio_entra",l:"↑ Entra (cambio)"},
-    {v:"cambio_sale",l:"↓ Sale (cambio)"},
     {v:"asistencia",l:"👟 Asistencia"},
   ];
   const tipoOpts = tipos.map(t=>`<option value="${t.v}">${t.l}</option>`).join("");
@@ -1828,4 +1814,5 @@ Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(
 </script>
 </body>
 </html>
+
 
