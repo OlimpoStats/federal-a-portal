@@ -1054,8 +1054,15 @@ function renderEvento(e, containerId, jIdx, eIdx){
     const saleJug = arr ? arr.find(j=>String(j.numero)===String(saleNum)) : null;
     const saleNombre = saleJug ? apellido(saleJug.nombre) : (saleNum||"?");
     inner=`<span class="evento-chip ev-cam"><span class="ev-entra">↑${minStr}</span> <span style="font-size:10px;color:var(--muted)">(${saleNombre})</span></span>`;
-  } else if(e.tipo==="cambio_sale"){
-    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span></span>`;
+} else if(e.tipo==="cambio_sale"){
+    // Buscar quién entra en reemplazo (tiene extra = número de camiseta del que sale)
+    const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+    const miNumero = String(arr?.[jIdx]?.numero || "");
+    const entrante = arr ? arr.find(j =>
+      (j.eventos||[]).some(ev => ev.tipo==="cambio_entra" && String(ev.extra)===miNumero)
+    ) : null;
+    const nombreEntrante = entrante ? apellido(entrante.nombre) : "?";
+    inner=`<span class="evento-chip ev-cam"><span class="ev-sale">↓${minStr}</span> <span style="font-size:10px;color:var(--muted)">(${nombreEntrante})</span></span>`;
   } else {
     inner=`<span class="evento-chip ev-cam">? ${minStr}</span>`;
   }
