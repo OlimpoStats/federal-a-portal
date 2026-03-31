@@ -235,8 +235,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
               <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
               <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
-                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">Editar existente</button>
-                <button class="btn btn-danger btn-sm" onclick="irPaso2()">Reemplazar desde cero</button>
+                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar</button>
+                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar</button>
+                <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
               </div>
             </div>
             <div style="text-align:right;margin-top:.5rem;">
@@ -512,10 +513,32 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="jug-buscar" placeholder="Buscar por nombre o ID federal..." style="flex:1" oninput="buscarJugadores()">
+          <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1" oninput="buscarJugadores()">
         </div>
       </div>
       <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
+      <div id="jug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:420px;max-width:95vw;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Editar jugador</div>
+          <input type="hidden" id="jug-edit-id">
+          <div style="display:grid;gap:.65rem;">
+            <div><label>ID Federal</label><input type="text" id="jug-edit-idfederal" placeholder="Ej: 3177974"></div>
+            <div><label>Nombre (planilla)</label><input type="text" id="jug-edit-nombre" placeholder="Como viene en la planilla"></div>
+            <div><label>Common name (a mostrar en portal)</label><input type="text" id="jug-edit-display" placeholder="Ej: Tomas Lopez"></div>
+            <div><label>Club actual</label>
+              <select id="jug-edit-equipo">
+                <option value="">— Sin club —</option>
+                ${ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+            <button class="btn btn-secondary btn-sm" onclick="cerrarEditJugador()">Cancelar</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminarJugador()">Eliminar</button>
+            <button class="btn btn-primary btn-sm" onclick="guardarJugador()">Guardar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ===================== ABM ÁRBITROS ===================== -->
@@ -874,6 +897,36 @@ function irPaso2(){
   setStep(2);
 }
 
+async function borrarPlanilla(){
+  const sel = obtenerPartidoSeleccionado();
+  if(!sel){ alert("Seleccioná un partido primero."); return; }
+  if(!confirm("¿Borrar la planilla de este partido? El resultado queda, solo se eliminan jugadores y eventos.")) return;
+
+  try {
+    const fixtureId = sel.p?.id;
+    if(!fixtureId) return;
+    const {data:partidoDB} = await sb.from("partidos").select("id").eq("fixture_id", fixtureId).maybeSingle();
+    if(!partidoDB?.id){ alert("No se encontró el partido en la base de datos."); return; }
+    const partidoId = partidoDB.id;
+
+    // Get all planillas for this partido
+    const {data:planillas} = await sb.from("planillas").select("id").eq("partido_id", partidoId);
+    if(planillas?.length){
+      const ids = planillas.map(p => p.id);
+      await sb.from("eventos").delete().in("planilla_id", ids);
+      await sb.from("planillas").delete().eq("partido_id", partidoId);
+    }
+
+    // Mark fixture as not having planilla
+    FIXTURE_CON_PLANILLA.delete(String(fixtureId));
+    actualizarEstadoPlanillaSeleccion();
+    actualizarPartidos();
+    alert("✓ Planilla borrada correctamente.");
+  } catch(e){
+    alert("Error: " + e.message);
+  }
+}
+
 async function editarPlanillaExistente(){
   const sel=obtenerPartidoSeleccionado();
   if(!sel){alert("Seleccioná zona, fecha y partido primero.");return;}
@@ -999,7 +1052,7 @@ async function procesarImagenes(){
 La imagen muestra una tabla de alineación con estas columnas de izquierda a derecha:
 - "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
 - "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
-- Badge opcional: naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
+- Badge de color (tercera columna, opcional): badge naranja con texto "AR" = arquero, badge verde con texto "CP" = capitán. Cada equipo tiene exactamente UN capitán. Leé con cuidado esta columna para todos los jugadores. Si no hay badge visible, nota = "". El capitán (CP) puede ser titular o suplente.
 - "Jugador": nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolvé el nombre EXACTAMENTE como aparece en la planilla, con la coma, en mayúsculas. NO lo conviertas. Ej: si la planilla dice "LOPEZ PEREZ, TOMAS JUAN", devolvé "LOPEZ PEREZ, TOMAS JUAN". El sistema lo formateará solo.
 - Columna de eventos (derecha del nombre).
 
@@ -1147,6 +1200,16 @@ function normalizarPlanilla(planilla, equipo){
     titular: !!j?.titular,
     eventos: Array.isArray(j?.eventos) ? j.eventos : [],
   }));
+  // Enriquecer con datos de DB: si el jugador ya existe, usar su nombre_display
+  for(const j of normalizados){
+    if(!j.id_federal) continue;
+    const idStr = String(j.id_federal);
+    const enCache = JUGADORES_CACHE.find(x => String(x.id_federal) === idStr);
+    if(enCache && enCache.nombre_display){
+      j.nombre = enCache.nombre_display; // usar common name ya editado
+    }
+  }
+
   // Inferir cambio_sale: buscar titulares cuyo número aparece en extra de un cambio_entra
   const suplentes = normalizados.filter(j => !j.titular);
   suplentes.forEach(sup => {
@@ -2159,18 +2222,21 @@ async function vincularEquipo(nombre, campo, valor){
 
 // ── JUGADORES ──
 let JUGADORES_CACHE = [];
+let EQUIPOS_ID_MAP = {}; // nombre -> id
 
 async function cargarJugadores(){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
-  lista.innerHTML = '<div style="color:var(--muted);">Cargando...</div>';
+  lista.innerHTML = '<div style="color:var(--muted);padding:1rem;">Cargando...</div>';
   try {
-    const {data, error} = await sb.from("jugadores")
-      .select("id, id_federal, nombre_display, nombre, equipo_id, equipos(nombre)")
-      .order("nombre_display")
-      .limit(500);
-    if(error) throw error;
-    JUGADORES_CACHE = data || [];
+    const [{data:jData, error:jErr}, {data:eqData}] = await Promise.all([
+      sb.from("jugadores").select("id, id_federal, nombre, nombre_display, equipo_id, equipos(id,nombre)").order("nombre_display").limit(1000),
+      sb.from("equipos").select("id, nombre"),
+    ]);
+    if(jErr) throw jErr;
+    JUGADORES_CACHE = jData || [];
+    EQUIPOS_ID_MAP = {};
+    (eqData||[]).forEach(e => EQUIPOS_ID_MAP[e.nombre] = e.id);
     renderJugadores(JUGADORES_CACHE);
   } catch(e){
     lista.innerHTML = `<div style="color:#e57373;">Error: ${e.message}</div>`;
@@ -2178,30 +2244,82 @@ async function cargarJugadores(){
 }
 
 function buscarJugadores(){
-  const q = document.getElementById("jug-buscar")?.value.toLowerCase().trim();
+  const q = (document.getElementById("jug-buscar")?.value||"").toLowerCase().trim();
   if(!q){ renderJugadores(JUGADORES_CACHE); return; }
-  const filtered = JUGADORES_CACHE.filter(j =>
-    (j.nombre_display||j.nombre||"").toLowerCase().includes(q) ||
+  renderJugadores(JUGADORES_CACHE.filter(j =>
+    (j.nombre_display||"").toLowerCase().includes(q) ||
+    (j.nombre||"").toLowerCase().includes(q) ||
     String(j.id_federal||"").includes(q)
-  );
-  renderJugadores(filtered);
+  ));
 }
 
 function renderJugadores(jugadores){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
   if(!jugadores.length){ lista.innerHTML = '<div style="color:var(--muted);padding:1rem;">Sin resultados.</div>'; return; }
-  lista.innerHTML = `
-    <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">ID FEDERAL</div>
-      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">NOMBRE</div>
-      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">EQUIPO</div>
-      ${jugadores.map(j=>`
-        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-family:monospace;font-size:11px;color:var(--muted);">${j.id_federal||"—"}</div>
-        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-size:13px;font-weight:500;">${j.nombre_display||j.nombre||"—"}</div>
-        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">${j.equipos?.nombre||"—"}</div>
-      `).join("")}
-    </div>`;
+  lista.innerHTML = `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr 80px;background:var(--surface3);">
+      <div style="padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">ID</div>
+      <div style="padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">COMMON NAME</div>
+      <div style="padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">CLUB</div>
+      <div style="padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;"></div>
+    </div>
+    ${jugadores.map(j=>`
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 80px;border-top:1px solid var(--border);">
+        <div style="padding:.4rem .6rem;font-family:monospace;font-size:11px;color:var(--muted);align-self:center;">${j.id_federal||"—"}</div>
+        <div style="padding:.4rem .6rem;font-size:13px;font-weight:500;align-self:center;">
+          ${j.nombre_display||j.nombre||"—"}
+          ${j.nombre_display&&j.nombre_display!==j.nombre?`<div style="font-size:10px;color:var(--muted);">${j.nombre||""}</div>`:""}
+        </div>
+        <div style="padding:.4rem .6rem;font-size:12px;color:var(--muted);align-self:center;">${j.equipos?.nombre||"—"}</div>
+        <div style="padding:.4rem .6rem;align-self:center;">
+          <button class="btn btn-secondary btn-sm" onclick="abrirEditJugador(${j.id})">✏️</button>
+        </div>
+      </div>`).join("")}
+  </div>`;
+}
+
+function abrirEditJugador(id){
+  const j = JUGADORES_CACHE.find(x => x.id === id);
+  if(!j) return;
+  document.getElementById("jug-edit-id").value = j.id;
+  document.getElementById("jug-edit-idfederal").value = j.id_federal || "";
+  document.getElementById("jug-edit-nombre").value = j.nombre || "";
+  document.getElementById("jug-edit-display").value = j.nombre_display || "";
+  const sel = document.getElementById("jug-edit-equipo");
+  // populate options
+  sel.innerHTML = '<option value="">— Sin club —</option>' +
+    ALL_TEAMS.map(t=>`<option value="${t}" ${j.equipos?.nombre===t?"selected":""}>${t}</option>`).join("");
+  document.getElementById("jug-modal").style.display = "flex";
+}
+
+function cerrarEditJugador(){
+  document.getElementById("jug-modal").style.display = "none";
+}
+
+async function guardarJugador(){
+  const id = document.getElementById("jug-edit-id").value;
+  const id_federal = document.getElementById("jug-edit-idfederal").value.trim();
+  const nombre = document.getElementById("jug-edit-nombre").value.trim();
+  const nombre_display = document.getElementById("jug-edit-display").value.trim();
+  const equipoNombre = document.getElementById("jug-edit-equipo").value;
+  const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : null;
+
+  const {error} = await sb.from("jugadores").update({
+    id_federal, nombre, nombre_display: nombre_display || nombre, equipo_id
+  }).eq("id", id);
+
+  if(error){ alert("Error: " + error.message); return; }
+  cerrarEditJugador();
+  cargarJugadores();
+}
+
+async function eliminarJugador(){
+  const id = document.getElementById("jug-edit-id").value;
+  if(!confirm("¿Eliminar este jugador? Sus planillas históricas quedan intactas.")) return;
+  await sb.from("jugadores").delete().eq("id", id);
+  cerrarEditJugador();
+  cargarJugadores();
 }
 
 // ── INIT ──
