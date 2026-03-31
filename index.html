@@ -832,15 +832,20 @@ async function verFicha(key, tienePlanilla){
           <!-- Fila goles: mismo grid -->
           ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;">
             <div style="text-align:right;padding-right:12px;">
-              <div style="display:inline-block;text-align:left;">
+              <div style="display:table;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
-                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
-                    <span style="font-size:13px;">${g.icon}</span>
-                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                    ${asist}
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:table-row;">
+                    <span style="display:table-cell;width:42px;"></span>
+                    <span style="display:table-cell;white-space:nowrap;padding:1px 0;">
+                      <span style="display:inline-flex;align-items:center;gap:4px;">
+                        <span style="font-size:13px;">${g.icon}</span>
+                        <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                        <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                        ${asist}
+                      </span>
+                    </span>
                   </div>`;
                 }).join("")}
               </div>
@@ -850,7 +855,7 @@ async function verFicha(key, tienePlanilla){
               <div style="display:inline-block;text-align:left;">
                 ${golesVisit.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
                   return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
                     <span style="font-size:13px;">${g.icon}</span>
                     <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
