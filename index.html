@@ -545,11 +545,120 @@ function renderPartidos(f){
   document.getElementById("partidos-cont").innerHTML=html;
 }
 
-function verFicha(key, tienePlanilla){
-  if(tienePlanilla){
-    alert("Próximamente: ficha completa del partido con planillas, goles y estadísticas.");
-  } else {
-    alert("Planilla pendiente de carga.");
+async function verFicha(key, tienePlanilla){
+  if(!tienePlanilla){ alert("Planilla pendiente de carga."); return; }
+
+  // Find partido data from key
+  const [zona, fecha, ...rest] = key.split("_");
+  // key format: zona_fecha_local_visitante (but names have spaces replaced by _)
+  // Better: find in FIXTURE
+  const fichaModal = document.getElementById("ficha-modal");
+  const fichaCont = document.getElementById("ficha-cont");
+  if(!fichaModal||!fichaCont) return;
+
+  fichaCont.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">Cargando ficha...</div>';
+  fichaModal.style.display = "flex";
+
+  try {
+    // Find partido from PLANILLA_CARGADA key
+    const [pZona, pFecha, ...pRest] = key.split("_");
+    // Get partido from DB
+    const {data:partidos} = await sb.from("partidos")
+      .select("id, zona, fecha, equipo_local_nombre, equipo_visitante_nombre, goles_local, goles_visitante, estadio, arbitro, juez1, juez2, cuarto_arbitro, dia, hora, dt_local, dt_visitante")
+      .eq("zona", pZona)
+      .eq("fecha", parseInt(pFecha));
+
+    let partido = null;
+    if(partidos?.length){
+      // Find matching by key
+      partido = partidos.find(p => {
+        const k = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+        return k === key;
+      });
+    }
+    if(!partido){ fichaCont.innerHTML = '<div style="color:#e57373;padding:2rem;">No se encontró el partido.</div>'; return; }
+
+    // Get planillas
+    const {data:planillas} = await sb.from("planillas")
+      .select("id, equipo_id, numero_camiseta, titular, jugadores(id_federal, nombre_display, nombre), equipos(nombre)")
+      .eq("partido_id", partido.id)
+      .order("numero_camiseta");
+
+    const {data:eventos} = await sb.from("eventos")
+      .select("planilla_id, tipo, minuto, extra")
+      .in("planilla_id", (planillas||[]).map(p=>p.id));
+
+    const evByPlanilla = {};
+    (eventos||[]).forEach(ev => {
+      if(!evByPlanilla[ev.planilla_id]) evByPlanilla[ev.planilla_id] = [];
+      evByPlanilla[ev.planilla_id].push(ev);
+    });
+
+    const renderEquipo = (nombre, jugadoresEquipo) => {
+      if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;">Sin planilla cargada.</div>';
+      const titulares = jugadoresEquipo.filter(j=>j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+      const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+
+      const renderJug = (pl) => {
+        const evs = evByPlanilla[pl.id] || [];
+        const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
+        const chips = evs.map(ev => {
+          if(ev.tipo==="gol") return '<span style="font-size:12px;">⚽</span>';
+          if(ev.tipo==="gol_penal") return '<span style="font-size:12px;">🥅</span>';
+          if(ev.tipo==="gol_contra") return '<span style="font-size:12px;">🚫</span>';
+          if(ev.tipo==="amarilla") return '<span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;vertical-align:middle;"></span>';
+          if(ev.tipo==="roja") return '<span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;vertical-align:middle;"></span>';
+          if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:11px;">↑${ev.minuto}'</span>`;
+          if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;">↓${ev.minuto}'</span>`;
+          if(ev.tipo==="asistencia") return '<span style="font-size:12px;">👟</span>';
+          return "";
+        }).join(" ");
+        return `<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <span style="font-size:11px;color:var(--muted);width:20px;text-align:right;">${pl.numero_camiseta||""}</span>
+          <span style="font-size:13px;flex:1;">${nombre}</span>
+          <span>${chips}</span>
+        </div>`;
+      };
+
+      return `
+        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">TITULARES</div>
+        ${titulares.map(renderJug).join("")}
+        ${suplentes.length?`<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:.65rem 0 .35rem;">SUPLENTES</div>${suplentes.map(renderJug).join("")}`:""}
+      `;
+    };
+
+    const localPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_local_nombre);
+    const visitPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_visitante_nombre);
+
+    const diaStr = partido.dia ? new Date(partido.dia+"T12:00:00").toLocaleDateString("es-AR",{day:"numeric",month:"long"}) : "";
+
+    fichaCont.innerHTML = `
+      <div style="text-align:center;margin-bottom:1rem;">
+        <div style="font-size:12px;color:var(--muted);">${partido.zona} — Fecha ${partido.fecha}${diaStr?" · "+diaStr:""}${partido.hora?" · "+partido.hora:""}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin:.75rem 0;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;flex:1;text-align:right;">${partido.equipo_local_nombre}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;color:var(--accent);">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;flex:1;text-align:left;">${partido.equipo_visitante_nombre}</div>
+        </div>
+        ${partido.estadio?`<div style="font-size:12px;color:var(--muted);">🏟️ ${partido.estadio}</div>`:""}
+        ${partido.arbitro?`<div style="font-size:12px;color:var(--muted);">🧑‍⚖️ ${partido.arbitro}</div>`:""}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);">${partido.equipo_local_nombre}</div>
+          ${partido.dt_local?`<div style="font-size:11px;color:var(--muted);margin-bottom:.5rem;">DT: ${partido.dt_local}</div>`:""}
+          ${renderEquipo(partido.equipo_local_nombre, localPlanilla)}
+        </div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);">${partido.equipo_visitante_nombre}</div>
+          ${partido.dt_visitante?`<div style="font-size:11px;color:var(--muted);margin-bottom:.5rem;">DT: ${partido.dt_visitante}</div>`:""}
+          ${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla)}
+        </div>
+      </div>`;
+
+  } catch(e){
+    fichaCont.innerHTML = `<div style="color:#e57373;padding:2rem;">Error: ${e.message}</div>`;
+    console.error(e);
   }
 }
 
@@ -777,5 +886,15 @@ async function init(){
 init();
 
 </script>
+<!-- FICHA MODAL -->
+<div id="ficha-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:780px;margin:auto;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;">FICHA DEL PARTIDO</span>
+      <button onclick="document.getElementById('ficha-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="ficha-cont" style="padding:1rem;max-height:85vh;overflow-y:auto;"></div>
+  </div>
+</div>
 </body>
 </html>
