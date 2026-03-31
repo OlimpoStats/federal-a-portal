@@ -713,11 +713,13 @@ function actualizarPartidos(){
     if(grid){
       const estado = tienePlanilla ? "✅ Con planilla" : (p.goles_local!=null ? `${p.goles_local}–${p.goles_visitante}` : (p.hora ? p.hora : "Sin programar"));
       const color = tienePlanilla ? "#1e5c35" : (p.goles_local!=null ? "#1a3a6a" : "var(--border)");
+      const escLocal = escudoData[p.local] ? `<img src="${escudoData[p.local]}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">` : "";
+      const escVisit = escudoData[p.visitante] ? `<img src="${escudoData[p.visitante]}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">` : "";
       const card = document.createElement("div");
       card.className = "partido-card" + (sel.value==String(i)?" selected":"");
       card.dataset.idx = i;
       card.innerHTML = `
-        <div class="pc-teams"><span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span></div>
+        <div class="pc-teams">${escLocal}<span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span>${escVisit}</div>
         <div class="pc-estado" style="border-color:${color};color:${color==="var(--border)"?"var(--muted)":color}">${estado}</div>`;
       card.onclick = () => {
         document.querySelectorAll(".partido-card").forEach(c=>c.classList.remove("selected"));
@@ -1075,23 +1077,17 @@ async function callClaude(prompt, imageB64){
 function formatearNombre(raw){
   if(!raw) return "";
   const s = raw.trim();
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
   // Si tiene coma: "APELLIDO, NOMBRE1 NOMBRE2" → "Nombre1 Apellido"
   if(s.includes(",")){
     const [apellido, nombres] = s.split(",").map(x => x.trim());
     const primerNombre = nombres.split(/\s+/)[0];
-    const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
     return cap(primerNombre) + " " + cap(apellido);
   }
-  
-  // Sin coma: tomar primer y último token → "Nombre Apellido"
+  // Sin coma: primer y último token
   const partes = s.split(/\s+/).filter(Boolean);
-  if(partes.length <= 2) return partes.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
-  // Más de 2 palabras: primera y última
-  const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+  if(partes.length === 1) return cap(partes[0]);
   return cap(partes[0]) + " " + cap(partes[partes.length - 1]);
-}
-  // Ya viene en formato normal, capitalizar cada palabra
-  return s.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 }
 
 function normalizarPlanilla(planilla, equipo){
@@ -1939,15 +1935,20 @@ async function upsertABMSiNuevo(tabla, nombre){
 async function renderEquiposVinculos(){
   const grid = document.getElementById("equipos-vinculos-grid");
   if(!grid) return;
-  await cargarEquiposInfo();
-  await cargarABM();
+  // Load fresh data before rendering
+  await Promise.all([cargarEquiposInfo(), cargarABM()]);
+  // Also reload from DB to get current IDs
+  const {data:eqData} = await sb.from("equipos").select("nombre,estadio_id,tecnico_id");
+  const eqMap = {};
+  (eqData||[]).forEach(e => eqMap[e.nombre] = e);
   grid.innerHTML = ALL_TEAMS.map(t => {
     const info = EQUIPOS_INFO[t] || {};
+    const eq = eqMap[t] || {};
     const estadioOpts = CACHE.estadios.map(e =>
-      `<option value="${e.id}" ${info.estadio_id==e.id?"selected":""}>${e.nombre}</option>`
+      `<option value="${e.id}" ${eq.estadio_id==e.id?"selected":""}>${e.nombre}</option>`
     ).join("");
     const tecnicoOpts = CACHE.tecnicos.map(e =>
-      `<option value="${e.id}" ${info.tecnico_id==e.id?"selected":""}>${e.nombre}</option>`
+      `<option value="${e.id}" ${eq.tecnico_id==e.id?"selected":""}>${e.nombre}</option>`
     ).join("");
     return `<div class="card">
       <div class="card-hdr">${t}</div>
