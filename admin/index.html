@@ -436,9 +436,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <!-- ===================== HORARIOS Y STREAMS ===================== -->
     <div class="panel" id="panel-horarios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Cargá día, hora, árbitros y transmisión para cada partido programado.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
       <div class="card">
-        <div class="card-hdr">Seleccionar partido</div>
         <div class="card-body">
           <div class="form-row two">
             <div><label>Zona</label><select id="hs-zona" onchange="hsActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
@@ -446,62 +445,50 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
           <div id="hs-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
           <select id="hs-partido" style="display:none" onchange="hsMostrar()"><option value="">—</option></select>
-          <div id="hs-form" style="display:none;margin-top:1rem;">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
-              <div style="font-size:14px;font-weight:600;margin-bottom:.85rem;" id="hs-titulo">—</div>
-              <div class="form-row two">
-                <div>
-                  <label>Día del partido</label>
-                  <input type="date" id="hs-dia">
-                </div>
-                <div>
-                  <label>Horario</label>
-                  <input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="5">
-                </div>
-              </div>
-              <div class="form-row two">
-                <div class="autocomplete-wrap">
-                  <label>Árbitro principal</label>
-                  <input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off">
-                  <div class="autocomplete-list" id="ac-hs-arbitro"></div>
-                </div>
-                <div class="autocomplete-wrap">
-                  <label>Juez de línea 1</label>
-                  <input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off">
-                  <div class="autocomplete-list" id="ac-hs-juez1"></div>
-                </div>
-                <div class="autocomplete-wrap">
-                  <label>Juez de línea 2</label>
-                  <input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off">
-                  <div class="autocomplete-list" id="ac-hs-juez2"></div>
-                </div>
-                <div class="autocomplete-wrap">
-                  <label>Cuarto árbitro</label>
-                  <input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off">
-                  <div class="autocomplete-list" id="ac-hs-cuarto"></div>
-                </div>
-              </div>
-              <div>
-                <label>Link de transmisión</label>
-                <input type="text" id="hs-stream" placeholder="https://youtube.com/live/...">
-              </div>
-              <div style="text-align:right;margin-top:.5rem;">
-                <button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button>
-              </div>
-            </div>
-            <div id="hs-preview" style="display:none;">
-              <p style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">Vista previa del botón de stream:</p>
-              <a id="hs-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:.4rem .75rem;text-decoration:none;color:#e8453a;font-size:12px;font-weight:600;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                Ver en vivo
-              </a>
-            </div>
+        </div>
+      </div>
+
+      <!-- Bulk programming form -->
+      <div id="hs-bulk-form" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">Programar todos los partidos</h3>
+          <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">Solo se guardan los partidos que hayas modificado. El estadio por defecto del equipo local aparece precargado pero no se guarda si no lo modificás.</p>
+        <div id="hs-bulk-lista"></div>
+        <div style="text-align:right;margin-top:1rem;">
+          <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
+        </div>
+      </div>
+
+      <!-- Single partido form (legacy) -->
+      <div id="hs-form" style="display:none;margin-top:1rem;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:.85rem;" id="hs-titulo">—</div>
+          <div class="form-row two">
+            <div><label>Día del partido</label><input type="date" id="hs-dia"></div>
+            <div><label>Horario</label><input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="8"></div>
           </div>
+          <div class="form-row two">
+            <div class="autocomplete-wrap"><label>Árbitro principal</label><input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-arbitro"></div></div>
+            <div class="autocomplete-wrap"><label>Juez de línea 1</label><input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez1"></div></div>
+            <div class="autocomplete-wrap"><label>Juez de línea 2</label><input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez2"></div></div>
+            <div class="autocomplete-wrap"><label>Cuarto árbitro</label><input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-cuarto"></div></div>
+          </div>
+          <div><label>Link de transmisión</label><input type="text" id="hs-stream" placeholder="https://youtube.com/live/..."></div>
+          <div style="text-align:right;margin-top:.5rem;"><button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button></div>
+        </div>
+        <div id="hs-preview" style="display:none;">
+          <p style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">Vista previa:</p>
+          <a id="hs-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:.4rem .75rem;text-decoration:none;color:#e8453a;font-size:12px;font-weight:600;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+            Ver en vivo
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- ===================== ESCUDOS ===================== -->
+<!-- ===================== ESCUDOS ===================== -->
     <div class="panel" id="panel-escudos">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Escudos de clubes</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente).</p>
@@ -1950,32 +1937,112 @@ const HORARIOS={};
 function hsActualizar(){
   const zona = document.getElementById("hs-zona").value;
   const fecha = document.getElementById("hs-fecha").value;
-  const sel = document.getElementById("hs-partido");
   const grid = document.getElementById("hs-partidos-grid");
-  sel.innerHTML = '<option value="">—</option>';
+  const bulkForm = document.getElementById("hs-bulk-form");
+  const bulkLista = document.getElementById("hs-bulk-lista");
   if(grid) grid.innerHTML = "";
-  document.getElementById("hs-form").style.display = "none";
+  if(bulkForm) bulkForm.style.display = "none";
   if(!zona || !fecha) return;
+
   const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
-  ps.forEach((p,i)=>{
-    const o=document.createElement("option");
-    o.value=i; o.textContent=p.local+" vs "+p.visitante;
-    sel.appendChild(o);
-    if(!grid) return;
-    const estado = p.hora ? `${p.dia||""} ${p.hora}`.trim() : "Sin programar";
-    const escL = escudoData[p.local]?`<img src="${escudoData[p.local]}" style="width:18px;height:18px;object-fit:contain;">` : "";
-    const escV = escudoData[p.visitante]?`<img src="${escudoData[p.visitante]}" style="width:18px;height:18px;object-fit:contain;">` : "";
-    const card = document.createElement("div");
-    card.className = "partido-card";
-    card.innerHTML = `<div class="pc-teams">${escL}<span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span>${escV}</div><div class="pc-estado">${estado}</div>`;
-    card.onclick = ()=>{
-      document.querySelectorAll("#hs-partidos-grid .partido-card").forEach(c=>c.classList.remove("selected"));
-      card.classList.add("selected");
-      sel.value = i;
-      hsMostrar();
-    };
-    grid.appendChild(card);
-  });
+  if(!ps.length) return;
+
+  // Show bulk form with all matches
+  if(bulkForm) bulkForm.style.display = "";
+  if(!bulkLista) return;
+
+  bulkLista.innerHTML = ps.map((p,i) => {
+    const infoLocal = EQUIPOS_INFO[p.local] || {};
+    const estadioDefault = p.estadio || infoLocal.estadio_nombre || "";
+    const arb = p.arbitro||"", j1=p.juez1||"", j2=p.juez2||"", c4=p.cuarto_arbitro||"";
+    const escL = escudoData[p.local]?`<img src="${escudoData[p.local]}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;">` : "";
+    const escV = escudoData[p.visitante]?`<img src="${escudoData[p.visitante]}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;">` : "";
+    return `<div class="card" style="margin-bottom:.75rem;" data-idx="${i}" id="hs-bulk-${i}">
+      <div class="card-hdr" style="font-size:13px;font-weight:600;">
+        ${escL} ${p.local} <span style="color:var(--muted);margin:0 .35rem;">vs</span> ${escV} ${p.visitante}
+      </div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+        <div><label>Día</label><input type="date" id="hs-dia-${i}" value="${p.dia||""}" oninput="marcarModificado(${i})"></div>
+        <div><label>Hora</label><input type="text" id="hs-hora-${i}" value="${p.hora||""}" placeholder="ej: 15:30" maxlength="8" oninput="marcarModificado(${i})"></div>
+        <div class="autocomplete-wrap"><label>Estadio</label>
+          <input type="text" id="hs-estadio-${i}" value="${estadioDefault}" placeholder="Estadio" data-default="${estadioDefault}" oninput="acInput(this,'estadios','hs-estadio-${i}');marcarModificado(${i})" autocomplete="off">
+          <div class="autocomplete-list" id="ac-hs-estadio-${i}"></div>
+        </div>
+        <div><label>Stream</label><input type="text" id="hs-stream-${i}" value="${p.stream_url||""}" placeholder="https://..." oninput="marcarModificado(${i})"></div>
+        <div class="autocomplete-wrap"><label>Árbitro principal</label>
+          <input type="text" id="hs-arb-${i}" value="${arb}" placeholder="Árbitro" oninput="acInput(this,'arbitros','hs-arb-${i}');marcarModificado(${i})" autocomplete="off">
+          <div class="autocomplete-list" id="ac-hs-arb-${i}"></div>
+        </div>
+        <div class="autocomplete-wrap"><label>Juez 1</label>
+          <input type="text" id="hs-j1-${i}" value="${j1}" placeholder="Juez 1" oninput="acInput(this,'arbitros','hs-j1-${i}');marcarModificado(${i})" autocomplete="off">
+          <div class="autocomplete-list" id="ac-hs-j1-${i}"></div>
+        </div>
+        <div class="autocomplete-wrap"><label>Juez 2</label>
+          <input type="text" id="hs-j2-${i}" value="${j2}" placeholder="Juez 2" oninput="acInput(this,'arbitros','hs-j2-${i}');marcarModificado(${i})" autocomplete="off">
+          <div class="autocomplete-list" id="ac-hs-j2-${i}"></div>
+        </div>
+        <div class="autocomplete-wrap"><label>Cuarto árbitro</label>
+          <input type="text" id="hs-c4-${i}" value="${c4}" placeholder="Cuarto árbitro" oninput="acInput(this,'arbitros','hs-c4-${i}');marcarModificado(${i})" autocomplete="off">
+          <div class="autocomplete-list" id="ac-hs-c4-${i}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Track modifications
+  window._hsModificados = new Set();
+}
+
+const _hsModificados = new Set();
+function marcarModificado(idx){ _hsModificados.add(idx); }
+
+async function hsGuardarTodo(){
+  const zona = document.getElementById("hs-zona").value;
+  const fecha = document.getElementById("hs-fecha").value;
+  if(!zona||!fecha){ alert("Seleccioná zona y fecha."); return; }
+  const ps = (FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
+  if(!_hsModificados.size){ alert("No hay cambios para guardar."); return; }
+
+  let saved = 0;
+  for(const i of _hsModificados){
+    const p = ps[i];
+    if(!p) continue;
+    const dia = document.getElementById(`hs-dia-${i}`)?.value||null;
+    const hora = document.getElementById(`hs-hora-${i}`)?.value||null;
+    const estadio = document.getElementById(`hs-estadio-${i}`)?.value||null;
+    const stream = document.getElementById(`hs-stream-${i}`)?.value||null;
+    const arbitro = document.getElementById(`hs-arb-${i}`)?.value||null;
+    const juez1 = document.getElementById(`hs-j1-${i}`)?.value||null;
+    const juez2 = document.getElementById(`hs-j2-${i}`)?.value||null;
+    const cuarto = document.getElementById(`hs-c4-${i}`)?.value||null;
+
+    // Don't save estadio if it's just the default and wasn't truly edited
+    const estadioInput = document.getElementById(`hs-estadio-${i}`);
+    const estadioVal = (estadioInput?.value||"") !== (estadioInput?.dataset?.default||"_x_") ? estadio : null;
+
+    const fixtureId = await buscarFixtureId(zona, fecha, p.local, p.visitante);
+    if(!fixtureId) continue;
+
+    const {error} = await sb.from("fixture").update({
+      dia, hora, stream_url:stream, estadio:estadioVal,
+      arbitro, juez1, juez2, cuarto_arbitro:cuarto,
+      estado:"programado"
+    }).eq("id", fixtureId);
+
+    if(!error){
+      saved++;
+      await upsertABMSiNuevo("arbitros", arbitro);
+      await upsertABMSiNuevo("arbitros", juez1);
+      await upsertABMSiNuevo("arbitros", juez2);
+      await upsertABMSiNuevo("arbitros", cuarto);
+      if(estadioVal) await upsertABMSiNuevo("estadios", estadioVal);
+    }
+  }
+
+  _hsModificados.clear();
+  alert(`✓ ${saved} partido${saved!==1?"s":""} guardado${saved!==1?"s":""}.`);
+  await cargarFixture();
+  hsActualizar();
 }
 
 function hsMostrar(){
