@@ -832,11 +832,13 @@ async function verFicha(key, tienePlanilla){
           <!-- Fila goles: mismo grid -->
           ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;">
             <div style="text-align:right;padding-right:12px;">
-              <div style="display:inline-block;text-align:left;min-width:180px;">
+              <div style="display:inline-flex;flex-direction:column;align-items:flex-start;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
                   const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
-                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="width:36px;flex-shrink:0;"></span>
+                    <span style="width:6px;flex-shrink:0;"></span>
                     <span style="font-size:13px;">${g.icon}</span>
                     <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
                     <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
