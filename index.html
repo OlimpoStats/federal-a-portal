@@ -607,31 +607,28 @@ async function verFicha(key, tienePlanilla){
         const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
         const esCapitan = pl.es_capitan;
         const chips = evs.map(ev => {
+          const min = String(ev.minuto||"");
           if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
             const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
-            return `<span style="display:inline-flex;align-items:center;gap:3px;">${icon}<span style="color:var(--accent);font-size:11px;">${ev.minuto}'</span></span>`;
+            return `<span style="display:inline-flex;align-items:center;gap:3px;">${icon}<span style="color:var(--accent);font-size:11px;">${min}'</span></span>`;
           }
-          if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;"></span><span style="font-size:11px;color:var(--muted);">${ev.minuto}'</span></span>`;
-          if(ev.tipo==="roja") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;"></span><span style="font-size:11px;color:var(--muted);">${ev.minuto}'</span></span>`;
-          if(ev.tipo==="cambio_entra"){
-            const saleNum = ev.extra;
-            const salePl = todosJugadores.find(j=>String(j.numero_camiseta)===String(saleNum));
-            const saleNombre = salePl ? (salePl.jugadores?.nombre_display||salePl.jugadores?.nombre||"").split(" ").pop() : "";
-            return `<span style="color:#4caf50;font-size:11px;">↑${ev.minuto}'${saleNombre?" "+saleNombre:""}</span>`;
-          }
-          if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;">↓${ev.minuto}'</span>`;
+          if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;"></span><span style="font-size:11px;color:#ddd;">${min}'</span></span>`;
+          if(ev.tipo==="roja") return `<span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;"></span><span style="font-size:11px;color:#ddd;">${min}'</span></span>`;
+          if(ev.tipo==="doble_amarilla") return `<span style="display:inline-flex;align-items:center;gap:2px;"><span style="display:inline-block;width:9px;height:12px;background:#e8c44a;border-radius:1px;"></span><span style="display:inline-block;width:9px;height:12px;background:#e57373;border-radius:1px;margin-left:-4px;"></span><span style="font-size:11px;color:#ddd;">${min}'</span></span>`;
+          if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:11px;">↑${min}'</span>`;
+          if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;">↓${min}'</span>`;
           if(ev.tipo==="asistencia") return `<span style="font-size:12px;">👟</span>`;
           return "";
         }).join("  ");
 
         const nombreSize = esTitular ? "15px" : "13px";
-        return `<div style="display:flex;align-items:center;gap:.6rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+        return `<div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);min-height:32px;">
           <span style="font-size:11px;color:var(--muted);width:18px;text-align:right;flex-shrink:0;">${pl.numero_camiseta||""}</span>
           <span style="font-size:${nombreSize};flex:1;${esCapitan?"font-weight:600;":""}">
             ${esCapitan?'<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 3px;margin-right:3px;vertical-align:middle;">CP</span>':""}
             ${nombre}
           </span>
-          <span style="display:flex;align-items:center;gap:6px;">${chips}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;">${chips}</span>
         </div>`;
       };
 
@@ -684,7 +681,7 @@ async function verFicha(key, tienePlanilla){
       return `
         <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">👕 TITULARES</div>
         ${titulares.map(j=>renderJug(j,true)).join("")}
-        ${dtNombre?`<div style="font-size:12px;color:var(--muted);padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">👔 <span style="color:var(--text);">${dtNombre}</span></div>`:""}
+        ${dtNombre?`<div style="font-size:15px;color:#ccc;padding:.6rem 0 .4rem;border-bottom:1px solid rgba(255,255,255,0.04);margin-top:.25rem;">👔 ${dtNombre}</div>`:""}
         ${suplentes.length?`<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin:.65rem 0 .35rem;">SUPLENTES</div>${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
         ${cambiosSec}
         ${tarjetasSec}
@@ -727,35 +724,37 @@ async function verFicha(key, tienePlanilla){
     const golesLocal = recogerGoles(localPlanilla);
     const golesVisit = recogerGoles(visitPlanilla);
 
-    const renderGoles = (goles) => goles.map(g=>
-      `<div style="font-size:12px;margin:.2rem 0;">
-        ${g.icon} <span style="color:#f0f0f0;">${g.nombre}</span> <span style="color:var(--accent);">${g.minuto}'</span>
+    const renderGoles = (goles, align="left") => goles.map(g=>{
+      const minStr = String(g.minuto).includes("+") ? g.minuto+"'" : g.minuto+"'";
+      return `<div style="font-size:12px;margin:.25rem 0;text-align:${align};">
+        ${g.icon} <strong style="color:#f0f0f0;">${g.nombre}</strong> <span style="color:var(--accent);">${minStr}</span>
         ${g.asist?`<span style="color:var(--muted);font-size:11px;"> (${g.asist})</span>`:""}
-      </div>`
-    ).join("");
+      </div>`;
+    }).join("");
 
     const diaStr = partido.dia ? new Date(partido.dia+"T12:00:00").toLocaleDateString("es-AR",{day:"numeric",month:"long"}) : "";
 
     fichaCont.innerHTML = `
-      <div style="text-align:center;margin-bottom:1rem;">
-        <div style="font-size:12px;color:var(--muted);">${partido.zona} — Fecha ${partido.fecha}${diaStr?" · "+diaStr:""}${partido.hora?" · "+partido.hora:""}</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:.75rem;margin:.75rem 0;">
+      <div style="text-align:center;margin-bottom:1.25rem;">
+        <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;">${partido.zona} — Fecha ${partido.fecha}</div>
+        ${diaStr||partido.hora?`<div style="font-size:13px;color:var(--muted);margin-top:.2rem;">${diaStr}${diaStr&&partido.hora?" · ":""}${partido.hora||""}</div>`:""}
+        <div style="display:flex;align-items:flex-start;justify-content:center;gap:.75rem;margin:.85rem 0;">
           <div style="flex:1;text-align:right;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">${partido.equipo_local_nombre}</div>
-            <div style="text-align:right;">${renderGoles(golesLocal)}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</div>
+            <div style="margin-top:.35rem;">${renderGoles(golesLocal, "right")}</div>
           </div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:700;color:var(--accent);flex-shrink:0;">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);flex-shrink:0;line-height:1;padding-top:.1rem;">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
           <div style="flex:1;text-align:left;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">${partido.equipo_visitante_nombre}</div>
-            <div>${renderGoles(golesVisit)}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</div>
+            <div style="margin-top:.35rem;">${renderGoles(golesVisit, "left")}</div>
           </div>
         </div>
-        ${partido.estadio?`<div style="font-size:12px;color:var(--muted);">🏟️ ${partido.estadio}</div>`:""}
-        ${partido.arbitro?`<div style="font-size:12px;color:var(--muted);">🧑‍⚖️ ${partido.arbitro}${partido.juez1?" · "+partido.juez1:""}${partido.juez2?" · "+partido.juez2:""}${partido.cuarto_arbitro?" · "+partido.cuarto_arbitro:""}</div>`:""}
+        ${partido.estadio?`<div style="font-size:13px;color:#ccc;margin-bottom:.3rem;">🏟️ <strong>${partido.estadio}</strong></div>`:""}
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div>${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
-        <div>${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+        <div style="display:flex;flex-direction:column;">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
+        <div style="display:flex;flex-direction:column;">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
       </div>`;
 
   } catch(e){
