@@ -811,47 +811,52 @@ async function verFicha(key, tienePlanilla){
             <col style="width:110px;">
             <col>
           </colgroup>
+          <!-- Fila 1: escudo+nombre | marcador | nombre+escudo -->
           <tr>
-            <td style="text-align:right;vertical-align:top;padding-right:10px;">
-              <div style="display:inline-block;text-align:left;">
-                <div style="display:flex;align-items:center;gap:6px;justify-content:flex-start;margin-bottom:2px;">
-                  ${escLocal}
-                  <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</span>
-                </div>
-                ${golesLocal.map(g=>{
-                  const min=String(g.minuto||"");
-                  const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
-                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
-                    <span style="font-size:13px;">${g.icon}</span>
-                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                    ${asist}
-                  </div>`;
-                }).join("")}
+            <td style="text-align:right;vertical-align:middle;padding-right:10px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                ${escLocal}
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</span>
               </div>
             </td>
             <td style="text-align:center;vertical-align:middle;">
               <span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span>
             </td>
-            <td style="text-align:left;vertical-align:top;padding-left:10px;">
-              <div style="display:inline-block;text-align:left;">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-                  <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</span>
-                  ${escVisit}
-                </div>
-                ${golesVisit.map(g=>{
-                  const min=String(g.minuto||"");
-                  const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
-                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
-                    <span style="font-size:13px;">${g.icon}</span>
-                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                    ${asist}
-                  </div>`;
-                }).join("")}
+            <td style="text-align:left;vertical-align:middle;padding-left:10px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</span>
+                ${escVisit}
               </div>
             </td>
           </tr>
+          <!-- Fila 2: goles (fila separada, marcador vacío) -->
+          ${(golesLocal.length||golesVisit.length)?`<tr>
+            <td style="text-align:right;vertical-align:top;padding-right:10px;">
+              ${golesLocal.map(g=>{
+                const min=String(g.minuto||"");
+                const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;padding-left:42px;">
+                  <span style="font-size:13px;">${g.icon}</span>
+                  <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                  <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                  ${asist}
+                </div>`;
+              }).join("")}
+            </td>
+            <td></td>
+            <td style="text-align:left;vertical-align:top;padding-left:10px;">
+              ${golesVisit.map(g=>{
+                const min=String(g.minuto||"");
+                const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                  <span style="font-size:13px;">${g.icon}</span>
+                  <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                  <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                  ${asist}
+                </div>`;
+              }).join("")}
+            </td>
+          </tr>`:""}
         </table>
 
         <div style="margin-top:.5rem;">
