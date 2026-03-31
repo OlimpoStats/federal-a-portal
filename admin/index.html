@@ -791,6 +791,16 @@ async function editarPlanillaExistente(){
   setStep(3);
 }
 
+function setStep(n){
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById("step"+i);
+    if(!el) return;
+    el.classList.remove("active-step","done");
+    if(i<n) el.classList.add("done");
+    else if(i===n) el.classList.add("active-step");
+  });
+}
+
 function resetTodo(){
   imgLocalB64=null;
   imgVisitB64=null;
@@ -876,38 +886,43 @@ async function procesarImagenes(){
 
   const prompt=`Sos un extractor de datos de planillas oficiales del torneo Federal A de fútbol argentino.
 
-La imagen tiene una tabla con estas columnas, de izquierda a derecha:
+La imagen muestra una tabla de alineación con estas columnas de izquierda a derecha:
 - "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
 - "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
-- Badge de color (opcional): naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
-- "Jugador": nombre en formato "APELLIDO, NOMBRE1 NOMBRE2". Convertí a "Nombre1 Apellido" (solo primer nombre). Ej: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo".
-- Columna de eventos (derecha del nombre): íconos con minuto y apóstrofe.
+- Badge opcional: naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
+- "Jugador": nombre en formato "APELLIDO, NOMBRE". Convertí a "Nombre Apellido". Ej: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo".
+- Columna de eventos (derecha del nombre).
 
-ÍCONOS DE EVENTOS - LEELOS CON EXTREMA ATENCIÓN:
+ÍCONOS DE EVENTOS — IDENTIFICALOS CON PRECISIÓN:
 
-1. RUEDA DENTADA / ENGRANAJE (ícono circular con dientes) seguido de minuto → tipo "gol". Este es el ícono de GOL en esta planilla. Ej: rueda⚙ 67' = gol en el minuto 67.
+1. RUEDA DENTADA o ENGRANAJE (ícono circular con dientes, similar a ⚙) seguido de minuto y apóstrofe → tipo "gol". ESTE ES EL ÍCONO DE GOL en esta planilla. Ej: ⚙ 67' = gol en el minuto 67. NUNCA lo interpretes como cambio.
 
-2. RECTÁNGULO AMARILLO VERTICAL seguido de minuto → tipo "amarilla". Ej: 🟨 83' = amarilla en el 83.
+2. RECTÁNGULO AMARILLO VERTICAL (más alto que ancho) seguido de minuto → tipo "amarilla".
 
 3. RECTÁNGULO ROJO VERTICAL seguido de minuto → tipo "roja".
 
-4. FLECHAS CIRCULARES VERDES (ícono de refresh/recarga en color verde) seguido de minuto y número entre paréntesis → tipo "cambio_entra". SOLO aparece en SUPLENTES (filas 12-20). El número entre paréntesis es el número de camiseta del titular que SALE. Ej: flechas 63'(5) = entra en el 63 reemplazando al jugador #5.
+4. DOS RECTÁNGULOS superpuestos (amarillo y rojo) → tipo "doble_amarilla".
+
+5. FLECHAS CIRCULARES VERDES (ícono de recarga/refresh en color verde, similar a 🔄) seguido de minuto y número entre paréntesis → tipo "cambio_entra". SOLO aparece en filas de SUPLENTES (filas 12-20). El número entre paréntesis es el número de camiseta del titular que SALE. Ej: 🔄 63'(5) = entra en el 63 reemplazando al jugador que porta el número 5.
 
 REGLAS CRÍTICAS:
-- La RUEDA DENTADA = GOL siempre. NUNCA es un cambio.
-- Las FLECHAS VERDES = cambio_entra siempre. SOLO en suplentes.
-- NO existe "cambio_sale" en esta planilla. No lo uses nunca.
-- Un titular puede tener gol + amarilla en distintos minutos: son dos eventos separados.
-- Contá los goles (tipo "gol") para "goles_equipo".
+- La RUEDA DENTADA = GOL siempre. Es el único ícono de gol. NUNCA lo llames cambio_sale.
+- Las FLECHAS VERDES = cambio_entra siempre. SOLO en suplentes (filas 12-20).
+- NO existe el evento "cambio_sale" en la planilla. NUNCA uses ese tipo.
+- Un jugador puede tener múltiples eventos: ej. gol en el 67' Y amarilla en el 83' son DOS eventos separados.
+- Contá los eventos de tipo "gol" y "gol_penal" para calcular "goles_equipo".
+- Los "gol_contra" NO suman a goles_equipo.
 
-Respondé ÚNICAMENTE con JSON válido, sin markdown:
+Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto extra:
 {
   "goles_equipo": 2,
   "jugadores": [
     {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "Juan Lungarzo", "titular": true, "eventos": []},
     {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
     {"numero": 11, "id": 3185627, "nota": "", "nombre": "Diego Ramirez", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
-    {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]}
+    {"numero": 5, "id": 3807010, "nota": "", "nombre": "Agustin Stancato", "titular": true, "eventos": [{"tipo":"amarilla","minuto":5,"extra":""}]},
+    {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]},
+    {"numero": 17, "id": 4794394, "nota": "", "nombre": "Santiago Llanos", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":71,"extra":"8"}]}
   ]
 }`;
 
@@ -1105,6 +1120,7 @@ function abrirAgregarEvento(containerId, jIdx){
     {v:"roja",l:"🟥 Roja"},
     {v:"doble_amarilla",l:"🟨🟥 Doble amarilla"},
     {v:"cambio_entra",l:"↑ Entra (cambio)"},
+    {v:"cambio_sale",l:"↓ Sale (cambio)"},
     {v:"asistencia",l:"👟 Asistencia"},
   ];
   const tipoOpts = tipos.map(t=>`<option value="${t.v}">${t.l}</option>`).join("");
