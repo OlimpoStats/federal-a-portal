@@ -1073,16 +1073,23 @@ async function callClaude(prompt, imageB64){
 }
 
 function formatearNombre(raw){
-  // Convierte "APELLIDO, NOMBRE1 NOMBRE2" → "Nombre1 Apellido"
-  // También maneja si ya viene en formato correcto
   if(!raw) return "";
   const s = raw.trim();
+  // Si tiene coma: "APELLIDO, NOMBRE1 NOMBRE2" → "Nombre1 Apellido"
   if(s.includes(",")){
-    const [apellido, nombres] = s.split(",").map(x=>x.trim());
-    const primerNombre = nombres.split(" ")[0];
+    const [apellido, nombres] = s.split(",").map(x => x.trim());
+    const primerNombre = nombres.split(/\s+/)[0];
     const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
     return cap(primerNombre) + " " + cap(apellido);
   }
+  
+  // Sin coma: tomar primer y último token → "Nombre Apellido"
+  const partes = s.split(/\s+/).filter(Boolean);
+  if(partes.length <= 2) return partes.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
+  // Más de 2 palabras: primera y última
+  const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+  return cap(partes[0]) + " " + cap(partes[partes.length - 1]);
+}
   // Ya viene en formato normal, capitalizar cada palabra
   return s.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
 }
