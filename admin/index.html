@@ -806,6 +806,16 @@ function resetTodo(){
   irPaso1();
 }
 
+function setStep(n){
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById("step"+i);
+    if(!el) return;
+    el.classList.remove("active-step","done");
+    if(i<n) el.classList.add("done");
+    else if(i===n) el.classList.add("active-step");
+  });
+}
+  
 // ── UPLOAD ──
 function dragOver(e,id){e.preventDefault();document.getElementById(id).classList.add("drag");}
 function dragLeave(id){document.getElementById(id).classList.remove("drag");}
