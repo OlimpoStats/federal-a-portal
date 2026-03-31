@@ -610,8 +610,8 @@ async function verFicha(key, tienePlanilla){
         if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
         if(ev.tipo==="roja") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
         if(ev.tipo==="doble_amarilla") return `<span style="display:inline-flex;align-items:center;gap:1px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;margin-left:-3px;"></span>${minSpan}</span>`;
-        if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:11px;font-family:'Barlow Condensed';font-weight:600;white-space:nowrap;">↑${min}'</span>`;
-        if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;font-family:'Barlow Condensed';font-weight:600;white-space:nowrap;">↓${min}'</span>`;
+        if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↑${min}'</span>`;
+        if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↓${min}'</span>`;
         if(ev.tipo==="asistencia") return `<span style="font-size:12px;">👟</span>`;
         return "";
       };
@@ -627,8 +627,8 @@ async function verFicha(key, tienePlanilla){
         const nombreSize = esTitular ? "14px" : "13px";
         const capStr = esCapitan ? ` <span style="color:var(--accent);font-size:11px;font-weight:700;">(C)</span>` : "";
         return `<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);min-height:30px;box-sizing:border-box;">
-          <span style="font-size:11px;color:var(--muted);width:18px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';">${pl.numero_camiseta||""}</span>
-          <span style="font-size:${nombreSize};flex:1;line-height:1.2;">${nombre}${capStr}</span>
+          <span style="font-size:13px;color:#bbb;width:20px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';font-weight:600;">${pl.numero_camiseta||""}</span>
+          <span style="font-size:${nombreSize};flex:1;line-height:1.3;font-family:'Barlow',sans-serif;">${nombre}${capStr}</span>
           <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${chips.join("")}</span>
         </div>`;
       };
@@ -668,7 +668,7 @@ async function verFicha(key, tienePlanilla){
         <div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
           ${secHeader("CAMBIOS")}
           ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.35rem;min-height:24px;">
-            <span style="color:var(--accent);font-family:'Barlow Condensed';font-weight:700;font-size:13px;flex-shrink:0;">${c.minuto}'</span>
+            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;flex-shrink:0;">${c.minuto}'</span>
             <span style="color:#4caf50;">${c.entra}</span>
             <span style="color:var(--muted);font-size:13px;">⇄</span>
             <span style="color:#e57373;">${c.sale}</span>
@@ -681,7 +681,7 @@ async function verFicha(key, tienePlanilla){
           ${tarjetas.map(t=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
             ${t.icon}
             <span>${t.nombre}</span>
-            <span style="color:var(--accent);font-family:'Barlow Condensed';font-weight:700;font-size:13px;">${t.minuto}'</span>
+            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${t.minuto}'</span>
           </div>`).join("")}
         </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
 
@@ -736,24 +736,25 @@ async function verFicha(key, tienePlanilla){
     const escLocal = ESCUDOS[partido.equipo_local_nombre] ? `<img src="${ESCUDOS[partido.equipo_local_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
     const escVisit = ESCUDOS[partido.equipo_visitante_nombre] ? `<img src="${ESCUDOS[partido.equipo_visitante_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
 
-    const diaStr = partido.dia ? new Date(partido.dia+"T12:00:00").toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"2-digit"}) : "";
-    const estadioLine = [partido.estadio, diaStr, partido.hora].filter(Boolean).join(" — ");
+    const diaStr = partido.dia ? new Date(partido.dia+"T12:00:00").toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"2-digit"}) : "";
+    const diaHoraStr = [diaStr, partido.hora].filter(Boolean).join(" — ");
+    const estadioLine = [partido.estadio, diaHoraStr].filter(Boolean).join(" — ");
 
     fichaCont.innerHTML = `
       <div style="text-align:center;margin-bottom:1.25rem;">
         <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;margin-bottom:.5rem;">${partido.zona} — Fecha ${partido.fecha}</div>
-        <div style="display:flex;align-items:flex-start;justify-content:center;gap:.75rem;margin-bottom:.75rem;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:.75rem;">
           <div style="flex:1;text-align:right;">
             <div style="display:flex;align-items:center;justify-content:flex-end;gap:.5rem;">
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</div>
               ${escLocal}
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</div>
             </div>
           </div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:700;color:var(--accent);flex-shrink:0;line-height:1;padding-top:.1rem;">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:700;color:var(--accent);flex-shrink:0;line-height:1;">${partido.goles_local??0} — ${partido.goles_visitante??0}</div>
           <div style="flex:1;text-align:left;">
             <div style="display:flex;align-items:center;justify-content:flex-start;gap:.5rem;">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</div>
               ${escVisit}
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</div>
             </div>
           </div>
         </div>
