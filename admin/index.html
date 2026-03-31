@@ -857,6 +857,15 @@ function setStep(n){
   });
 }
 
+function showFlash(msg, type){
+  const f = document.getElementById("flash-msg");
+  if(!f) return;
+  f.textContent = msg;
+  f.className = "flash " + type;
+  setTimeout(()=>{ f.className = "flash"; }, 5000);
+}
+
+  
 function resetTodo(){
   imgLocalB64=null;
   imgVisitB64=null;
