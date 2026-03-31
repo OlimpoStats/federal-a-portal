@@ -805,33 +805,29 @@ async function verFicha(key, tienePlanilla){
       <div style="text-align:center;margin-bottom:1.25rem;">
         <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;margin-bottom:.5rem;">${partido.zona} — Fecha ${partido.fecha}</div>
 
-        <table style="width:100%;border-collapse:collapse;margin-bottom:.5rem;">
-          <colgroup>
-            <col>
-            <col style="width:110px;">
-            <col>
-          </colgroup>
-          <!-- Fila 1: escudo+nombre | marcador | nombre+escudo -->
-          <tr>
-            <td style="text-align:right;vertical-align:middle;padding-right:10px;">
+        <div style="position:relative;margin-bottom:.4rem;">
+          <!-- Marcador absolutamente centrado -->
+          <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);text-align:center;pointer-events:none;">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;white-space:nowrap;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span>
+          </div>
+          <!-- Nombres en flex, con padding para no solapar el marcador -->
+          <div style="display:flex;align-items:center;min-height:48px;">
+            <div style="flex:1;text-align:right;padding-right:80px;">
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 ${escLocal}
                 <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</span>
               </div>
-            </td>
-            <td style="text-align:center;vertical-align:middle;">
-              <span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span>
-            </td>
-            <td style="text-align:left;vertical-align:middle;padding-left:10px;">
+            </div>
+            <div style="flex:1;text-align:left;padding-left:80px;">
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</span>
                 ${escVisit}
               </div>
-            </td>
-          </tr>
-          <!-- Fila 2: goles (fila separada, marcador vacío) -->
-          ${(golesLocal.length||golesVisit.length)?`<tr>
-            <td style="text-align:right;vertical-align:top;padding-right:10px;">
+            </div>
+          </div>
+          <!-- Goles -->
+          ${(golesLocal.length||golesVisit.length)?`<div style="display:flex;margin-top:2px;">
+            <div style="flex:1;text-align:right;padding-right:80px;">
               <div style="display:inline-block;text-align:left;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
@@ -844,9 +840,8 @@ async function verFicha(key, tienePlanilla){
                   </div>`;
                 }).join("")}
               </div>
-            </td>
-            <td></td>
-            <td style="text-align:left;vertical-align:top;padding-left:10px;">
+            </div>
+            <div style="flex:1;text-align:left;padding-left:80px;">
               ${golesVisit.map(g=>{
                 const min=String(g.minuto||"");
                 const asist=g.asist?` <span style="color:#999;font-size:11px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
@@ -857,9 +852,9 @@ async function verFicha(key, tienePlanilla){
                   ${asist}
                 </div>`;
               }).join("")}
-            </td>
-          </tr>`:""}
-        </table>
+            </div>
+          </div>`:""}
+        </div>
 
         <div style="margin-top:.5rem;">
           ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
