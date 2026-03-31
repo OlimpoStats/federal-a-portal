@@ -562,7 +562,9 @@ function renderPartidos(f){
     const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
     const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
     const fichaBtn = m.gl!==null
-      ? `<div class="ficha-btn" title="${tienePlanilla?'Ver ficha del partido':'Planilla pendiente de carga'}" onclick="verFicha('${fichaKey}',${tienePlanilla})">📄</div>`
+      ? tienePlanilla
+        ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
+        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
       : `<div style="width:32px;flex-shrink:0"></div>`;
     const zc = zonaConfig(zona);
     const zonaShort = zc.code || letraZona(zona);
@@ -644,7 +646,7 @@ async function verFicha(key, tienePlanilla){
         const min = String(ev.minuto||"");
         const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
         if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
-          const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
+          const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':ev.tipo==="gol_penal"?"🥅":"⚽";
           return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
         }
         if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
@@ -753,7 +755,7 @@ async function verFicha(key, tienePlanilla){
                 }
               });
             });
-            const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
+            const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':ev.tipo==="gol_penal"?"🥅":"⚽";
             goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, contra:ev.tipo==="gol_contra"});
           }
         });
