@@ -630,7 +630,7 @@ async function verFicha(key, tienePlanilla){
 
       const renderChip = (ev) => {
         const min = String(ev.minuto||"");
-        const minSpan = `<span style="font-size:13px;color:var(--accent);font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
+        const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
         if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
           const icon = ev.tipo==="gol_contra"?"🚫":ev.tipo==="gol_penal"?"🥅":"⚽";
           return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
@@ -761,7 +761,7 @@ async function verFicha(key, tienePlanilla){
           <td style="padding:1px 3px 1px 0;font-size:14px;width:18px;vertical-align:middle;">${g.icon}</td>
           <td style="padding:1px 2px;font-size:12px;vertical-align:middle;">
             <strong style="color:#f0f0f0;">${g.nombre}</strong>
-            <span style="color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;margin-left:3px;">${min}'</span>
+            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;margin-left:3px;">${min}'</span>
             ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:5px;">(${g.asist})</span>`:""}
           </td>
         </tr>`;
@@ -802,9 +802,19 @@ async function verFicha(key, tienePlanilla){
           </div>
         </div>
         <div style="display:flex;justify-content:center;gap:2rem;margin-bottom:.5rem;align-items:flex-start;">
-          <div style="flex:1;display:flex;justify-content:flex-end;padding-right:${escLocal?"40px":"0px"};">${renderGoles(golesLocal,"right")}</div>
+          <div style="flex:1;display:flex;justify-content:flex-end;">
+            <div style="display:flex;align-items:flex-start;gap:.5rem;">
+              <div style="text-align:right;">${renderGoles(golesLocal,"right")}</div>
+              ${escLocal?`<div style="width:36px;flex-shrink:0;"></div>`:""}
+            </div>
+          </div>
           <div style="width:80px;flex-shrink:0;"></div>
-          <div style="flex:1;padding-left:${escVisit?"40px":"0px"};">${renderGoles(golesVisit,"left")}</div>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:flex-start;gap:.5rem;">
+              ${escVisit?`<div style="width:36px;flex-shrink:0;"></div>`:""}
+              <div>${renderGoles(golesVisit,"left")}</div>
+            </div>
+          </div>
         </div>
         <div style="margin-top:.75rem;"></div>
         ${(estadioLine||diaHoraStr)?`<div style="font-size:13px;color:#ccc;margin:.35rem 0;">
