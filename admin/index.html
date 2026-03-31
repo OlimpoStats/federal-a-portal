@@ -150,6 +150,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .abm-del{background:none;border:none;color:#e57373;cursor:pointer;font-size:16px;padding:0 .25rem;}
 .abm-del:hover{color:#ff5252;}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+/* partido cards */
+.partido-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.35rem;}
+.partido-card:hover{border-color:rgba(255,255,255,0.2);}
+.partido-card.selected{border-color:var(--accent);background:rgba(232,196,74,0.07);}
+.pc-teams{display:flex;align-items:center;gap:.4rem;font-size:13px;font-weight:600;}
+.pc-local{flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pc-vs{font-size:10px;color:var(--muted);flex-shrink:0;}
+.pc-visit{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pc-estado{font-size:10px;font-weight:600;border:1px solid;border-radius:4px;padding:2px 6px;text-align:center;letter-spacing:.3px;}
+/* escudo-name ya definido arriba */
 </style>
 </head>
 <body>
@@ -174,6 +184,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-item" onclick="goPanel('abm-arbitros')"><span class="sb-icon">🧑‍⚖️</span>Árbitros</div>
     <div class="sb-item" onclick="goPanel('abm-estadios')"><span class="sb-icon">🏟️</span>Estadios</div>
     <div class="sb-item" onclick="goPanel('abm-tecnicos')"><span class="sb-icon">👔</span>Directores Técnicos</div>
+    <div class="sb-item" onclick="goPanel('abm-equipos')"><span class="sb-icon">🔗</span>Equipos / Vínculos</div>
     <div class="sb-section">Foro</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
   </div>
@@ -214,12 +225,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                   <option>16</option><option>17</option><option>18</option>
                 </select>
               </div>
-              <div><label>Partido</label>
-                <select id="sel-partido" onchange="selPartidoChanged()">
-                  <option value="">— Primero elegí zona y fecha —</option>
-                </select>
-              </div>
             </div>
+            <!-- Grid visual de partidos -->
+            <div id="partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;"></div>
+            <!-- Select oculto para compatibilidad -->
+            <select id="sel-partido" style="display:none" onchange="selPartidoChanged()">
+              <option value="">— Primero elegí zona y fecha —</option>
+            </select>
             <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
               <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
               <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
@@ -311,6 +323,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 <label>Estadio</label>
                 <input type="text" id="partido-estadio" placeholder="Nombre del estadio" oninput="acInput(this,'estadios','partido-estadio')" autocomplete="off">
                 <div class="autocomplete-list" id="ac-partido-estadio"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>DT Local</label>
+                <input type="text" id="partido-dt-local" placeholder="Director técnico local" oninput="acInput(this,'tecnicos','partido-dt-local')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-dt-local"></div>
+              </div>
+              <div class="autocomplete-wrap">
+                <label>DT Visitante</label>
+                <input type="text" id="partido-dt-visit" placeholder="Director técnico visitante" oninput="acInput(this,'tecnicos','partido-dt-visit')" autocomplete="off">
+                <div class="autocomplete-list" id="ac-partido-dt-visit"></div>
               </div>
               <div class="autocomplete-wrap">
                 <label>Árbitro principal</label>
@@ -495,6 +517,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div class="abm-list" id="tec-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
     </div>
 
+    <!-- ===================== EQUIPOS / VINCULOS ===================== -->
+    <div class="panel" id="panel-abm-equipos">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Equipos — Estadio y DT predeterminado</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Vinculá cada equipo con su estadio y DT actual. Se usa como valor por defecto al cargar planillas, sin afectar planillas ya guardadas.</p>
+      <div id="equipos-vinculos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem;"></div>
+    </div>
+
     <!-- ===================== FORO ADMIN ===================== -->
     <div class="panel" id="panel-foro-admin">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
@@ -659,24 +688,46 @@ function goPanel(id){
   }
   if(id==="escudos") renderEscudos();
   if(id==="abm-arbitros"||id==="abm-estadios"||id==="abm-tecnicos") cargarABM();
+  if(id==="abm-equipos") renderEquiposVinculos();
 }
 
 // ── PASO 1 ──
 function actualizarPartidos(){
   const zona=document.getElementById("sel-zona").value;
   const fecha=document.getElementById("sel-fecha").value;
+  // Keep hidden select in sync for obtenerPartidoSeleccionado
   const sel=document.getElementById("sel-partido");
   sel.innerHTML='<option value="">— Seleccioná —</option>';
+  const grid = document.getElementById("partidos-grid");
+  if(grid) grid.innerHTML="";
   actualizarEstadoPlanillaSeleccion();
-  if(!zona||!fecha)return;
+  if(!zona||!fecha){ return; }
   const partidos=(FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
   partidos.forEach((p,i)=>{
+    // populate hidden select
     const o=document.createElement("option");
     const tienePlanilla = p?.id ? FIXTURE_CON_PLANILLA.has(String(p.id)) : false;
-    o.value=i;o.textContent=`${p.local} vs ${p.visitante}${tienePlanilla ? " • planilla" : ""}`;
+    o.value=i; o.textContent=`${p.local} vs ${p.visitante}`;
     sel.appendChild(o);
+    // populate visual grid
+    if(grid){
+      const estado = tienePlanilla ? "✅ Con planilla" : (p.goles_local!=null ? `${p.goles_local}–${p.goles_visitante}` : (p.hora ? p.hora : "Sin programar"));
+      const color = tienePlanilla ? "#1e5c35" : (p.goles_local!=null ? "#1a3a6a" : "var(--border)");
+      const card = document.createElement("div");
+      card.className = "partido-card" + (sel.value==String(i)?" selected":"");
+      card.dataset.idx = i;
+      card.innerHTML = `
+        <div class="pc-teams"><span class="pc-local">${p.local}</span><span class="pc-vs">vs</span><span class="pc-visit">${p.visitante}</span></div>
+        <div class="pc-estado" style="border-color:${color};color:${color==="var(--border)"?"var(--muted)":color}">${estado}</div>`;
+      card.onclick = () => {
+        document.querySelectorAll(".partido-card").forEach(c=>c.classList.remove("selected"));
+        card.classList.add("selected");
+        sel.value = i;
+        selPartidoChanged();
+      };
+      grid.appendChild(card);
+    }
   });
-  selPartidoChanged();
 }
 
 function selPartidoChanged(){
@@ -743,6 +794,11 @@ function cargarDatosPartidoSeleccionadoEnUI(sel){
   document.getElementById("partido-juez1").value = p.juez1 || "";
   document.getElementById("partido-juez2").value = p.juez2 || "";
   document.getElementById("partido-cuarto").value = p.cuarto_arbitro || "";
+  // DT por defecto desde vinculación del equipo
+  const infoLocal = EQUIPOS_INFO[p.local]||{};
+  const infoVisit = EQUIPOS_INFO[p.visitante]||{};
+  document.getElementById("partido-dt-local").value = p.dt_local || infoLocal.tecnico_nombre || "";
+  document.getElementById("partido-dt-visit").value = p.dt_visitante || infoVisit.tecnico_nombre || "";
 
   if(p.goles_local!==null&&p.goles_local!==undefined){
     document.getElementById("score-local").value=p.goles_local;
@@ -886,43 +942,34 @@ async function procesarImagenes(){
 
   const prompt=`Sos un extractor de datos de planillas oficiales del torneo Federal A de fútbol argentino.
 
-La imagen muestra una tabla de alineación con estas columnas de izquierda a derecha:
-- "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
-- "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
-- Badge opcional: naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
-- "Jugador": nombre en formato "APELLIDO, NOMBRE". Convertí a "Nombre Apellido". Ej: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo".
-- Columna de eventos (derecha del nombre).
+La imagen tiene una tabla con estas columnas exactas, de izquierda a derecha:
+- "Núm." (o similar): número de orden en la lista, del 1 al 20. Los jugadores 1 a 11 son TITULARES, del 12 en adelante son SUPLENTES.
+- "Núm" (sin punto): ID numérico del jugador, siempre de 6 o 7 dígitos. Es el identificador único del jugador. Leelo con cuidado, no lo confundas con el número de orden.
+- Columna de badges de color: puede aparecer un badge naranja "AR" (arquero) o verde "CP" (capitán). Si no hay badge, la nota es vacía.
+- "Jugador": nombre en formato "APELLIDO, NOMBRE1 NOMBRE2". Convertilo a "Nombre1 Apellido" (solo primer nombre, capitalización normal). Ejemplo: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo". "FERREYRA, MARTIN IGNACIO" → "Martin Ferreyra".
+- Columna de eventos (a la derecha del nombre): puede contener uno o más íconos seguidos de minuto y apostrofe. Los íconos son:
+  * Pelota de fútbol ⚽ o ícono de gol → tipo "gol"
+  * Pelota con "P" o ícono distinto de penal → tipo "gol_penal"  
+  * Pelota con flecha o autoGol → tipo "gol_contra"
+  * Rectángulo amarillo 🟡 → tipo "amarilla"
+  * Rectángulo rojo 🔴 → tipo "roja"
+  * Dos rectángulos (amarillo+rojo) → tipo "doble_amarilla"
+  * Ícono de engranaje ⚙️ o flecha de salida → tipo "cambio_sale" con el minuto indicado
+  * Ícono de flechas circulares 🔄 o flecha de entrada → tipo "cambio_entra". El número entre paréntesis después del minuto es el número de camiseta del jugador que SALE. Ej: "63'(5)" significa entra en el minuto 63 y reemplaza al #5.
 
-ÍCONOS DE EVENTOS — IDENTIFICALOS CON PRECISIÓN:
-
-1. RUEDA DENTADA o ENGRANAJE (ícono circular con dientes, similar a ⚙) seguido de minuto y apóstrofe → tipo "gol". ESTE ES EL ÍCONO DE GOL en esta planilla. Ej: ⚙ 67' = gol en el minuto 67. NUNCA lo interpretes como cambio.
-
-2. RECTÁNGULO AMARILLO VERTICAL (más alto que ancho) seguido de minuto → tipo "amarilla".
-
-3. RECTÁNGULO ROJO VERTICAL seguido de minuto → tipo "roja".
-
-4. DOS RECTÁNGULOS superpuestos (amarillo y rojo) → tipo "doble_amarilla".
-
-5. FLECHAS CIRCULARES VERDES (ícono de recarga/refresh en color verde, similar a 🔄) seguido de minuto y número entre paréntesis → tipo "cambio_entra". SOLO aparece en filas de SUPLENTES (filas 12-20). El número entre paréntesis es el número de camiseta del titular que SALE. Ej: 🔄 63'(5) = entra en el 63 reemplazando al jugador que porta el número 5.
-
-REGLAS CRÍTICAS:
-- La RUEDA DENTADA = GOL siempre. Es el único ícono de gol. NUNCA lo llames cambio_sale.
-- Las FLECHAS VERDES = cambio_entra siempre. SOLO en suplentes (filas 12-20).
-- NO existe el evento "cambio_sale" en la planilla. NUNCA uses ese tipo.
-- Un jugador puede tener múltiples eventos: ej. gol en el 67' Y amarilla en el 83' son DOS eventos separados.
-- Contá los eventos de tipo "gol" y "gol_penal" para calcular "goles_equipo".
-- Los "gol_contra" NO suman a goles_equipo.
+IMPORTANTE:
+- El campo "id" es el número de 6-7 dígitos de la segunda columna, NO el número de orden.
+- Si un jugador tiene cambio_sale, también buscá quién entra (cambio_entra) en otra fila.
+- Contá los goles (tipo "gol" y "gol_penal") para calcular "goles_equipo". NO contés gol_contra como gol propio.
+- Los goles en contra ("gol_contra") suman al rival, NO a este equipo.
 
 Respondé ÚNICAMENTE con JSON válido, sin markdown, sin texto extra:
 {
   "goles_equipo": 2,
   "jugadores": [
     {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "Juan Lungarzo", "titular": true, "eventos": []},
-    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
-    {"numero": 11, "id": 3185627, "nota": "", "nombre": "Diego Ramirez", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
-    {"numero": 5, "id": 3807010, "nota": "", "nombre": "Agustin Stancato", "titular": true, "eventos": [{"tipo":"amarilla","minuto":5,"extra":""}]},
-    {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]},
-    {"numero": 17, "id": 4794394, "nota": "", "nombre": "Santiago Llanos", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":71,"extra":"8"}]}
+    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"cambio_sale","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
+    {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]}
   ]
 }`;
 
@@ -1008,6 +1055,21 @@ async function callClaude(prompt, imageB64){
   }
 }
 
+function formatearNombre(raw){
+  // Convierte "APELLIDO, NOMBRE1 NOMBRE2" → "Nombre1 Apellido"
+  // También maneja si ya viene en formato correcto
+  if(!raw) return "";
+  const s = raw.trim();
+  if(s.includes(",")){
+    const [apellido, nombres] = s.split(",").map(x=>x.trim());
+    const primerNombre = nombres.split(" ")[0];
+    const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+    return cap(primerNombre) + " " + cap(apellido);
+  }
+  // Ya viene en formato normal, capitalizar cada palabra
+  return s.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+}
+
 function normalizarPlanilla(planilla, equipo){
   if(!planilla || typeof planilla !== "object"){
     throw new Error(`La IA devolvió un formato inválido para ${equipo}.`);
@@ -1018,7 +1080,7 @@ function normalizarPlanilla(planilla, equipo){
     id: j?.id ?? j?.id_federal ?? "",
     id_federal: j?.id_federal ?? j?.id ?? "",
     nota: j?.nota ?? "",
-    nombre: j?.nombre ?? "",
+    nombre: formatearNombre(j?.nombre ?? ""),
     titular: !!j?.titular,
     eventos: Array.isArray(j?.eventos) ? j.eventos : [],
   }));
@@ -1083,20 +1145,26 @@ function renderPlanilla(containerId, jugadores){
     document.getElementById(containerId).innerHTML='<p style="color:var(--muted);font-size:13px;">No se encontraron jugadores.</p>';
     return;
   }
-  let html=`<table class="planilla">
+  let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
     <thead><tr>
-      <th>#</th><th>ID</th><th>Nombre a mostrar</th><th>Titular</th><th>Eventos</th><th style="width:80px">Agregar</th>
+      <th style="width:36px">#</th>
+      <th style="width:72px">ID</th>
+      <th>Nombre</th>
+      <th style="width:38px">Tit</th>
+      <th style="width:180px">Eventos</th>
+      <th style="width:68px"></th>
     </tr></thead><tbody>`;
   jugadores.forEach((j,i)=>{
     const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
-    html+=`<tr>
-      <td><input type="number" value="${j.numero||""}" style="width:40px;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
-      <td style="font-size:11px;color:var(--muted);font-family:monospace">${j.id||"—"}</td>
-      <td><input type="text" value="${j.nombre||""}" style="min-width:160px;font-weight:500;"
+    const trStyle = j.titular ? "" : "background:rgba(255,255,255,0.02);";
+    html+=`<tr style="${trStyle}">
+      <td><input type="number" value="${j.numero||""}" style="width:32px;padding:2px 4px;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="font-size:10px;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${j.id||"—"}</td>
+      <td><input type="text" value="${j.nombre||""}" style="width:100%;font-weight:500;font-size:12px;"
         onchange="editarNombre('${containerId}',${i},this.value)"></td>
-      <td style="text-align:center;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"Tit.":"Sup."}</td>
-      <td>${eventosHtml}</td>
-      <td><button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})">+ Evento</button></td>
+      <td style="text-align:center;font-size:11px;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
+      <td style="white-space:nowrap;overflow:hidden;">${eventosHtml}</td>
+      <td><button class="add-ev-btn" style="white-space:nowrap;" onclick="abrirAgregarEvento('${containerId}',${i})">+</button></td>
     </tr>`;
   });
   html+=`</tbody></table>`;
@@ -1421,13 +1489,19 @@ async function confirmarCarga(){
     }
 
     if (fixtureId){
+      const _dtLocal = document.getElementById("partido-dt-local")?.value || null;
+      const _dtVisit = document.getElementById("partido-dt-visit")?.value || null;
       const {error:fxErr} = await sb.from("fixture").update({
         goles_local: glLocal,
         goles_visitante: glVisit,
         estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
+        dt_local: _dtLocal, dt_visitante: _dtVisit,
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
+
+    const dtLocal = document.getElementById("partido-dt-local")?.value || null;
+    const dtVisit = document.getElementById("partido-dt-visit")?.value || null;
 
     const partidoPayload = {
       zona: partidoActual.zona,
@@ -1438,6 +1512,7 @@ async function confirmarCarga(){
       goles_visitante: glVisit,
       jugado: true,
       estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
+      dt_local: dtLocal, dt_visitante: dtVisit,
       fixture_id: fixtureId,
     };
 
@@ -1820,6 +1895,49 @@ async function upsertABMSiNuevo(tabla, nombre){
   }
 }
   
+// ── EQUIPOS / VINCULOS ──
+async function renderEquiposVinculos(){
+  const grid = document.getElementById("equipos-vinculos-grid");
+  if(!grid) return;
+  await cargarEquiposInfo();
+  await cargarABM();
+  grid.innerHTML = ALL_TEAMS.map(t => {
+    const info = EQUIPOS_INFO[t] || {};
+    const estadioOpts = CACHE.estadios.map(e =>
+      `<option value="${e.id}" ${info.estadio_id==e.id?"selected":""}>${e.nombre}</option>`
+    ).join("");
+    const tecnicoOpts = CACHE.tecnicos.map(e =>
+      `<option value="${e.id}" ${info.tecnico_id==e.id?"selected":""}>${e.nombre}</option>`
+    ).join("");
+    return `<div class="card">
+      <div class="card-hdr">${t}</div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:.5rem;">
+        <div>
+          <label>Estadio predeterminado</label>
+          <select onchange="vincularEquipo('${t.replace(/'/g,"\'")}','estadio_id',this.value)">
+            <option value="">— Sin vincular —</option>
+            ${estadioOpts}
+          </select>
+        </div>
+        <div>
+          <label>DT predeterminado</label>
+          <select onchange="vincularEquipo('${t.replace(/'/g,"\'")}','tecnico_id',this.value)">
+            <option value="">— Sin vincular —</option>
+            ${tecnicoOpts}
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function vincularEquipo(nombre, campo, valor){
+  const v = valor ? parseInt(valor) : null;
+  const {error} = await sb.from("equipos").upsert({nombre, [campo]: v},{onConflict:"nombre"});
+  if(error){ alert("Error: "+error.message); return; }
+  await cargarEquiposInfo();
+}
+
 // ── INIT ──
 cargarEscudosDesdeDB();
 cargarABM();
