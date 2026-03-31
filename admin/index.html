@@ -1316,7 +1316,7 @@ function renderEvento(e, containerId, jIdx, eIdx){
   const minStr = `${e.minuto}'`;
   let inner = "";
   if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"){
-    const icon = e.tipo==="gol_contra"?"⚽(GC)":e.tipo==="gol_penal"?"⚽(P)":"⚽";
+    const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":"⚽";
     const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":"ev-gol";
     inner=`<span class="evento-chip ${cls}">${icon} ${minStr}</span>`;
   } else if(e.tipo==="penal_atajado"){
