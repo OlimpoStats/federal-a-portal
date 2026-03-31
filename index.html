@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .fnav.dis{opacity:.2;cursor:default;pointer-events:none;}
 .fi{flex:1;text-align:center;}
 .fnum{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
-.fsub{font-size:10px;color:var(--muted);margin-top:1px;}
+.fsub{font-size:13px;color:#e0e0e0;margin-top:2px;font-weight:500;}
 .badge-j{background:#1a1a1a;color:#555;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
 .badge-p{background:#2a2510;color:var(--accent);font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
 .badge-ec{background:#0a1f0a;color:#5dba7d;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
@@ -152,8 +152,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <p class="sec">Resultados</p>
       <div class="fecha-hdr">
         <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
-        <div class="fi">
-          <div class="fnum" id="fnum">Fecha 1</div>
+        <div class="fi" style="position:relative;">
+          <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .6rem;">
+            <span id="fnum-txt">Fecha 1</span>
+            <span style="font-size:11px;color:var(--muted);">▼</span>
+          </div>
+          <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+            <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+          </div>
           <div class="fsub">Primera Fase — 2026</div>
         </div>
         <div id="badge" class="badge-j">JUGADO</div>
@@ -489,7 +495,13 @@ function escudoHTML(nombre, size='esc'){
 }
 
 function renderPartidos(f){
-  document.getElementById("fnum").textContent="Fecha "+f;
+  document.getElementById("fnum-txt").textContent="Fecha "+f;
+  // Highlight active fecha in picker
+  for(let i=1;i<=18;i++){
+    const el=document.getElementById("fp-"+i);
+    if(el) el.style.color = i===f ? "var(--accent)" : "";
+    if(el) el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
+  }
   const todosJugados=ZONAS.every(z=>(FIXTURE[z][String(f)]||[]).every(m=>m.gl!==null));
   const algunoJugado=ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
   const badge=document.getElementById("badge");
@@ -754,18 +766,17 @@ async function verFicha(key, tienePlanilla){
 
     const renderGoles = (goles, align="left") => {
       if(!goles.length) return "";
-      return `<table style="border-collapse:collapse;margin-left:${align==="right"?"auto":"0"};">` +
+      const isRight = align === "right";
+      return `<div style="display:flex;flex-direction:column;align-items:${isRight?"flex-end":"flex-start"};">` +
       goles.map(g=>{
         const min = String(g.minuto||"");
-        return `<tr>
-          <td style="padding:1px 3px 1px 0;font-size:14px;width:18px;vertical-align:middle;">${g.icon}</td>
-          <td style="padding:1px 2px;font-size:12px;vertical-align:middle;">
-            <strong style="color:#f0f0f0;">${g.nombre}</strong>
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;margin-left:3px;">${min}'</span>
-            ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:5px;">(${g.asist})</span>`:""}
-          </td>
-        </tr>`;
-      }).join("") + "</table>";
+        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;${isRight?"flex-direction:row-reverse;":""}">
+          <span style="font-size:14px;line-height:1;">${g.icon}</span>
+          <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+          <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+          ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;">(${g.asist})</span>`:""}
+        </div>`;
+      }).join("") + "</div>";
     };
     
     // Get escudos
@@ -917,6 +928,35 @@ function renderTablas(){
 
   document.getElementById("tablas-cont").innerHTML=html;
 }
+
+function toggleFechaPicker(){
+  const picker = document.getElementById("fecha-picker");
+  if(!picker) return;
+  const grid = document.getElementById("fecha-picker-grid");
+  if(grid && !grid.children.length){
+    grid.innerHTML = Array.from({length:18},(_,i)=>{
+      const n = i+1;
+      return `<div onclick="irAFecha(${n})" id="fp-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual?'var(--accent)':'var(--text)'};border-color:${n===fechaActual?'var(--accent)':'var(--border)'};">${n}</div>`;
+    }).join("");
+  }
+  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
+}
+
+function irAFecha(n){
+  const picker = document.getElementById("fecha-picker");
+  if(picker) picker.style.display = "none";
+  if(n < 1 || n > 18) return;
+  fechaActual = n;
+  renderPartidos(fechaActual);
+}
+
+// Close picker on outside click
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".fi")){
+    const picker = document.getElementById("fecha-picker");
+    if(picker) picker.style.display = "none";
+  }
+});
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
