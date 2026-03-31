@@ -696,10 +696,10 @@ async function verFicha(key, tienePlanilla){
         <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
           ${secHeader("CAMBIOS")}
           ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.35rem;min-height:24px;">
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:14px;flex-shrink:0;">${c.minuto}'</span>
-            <span style="color:#4caf50;">${c.entra}</span>
-            <span style="color:var(--muted);font-size:13px;">⇄</span>
-            <span style="color:#e57373;">${c.sale}</span>
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${c.minuto}'</span>
+            <span style="color:#4caf50;font-size:13px;">${c.entra}</span>
+            <span style="color:var(--muted);font-size:12px;">⇄</span>
+            <span style="color:#e57373;font-size:13px;">${c.sale}</span>
           </div>`).join("")}
         </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
 
@@ -708,8 +708,8 @@ async function verFicha(key, tienePlanilla){
           ${secHeader("TARJETAS")}
           ${tarjetas.map(t=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
             ${t.icon}
-            <span>${t.nombre}</span>
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:14px;">${t.minuto}'</span>
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${t.minuto}'</span>
+            <span style="font-size:13px;">${t.nombre}</span>
           </div>`).join("")}
         </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
 
@@ -761,7 +761,7 @@ async function verFicha(key, tienePlanilla){
           <td style="padding:1px 3px 1px 0;font-size:14px;width:18px;vertical-align:middle;">${g.icon}</td>
           <td style="padding:1px 2px;font-size:12px;vertical-align:middle;">
             <strong style="color:#f0f0f0;">${g.nombre}</strong>
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;margin-left:3px;">${min}'</span>
+            <span style="color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;margin-left:3px;">${min}'</span>
             ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:5px;">(${g.asist})</span>`:""}
           </td>
         </tr>`;
@@ -802,9 +802,9 @@ async function verFicha(key, tienePlanilla){
           </div>
         </div>
         <div style="display:flex;justify-content:center;gap:2rem;margin-bottom:.5rem;align-items:flex-start;">
-          <div style="flex:1;text-align:right;display:flex;flex-direction:column;align-items:flex-end;">${renderGoles(golesLocal,"right")}</div>
+          <div style="flex:1;display:flex;justify-content:flex-end;padding-right:${escLocal?"40px":"0px"};">${renderGoles(golesLocal,"right")}</div>
           <div style="width:80px;flex-shrink:0;"></div>
-          <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;">${renderGoles(golesVisit,"left")}</div>
+          <div style="flex:1;padding-left:${escVisit?"40px":"0px"};">${renderGoles(golesVisit,"left")}</div>
         </div>
         <div style="margin-top:.75rem;"></div>
         ${(estadioLine||diaHoraStr)?`<div style="font-size:13px;color:#ccc;margin:.35rem 0;">
