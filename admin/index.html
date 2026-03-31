@@ -80,13 +80,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .planilla-wrap{overflow-x:auto;}
 .planilla{width:100%;border-collapse:collapse;font-size:12px;}
 .planilla th{background:var(--surface3);padding:.45rem .6rem;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
-.planilla td{padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+.planilla td{padding:.3rem .5rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
 .planilla tr:hover td{background:rgba(255,255,255,0.02);}
 .planilla input{background:transparent;border:none;border-bottom:1px solid transparent;border-radius:0;padding:.15rem .25rem;color:var(--text);font-size:12px;width:100%;min-width:80px;}
 .planilla input:focus{border-bottom-color:var(--accent);outline:none;}
 .badge-gk{background:#1a2a3a;color:#6ab0e8;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;}
 .badge-cap{background:#2a2a0a;color:var(--accent);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;}
-.evento-chip{display:inline-flex;align-items:center;gap:3px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:10px;margin:1px;white-space:nowrap;}
+.evento-chip{display:inline-flex;align-items:center;gap:3px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;margin:1px;white-space:nowrap;}
 .ev-gol{border-color:#1e5c35;background:#0a1a0d;color:#5dba7d;}
 .ev-pen{border-color:#1a3a5a;background:#0a1020;color:#5daadd;}
 .ev-gc{border-color:#5a1a1a;background:#1a0808;color:#e57373;}
@@ -510,7 +510,12 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <!-- ===================== JUGADORES ===================== -->
     <div class="panel" id="panel-jugadores">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
-      <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Los jugadores se agregan automáticamente al cargar planillas. Acá podrás buscarlos por ID o nombre.</div></div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-body" style="display:flex;gap:.75rem;">
+          <input type="text" id="jug-buscar" placeholder="Buscar por nombre o ID federal..." style="flex:1" oninput="buscarJugadores()">
+        </div>
+      </div>
+      <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
     </div>
 
     <!-- ===================== ABM ÁRBITROS ===================== -->
@@ -724,6 +729,7 @@ function goPanel(id){
   if(id==="escudos") renderEscudos();
   if(id==="abm-arbitros"||id==="abm-estadios"||id==="abm-tecnicos") cargarABM();
   if(id==="abm-equipos") renderEquiposVinculos();
+  if(id==="jugadores") cargarJugadores();
 }
 
 // ── PASO 1 ──
@@ -994,7 +1000,7 @@ La imagen muestra una tabla de alineación con estas columnas de izquierda a der
 - "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
 - "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
 - Badge opcional: naranja "AR" = arquero, verde "CP" = capitán. Si no hay badge, nota = "".
-- "Jugador": nombre en formato "APELLIDO, NOMBRE". Convertí a "Nombre Apellido". Ej: "LUNGARZO, JUAN PABLO" → "Juan Lungarzo".
+- "Jugador": nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolvé el nombre EXACTAMENTE como aparece en la planilla, con la coma, en mayúsculas. NO lo conviertas. Ej: si la planilla dice "LOPEZ PEREZ, TOMAS JUAN", devolvé "LOPEZ PEREZ, TOMAS JUAN". El sistema lo formateará solo.
 - Columna de eventos (derecha del nombre).
 
 ÍCONOS DE EVENTOS:
@@ -1020,12 +1026,12 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown:
 {
   "goles_equipo": 2,
   "jugadores": [
-    {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "Juan Lungarzo", "titular": true, "eventos": []},
-    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "Martin Ferreyra", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
-    {"numero": 11, "id": 3185627, "nota": "", "nombre": "Diego Ramirez", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
-    {"numero": 5, "id": 3807010, "nota": "", "nombre": "Agustin Stancato", "titular": true, "eventos": [{"tipo":"amarilla","minuto":5,"extra":""}]},
-    {"numero": 15, "id": 3685794, "nota": "", "nombre": "Tobias Fernandez", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]},
-    {"numero": 17, "id": 4794394, "nota": "", "nombre": "Santiago Llanos", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":71,"extra":"8"}]}
+    {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "LUNGARZO, JUAN PABLO", "titular": true, "eventos": []},
+    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "FERREYRA, MARTIN IGNACIO", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
+    {"numero": 11, "id": 3185627, "nota": "", "nombre": "RAMIREZ, DIEGO IGNACIO", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
+    {"numero": 5, "id": 3807010, "nota": "", "nombre": "STANCATO, AGUSTIN", "titular": true, "eventos": [{"tipo":"amarilla","minuto":5,"extra":""}]},
+    {"numero": 15, "id": 3685794, "nota": "", "nombre": "FERNANDEZ, TOBIAS SEBASTIAN", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]},
+    {"numero": 17, "id": 4794394, "nota": "", "nombre": "LLANOS, SANTIAGO GABRIEL", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":71,"extra":"8"}]}
   ]
 }`;
 
@@ -1115,19 +1121,16 @@ function formatearNombre(raw){
   if(!raw) return "";
   const s = raw.trim();
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-  // Con coma: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" → "Nombre1 Apellido1"
+  // Formato planilla: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" → "Nombre1 Apellido1"
   if(s.includes(",")){
     const [apellidos, nombres] = s.split(",").map(x => x.trim());
     const primerNombre = nombres.split(/\s+/)[0];
-    const primerApellido = apellidos.split(/\s+/)[0]; // siempre el primero
+    const primerApellido = apellidos.split(/\s+/)[0];
     return cap(primerNombre) + " " + cap(primerApellido);
   }
-  // Sin coma: "Nombre1 Nombre2 Apellido1 Apellido2" → tomar [0] y [mitad]
+  // Sin coma: devolver capitalizado tal cual (la IA no debería enviar sin coma)
   const partes = s.split(/\s+/).filter(Boolean);
-  if(partes.length === 1) return cap(partes[0]);
-  if(partes.length === 2) return cap(partes[0]) + " " + cap(partes[1]);
-  // Más de 2: primer token como nombre, segundo token como apellido
-  return cap(partes[0]) + " " + cap(partes[1]);
+  return partes.map(cap).join(" ");
 }
 
 function normalizarPlanilla(planilla, equipo){
@@ -1245,9 +1248,9 @@ function renderPlanilla(containerId, jugadores){
     html+=`<tr style="${trStyle}">
       <td><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:38px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="font-size:10px;color:var(--muted);font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${j.id||""}">${j.id||"—"}</td>
-      <td style="display:flex;align-items:center;gap:3px;">
-        ${j.nota==="CP"?'<span class="badge-cap" style="flex-shrink:0">CP</span>':''}
-        <input type="text" value="${j.nombre||""}" style="width:100%;font-weight:500;font-size:12px;padding:2px 4px;"
+      <td>
+        ${j.nota==="CP"?'<span class="badge-cap" style="margin-right:3px;">CP</span>':''}
+        <input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.nota==="CP"?"32px":"0px"});font-weight:500;font-size:12px;padding:2px 4px;"
           onchange="editarNombre('${containerId}',${i},this.value)">
       </td>
       <td style="text-align:center;font-size:10px;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
@@ -2152,6 +2155,53 @@ async function vincularEquipo(nombre, campo, valor){
   const {error} = await sb.from("equipos").upsert({nombre, [campo]: v},{onConflict:"nombre"});
   if(error){ alert("Error: "+error.message); return; }
   await cargarEquiposInfo();
+}
+
+// ── JUGADORES ──
+let JUGADORES_CACHE = [];
+
+async function cargarJugadores(){
+  const lista = document.getElementById("jug-lista");
+  if(!lista) return;
+  lista.innerHTML = '<div style="color:var(--muted);">Cargando...</div>';
+  try {
+    const {data, error} = await sb.from("jugadores")
+      .select("id, id_federal, nombre_display, nombre, equipo_id, equipos(nombre)")
+      .order("nombre_display")
+      .limit(500);
+    if(error) throw error;
+    JUGADORES_CACHE = data || [];
+    renderJugadores(JUGADORES_CACHE);
+  } catch(e){
+    lista.innerHTML = `<div style="color:#e57373;">Error: ${e.message}</div>`;
+  }
+}
+
+function buscarJugadores(){
+  const q = document.getElementById("jug-buscar")?.value.toLowerCase().trim();
+  if(!q){ renderJugadores(JUGADORES_CACHE); return; }
+  const filtered = JUGADORES_CACHE.filter(j =>
+    (j.nombre_display||j.nombre||"").toLowerCase().includes(q) ||
+    String(j.id_federal||"").includes(q)
+  );
+  renderJugadores(filtered);
+}
+
+function renderJugadores(jugadores){
+  const lista = document.getElementById("jug-lista");
+  if(!lista) return;
+  if(!jugadores.length){ lista.innerHTML = '<div style="color:var(--muted);padding:1rem;">Sin resultados.</div>'; return; }
+  lista.innerHTML = `
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">ID FEDERAL</div>
+      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">NOMBRE</div>
+      <div style="background:var(--surface3);padding:.4rem .6rem;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;">EQUIPO</div>
+      ${jugadores.map(j=>`
+        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-family:monospace;font-size:11px;color:var(--muted);">${j.id_federal||"—"}</div>
+        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-size:13px;font-weight:500;">${j.nombre_display||j.nombre||"—"}</div>
+        <div style="padding:.4rem .6rem;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">${j.equipos?.nombre||"—"}</div>
+      `).join("")}
+    </div>`;
 }
 
 // ── INIT ──
