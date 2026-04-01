@@ -753,14 +753,14 @@ function renderPartidos(f){
     if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
     if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
     const infoBarHTML = (infoItems.length && m.gl===null) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
-      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:12px;color:var(--muted);display:flex;gap:.75rem;flex-wrap:wrap;">
+      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
         ${infoItems.join(' &nbsp;')}
       </div>
       <div style="width:32px;flex-shrink:0;"></div>
     </div>` : "";
 
     goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
         <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
         <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
       </div>
