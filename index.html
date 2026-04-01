@@ -647,7 +647,8 @@ function renderPartidos(f){
     };
     const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
       .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-    goleadoresHTML = hayGoles ? `<div class="mini-goles" style="background:${zc.color}22;">
+    const _zc = zonaConfig(zona);
+    goleadoresHTML = hayGoles ? `<div class="mini-goles" style="background:${_zc.color}22;">
       ⚽ ${todosGoles.map(fmtMiniGol).join(', ')}
     </div>` : "";
 
