@@ -314,7 +314,7 @@ async function cargarPartidosDesdeDB(){
           match.gl = p.goles_local;
           match.gv = p.goles_visitante;
         }
-        if(p.dia || p.hora || p.stream_url){
+        if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
           PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
         }
