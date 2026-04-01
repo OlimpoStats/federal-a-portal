@@ -1954,6 +1954,7 @@ async function upsertPartido(payload){
 async function guardarPlanilla(jugadores, equipoId, partidoId){
   if(!jugadores || !jugadores.length) return;
 
+  // Borrar planillas de ESTE equipo en ESTE partido antes de reinsertar
   const {data:prevPlan} = await sb
     .from("planillas")
     .select("id")
@@ -1963,7 +1964,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
   if(prevPlan?.length){
     const ids = prevPlan.map(p => p.id);
     await sb.from("eventos").delete().in("planilla_id", ids);
-    await sb.from("planillas").delete().eq("partido_id", partidoId).eq("equipo_id", equipoId);
+    await sb.from("planillas").delete().in("id", ids);
   }
 
   for(const j of jugadores){
