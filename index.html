@@ -1132,19 +1132,11 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
   // Position near the cell
   const rect = event.target.getBoundingClientRect();
   const tipW = 200;
-  tip.style.visibility = "hidden";
-  tip.style.left = "0px";
-  tip.style.top = "0px";
-  document.body.appendChild(tip);
-  const tipW2 = tip.offsetWidth || 100;
-  const tipH2 = tip.offsetHeight || 80;
-  tip.remove();
-  let left = rect.left + rect.width/2 - tipW2/2;
+  let left = rect.left + rect.width/2 - 50;
   let top = rect.bottom + 6;
-  if(left + tipW2 > window.innerWidth - 8) left = window.innerWidth - tipW2 - 8;
+  if(left + 120 > window.innerWidth - 8) left = window.innerWidth - 120 - 8;
   if(left < 8) left = 8;
-  if(top + tipH2 > window.innerHeight) top = rect.top - tipH2 - 6;
-  tip.style.visibility = "";
+  if(top + 80 > window.innerHeight) top = rect.top - 80 - 6;
   tip.style.left = left + "px";
   tip.style.top = top + "px";
 
