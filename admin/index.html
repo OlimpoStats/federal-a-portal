@@ -1320,9 +1320,9 @@ function apellido(nombre){
 function renderEvento(e, containerId, jIdx, eIdx){
   const minStr = `${e.minuto}'`;
   let inner = "";
-  if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"){
+  if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"||e.tipo==="gol_tiro_libre"){
     const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":e.tipo==="gol_tiro_libre"?"⚽🔵":"⚽";
-    const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":e.tipo==="gol_tiro_libre"?"ev-gol":"ev-gol";
+    const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":e.tipo==="gol_tiro_libre"?"ev-tl":"ev-gol";
     inner=`<span class="evento-chip ${cls}">${icon} ${minStr}</span>`;
   } else if(e.tipo==="penal_atajado"){
     inner=`<span class="evento-chip ev-cam" style="border-color:#5dba7d;background:rgba(93,186,125,0.1);">🧤 ${minStr}</span>`;
@@ -1819,7 +1819,7 @@ function confirmarEvento(containerId, jIdx){
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
   // Penales: abrir modal para registrar detalles
-  if(tipo==="gol_penal"||tipo==="penal_atajado"||tipo==="penal_desviado"){
+  if(tipo==="penal_atajado"||tipo==="penal_desviado"||tipo==="gol_penal"){
     // Push event first, then open penal modal
     if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
     arr[jIdx].eventos.push({tipo, minuto, extra});
