@@ -1114,7 +1114,7 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
 
   const tip = document.createElement("div");
   tip.id = "h2h-tooltip";
-  tip.style.cssText = `position:fixed;z-index:500;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:.5rem .75rem;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;min-width:160px;`;
+  tip.style.cssText = `position:fixed;z-index:500;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:.4rem .6rem;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;width:auto;`;
 
   tip.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">H2H</div>` +
     matches.map(m=>{
@@ -1132,11 +1132,19 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
   // Position near the cell
   const rect = event.target.getBoundingClientRect();
   const tipW = 200;
-  let left = rect.left - tipW/2 + rect.width/2;
+  tip.style.visibility = "hidden";
+  tip.style.left = "0px";
+  tip.style.top = "0px";
+  document.body.appendChild(tip);
+  const tipW2 = tip.offsetWidth || 100;
+  const tipH2 = tip.offsetHeight || 80;
+  tip.remove();
+  let left = rect.left + rect.width/2 - tipW2/2;
   let top = rect.bottom + 6;
-  if(left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
+  if(left + tipW2 > window.innerWidth - 8) left = window.innerWidth - tipW2 - 8;
   if(left < 8) left = 8;
-  if(top + 120 > window.innerHeight) top = rect.top - 120;
+  if(top + tipH2 > window.innerHeight) top = rect.top - tipH2 - 6;
+  tip.style.visibility = "";
   tip.style.left = left + "px";
   tip.style.top = top + "px";
 
