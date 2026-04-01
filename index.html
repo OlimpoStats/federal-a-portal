@@ -748,13 +748,12 @@ function renderPartidos(f){
     const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
     const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
 
-    // Info bar: arbitro, hora, estadio (only for programmed matches without result)
+    // Info bar: estadio + arbitro (no hora, ya aparece en el marcador)
     const infoItems = [];
-    if(meta.hora) infoItems.push(`🕐 ${meta.hora}`);
-    if(meta.arbitro) infoItems.push(`🧑‍⚖️ ${meta.arbitro}`);
     if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
+    if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
     const infoBarHTML = (infoItems.length && m.gl===null) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
-      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;color:var(--muted);display:flex;gap:.75rem;flex-wrap:wrap;">
+      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:12px;color:var(--muted);display:flex;gap:.75rem;flex-wrap:wrap;">
         ${infoItems.join(' &nbsp;')}
       </div>
       <div style="width:32px;flex-shrink:0;"></div>
