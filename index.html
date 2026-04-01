@@ -651,9 +651,9 @@ function renderPartidos(f){
     const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
     const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
     goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:flex;justify-content:space-between;gap:.5rem;overflow:hidden;">
-        <span style="text-align:left;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesVisitFmt ? ' ·' : '') : ''}</span>
-        <span style="text-align:right;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + '.' : ''}</span>
+        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + '. ⚽' : ''}</span>
       </div>
       <div style="width:32px;flex-shrink:0;"></div>
     </div>` : "";
