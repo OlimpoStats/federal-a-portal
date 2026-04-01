@@ -86,12 +86,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* tablas */
 .tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:.7rem;}
 .tabla-mini table{width:100%;border-collapse:collapse;}
-.tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);}
+.tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
 .tabla-mini thead th:nth-child(2){text-align:left;}
 .tabla-mini tbody tr{border-bottom:1px solid var(--border);}
 .tabla-mini tbody tr:last-child{border-bottom:none;}
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
-.tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;}
+.tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;}
 .tabla-mini tbody td:nth-child(2){text-align:left;}
 .pos{font-size:12px;font-weight:700;color:var(--muted);}
 .pos.clasif{color:#4caf50;}
@@ -140,8 +140,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .esc{width:22px;height:22px;}
   .ficha-btn,.stream-btn{width:26px;height:26px;font-size:13px;}
   .res{min-width:50px;}
-  .tabla-mini tbody td{padding:.35rem .2rem;font-size:11px;}
-  .tabla-mini thead th{font-size:9px;padding:.3rem .2rem;}
+  .tabla-mini tbody td{padding:.35rem .2rem;font-size:11px;line-height:1.2;}
+  .tabla-mini thead th{font-size:9px;padding:.3rem .2rem;white-space:nowrap;}
+  .tabla-mini .pts{font-size:12px;}
+  .tabla-mini .pos{font-size:11px;}
   .ztabs{gap:.2rem;}
   .ztab{font-size:10px;padding:3px 9px;}
   #ficha-modal{padding:.4rem;}
@@ -652,8 +654,8 @@ function renderPartidos(f){
     const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
     goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
       <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
-        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + '.' : ''}</span>
-        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + '. ⚽' : ''}</span>
+        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
+        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
       </div>
       <div style="width:32px;flex-shrink:0;"></div>
     </div>` : "";
