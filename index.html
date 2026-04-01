@@ -114,6 +114,48 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ph-icon{font-size:40px;margin-bottom:.85rem;}
 .ph-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;color:#444;margin-bottom:.4rem;}
 .ph-sub{font-size:13px;}
+
+/* mini goleadores bajo partido */
+.mini-goles{font-size:11px;color:var(--muted);padding:.25rem .9rem .4rem;display:flex;justify-content:space-between;gap:.5rem;border-top:1px solid rgba(255,255,255,0.05);}
+.mini-gol-local{text-align:left;flex:1;}
+.mini-gol-visit{text-align:right;flex:1;}
+.mini-gol-min{color:var(--accent);font-weight:600;}
+
+/* ── MOBILE ── */
+@media(max-width:700px){
+  .hdr{padding:0 .75rem;gap:.4rem;height:54px;}
+  .logo{font-size:17px;}
+  .ni{font-size:12px;padding:0 .5rem;height:54px;letter-spacing:0;}
+  .user-btn{width:28px;height:28px;margin-left:.2rem;}
+  .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
+  .nav::-webkit-scrollbar{display:none;}
+  .page{padding:1rem .65rem;}
+  .inicio-grid{grid-template-columns:1fr;gap:1rem;}
+  .fecha-hdr{padding:.6rem .75rem;}
+  .fnum{font-size:17px;}
+  .fsub{font-size:11px;}
+  .fnav{width:26px;height:26px;font-size:13px;}
+  .partido{padding:.5rem .65rem;gap:.2rem;}
+  .eqn{font-size:13px;}
+  .score{font-size:19px;letter-spacing:1px;}
+  .esc{width:22px;height:22px;}
+  .ficha-btn,.stream-btn{width:26px;height:26px;font-size:13px;}
+  .res{min-width:50px;}
+  .tabla-mini tbody td{padding:.35rem .2rem;font-size:11px;}
+  .tabla-mini thead th{font-size:9px;padding:.3rem .2rem;}
+  .ztabs{gap:.2rem;}
+  .ztab{font-size:10px;padding:3px 9px;}
+  #ficha-modal{padding:.4rem;}
+  #ficha-cont{padding:.65rem;max-height:92vh;}
+  .planillas-grid{grid-template-columns:1fr !important;}
+  #fecha-picker-grid{width:180px !important;}
+  .mini-goles{font-size:10px;padding:.2rem .65rem .35rem;}
+}
+@media(max-width:400px){
+  .ni{font-size:11px;padding:0 .35rem;}
+  .eqn{font-size:12px;}
+  .score{font-size:16px;}
+}
 </style>
 </head>
 <body>
@@ -302,6 +344,47 @@ async function cargarPartidosDesdeDB(){
         }
       });
     }
+
+    // Cargar goleadores para mini-display en fixture
+    try {
+      const {data:golesDB} = await sb
+        .from("eventos")
+        .select("tipo, minuto, planillas(partido_id, titular, equipos(nombre), jugadores(nombre_display,nombre))")
+        .in("tipo", ["gol","gol_penal","gol_tiro_libre","gol_contra"]);
+      if(golesDB?.length){
+        // Group by partido_id
+        const golesPorPartido = {};
+        golesDB.forEach(ev => {
+          const pl = ev.planillas;
+          if(!pl?.partido_id) return;
+          if(!golesPorPartido[pl.partido_id]) golesPorPartido[pl.partido_id] = [];
+          golesPorPartido[pl.partido_id].push({
+            tipo: ev.tipo,
+            minuto: ev.minuto,
+            nombre: pl.jugadores?.nombre_display || pl.jugadores?.nombre || "?",
+            equipo: pl.equipos?.nombre || "",
+          });
+        });
+        // Match to FIXTURE
+        const {data:partidosGoles} = await sb
+          .from("partidos")
+          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre")
+          .in("id", Object.keys(golesPorPartido).map(Number));
+        if(partidosGoles){
+          partidosGoles.forEach(p => {
+            const ms = FIXTURE[p.zona]?.[String(p.fecha)];
+            if(!ms) return;
+            const match = ms.find(m => m.local===p.equipo_local_nombre && m.visitante===p.equipo_visitante_nombre);
+            if(!match) return;
+            const goles = golesPorPartido[p.id] || [];
+            match.goleadores = goles.map(g => ({
+              ...g,
+              equipo: g.equipo === p.equipo_local_nombre ? "local" : "visitante"
+            })).sort((a,b) => (parseInt(a.minuto)||0) - (parseInt(b.minuto)||0));
+          });
+        }
+      }
+    } catch(e){ console.log("Error cargando goleadores:", e); }
 
     const {data:planillasRows, error:plErr} = await sb.from("planillas").select("partido_id");
     if(!plErr && planillasRows?.length){
@@ -551,9 +634,10 @@ function renderPartidos(f){
     const golesLocal = (m.goleadores||[]).filter(g=>g.equipo==="local");
     const golesVisit = (m.goleadores||[]).filter(g=>g.equipo==="visitante");
     const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
-    const goleadoresHTML = hayGoles ? `<div class="goleadores">
-      <div class="gol-local">${golesLocal.map(g=>`${g.nombre} <span class="gol-min">${g.minuto}'</span>`).join(' · ')}</div>
-      <div class="gol-visit">${golesVisit.map(g=>`<span class="gol-min">${g.minuto}'</span> ${g.nombre}`).join(' · ')}</div>
+    const miniIcon = g => g.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);font-size:10px;line-height:1;">⚽</span>':g.tipo==="gol_penal"?'🥅':g.tipo==="gol_tiro_libre"?'⚽🔵':'⚽';
+    goleadoresHTML = hayGoles ? `<div class="mini-goles">
+      <div class="mini-gol-local">${golesLocal.map(g=>`${miniIcon(g)} ${g.nombre} <span class="mini-gol-min">${g.minuto}'</span>`).join(' &nbsp;· ')}</div>
+      <div class="mini-gol-visit">${golesVisit.map(g=>`${miniIcon(g)} ${g.nombre} <span class="mini-gol-min">${g.minuto}'</span>`).join(' &nbsp;· ')}</div>
     </div>` : "";
 
     const streamBtn = meta.stream
@@ -756,7 +840,7 @@ async function verFicha(key, tienePlanilla){
               });
             });
             const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':ev.tipo==="gol_penal"?"🥅":"⚽";
-            goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, contra:ev.tipo==="gol_contra"});
+            goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
           }
         });
       });
@@ -870,7 +954,7 @@ async function verFicha(key, tienePlanilla){
         </div>
         ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
         <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
       </div>`;
