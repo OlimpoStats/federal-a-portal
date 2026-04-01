@@ -116,7 +116,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ph-sub{font-size:13px;}
 
 /* mini goleadores bajo partido */
-.mini-goles{font-size:11px;padding:.3rem .9rem .45rem;border-top:1px solid rgba(255,255,255,0.06);}
 .mini-gol-min{color:var(--accent);font-weight:600;}
 .mini-gol-nombre{color:#f0f0f0;}
 .partido-wrap{margin-bottom:.85rem;}
@@ -642,14 +641,21 @@ function renderPartidos(f){
       return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
     };
     const fmtMiniGol = g => {
-      const ec = g.tipo==="gol_contra" ? ' <span style="color:var(--muted);font-size:10px;">(E/C)</span>' : "";
-      return `<span class="mini-gol-min">${g.minuto}'</span> <span class="mini-gol-nombre">${fmtMiniNombre(g.nombre)}</span>${ec}`;
+      const ec = g.tipo==="gol_contra" ? " <span style='color:var(--muted);font-size:10px;'>(E/C)</span>" : "";
+      const min = g.minuto || "";
+      return "<span class='mini-gol-min'>" + min + "'</span> <span class='mini-gol-nombre'>" + fmtMiniNombre(g.nombre) + "</span>" + ec;
     };
     const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
       .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
     const _zc = zonaConfig(zona);
-    goleadoresHTML = hayGoles ? `<div class="mini-goles" style="background:${_zc.color}22;">
-      ⚽ ${todosGoles.map(fmtMiniGol).join(', ')}
+    const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
+    const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
+    goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.3rem .75rem .35rem;display:flex;justify-content:space-between;gap:.5rem;overflow:hidden;">
+        <span style="text-align:left;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${golesLocalFmt ? '⚽ ' + golesLocalFmt : ''}</span>
+        <span style="text-align:right;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
     </div>` : "";
 
     const streamBtn = meta.stream
