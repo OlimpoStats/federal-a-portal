@@ -59,7 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .dia-lbl{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:.5px;color:var(--accent);margin:.9rem 0 .35rem;}
 .dia-week{color:var(--accent);}
 .dia-date{color:#f0f0f0;}
-.partido-wrap{margin-bottom:.5rem;}
+.partido-wrap{margin-bottom:.85rem;}
 .partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem;transition:border-color .15s;}
 .partido:hover{border-color:rgba(255,255,255,0.14);}
 .partido.topo-dia{border-left:3px solid var(--accent);}
@@ -116,10 +116,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ph-sub{font-size:13px;}
 
 /* mini goleadores bajo partido */
-.mini-goles{font-size:11px;color:var(--muted);padding:.25rem .9rem .4rem;display:flex;justify-content:space-between;gap:.5rem;border-top:1px solid rgba(255,255,255,0.05);}
-.mini-gol-local{text-align:left;flex:1;}
-.mini-gol-visit{text-align:right;flex:1;}
+.mini-goles{font-size:11px;padding:.3rem .9rem .45rem;border-top:1px solid rgba(255,255,255,0.06);}
 .mini-gol-min{color:var(--accent);font-weight:600;}
+.mini-gol-nombre{color:#f0f0f0;}
+.partido-wrap{margin-bottom:.85rem;}
 
 /* ── MOBILE ── */
 @media(max-width:700px){
@@ -634,10 +634,21 @@ function renderPartidos(f){
     const golesLocal = (m.goleadores||[]).filter(g=>g.equipo==="local");
     const golesVisit = (m.goleadores||[]).filter(g=>g.equipo==="visitante");
     const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
-    const miniIcon = g => g.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);font-size:10px;line-height:1;">⚽</span>':g.tipo==="gol_penal"?'🥅':g.tipo==="gol_tiro_libre"?'⚽🔵':'⚽';
-    goleadoresHTML = hayGoles ? `<div class="mini-goles">
-      <div class="mini-gol-local">${golesLocal.map(g=>`${miniIcon(g)} ${g.nombre} <span class="mini-gol-min">${g.minuto}'</span>`).join(' &nbsp;· ')}</div>
-      <div class="mini-gol-visit">${golesVisit.map(g=>`${miniIcon(g)} ${g.nombre} <span class="mini-gol-min">${g.minuto}'</span>`).join(' &nbsp;· ')}</div>
+    // Format: "N. Apellido" - primera letra del nombre + apellido
+    const fmtMiniNombre = nombre => {
+      if(!nombre) return "?";
+      const parts = nombre.trim().split(/\s+/);
+      if(parts.length === 1) return parts[0];
+      return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
+    };
+    const fmtMiniGol = g => {
+      const ec = g.tipo==="gol_contra" ? ' <span style="color:var(--muted);font-size:10px;">(E/C)</span>' : "";
+      return `<span class="mini-gol-min">${g.minuto}'</span> <span class="mini-gol-nombre">${fmtMiniNombre(g.nombre)}</span>${ec}`;
+    };
+    const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
+      .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+    goleadoresHTML = hayGoles ? `<div class="mini-goles" style="background:${zc.color}22;">
+      ⚽ ${todosGoles.map(fmtMiniGol).join(', ')}
     </div>` : "";
 
     const streamBtn = meta.stream
@@ -729,8 +740,8 @@ async function verFicha(key, tienePlanilla){
       const renderChip = (ev) => {
         const min = String(ev.minuto||"");
         const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
-        if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
-          const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':ev.tipo==="gol_penal"?"🥅":"⚽";
+        if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
+          const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':"⚽";
           return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
         }
         if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
@@ -839,7 +850,7 @@ async function verFicha(key, tienePlanilla){
                 }
               });
             });
-            const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':ev.tipo==="gol_penal"?"🥅":"⚽";
+            const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':"⚽";
             goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
           }
         });
