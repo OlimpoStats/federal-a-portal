@@ -505,10 +505,13 @@ function ini(n){return n.split(/\s+/).map(p=>p[0]).join("").substring(0,2).toUpp
 
 function calcTabla(zona){
   const eq={};
+  // Collect all matches
+  const partidos=[];
   for(let f=1;f<=18;f++){
     (FIXTURE[zona][String(f)]||[]).forEach(m=>{
       [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
       if(m.gl===null)return;
+      partidos.push(m);
       eq[m.local].pj++;eq[m.visitante].pj++;
       eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
       eq[m.visitante].gf+=m.gv;eq[m.visitante].gc+=m.gl;
@@ -520,7 +523,76 @@ function calcTabla(zona){
   const all=new Set();
   for(let f=1;f<=18;f++){(FIXTURE[zona][String(f)]||[]).forEach(m=>{all.add(m.local);all.add(m.visitante);});}
   all.forEach(t=>{if(!eq[t])eq[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
-  return Object.entries(eq).map(([n,s])=>({n,...s})).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+
+  // H2H: calcular minitabla entre equipos empatados en puntos
+  const calcH2H = (equipos) => {
+    // Only between the tied teams
+    const h2h={};
+    equipos.forEach(e=>{h2h[e]={pts:0,dif:0,gf:0,gv:0};});
+    partidos.forEach(m=>{
+      if(!equipos.includes(m.local)||!equipos.includes(m.visitante)) return;
+      h2h[m.local].gf+=m.gl; h2h[m.local].dif+=m.gl-m.gv; h2h[m.visitante].gf+=m.gv; h2h[m.visitante].dif+=m.gv-m.gl;
+      h2h[m.visitante].gv+=m.gv; // goles como visitante
+      if(m.gl>m.gv){h2h[m.local].pts+=3;}
+      else if(m.gl<m.gv){h2h[m.visitante].pts+=3;}
+      else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
+    });
+    return h2h;
+  };
+
+  // Sort with H2H tiebreaker
+  const rows = Object.entries(eq).map(([n,s])=>({n,...s,h2h:'—'}));
+
+  // Group by pts, apply H2H within groups
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    return 0; // temp, will resolve below
+  });
+
+  // Find groups with same pts
+  const ptGroups={};
+  rows.forEach(r=>{
+    if(!ptGroups[r.pts]) ptGroups[r.pts]=[];
+    ptGroups[r.pts].push(r.n);
+  });
+
+  // For each group with 2+ teams, compute H2H and assign rank
+  const h2hRank={};
+  Object.entries(ptGroups).forEach(([pts,teams])=>{
+    if(teams.length<2) return;
+    const h2h=calcH2H(teams);
+    // Sort by H2H: pts → dif → gf → gv
+    const sorted=[...teams].sort((a,b)=>
+      (h2h[b].pts-h2h[a].pts)||
+      (h2h[b].dif-h2h[a].dif)||
+      (h2h[b].gf-h2h[a].gf)||
+      (h2h[b].gv-h2h[a].gv)||
+      ((eq[b].gf-eq[b].gc)-(eq[a].gf-eq[a].gc))||
+      (eq[b].gf-eq[a].gf)||
+      0
+    );
+    // Assign H2H display string and rank within group
+    sorted.forEach((t,i)=>{
+      h2hRank[t]={rank:i, label:`${h2h[t].pts}pts`};
+    });
+    // Update h2h field in rows
+    rows.forEach(r=>{
+      if(teams.includes(r.n)) r.h2h=h2hRank[r.n]?.label||'—';
+    });
+  });
+
+  // Final sort: pts → H2H rank → general dif → general gf → gv visitante
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    // Same pts group: use H2H rank
+    const ra=h2hRank[a.n]?.rank??0;
+    const rb=h2hRank[b.n]?.rank??0;
+    if(ra!==rb) return ra-rb;
+    // General tiebreakers
+    return ((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||(b.gf-b.pj)-(a.gf-a.pj)||0;
+  });
+
+  return rows;
 }
 
 // Datos extra por partido: hora programada y stream URL
@@ -1038,7 +1110,7 @@ function renderTablas(){
         <td>${r.gf}</td>
         <td>${r.gc}</td>
         <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
-        <td style="color:var(--muted)">—</td>
+        <td style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'}">${r.h2h}</td>
       </tr>`;
       // Guardar quinto de B/C/D
       if(pos===5 && z!=="Zona A") quintosRows.push({...r, zona:z});
