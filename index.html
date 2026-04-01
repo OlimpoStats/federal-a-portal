@@ -302,7 +302,7 @@ async function cargarPartidosDesdeDB(){
     // Fuente principal: fixture
     const {data:fixtureData, error:fixtureErr} = await sb
       .from("fixture")
-      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url");
+      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro");
     if(!fixtureErr && fixtureData){
       fixtureData.forEach(p => {
         if(!p.zona || !p.fecha) return;
@@ -316,7 +316,7 @@ async function cargarPartidosDesdeDB(){
         }
         if(p.dia || p.hora || p.stream_url){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
-          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || ""};
+          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
         }
       });
     }
@@ -340,7 +340,9 @@ async function cargarPartidosDesdeDB(){
           PARTIDO_META[key] = {
             dia: prev.dia || p.dia || "",
             hora: prev.hora || p.hora || "",
-            stream: prev.stream || p.stream_url || ""
+            stream: prev.stream || p.stream_url || "",
+            estadio: prev.estadio || p.estadio || "",
+            arbitro: prev.arbitro || p.arbitro || ""
           };
         }
       });
@@ -640,12 +642,23 @@ function diaTitulo(metaDia){
 }
 
 function fechaInteligente(){
-  // Busca la primera fecha con algún partido sin resultado = "en disputa o próxima"
+  // 1. Buscar fecha con al menos un partido programado (tiene dia u hora en PARTIDO_META)
   for(let f=1;f<=18;f++){
-    const tienePendiente=ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl===null));
-    if(tienePendiente) return f;
+    const tieneProgramado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>{
+      const key = `${z}_${f}_${m.local}_${m.visitante}`;
+      const meta = PARTIDO_META[key];
+      return m.gl===null && (meta?.dia || meta?.hora);
+    }));
+    if(tieneProgramado) return f;
   }
-  return 18; // todas jugadas, mostrar la última
+  // 2. Si no hay programados, mostrar la última fecha con partidos jugados
+  let ultimaJugada = 1;
+  for(let f=1;f<=18;f++){
+    const tieneJugado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
+    if(tieneJugado) ultimaJugada = f;
+  }
+  return ultimaJugada;
+  // fallbackstrar la última
 }
 
 function escudoHTML(nombre, size='esc'){
@@ -682,10 +695,14 @@ function renderPartidos(f){
   });
 
   rows.sort((a,b)=>{
-    const kd = diaKey(a.meta.dia).localeCompare(diaKey(b.meta.dia));
+    // Sin día van al final
+    const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
+    const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
+    // Por hora
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
+    // Por zona
     return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
   });
 
@@ -730,6 +747,19 @@ function renderPartidos(f){
     const _zc = zonaConfig(zona);
     const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
     const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
+
+    // Info bar: arbitro, hora, estadio (only for programmed matches without result)
+    const infoItems = [];
+    if(meta.hora) infoItems.push(`🕐 ${meta.hora}`);
+    if(meta.arbitro) infoItems.push(`🧑‍⚖️ ${meta.arbitro}`);
+    if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
+    const infoBarHTML = (infoItems.length && m.gl===null) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
+      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;color:var(--muted);display:flex;gap:.75rem;flex-wrap:wrap;">
+        ${infoItems.join(' &nbsp;')}
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>` : "";
+
     goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
       <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:10px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
         <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
@@ -764,6 +794,7 @@ function renderPartidos(f){
         </div>
       </div>
       ${goleadoresHTML}
+      ${infoBarHTML}
     </div>`;
   });
   document.getElementById("partidos-cont").innerHTML=html;
@@ -1086,11 +1117,15 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
   tip.style.cssText = `position:fixed;z-index:500;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:.5rem .75rem;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;min-width:160px;`;
 
   tip.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">H2H</div>` +
-    matches.map(m=>`<div style="display:flex;align-items:center;gap:.4rem;padding:.15rem 0;">
-      <span style="font-size:12px;flex:1;text-align:right;">${m.local}</span>
-      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);white-space:nowrap;">${m.gl} — ${m.gv}</span>
-      <span style="font-size:12px;flex:1;">${m.visitante}</span>
-    </div>`).join("");
+    matches.map(m=>{
+      const escL = ESCUDOS[m.local] ? `<img src="${ESCUDOS[m.local]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.local.charAt(0)}</span>`;
+      const escV = ESCUDOS[m.visitante] ? `<img src="${ESCUDOS[m.visitante]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.visitante.charAt(0)}</span>`;
+      return `<div style="display:flex;align-items:center;gap:.4rem;padding:.15rem 0;">
+        <span style="display:flex;justify-content:flex-end;width:24px;">${escL}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);white-space:nowrap;min-width:40px;text-align:center;">${m.gl} — ${m.gv}</span>
+        <span style="display:flex;width:24px;">${escV}</span>
+      </div>`;
+    }).join("");
 
   document.body.appendChild(tip);
 
@@ -1106,7 +1141,12 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
   tip.style.top = top + "px";
 
   if(isTouch){
-    _h2hTimer = setTimeout(hideH2HTooltip, 2500);
+    _h2hTimer = setTimeout(hideH2HTooltip, 2000);
+    // Close on any touch elsewhere
+    const closeOnTouch = (e) => {
+      if(!e.target.closest('#h2h-tooltip')){ hideH2HTooltip(); document.removeEventListener('touchstart', closeOnTouch); }
+    };
+    setTimeout(()=>document.addEventListener('touchstart', closeOnTouch), 100);
   }
 }
 
