@@ -1648,34 +1648,31 @@ function abrirModalPenal(containerId, jIdx, tipo, minuto){
     : tipo==="penal_atajado" ? "🧤 Penal atajado"
     : "❌ Penal desviado";
 
+  // Datos del partido ya conocidos
+  const arbitroPartido = document.getElementById('partido-arbitro')?.value || "";
+
   const html = `<div id="modal-penal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center;">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:440px;max-width:95vw;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">${titulo}</div>
-      <div style="display:grid;gap:.6rem;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-          <div><label style="font-size:11px;color:var(--muted);">Equipo a favor</label><input type="text" id="pen-favor" value="${esFavor||""}" style="width:100%;"></div>
-          <div><label style="font-size:11px;color:var(--muted);">Equipo en contra</label><input type="text" id="pen-contra" value="${esContra||""}" style="width:100%;"></div>
-        </div>
-        <div><label style="font-size:11px;color:var(--muted);">Ejecutante</label>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:380px;max-width:95vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:.25rem;">${titulo}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;">${esFavor} vs ${esContra} · min. ${minuto||"?"}${arbitroPartido?" · Árb: "+arbitroPartido:""}</div>
+      <input type="hidden" id="pen-favor" value="${esFavor||""}">
+      <input type="hidden" id="pen-contra" value="${esContra||""}">
+      <input type="hidden" id="pen-minuto" value="${minuto||""}">
+      <input type="hidden" id="pen-arbitro" value="${arbitroPartido}">
+      <input type="hidden" id="pen-tipo" value="${tipo}">
+      <div style="display:grid;gap:.65rem;">
+        <div>
+          <label style="font-size:11px;color:var(--muted);">Ejecutante</label>
           <input type="text" id="pen-ejecutante" value="${jugador.nombre||""}" style="width:100%;">
           <input type="hidden" id="pen-ejecutante-id" value="${jugador.id_federal||jugador.id||""}">
         </div>
-        ${tipo!=="gol_penal"?`<div><label style="font-size:11px;color:var(--muted);">${tipo==="penal_atajado"?"Arquero que atajó":"Arquero rival"}</label>
+        <div>
+          <label style="font-size:11px;color:var(--muted);">${tipo==="penal_atajado"?"Arquero que atajó":"Arquero rival"}</label>
           <select id="pen-arquero" style="width:100%;">
             <option value="">— Seleccionar —</option>
             ${arqueroOpts}
           </select>
-        </div>`:`<div><label style="font-size:11px;color:var(--muted);">Arquero rival</label>
-          <select id="pen-arquero" style="width:100%;">
-            <option value="">— Seleccionar —</option>
-            ${arqueroOpts}
-          </select>
-        </div>`}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-          <div><label style="font-size:11px;color:var(--muted);">Minuto</label><input type="text" id="pen-minuto" value="${minuto||""}" style="width:100%;"></div>
-          <div><label style="font-size:11px;color:var(--muted);">Árbitro del partido</label><input type="text" id="pen-arbitro" value="${document.getElementById('partido-arbitro')?.value||''}" style="width:100%;"></div>
         </div>
-        <input type="hidden" id="pen-tipo" value="${tipo}">
       </div>
       <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-penal').remove()">Omitir</button>
