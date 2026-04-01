@@ -383,16 +383,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
         </div>
 
-        <!-- planilla local -->
-        <div class="card" style="position:relative;">
-          <div class="card-hdr"><span id="title-plan-local">Planilla local</span></div>
-          <div class="card-body planilla-wrap" id="tabla-local"></div>
-        </div>
-
-        <!-- planilla visitante -->
-        <div class="card">
-          <div class="card-hdr"><span id="title-plan-visit">Planilla visitante</span></div>
-          <div class="card-body planilla-wrap" id="tabla-visit"></div>
+        <!-- planillas lado a lado -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="card" style="position:relative;">
+            <div class="card-hdr"><span id="title-plan-local">Planilla local</span></div>
+            <div class="card-body planilla-wrap" id="tabla-local"></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><span id="title-plan-visit">Planilla visitante</span></div>
+            <div class="card-body planilla-wrap" id="tabla-visit"></div>
+          </div>
         </div>
 
         <div class="confirm-bar">
@@ -768,6 +768,11 @@ function actualizarPartidos(){
         card.classList.add("selected");
         sel.value = i;
         selPartidoChanged();
+        // Set result directly from partido object (avoids lookup issues)
+        const erGl = document.getElementById("er-gl-inline");
+        const erGv = document.getElementById("er-gv-inline");
+        if(erGl) erGl.value = p.goles_local ?? 0;
+        if(erGv) erGv.value = p.goles_visitante ?? 0;
       };
       grid.appendChild(card);
     }
@@ -1316,8 +1321,8 @@ function renderEvento(e, containerId, jIdx, eIdx){
   const minStr = `${e.minuto}'`;
   let inner = "";
   if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"){
-    const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":"⚽";
-    const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":"ev-gol";
+    const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":e.tipo==="gol_tiro_libre"?"⚽🔵":"⚽";
+    const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":e.tipo==="gol_tiro_libre"?"ev-gol":"ev-gol";
     inner=`<span class="evento-chip ${cls}">${icon} ${minStr}</span>`;
   } else if(e.tipo==="penal_atajado"){
     inner=`<span class="evento-chip ev-cam" style="border-color:#5dba7d;background:rgba(93,186,125,0.1);">🧤 ${minStr}</span>`;
@@ -1433,6 +1438,7 @@ function abrirAgregarEvento(containerId, jIdx, prefill=null){
   const tipos=[
     {v:"gol",l:"⚽ Gol"},
     {v:"gol_penal",l:"🥅 Gol penal"},
+    {v:"gol_tiro_libre",l:"⚽🔵 Gol tiro libre"},
     {v:"penal_atajado",l:"🧤 Penal atajado"},
     {v:"penal_desviado",l:"❌ Penal desviado"},
     {v:"gol_contra",l:"🚫 Gol en contra"},
