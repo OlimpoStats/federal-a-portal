@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
+
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -11,17 +12,17 @@
 :root{--bg:#0a0a0a;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--green:#2a7a4a;--red:#7a2a2a;--blue:#1a3a6a;}
 body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
 
-.hdr{background:#0d0d0d;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:54px;}
-.logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:1px;color:var(--accent);}
+.hdr{background:#0d0d0d;border-bottom:2px solid var(–accent);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:54px;}
+.logo{font-family:‘Barlow Condensed’,sans-serif;font-weight:700;font-size:18px;letter-spacing:1px;color:var(–accent);}
 .logo span{color:#fff;}
-.admin-badge{background:#2a1a00;color:var(--accent);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;}
+.admin-badge{background:#2a1a00;color:var(–accent);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;}
 
 .layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 54px);}
-.sidebar{background:#0d0d0d;border-right:1px solid var(--border);padding:1rem 0;}
-.sb-section{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#333;padding:.4rem 1.25rem;margin-top:.5rem;}
-.sb-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1.25rem;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:2px solid transparent;}
-.sb-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
-.sb-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(232,196,74,0.05);}
+.sidebar{background:#0d0d0d;border-right:1px solid var(–border);padding:1rem 0;}
+.sb-section{font-family:‘Barlow Condensed’,sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#333;padding:.4rem 1.25rem;margin-top:.5rem;}
+.sb-item{display:flex;align-items:center;gap:.6rem;padding:.55rem 1.25rem;cursor:pointer;color:var(–muted);font-size:13px;font-weight:500;transition:all .15s;border-left:2px solid transparent;}
+.sb-item:hover{color:var(–text);background:rgba(255,255,255,0.03);}
+.sb-item.active{color:var(–accent);border-left-color:var(–accent);background:rgba(232,196,74,0.05);}
 .sb-icon{font-size:14px;width:16px;text-align:center;}
 
 .content{padding:1.5rem;overflow-y:auto;}
@@ -29,45 +30,45 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .panel.active{display:block;}
 
 /* cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.25rem;}
-.card-hdr{background:var(--surface2);padding:.65rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;}
+.card{background:var(–surface);border:1px solid var(–border);border-radius:8px;overflow:hidden;margin-bottom:1.25rem;}
+.card-hdr{background:var(–surface2);padding:.65rem 1rem;border-bottom:1px solid var(–border);font-family:‘Barlow Condensed’,sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(–muted);display:flex;align-items:center;justify-content:space-between;}
 .card-body{padding:1rem;}
 
 /* steps */
 .steps{display:flex;gap:0;margin-bottom:1.5rem;}
-.step{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:var(--surface2);border:1px solid var(--border);flex:1;position:relative;}
-.step:not(:last-child)::after{content:'›';position:absolute;right:-10px;color:var(--muted);font-size:18px;z-index:1;}
-.step-n{width:24px;height:24px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;}
-.step.done .step-n{background:var(--green);border-color:var(--green);color:#fff;}
-.step.active-step .step-n{background:var(--accent);border-color:var(--accent);color:#111;}
-.step-label{font-size:11px;color:var(--muted);font-weight:500;}
-.step.active-step .step-label{color:var(--text);}
+.step{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:var(–surface2);border:1px solid var(–border);flex:1;position:relative;}
+.step:not(:last-child)::after{content:’›’;position:absolute;right:-10px;color:var(–muted);font-size:18px;z-index:1;}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(–surface3);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(–muted);flex-shrink:0;}
+.step.done .step-n{background:var(–green);border-color:var(–green);color:#fff;}
+.step.active-step .step-n{background:var(–accent);border-color:var(–accent);color:#111;}
+.step-label{font-size:11px;color:var(–muted);font-weight:500;}
+.step.active-step .step-label{color:var(–text);}
 
 /* selects & inputs */
-select,input[type=text],input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;width:100%;}
-select:focus,input:focus{border-color:var(--accent);}
+select,input[type=text],input[type=number]{background:var(–surface2);border:1px solid var(–border);border-radius:6px;padding:.5rem .75rem;color:var(–text);font-size:13px;font-family:‘Barlow’,sans-serif;outline:none;transition:border-color .15s;width:100%;}
+select:focus,input:focus{border-color:var(–accent);}
 select option{background:#1e1e1e;}
-label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-weight:500;}
+label{font-size:12px;color:var(–muted);display:block;margin-bottom:.35rem;font-weight:500;}
 .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 .form-row.two{grid-template-columns:1fr 1fr;}
 
 /* upload zones */
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.75rem;}
-.upload-zone{border:2px dashed var(--border);border-radius:8px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(232,196,74,0.03);}
-.upload-zone.has-img{border-style:solid;border-color:var(--green);background:rgba(42,122,74,0.05);}
+.upload-zone{border:2px dashed var(–border);border-radius:8px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(–accent);background:rgba(232,196,74,0.03);}
+.upload-zone.has-img{border-style:solid;border-color:var(–green);background:rgba(42,122,74,0.05);}
 .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-icon{font-size:28px;margin-bottom:.5rem;}
-.upload-label{font-size:13px;color:var(--muted);margin-bottom:.25rem;}
+.upload-label{font-size:13px;color:var(–muted);margin-bottom:.25rem;}
 .upload-sub{font-size:11px;color:#444;}
 .upload-preview{width:100%;max-height:200px;object-fit:contain;border-radius:4px;margin-top:.5rem;}
 
 /* buttons */
-.btn{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:.55rem 1.25rem;border-radius:6px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.5rem;}
-.btn-primary{background:var(--accent);color:#111;}
+.btn{font-family:‘Barlow Condensed’,sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:.55rem 1.25rem;border-radius:6px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.5rem;}
+.btn-primary{background:var(–accent);color:#111;}
 .btn-primary:hover{opacity:.9;}
 .btn-primary:disabled{opacity:.4;cursor:default;}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary{background:var(–surface2);color:var(–text);border:1px solid var(–border);}
 .btn-secondary:hover{border-color:rgba(255,255,255,0.2);}
 .btn-danger{background:#3a1010;color:#e57373;border:1px solid #5a2020;}
 .btn-sm{font-size:12px;padding:.35rem .75rem;}
@@ -79,14 +80,14 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 /* planilla table */
 .planilla-wrap{overflow-x:auto;}
 .planilla{width:100%;border-collapse:collapse;font-size:12px;}
-.planilla th{background:var(--surface3);padding:.45rem .6rem;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+.planilla th{background:var(–surface3);padding:.45rem .6rem;text-align:left;font-family:‘Barlow Condensed’,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(–muted);border-bottom:1px solid var(–border);white-space:nowrap;}
 .planilla td{padding:.3rem .5rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
 .planilla tr:hover td{background:rgba(255,255,255,0.02);}
-.planilla input{background:transparent;border:none;border-bottom:1px solid transparent;border-radius:0;padding:.15rem .25rem;color:var(--text);font-size:12px;width:100%;min-width:80px;}
-.planilla input:focus{border-bottom-color:var(--accent);outline:none;}
+.planilla input{background:transparent;border:none;border-bottom:1px solid transparent;border-radius:0;padding:.15rem .25rem;color:var(–text);font-size:12px;width:100%;min-width:80px;}
+.planilla input:focus{border-bottom-color:var(–accent);outline:none;}
 .badge-gk{background:#1a2a3a;color:#6ab0e8;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;}
-.badge-cap{background:#2a2a0a;color:var(--accent);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;}
-.evento-chip{display:inline-flex;align-items:center;gap:3px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;margin:1px;white-space:nowrap;}
+.badge-cap{background:#2a2a0a;color:var(–accent);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.5px;}
+.evento-chip{display:inline-flex;align-items:center;gap:3px;background:var(–surface3);border:1px solid var(–border);border-radius:4px;padding:3px 7px;font-size:12px;margin:1px;white-space:nowrap;}
 .ev-gol{border-color:#1e5c35;background:#0a1a0d;color:#5dba7d;}
 .ev-pen{border-color:#1a3a5a;background:#0a1020;color:#5daadd;}
 .ev-gc{border-color:#5a1a1a;background:#1a0808;color:#e57373;}
@@ -95,15 +96,15 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-cam{border-color:#3a3a3a;background:#111;color:#aaa;}
 
 /* resultado box */
-.result-box{display:flex;align-items:center;gap:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;}
+.result-box{display:flex;align-items:center;gap:1rem;background:var(–surface2);border:1px solid var(–border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1rem;}
 .team-side{flex:1;text-align:center;}
-.team-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;margin-bottom:.35rem;}
-.score-input{width:60px;height:48px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--accent);}
-.score-sep{font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--muted);padding:0 .5rem;}
+.team-name{font-family:‘Barlow Condensed’,sans-serif;font-size:18px;font-weight:700;margin-bottom:.35rem;}
+.score-input{width:60px;height:48px;text-align:center;font-family:‘Barlow Condensed’,sans-serif;font-size:28px;font-weight:700;background:var(–surface3);border:1px solid var(–border);border-radius:6px;color:var(–accent);}
+.score-sep{font-family:‘Barlow Condensed’,sans-serif;font-size:28px;color:var(–muted);padding:0 .5rem;}
 
 /* confirm bar */
-.confirm-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-top:1rem;}
-.confirm-info{font-size:13px;color:var(--muted);}
+.confirm-bar{background:var(–surface2);border:1px solid var(–border);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-top:1rem;}
+.confirm-info{font-size:13px;color:var(–muted);}
 
 /* result flash */
 .flash{padding:.75rem 1rem;border-radius:6px;font-size:13px;font-weight:500;margin-bottom:1rem;display:none;}
@@ -113,15 +114,15 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 /* loading overlay */
 .loading-overlay{display:none;position:absolute;inset:0;background:rgba(10,10,10,.8);border-radius:8px;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;z-index:5;}
 .loading-overlay.on{display:flex;}
-.loading-text{font-size:13px;color:var(--muted);}
+.loading-text{font-size:13px;color:var(–muted);}
 
 /* escudos grid */
 .escudos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;}
-.escudo-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem;text-align:center;cursor:pointer;transition:border-color .15s;position:relative;}
+.escudo-card{background:var(–surface2);border:1px solid var(–border);border-radius:8px;padding:.85rem;text-align:center;cursor:pointer;transition:border-color .15s;position:relative;}
 .escudo-card:hover{border-color:rgba(255,255,255,0.2);}
 .escudo-card input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .escudo-img{width:56px;height:56px;object-fit:contain;margin:0 auto .5rem;display:block;}
-.escudo-placeholder{width:56px;height:56px;background:var(--surface3);border:1px dashed var(--border);border-radius:50%;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#333;}
+.escudo-placeholder{width:56px;height:56px;background:var(–surface3);border:1px dashed var(–border);border-radius:50%;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#333;}
 /* tarjetas como cuadrados */
 .ev-am-sq{display:inline-block;width:11px;height:14px;background:#e8c44a;border-radius:2px;vertical-align:middle;}
 .ev-ro-sq{display:inline-block;width:11px;height:14px;background:#e57373;border-radius:2px;vertical-align:middle;}
@@ -130,37 +131,38 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-entra{color:#4caf50;font-weight:600;}
 .ev-sale{color:#e57373;font-weight:600;}
 /* editor de eventos */
-.ev-editor{margin-top:.4rem;padding:.4rem .6rem;background:var(--surface3);border-radius:6px;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;}
-.ev-tag{display:inline-flex;align-items:center;gap:.3rem;padding:2px 7px;border-radius:4px;font-size:11px;background:var(--surface2);border:1px solid var(--border);}
+.ev-editor{margin-top:.4rem;padding:.4rem .6rem;background:var(–surface3);border-radius:6px;display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;}
+.ev-tag{display:inline-flex;align-items:center;gap:.3rem;padding:2px 7px;border-radius:4px;font-size:11px;background:var(–surface2);border:1px solid var(–border);}
 .ev-tag .del-ev{cursor:pointer;color:#e57373;font-size:13px;line-height:1;margin-left:2px;}
 .ev-tag .del-ev:hover{color:#ff5252;}
-.add-ev-btn{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer;}
-.add-ev-btn:hover{border-color:var(--accent);}
+.add-ev-btn{font-size:11px;padding:3px 8px;background:var(–surface2);border:1px solid var(–border);border-radius:4px;color:var(–accent);cursor:pointer;}
+.add-ev-btn:hover{border-color:var(–accent);}
 /* autocomplete */
 .autocomplete-wrap{position:relative;}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(–surface2);border:1px solid var(–border);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
 .autocomplete-list.open{display:block;}
 .ac-item{padding:.4rem .75rem;font-size:13px;cursor:pointer;}
-.ac-item:hover{background:var(--surface3);color:var(--accent);}
+.ac-item:hover{background:var(–surface3);color:var(–accent);}
 /* abm */
-.abm-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.abm-row{display:flex;align-items:center;gap:.75rem;padding:.55rem 1rem;border-bottom:1px solid var(--border);font-size:13px;}
+.abm-list{background:var(–surface);border:1px solid var(–border);border-radius:8px;overflow:hidden;}
+.abm-row{display:flex;align-items:center;gap:.75rem;padding:.55rem 1rem;border-bottom:1px solid var(–border);font-size:13px;}
 .abm-row:last-child{border-bottom:none;}
 .abm-name{flex:1;}
 .abm-del{background:none;border:none;color:#e57373;cursor:pointer;font-size:16px;padding:0 .25rem;}
 .abm-del:hover{color:#ff5252;}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 /* partido cards */
-.partido-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .85rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.35rem;}
+.partido-card{background:var(–surface2);border:1px solid var(–border);border-radius:8px;padding:.65rem .85rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.35rem;}
 .partido-card:hover{border-color:rgba(255,255,255,0.2);}
-.partido-card.selected{border-color:var(--accent);background:rgba(232,196,74,0.07);}
+.partido-card.selected{border-color:var(–accent);background:rgba(232,196,74,0.07);}
 .pc-teams{display:flex;align-items:center;gap:.4rem;font-size:13px;font-weight:600;}
 .pc-local{flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.pc-vs{font-size:10px;color:var(--muted);flex-shrink:0;}
+.pc-vs{font-size:10px;color:var(–muted);flex-shrink:0;}
 .pc-visit{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pc-estado{font-size:10px;font-weight:600;border:1px solid;border-radius:4px;padding:2px 6px;text-align:center;letter-spacing:.3px;}
 /* escudo-name ya definido arriba */
 </style>
+
 </head>
 <body>
 
@@ -189,387 +191,396 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
   </div>
 
   <!-- CONTENT -->
+
   <div class="content">
 
-    <!-- ===================== PARTIDOS (merged) ===================== -->
-    <div class="panel active" id="panel-partidos">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Partidos</h2>
+```
+<!-- ===================== PARTIDOS (merged) ===================== -->
+<div class="panel active" id="panel-partidos">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Partidos</h2>
 
-      <!-- Paso 1: Seleccionar partido -->
-      <div id="paso1">
-        <div class="card">
-          <div class="card-hdr">Seleccionar partido</div>
-          <div class="card-body">
-            <div class="form-row two">
-              <div><label>Zona</label>
-                <select id="sel-zona" onchange="actualizarPartidos()">
-                  <option value="">— Zona —</option>
-                  <option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option>
-                </select>
-              </div>
-              <div><label>Fecha</label>
-                <select id="sel-fecha" onchange="actualizarPartidos()">
-                  <option value="">— Fecha —</option>
-                  <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-                  <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-                  <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
-                  <option>16</option><option>17</option><option>18</option>
-                </select>
-              </div>
-            </div>
-            <div id="partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
-            <select id="sel-partido" style="display:none" onchange="selPartidoChanged()">
-              <option value="">— Primero elegí zona y fecha —</option>
+  <!-- Paso 1: Seleccionar partido -->
+  <div id="paso1">
+    <div class="card">
+      <div class="card-hdr">Seleccionar partido</div>
+      <div class="card-body">
+        <div class="form-row two">
+          <div><label>Zona</label>
+            <select id="sel-zona" onchange="actualizarPartidos()">
+              <option value="">— Zona —</option>
+              <option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option>
             </select>
-            <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
-              <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
-              <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
-                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar planilla</button>
-                <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
-              </div>
-            </div>
-
-            <!-- Result editor (shown when partido selected and has result) -->
-            <div id="er-form-inline" style="display:none;margin-top:.75rem;padding:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
-              <div style="font-size:12px;color:var(--muted);margin-bottom:.5rem;">Resultado</div>
-              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
-                <span id="er-local-inline" style="font-size:14px;font-weight:600;flex:1;text-align:right;">—</span>
-                <input type="number" id="er-gl-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
-                <span style="color:var(--muted);">—</span>
-                <input type="number" id="er-gv-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
-                <span id="er-visit-inline" style="font-size:14px;font-weight:600;flex:1;">—</span>
-              </div>
-              <div style="text-align:right;display:flex;gap:.5rem;justify-content:flex-end;">
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">📋 Cargar planilla</button>
-                <button class="btn btn-primary btn-sm" onclick="erGuardarInline()">Guardar resultado</button>
-              </div>
-            </div>
-
-            <div style="text-align:right;margin-top:.5rem;" id="btn-sel-siguiente-wrap" style="display:none;">
-              <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar planilla →</button>
-            </div>
           </div>
+          <div><label>Fecha</label>
+            <select id="sel-fecha" onchange="actualizarPartidos()">
+              <option value="">— Fecha —</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+              <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+              <option>11</option><option>12</option><option>13</option><option>14</option><option>15</option>
+              <option>16</option><option>17</option><option>18</option>
+            </select>
+          </div>
+        </div>
+        <div id="partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
+        <select id="sel-partido" style="display:none" onchange="selPartidoChanged()">
+          <option value="">— Primero elegí zona y fecha —</option>
+        </select>
+        <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
+          <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
+          <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
+            <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
+            <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar planilla</button>
+            <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
+          </div>
+        </div>
+
+        <!-- Result editor (shown when partido selected and has result) -->
+        <div id="er-form-inline" style="display:none;margin-top:.75rem;padding:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:.5rem;">Resultado</div>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+            <span id="er-local-inline" style="font-size:14px;font-weight:600;flex:1;text-align:right;">—</span>
+            <input type="number" id="er-gl-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
+            <span style="color:var(--muted);">—</span>
+            <input type="number" id="er-gv-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
+            <span id="er-visit-inline" style="font-size:14px;font-weight:600;flex:1;">—</span>
+          </div>
+          <div style="text-align:right;display:flex;gap:.5rem;justify-content:flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="irPaso2()">📋 Cargar planilla</button>
+            <button class="btn btn-primary btn-sm" onclick="erGuardarInline()">Guardar resultado</button>
+          </div>
+        </div>
+
+        <div style="text-align:right;margin-top:.5rem;" id="btn-sel-siguiente-wrap" style="display:none;">
+          <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar planilla →</button>
         </div>
       </div>
-
-      <!-- steps -->
-      <div class="steps" id="steps-bar" style="display:none;">
-        <div class="step active-step" id="step1"><div class="step-n">1</div><div class="step-label">Seleccionar</div></div>
-        <div class="step" id="step2"><div class="step-n">2</div><div class="step-label">Subir imágenes</div></div>
-        <div class="step" id="step3"><div class="step-n">3</div><div class="step-label">Revisar y editar</div></div>
-        <div class="step" id="step4"><div class="step-n">4</div><div class="step-label">Confirmar</div></div>
-      </div>
-
-      <!-- Paso 2: subir imágenes -->
-      <div id="paso2" style="display:none;">
-        <div class="card">
-          <div class="card-hdr" id="paso2-titulo">Subir planillas</div>
-          <div class="card-body">
-            <p style="font-size:13px;color:var(--muted);margin-bottom:.5rem;">Subí una captura por equipo. La IA va a extraer jugadores, goles, tarjetas y cambios automáticamente.</p>
-            <div class="upload-grid">
-              <div>
-                <label style="margin-bottom:.5rem;" id="label-local">Planilla local</label>
-                <div class="upload-zone" id="zone-local" ondragover="dragOver(event,'zone-local')" ondragleave="dragLeave('zone-local')" ondrop="dropFile(event,'local')">
-                  <input type="file" accept="image/*" onchange="fileSelected(event,'local')">
-                  <div class="upload-icon">📄</div>
-                  <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
-                  <div class="upload-sub">PNG, JPG o captura pegada</div>
-                  <img id="preview-local" class="upload-preview" style="display:none;">
-                </div>
-              </div>
-              <div>
-                <label style="margin-bottom:.5rem;" id="label-visit">Planilla visitante</label>
-                <div class="upload-zone" id="zone-visit" ondragover="dragOver(event,'zone-visit')" ondragleave="dragLeave('zone-visit')" ondrop="dropFile(event,'visitante')">
-                  <input type="file" accept="image/*" onchange="fileSelected(event,'visitante')">
-                  <div class="upload-icon">📄</div>
-                  <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
-                  <div class="upload-sub">PNG, JPG o captura pegada</div>
-                  <img id="preview-visit" class="upload-preview" style="display:none;">
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:1rem;">
-              <button class="btn btn-secondary" onclick="irPaso1()">← Atrás</button>
-              <button class="btn btn-primary" id="btn-procesar" onclick="procesarImagenes()" disabled>
-                <span id="btn-proc-txt">Procesar con IA →</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PASO 3: revisar -->
-      <div id="paso3" style="display:none;">
-        <div id="flash-msg" class="flash"></div>
-
-        <div class="card" style="position:relative;">
-          <div class="loading-overlay" id="loading-overlay">
-            <div style="font-size:28px;">🤖</div>
-            <div class="loading-text" id="loading-text">Procesando imagen con IA...</div>
-            <div style="display:flex;gap:.35rem;margin-top:.25rem;">
-              <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .0s infinite;"></div>
-              <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .2s infinite;"></div>
-              <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .4s infinite;"></div>
-            </div>
-          </div>
-          <div class="card-hdr">
-            <span>Resultado del partido</span>
-            <span style="font-size:11px;color:#444;">Editá si es necesario</span>
-          </div>
-          <div class="card-body">
-            <div class="result-box">
-              <div class="team-side">
-                <div class="team-name" id="res-local">—</div>
-                <div style="font-size:11px;color:var(--muted);">Local</div>
-              </div>
-              <div style="display:flex;align-items:center;">
-                <input type="number" class="score-input" id="score-local" min="0" value="0">
-                <div class="score-sep">—</div>
-                <input type="number" class="score-input" id="score-visit" min="0" value="0">
-              </div>
-              <div class="team-side">
-                <div class="team-name" id="res-visit">—</div>
-                <div style="font-size:11px;color:var(--muted);">Visitante</div>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
-              <div>
-                <label>Fecha del partido</label>
-                <input type="date" id="partido-dia" style="width:100%">
-              </div>
-              <div>
-                <label>Hora</label>
-                <input type="text" id="partido-hora" placeholder="ej: 15:30" maxlength="5" style="width:100%">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;">
-              <div class="autocomplete-wrap">
-                <label>Estadio</label>
-                <input type="text" id="partido-estadio" placeholder="Nombre del estadio" oninput="acInput(this,'estadios','partido-estadio')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-estadio"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label>DT Local</label>
-                <input type="text" id="partido-dt-local" placeholder="Director técnico local" oninput="acInput(this,'tecnicos','partido-dt-local')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-dt-local"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label>DT Visitante</label>
-                <input type="text" id="partido-dt-visit" placeholder="Director técnico visitante" oninput="acInput(this,'tecnicos','partido-dt-visit')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-dt-visit"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('partido-arbitro')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
-                <input type="text" id="partido-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-arbitro')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-arbitro"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 1 <span onclick="abrirCrearArbitroRapido('partido-juez1')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
-                <input type="text" id="partido-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez1')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-juez1"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 2 <span onclick="abrirCrearArbitroRapido('partido-juez2')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
-                <input type="text" id="partido-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez2')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-juez2"></div>
-              </div>
-              <div class="autocomplete-wrap">
-                <label style="display:flex;align-items:center;justify-content:space-between;">Cuarto árbitro <span onclick="abrirCrearArbitroRapido('partido-cuarto')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
-                <input type="text" id="partido-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-cuarto')" autocomplete="off">
-                <div class="autocomplete-list" id="ac-partido-cuarto"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- planillas lado a lado -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-          <div class="card" style="position:relative;">
-            <div class="card-hdr"><span id="title-plan-local">Planilla local</span></div>
-            <div class="card-body planilla-wrap" id="tabla-local"></div>
-          </div>
-          <div class="card">
-            <div class="card-hdr"><span id="title-plan-visit">Planilla visitante</span></div>
-            <div class="card-body planilla-wrap" id="tabla-visit"></div>
-          </div>
-        </div>
-
-        <div class="confirm-bar">
-          <div class="confirm-info">Revisá los datos antes de confirmar. Una vez guardado, las stats de cada jugador se actualizan automáticamente.</div>
-          <div style="display:flex;gap:.6rem;">
-            <button class="btn btn-secondary" onclick="irPaso2()">← Volver</button>
-            <button class="btn btn-secondary" onclick="guardarBorrador()" title="Guarda los datos sin marcar el partido como jugado">💾 Borrador</button>
-            <button class="btn btn-primary" onclick="confirmarCarga()">✓ Publicar planilla</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- PASO 4: confirmado -->
-      <div id="paso4" style="display:none;">
-        <div style="text-align:center;padding:3rem 2rem;">
-          <div style="font-size:48px;margin-bottom:1rem;">✅</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--accent);margin-bottom:.5rem;">¡Partido cargado!</div>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:2rem;" id="confirmado-txt">Los datos fueron guardados y las posiciones actualizadas.</div>
-          <div style="display:flex;gap:.75rem;justify-content:center;">
-            <button class="btn btn-secondary" onclick="resetTodo()">Cargar otro partido</button>
-            <button class="btn btn-primary" onclick="volverAlInicio()">← Volver al inicio</button>
-          </div>
-        </div>
-      </div>
-
     </div>
+  </div>
+
+  <!-- steps -->
+  <div class="steps" id="steps-bar" style="display:none;">
+    <div class="step active-step" id="step1"><div class="step-n">1</div><div class="step-label">Seleccionar</div></div>
+    <div class="step" id="step2"><div class="step-n">2</div><div class="step-label">Subir imágenes</div></div>
+    <div class="step" id="step3"><div class="step-n">3</div><div class="step-label">Revisar y editar</div></div>
+    <div class="step" id="step4"><div class="step-n">4</div><div class="step-label">Confirmar</div></div>
+  </div>
+
+  <!-- Paso 2: subir imágenes -->
+  <div id="paso2" style="display:none;">
+    <div class="card">
+      <div class="card-hdr" id="paso2-titulo">Subir planillas</div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:.5rem;">Subí una captura por equipo. La IA va a extraer jugadores, goles, tarjetas y cambios automáticamente.</p>
+        <div class="upload-grid">
+          <div>
+            <label style="margin-bottom:.5rem;" id="label-local">Planilla local</label>
+            <div class="upload-zone" id="zone-local" ondragover="dragOver(event,'zone-local')" ondragleave="dragLeave('zone-local')" ondrop="dropFile(event,'local')">
+              <input type="file" accept="image/*" onchange="fileSelected(event,'local')">
+              <div class="upload-icon">📄</div>
+              <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
+              <div class="upload-sub">PNG, JPG o captura pegada</div>
+              <img id="preview-local" class="upload-preview" style="display:none;">
+            </div>
+          </div>
+          <div>
+            <label style="margin-bottom:.5rem;" id="label-visit">Planilla visitante</label>
+            <div class="upload-zone" id="zone-visit" ondragover="dragOver(event,'zone-visit')" ondragleave="dragLeave('zone-visit')" ondrop="dropFile(event,'visitante')">
+              <input type="file" accept="image/*" onchange="fileSelected(event,'visitante')">
+              <div class="upload-icon">📄</div>
+              <div class="upload-label">Arrastrá, hacé click o <strong>Ctrl+V</strong></div>
+              <div class="upload-sub">PNG, JPG o captura pegada</div>
+              <img id="preview-visit" class="upload-preview" style="display:none;">
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:1rem;">
+          <button class="btn btn-secondary" onclick="irPaso1()">← Atrás</button>
+          <button class="btn btn-primary" id="btn-procesar" onclick="procesarImagenes()" disabled>
+            <span id="btn-proc-txt">Procesar con IA →</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 3: revisar -->
+  <div id="paso3" style="display:none;">
+    <div id="flash-msg" class="flash"></div>
+
+    <div class="card" style="position:relative;">
+      <div class="loading-overlay" id="loading-overlay">
+        <div style="font-size:28px;">🤖</div>
+        <div class="loading-text" id="loading-text">Procesando imagen con IA...</div>
+        <div style="display:flex;gap:.35rem;margin-top:.25rem;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .0s infinite;"></div>
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .2s infinite;"></div>
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s .4s infinite;"></div>
+        </div>
+      </div>
+      <div class="card-hdr">
+        <span>Resultado del partido</span>
+        <span style="font-size:11px;color:#444;">Editá si es necesario</span>
+      </div>
+      <div class="card-body">
+        <div class="result-box">
+          <div class="team-side">
+            <div class="team-name" id="res-local">—</div>
+            <div style="font-size:11px;color:var(--muted);">Local</div>
+          </div>
+          <div style="display:flex;align-items:center;">
+            <input type="number" class="score-input" id="score-local" min="0" value="0">
+            <div class="score-sep">—</div>
+            <input type="number" class="score-input" id="score-visit" min="0" value="0">
+          </div>
+          <div class="team-side">
+            <div class="team-name" id="res-visit">—</div>
+            <div style="font-size:11px;color:var(--muted);">Visitante</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem;">
+          <div>
+            <label>Fecha del partido</label>
+            <input type="date" id="partido-dia" style="width:100%">
+          </div>
+          <div>
+            <label>Hora</label>
+            <input type="text" id="partido-hora" placeholder="ej: 15:30" maxlength="5" style="width:100%">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;">
+          <div class="autocomplete-wrap">
+            <label>Estadio</label>
+            <input type="text" id="partido-estadio" placeholder="Nombre del estadio" oninput="acInput(this,'estadios','partido-estadio')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-estadio"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label>DT Local</label>
+            <input type="text" id="partido-dt-local" placeholder="Director técnico local" oninput="acInput(this,'tecnicos','partido-dt-local')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-dt-local"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label>DT Visitante</label>
+            <input type="text" id="partido-dt-visit" placeholder="Director técnico visitante" oninput="acInput(this,'tecnicos','partido-dt-visit')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-dt-visit"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('partido-arbitro')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
+            <input type="text" id="partido-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-arbitro')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-arbitro"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 1 <span onclick="abrirCrearArbitroRapido('partido-juez1')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
+            <input type="text" id="partido-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez1')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-juez1"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 2 <span onclick="abrirCrearArbitroRapido('partido-juez2')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
+            <input type="text" id="partido-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-juez2')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-juez2"></div>
+          </div>
+          <div class="autocomplete-wrap">
+            <label style="display:flex;align-items:center;justify-content:space-between;">Cuarto árbitro <span onclick="abrirCrearArbitroRapido('partido-cuarto')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
+            <input type="text" id="partido-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','partido-cuarto')" autocomplete="off">
+            <div class="autocomplete-list" id="ac-partido-cuarto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- planillas lado a lado -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card" style="position:relative;">
+        <div class="card-hdr"><span id="title-plan-local">Planilla local</span></div>
+        <div class="card-body planilla-wrap" id="tabla-local"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span id="title-plan-visit">Planilla visitante</span></div>
+        <div class="card-body planilla-wrap" id="tabla-visit"></div>
+      </div>
+    </div>
+
+    <div class="confirm-bar">
+      <div class="confirm-info">Revisá los datos antes de confirmar. Una vez guardado, las stats de cada jugador se actualizan automáticamente.</div>
+      <div style="display:flex;gap:.6rem;">
+        <button class="btn btn-secondary" onclick="irPaso2()">← Volver</button>
+        <button class="btn btn-secondary" onclick="guardarBorrador()" title="Guarda los datos sin marcar el partido como jugado">💾 Borrador</button>
+        <button class="btn btn-primary" onclick="confirmarCarga()">✓ Publicar planilla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 4: confirmado -->
+  <div id="paso4" style="display:none;">
+    <div style="text-align:center;padding:3rem 2rem;">
+      <div style="font-size:48px;margin-bottom:1rem;">✅</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--accent);margin-bottom:.5rem;">¡Partido cargado!</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:2rem;" id="confirmado-txt">Los datos fueron guardados y las posiciones actualizadas.</div>
+      <div style="display:flex;gap:.75rem;justify-content:center;">
+        <button class="btn btn-secondary" onclick="resetTodo()">Cargar otro partido</button>
+        <button class="btn btn-primary" onclick="volverAlInicio()">← Volver al inicio</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+```
 
 <!-- ===================== HORARIOS Y STREAMS ===================== -->
-    <div class="panel" id="panel-horarios">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
-      <div class="card">
-        <div class="card-body">
-          <div class="form-row two">
-            <div><label>Zona</label><select id="hs-zona" onchange="hsActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
-            <div><label>Fecha</label><select id="hs-fecha" onchange="hsActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
-          </div>
-          <div id="hs-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
-          <select id="hs-partido" style="display:none" onchange="hsMostrar()"><option value="">—</option></select>
-        </div>
-      </div>
 
-      <!-- Bulk programming form -->
-      <div id="hs-bulk-form" style="display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
-          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">Programar todos los partidos</h3>
-          <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
-        </div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">Solo se guardan los partidos que hayas modificado. El estadio por defecto del equipo local aparece precargado pero no se guarda si no lo modificás.</p>
-        <div id="hs-bulk-lista"></div>
-        <div style="text-align:right;margin-top:1rem;">
-          <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
-        </div>
+```
+<div class="panel" id="panel-horarios">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
+  <div class="card">
+    <div class="card-body">
+      <div class="form-row two">
+        <div><label>Zona</label><select id="hs-zona" onchange="hsActualizar()"><option value="">— Zona —</option><option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option></select></div>
+        <div><label>Fecha</label><select id="hs-fecha" onchange="hsActualizar()"><option value="">— Fecha —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option></select></div>
       </div>
-
-      <!-- Single partido form (legacy) -->
-      <div id="hs-form" style="display:none;margin-top:1rem;">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
-          <div style="font-size:14px;font-weight:600;margin-bottom:.85rem;" id="hs-titulo">—</div>
-          <div class="form-row two">
-            <div><label>Día del partido</label><input type="date" id="hs-dia"></div>
-            <div><label>Horario</label><input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="8"></div>
-          </div>
-          <div class="form-row two">
-            <div class="autocomplete-wrap"><label>Árbitro principal</label><input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-arbitro"></div></div>
-            <div class="autocomplete-wrap"><label>Juez de línea 1</label><input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez1"></div></div>
-            <div class="autocomplete-wrap"><label>Juez de línea 2</label><input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez2"></div></div>
-            <div class="autocomplete-wrap"><label>Cuarto árbitro</label><input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-cuarto"></div></div>
-          </div>
-          <div><label>Link de transmisión</label><input type="text" id="hs-stream" placeholder="https://youtube.com/live/..."></div>
-          <div style="text-align:right;margin-top:.5rem;"><button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button></div>
-        </div>
-        <div id="hs-preview" style="display:none;">
-          <p style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">Vista previa:</p>
-          <a id="hs-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:.4rem .75rem;text-decoration:none;color:#e8453a;font-size:12px;font-weight:600;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-            Ver en vivo
-          </a>
-        </div>
-      </div>
+      <div id="hs-partidos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0;"></div>
+      <select id="hs-partido" style="display:none" onchange="hsMostrar()"><option value="">—</option></select>
     </div>
+  </div>
+
+  <!-- Bulk programming form -->
+  <div id="hs-bulk-form" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">Programar todos los partidos</h3>
+      <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">Solo se guardan los partidos que hayas modificado. El estadio por defecto del equipo local aparece precargado pero no se guarda si no lo modificás.</p>
+    <div id="hs-bulk-lista"></div>
+    <div style="text-align:right;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="hsGuardarTodo()">💾 Guardar programación</button>
+    </div>
+  </div>
+
+  <!-- Single partido form (legacy) -->
+  <div id="hs-form" style="display:none;margin-top:1rem;">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:.85rem;" id="hs-titulo">—</div>
+      <div class="form-row two">
+        <div><label>Día del partido</label><input type="date" id="hs-dia"></div>
+        <div><label>Horario</label><input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="8"></div>
+      </div>
+      <div class="form-row two">
+        <div class="autocomplete-wrap"><label>Árbitro principal</label><input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-arbitro"></div></div>
+        <div class="autocomplete-wrap"><label>Juez de línea 1</label><input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez1"></div></div>
+        <div class="autocomplete-wrap"><label>Juez de línea 2</label><input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez2"></div></div>
+        <div class="autocomplete-wrap"><label>Cuarto árbitro</label><input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-cuarto"></div></div>
+      </div>
+      <div><label>Link de transmisión</label><input type="text" id="hs-stream" placeholder="https://youtube.com/live/..."></div>
+      <div style="text-align:right;margin-top:.5rem;"><button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button></div>
+    </div>
+    <div id="hs-preview" style="display:none;">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">Vista previa:</p>
+      <a id="hs-preview-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:.4rem .75rem;text-decoration:none;color:#e8453a;font-size:12px;font-weight:600;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        Ver en vivo
+      </a>
+    </div>
+  </div>
+</div>
+```
 
 <!-- ===================== ESCUDOS ===================== -->
-    <div class="panel" id="panel-escudos">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Escudos de clubes</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente).</p>
-      <div class="escudos-grid" id="escudos-grid"></div>
-    </div>
 
-    <!-- ===================== JUGADORES ===================== -->
-    <div class="panel" id="panel-jugadores">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
-          <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1;min-width:200px;" oninput="buscarJugadores()">
-          <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
+```
+<div class="panel" id="panel-escudos">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Escudos de clubes</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente).</p>
+  <div class="escudos-grid" id="escudos-grid"></div>
+</div>
+
+<!-- ===================== JUGADORES ===================== -->
+<div class="panel" id="panel-jugadores">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Jugadores</h2>
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1;min-width:200px;" oninput="buscarJugadores()">
+      <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
+    </div>
+  </div>
+  <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
+  <div id="jug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:420px;max-width:95vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Editar jugador</div>
+      <input type="hidden" id="jug-edit-id">
+      <div style="display:grid;gap:.65rem;">
+        <div><label>ID Federal</label><input type="text" id="jug-edit-idfederal" placeholder="Ej: 3177974"></div>
+        <div><label>Nombre (planilla)</label><input type="text" id="jug-edit-nombre" placeholder="Como viene en la planilla"></div>
+        <div><label>Common name (a mostrar en portal)</label><input type="text" id="jug-edit-display" placeholder="Ej: Tomas Lopez"></div>
+        <div><label>Club actual</label>
+          <select id="jug-edit-equipo">
+            <option value="">— Sin club —</option>
+            ${ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("")}
+          </select>
         </div>
       </div>
-      <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
-      <div id="jug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:420px;max-width:95vw;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Editar jugador</div>
-          <input type="hidden" id="jug-edit-id">
-          <div style="display:grid;gap:.65rem;">
-            <div><label>ID Federal</label><input type="text" id="jug-edit-idfederal" placeholder="Ej: 3177974"></div>
-            <div><label>Nombre (planilla)</label><input type="text" id="jug-edit-nombre" placeholder="Como viene en la planilla"></div>
-            <div><label>Common name (a mostrar en portal)</label><input type="text" id="jug-edit-display" placeholder="Ej: Tomas Lopez"></div>
-            <div><label>Club actual</label>
-              <select id="jug-edit-equipo">
-                <option value="">— Sin club —</option>
-                ${ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("")}
-              </select>
-            </div>
-          </div>
-          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
-            <button class="btn btn-secondary btn-sm" onclick="cerrarEditJugador()">Cancelar</button>
-            <button class="btn btn-danger btn-sm" onclick="eliminarJugador()">Eliminar</button>
-            <button class="btn btn-primary btn-sm" onclick="guardarJugador()">Guardar</button>
-          </div>
-        </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarEditJugador()">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarJugador()">Eliminar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarJugador()">Guardar</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- ===================== ABM ÁRBITROS ===================== -->
-    <div class="panel" id="panel-abm-arbitros">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Árbitros</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá el plantel de árbitros. Pueden actuar como árbitro principal, línea 1, línea 2 o cuarto árbitro.</p>
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
-          <input type="text" id="arb-filtro" placeholder="🔍 Buscar árbitro..." style="flex:1;min-width:160px;" oninput="filtrarABM('arb')">
-          <input type="text" id="arb-nuevo" placeholder="Nombre completo del árbitro" style="flex:1;min-width:160px;">
-          <button class="btn btn-primary btn-sm" onclick="agregarArbitro()">+ Agregar</button>
-        </div>
-      </div>
-      <div class="abm-list" id="arb-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+<!-- ===================== ABM ÁRBITROS ===================== -->
+<div class="panel" id="panel-abm-arbitros">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Árbitros</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá el plantel de árbitros. Pueden actuar como árbitro principal, línea 1, línea 2 o cuarto árbitro.</p>
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <input type="text" id="arb-filtro" placeholder="🔍 Buscar árbitro..." style="flex:1;min-width:160px;" oninput="filtrarABM('arb')">
+      <input type="text" id="arb-nuevo" placeholder="Nombre completo del árbitro" style="flex:1;min-width:160px;">
+      <button class="btn btn-primary btn-sm" onclick="agregarArbitro()">+ Agregar</button>
     </div>
+  </div>
+  <div class="abm-list" id="arb-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+</div>
 
-    <!-- ===================== ABM ESTADIOS ===================== -->
-    <div class="panel" id="panel-abm-estadios">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Estadios</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá los estadios del torneo.</p>
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="est-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('est')">
-          <input type="text" id="est-nuevo" placeholder="Nombre del estadio" style="flex:1;min-width:140px;">
-          <button class="btn btn-primary btn-sm" onclick="agregarEstadio()">+ Agregar</button>
-        </div>
-      </div>
-      <div class="abm-list" id="est-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+<!-- ===================== ABM ESTADIOS ===================== -->
+<div class="panel" id="panel-abm-estadios">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Estadios</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Cargá los estadios del torneo.</p>
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-body" style="display:flex;gap:.75rem;">
+      <input type="text" id="est-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('est')">
+      <input type="text" id="est-nuevo" placeholder="Nombre del estadio" style="flex:1;min-width:140px;">
+      <button class="btn btn-primary btn-sm" onclick="agregarEstadio()">+ Agregar</button>
     </div>
+  </div>
+  <div class="abm-list" id="est-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+</div>
 
-    <!-- ===================== ABM TECNICOS ===================== -->
-    <div class="panel" id="panel-abm-tecnicos">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Directores Tecnicos</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Carga y mantenimiento de directores tecnicos por club.</p>
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-body" style="display:flex;gap:.75rem;">
-          <input type="text" id="tec-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('tec')">
-          <input type="text" id="tec-nuevo" placeholder="Nombre del director tecnico" style="flex:1;min-width:140px;">
-          <button class="btn btn-primary btn-sm" onclick="agregarTecnico()">+ Agregar</button>
-        </div>
-      </div>
-      <div class="abm-list" id="tec-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+<!-- ===================== ABM TECNICOS ===================== -->
+<div class="panel" id="panel-abm-tecnicos">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Directores Tecnicos</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Carga y mantenimiento de directores tecnicos por club.</p>
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-body" style="display:flex;gap:.75rem;">
+      <input type="text" id="tec-filtro" placeholder="🔍 Buscar..." style="flex:1;min-width:140px;" oninput="filtrarABM('tec')">
+      <input type="text" id="tec-nuevo" placeholder="Nombre del director tecnico" style="flex:1;min-width:140px;">
+      <button class="btn btn-primary btn-sm" onclick="agregarTecnico()">+ Agregar</button>
     </div>
+  </div>
+  <div class="abm-list" id="tec-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
+</div>
 
-    <!-- ===================== EQUIPOS / VINCULOS ===================== -->
-    <div class="panel" id="panel-abm-equipos">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Equipos — Estadio y DT predeterminado</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Vinculá cada equipo con su estadio y DT actual. Se usa como valor por defecto al cargar planillas, sin afectar planillas ya guardadas.</p>
-      <div id="equipos-vinculos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem;"></div>
-    </div>
+<!-- ===================== EQUIPOS / VINCULOS ===================== -->
+<div class="panel" id="panel-abm-equipos">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Equipos — Estadio y DT predeterminado</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Vinculá cada equipo con su estadio y DT actual. Se usa como valor por defecto al cargar planillas, sin afectar planillas ya guardadas.</p>
+  <div id="equipos-vinculos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem;"></div>
+</div>
 
-    <!-- ===================== FORO ADMIN ===================== -->
-    <div class="panel" id="panel-foro-admin">
-      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
-      <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Próximamente: lista de mensajes del foro con opción de eliminar o bloquear usuarios.</div></div>
-    </div>
+<!-- ===================== FORO ADMIN ===================== -->
+<div class="panel" id="panel-foro-admin">
+  <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
+  <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Próximamente: lista de mensajes del foro con opción de eliminar o bloquear usuarios.</div></div>
+</div>
+```
 
   </div>
 </div>
@@ -1696,9 +1707,27 @@ async function guardarPenal(){
   // Map tipo to resultado
   const resultado = tipo==="gol_penal" ? "gol" : tipo==="penal_atajado" ? "atajado" : "desviado";
 
-  // Find jugador DB ids
-  const ejecutanteDB = JUGADORES_CACHE.find(j => String(j.id_federal)===String(ejecutanteId));
-  const arqueroDB = JUGADORES_CACHE.find(j => String(j.id_federal)===String(arqueroId));
+  // Find jugador DB ids - fetch from DB directly to ensure correctness
+  let ejecutanteDBId = null;
+  let arqueroDBId = parseInt(arqueroId) || null;
+
+  if(ejecutanteId){
+    // Try JUGADORES_CACHE first
+    const cached = JUGADORES_CACHE.find(j => String(j.id_federal)===String(ejecutanteId) || String(j.id)===String(ejecutanteId));
+    if(cached){
+      ejecutanteDBId = cached.id;
+    } else {
+      // Fetch from DB
+      const {data:jFetch} = await sb.from("jugadores")
+        .select("id").eq("id_federal", ejecutanteId).maybeSingle();
+      if(jFetch) ejecutanteDBId = jFetch.id;
+      else {
+        // Try by db id directly
+        const parsed = parseInt(ejecutanteId);
+        if(parsed) ejecutanteDBId = parsed;
+      }
+    }
+  }
 
   // Get partido_id and fixture_id from current state
   const sel = obtenerPartidoSeleccionado();
@@ -1716,8 +1745,8 @@ async function guardarPenal(){
     fixture_id: fixtureId,
     equipo_favor: favor,
     equipo_contra: contra,
-    ejecutante_id: ejecutanteDB?.id || null,
-    arquero_id: arqueroDB?.id || null,
+    ejecutante_id: ejecutanteDBId || null,
+    arquero_id: arqueroDBId || null,
     resultado,
     minuto,
     arbitro,
@@ -2907,7 +2936,6 @@ Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(
   actualizarEstadoPlanillaSeleccion();
 });
 </script>
+
 </body>
 </html>
-
-
