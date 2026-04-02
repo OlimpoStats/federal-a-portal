@@ -271,7 +271,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div><p class="sec">🏠 Como local</p><div class="tabla-mini" id="tbl-local-stats"></div></div>
         <div><p class="sec">✈️ Como visitante</p><div class="tabla-mini" id="tbl-visitante-stats"></div></div>
       </div>
-      <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas"></div></div>
+      <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div></div>
     </div>
     <div id="stats-arbitros" style="display:none;">
       <p class="sec">🧑‍⚖️ Rendimiento de árbitros</p>
@@ -337,6 +337,8 @@ async function cargarPartidosDesdeDB(){
       .from("fixture")
       .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro");
     if(!fixtureErr && fixtureData){
+      // Store globally for stats
+      window._FIXTURE_RAW = fixtureData;
       fixtureData.forEach(p => {
         if(!p.zona || !p.fecha) return;
         const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
@@ -1477,7 +1479,7 @@ async function cargarEstadisticas(){
     // Query 5: jugadores para penales
     const {data:jugsDB} = await sb.from('jugadores').select('id,nombre,nombre_display,equipo_id,equipos(nombre)');
     const jugsById = {};
-    (jugsDB||[]).forEach(j=>{ jugsById[j.id]=j; jugsById[String(j.id)]=j; });
+    (jugsDB||[]).forEach(j=>{ jugsById[j.id]=j; jugsById[String(j.id)]=j; jugsById[Number(j.id)]=j; });
 
     // Process jugadores stats
     const jugStats = {}; // id → {nombre, equipo, goles, asist, amarillas, rojas}
@@ -1669,14 +1671,37 @@ async function cargarEstadisticas(){
       }
     });
 
-    // Arbitros from PARTIDO_META (has arbitro) + FIXTURE (has result)
+    // Build arbitro per partido from fixture table query
+    // We already have fixtureData with arbitro field - build a map partido→arbitro
+    // Also build from PARTIDO_META as fallback
+    const arbitroPorPartido = {}; // "zona_fecha_local_visit" → arbitro name
     ZONAS.forEach(z=>{
       for(let f=1;f<=18;f++){
         (FIXTURE[z][String(f)]||[]).forEach(m=>{
           if(m.gl===null) return;
           const key = `${z}_${f}_${m.local}_${m.visitante}`;
           const meta = PARTIDO_META[key]||{};
-          const arb = meta.arbitro || m.arbitro || "";
+          const arb = meta.arbitro || "";
+          if(arb) arbitroPorPartido[key] = arb;
+        });
+      }
+    });
+    // Also use fixtureData directly (already loaded) - it has arbitro field
+    if(window._FIXTURE_RAW){
+      (window._FIXTURE_RAW||[]).forEach(p=>{
+        if(!p.arbitro) return;
+        const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
+        arbitroPorPartido[key]=p.arbitro;
+      });
+    }
+
+    // Build arbiStats from partido results
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          const key=`${z}_${f}_${m.local}_${m.visitante}`;
+          const arb=arbitroPorPartido[key]||"";
           if(!arb) return;
           if(!arbiStats[arb]) arbiStats[arb]={pj:0,vl:0,emp:0,vv:0,aml:0,amv:0,rl:0,rv:0,penl:0,penv:0};
           const a=arbiStats[arb];
@@ -1684,8 +1709,7 @@ async function cargarEstadisticas(){
           if(m.gl>m.gv) a.vl++;
           else if(m.gl<m.gv) a.vv++;
           else a.emp++;
-          // Store arbitro name in match for event cross-referencing
-          m._arbitro = arb;
+          m._arbitro=arb;
         });
       }
     });
@@ -1763,7 +1787,7 @@ async function cargarEstadisticas(){
     }).join('') + '</tbody></table>';
 
     // Zona table with H2H columns
-    const renderZonaTable = (rows) => {
+    const renderZonaTable = (rows, _zc2={color:'#888'}) => {
       // Compute H2H same as calcTabla
       const ptGroups={};
       rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
@@ -1785,10 +1809,17 @@ async function cargarEstadisticas(){
         }});
         teams.forEach(t=>{ h2hData[t]=h2h[t]; });
       });
-      return tblHead(
-        ['24px','','#'],['140px','Equipo','Equipo'],['30px','PJ','PJ'],['30px','G','G'],['30px','E','E'],['30px','P','P'],['30px','GF','GF'],['30px','GC','GC'],['34px','+/-','+/-'],['34px','Pts','Pts'],
-        ['34px','H2H','H2H'],['30px','GD','GD'],['30px','ED','ED'],['30px','PD','PD'],['30px','GFD','GFD'],['30px','GFV','GFV']
-      ) + rows.map((r,i)=>{
+      const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
+      return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
+        + `<tr><td colspan="10"></td><td colspan="6" style="${h2hBg}border-radius:4px 4px 0 0;font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-align:center;padding:2px;text-transform:uppercase;">Desempate mini-tabla</td></tr>`
+        + `<tr>`
+        + `<th style="width:24px;"></th><th style="width:120px;text-align:left;">Equipo</th>`
+        + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
+        + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
+        + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
+        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `</tr></thead><tbody>`
+        + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
         const h=h2hData[r.n];
         const hasH2H = !!h;
@@ -1805,7 +1836,7 @@ async function cargarEstadisticas(){
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gf:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gfv:'—'}</td>
         </tr>`;
-      }).join('') + '</tbody></table>';
+      }).join('') + `</tbody></table>`;
     };
     document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
 
@@ -1826,7 +1857,7 @@ async function cargarEstadisticas(){
       const rows=Object.entries(equipoStats).filter(([,s])=>s.zona===z)
         .map(([n,s])=>({n,...s,dif:s.gf-s.gc})).sort((a,b)=>b.pts-a.pts||(b.dif)-(a.dif)||b.gf-a.gf);
       return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
-      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows)}</div>`;
+      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc)}</div>`;
     }).join('');
 
     // ÁRBITROS
