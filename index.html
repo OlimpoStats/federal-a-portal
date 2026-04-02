@@ -1447,13 +1447,33 @@ async function cargarEstadisticas(){
   document.getElementById('stats-loading').style.display='';
   document.getElementById('stats-content').style.display='none';
   try {
-    // Load all events with player and team info
-    const {data:eventos} = await sb.from('eventos')
-      .select('tipo,minuto,planillas(partido_id,equipo_id,titular,es_capitan,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre),partidos(id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante))');
+    // Query 1: eventos con jugador y equipo
+    const {data:eventos, error:evErr} = await sb.from('eventos')
+      .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,jugadores(id,nombre,nombre_display),equipos(nombre))');
+    if(evErr) throw evErr;
 
-    // Load penales
+    // Query 2: partidos jugados para cruzar con eventos
+    const {data:partidosDB, error:pErr} = await sb.from('partidos')
+      .select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante')
+      .not('goles_local','is',null);
+    if(pErr) throw pErr;
+    const partidosById = {};
+    (partidosDB||[]).forEach(p=>{ partidosById[p.id]=p; });
+
+    // Query 3: planillas para cruzar partido_id
+    const {data:planillasDB} = await sb.from('planillas')
+      .select('id,partido_id,equipo_id');
+    const planillaPartido = {};
+    (planillasDB||[]).forEach(p=>{ planillaPartido[p.id]=p.partido_id; });
+
+    // Query 4: penales
     const {data:penalesDB} = await sb.from('penales')
-      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,jugadores!penales_ejecutante_id_fkey(nombre,nombre_display),arqueros:jugadores!penales_arquero_id_fkey(nombre,nombre_display)');
+      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra');
+
+    // Query 5: jugadores para penales
+    const {data:jugsDB} = await sb.from('jugadores').select('id,nombre,nombre_display');
+    const jugsById = {};
+    (jugsDB||[]).forEach(j=>{ jugsById[j.id]=j; });
 
     // Process jugadores stats
     const jugStats = {}; // id → {nombre, equipo, goles, asist, amarillas, rojas}
@@ -1464,8 +1484,9 @@ async function cargarEstadisticas(){
     (eventos||[]).forEach(ev => {
       const pl = ev.planillas;
       if(!pl) return;
-      const partido = pl.partidos;
-      if(!partido || partido.goles_local===null) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidosById[partidoId];
+      if(!partido) return;
       const jugador = pl.jugadores;
       const equipo = pl.equipos?.nombre;
       const jId = jugador?.id;
@@ -1547,8 +1568,9 @@ async function cargarEstadisticas(){
     (eventos||[]).forEach(ev=>{
       const pl=ev.planillas;
       if(!pl?.partidos) return;
-      const partido=pl.partidos;
-      if(partido.goles_local===null) return;
+      const partidoId2 = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido=partidosById[partidoId2];
+      if(!partido || partido.goles_local===null) return;
       // Find arbitro for this partido from FIXTURE
       const ms=FIXTURE[partido.zona]?.[String(partido.fecha)];
       if(!ms) return;
@@ -1648,7 +1670,8 @@ async function cargarEstadisticas(){
     // PENALES EJECUTANTES
     const penEjec = {};
     (penalesDB||[]).forEach(p=>{
-      const nombre = p.jugadores?.nombre_display||p.jugadores?.nombre||'?';
+      const jug = jugsById[p.ejecutante_id];
+      const nombre = jug?.nombre_display||jug?.nombre||'?';
       if(!penEjec[nombre]) penEjec[nombre]={nombre,ejecutados:0,goles:0,equipo:p.equipo_favor||''};
       penEjec[nombre].ejecutados++;
       if(p.resultado==='gol') penEjec[nombre].goles++;
@@ -1666,7 +1689,8 @@ async function cargarEstadisticas(){
     const penArq = {};
     (penalesDB||[]).forEach(p=>{
       if(!p.arquero_id) return;
-      const nombre = p.arqueros?.nombre_display||p.arqueros?.nombre||'?';
+      const arqJug = jugsById[p.arquero_id];
+      const nombre = arqJug?.nombre_display||arqJug?.nombre||'?';
       if(!penArq[nombre]) penArq[nombre]={nombre,recibidos:0,atajados:0};
       penArq[nombre].recibidos++;
       if(p.resultado==='atajado') penArq[nombre].atajados++;
