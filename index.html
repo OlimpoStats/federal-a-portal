@@ -1537,19 +1537,135 @@ async function cargarEstadisticas(){
       }
     });
 
-    // Vallas from fixture
-    const vallasPorEquipo = {}; // equipo → {vallas, pj}
-    ZONAS.forEach(z=>{
-      for(let f=1;f<=18;f++){
-        (FIXTURE[z][String(f)]||[]).forEach(m=>{
-          if(m.gl===null) return;
-          if(!vallasPorEquipo[m.local]) vallasPorEquipo[m.local]={vallas:0,pj:0};
-          if(!vallasPorEquipo[m.visitante]) vallasPorEquipo[m.visitante]={vallas:0,pj:0};
-          vallasPorEquipo[m.local].pj++;
-          vallasPorEquipo[m.visitante].pj++;
-          if(m.gv===0) vallasPorEquipo[m.local].vallas++;
-          if(m.gl===0) vallasPorEquipo[m.visitante].vallas++;
-        });
+    // Vallas por arquero (#1 titular, #12 suplente)
+    // Cross planillasDB (has partido_id, equipo_id, numero_camiseta, jugador_id) with fixture results
+    const vallasPorArquero = {}; // jugador_id → {nombre, equipo, pj, vallas}
+
+    // Build a map: partido_id → {local_equipo_id, visit_equipo_id, gl, gv, zona, fecha, local, visitante}
+    const partidoMap = {};
+    (partidosDB||[]).forEach(p=>{
+      partidoMap[p.id] = p;
+    });
+
+    // For each planilla row that is a keeper (numero 1 o 12), find if they played
+    // planillasDB has: id, partido_id, equipo_id
+    // We need planillas with jugador info and numero - but planillasDB only has id/partido_id/equipo_id
+    // We need a richer query - let's use eventos to find cambio_entra/sale for #12
+
+    // Simpler approach: query planillas with numero_camiseta filter
+    const {data:arquerosPlanilla} = await sb.from('planillas')
+      .select('id,partido_id,equipo_id,numero_camiseta,titular,jugadores(id,nombre,nombre_display),equipos(nombre)')
+      .in('numero_camiseta',[1,12]);
+
+    // Build set of partido_ids where keeper #12 entered (cambio_entra)
+    const arqSustitutos = new Set(); // planilla ids where #12 has cambio_entra
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo==='cambio_entra'){
+        const pl = ev.planillas;
+        if(pl && [1,12].includes(Number(pl.numero_camiseta || 0))){
+          arqSustitutos.add(ev.planilla_id);
+        }
+      }
+    });
+    // Build set of planilla ids where #1 has cambio_sale (left early)
+    const arqSalieron = new Set();
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo==='cambio_sale'){
+        const pl = ev.planillas;
+        if(pl && Number(pl.numero_camiseta||0)===1){
+          arqSalieron.add(ev.planilla_id);
+        }
+      }
+    });
+
+    // Build event map by planilla_id for keeper minute tracking
+    const evsByPlanilla = {};
+    (eventos||[]).forEach(ev=>{
+      if(!evsByPlanilla[ev.planilla_id]) evsByPlanilla[ev.planilla_id]=[];
+      evsByPlanilla[ev.planilla_id].push(ev);
+    });
+
+    // Build goles concedidos per partido per equipo with minutes
+    // goles_concedidos[partido_id][equipo_id] = [{minuto}]
+    const golesConcedidosMap = {};
+    (eventos||[]).forEach(ev=>{
+      if(!['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidoMap[partidoId];
+      if(!partido) return;
+      // This goal was scored BY pl.equipo_id AGAINST the other team
+      // Find the other team's equipo_id
+      if(!golesConcedidosMap[partidoId]) golesConcedidosMap[partidoId]={};
+      // We'll track by "equipo que recibió" = the other team
+      // Store goal minutes indexed by scoring equipo (to invert later)
+      const scoringEquipo = pl.equipos?.nombre;
+      const concedidoPor = scoringEquipo===partido.equipo_local_nombre
+        ? partido.equipo_visitante_nombre
+        : partido.equipo_local_nombre;
+      if(!golesConcedidosMap[partidoId][concedidoPor]) golesConcedidosMap[partidoId][concedidoPor]=[];
+      golesConcedidosMap[partidoId][concedidoPor].push(parseInt(ev.minuto)||0);
+    });
+    // Also gol_contra: scored by own team, counts against them
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo!=='gol_contra') return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidoMap[partidoId];
+      if(!partido) return;
+      const ownEquipo = pl.equipos?.nombre;
+      if(!golesConcedidosMap[partidoId]) golesConcedidosMap[partidoId]={};
+      if(!golesConcedidosMap[partidoId][ownEquipo]) golesConcedidosMap[partidoId][ownEquipo]=[];
+      golesConcedidosMap[partidoId][ownEquipo].push(parseInt(ev.minuto)||0);
+    });
+
+    const parseMin = m => { const s=String(m||'').split('+'); return parseInt(s[0]||0)*100+(parseInt(s[1]||0)); };
+
+    (arquerosPlanilla||[]).forEach(pl=>{
+      const partido = partidoMap[pl.partido_id];
+      if(!partido || partido.goles_local===null) return;
+      const jug = pl.jugadores;
+      if(!jug) return;
+      const jId = jug.id;
+      const nombre = jug.nombre_display || jug.nombre || '?';
+      const equipo = pl.equipos?.nombre || '';
+      const num = Number(pl.numero_camiseta);
+      const plEvs = evsByPlanilla[pl.id] || [];
+
+      // Determine minutes played
+      let minuteIn = null, minuteOut = null;
+      if(num===1 && pl.titular){
+        minuteIn = 0;
+        const saleEv = plEvs.find(e=>e.tipo==='cambio_sale');
+        minuteOut = saleEv ? parseMin(saleEv.minuto) : 9000; // 9000 = played full
+      } else if(num===12){
+        const entraEv = plEvs.find(e=>e.tipo==='cambio_entra');
+        if(!entraEv) return; // didn't play
+        minuteIn = parseMin(entraEv.minuto);
+        minuteOut = 9000;
+      } else return;
+
+      const minutesPlayed = minuteOut===9000 ? (9000-minuteIn) : (minuteOut-minuteIn);
+      // Normalize: full game = 9000-0 = 9000, treat as 90
+      const minutosEfectivos = minuteOut===9000 ? 90 - (minuteIn===0?0:minuteIn/100) : (minuteOut-minuteIn)/100;
+
+      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0};
+
+      // Goals conceded BY this keeper's team while he was on
+      const golesContra = (golesConcedidosMap[pl.partido_id]?.[equipo] || []);
+      const golesEnSuTurno = golesContra.filter(m => m*100>=minuteIn && m*100<=(minuteOut===9000?9099:minuteOut));
+
+      const tuvoValla = golesEnSuTurno.length===0;
+      const minJugados = minuteOut===9000 ? (90 - minuteIn/100) : (minuteOut-minuteIn)/100;
+
+      // Count partido:
+      // - If conceded goals: always count as PJ (regardless of minutes)
+      // - If clean sheet: only count if played 60+ minutes
+      if(!tuvoValla || minJugados>=60){
+        vallasPorArquero[jId].pj++;
+        if(tuvoValla) vallasPorArquero[jId].vallas++;
       }
     });
 
@@ -1629,11 +1745,11 @@ async function cargarEstadisticas(){
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // VALLAS INVICTAS
-    const vallas = Object.entries(vallasPorEquipo).filter(([,v])=>v.vallas>0)
-      .sort(([,a],[,b])=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
+    const vallas = Object.values(vallasPorArquero)
+      .sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
     document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
-      ['28px','','#'],['','Equipo','Equipo'],['40px','PJ','PJ'],['50px','Vallas invictas','🧤']
-    ) + vallas.map(([eq,v],i)=>`<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(eq,'me')}<span style="font-size:13px;">${eq}</span></div></td><td>${v.pj}</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
+      ['28px','','#'],['','Arquero','Arquero'],['40px','PJ','PJ'],['50px','Vallas','🧤']
+    ) + vallas.map((v,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // TABLA GENERAL
