@@ -1474,7 +1474,9 @@ async function cargarEstadisticas(){
     const {data:penalesDB, error:penErr} = await sb.from('penales')
       .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id');
     if(penErr) console.warn('Penales error:', penErr.message);
-    console.log('Penales loaded:', penalesDB?.length, penErr?.message);
+    console.log('Penales loaded:', penalesDB?.length, 'error:', penErr?.message);
+    console.log('Sample penal:', penalesDB?.[0]);
+    console.log('jugsDB sample:', jugsDB?.[0]);
 
     // Query 5: jugadores para penales
     const {data:jugsDB} = await sb.from('jugadores').select('id,nombre,nombre_display,equipo_id,equipos(nombre)');
@@ -1687,13 +1689,14 @@ async function cargarEstadisticas(){
       }
     });
     // Also use fixtureData directly (already loaded) - it has arbitro field
-    if(window._FIXTURE_RAW){
-      (window._FIXTURE_RAW||[]).forEach(p=>{
-        if(!p.arbitro) return;
-        const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
-        arbitroPorPartido[key]=p.arbitro;
-      });
-    }
+    // Fetch arbitros directly from fixture table
+    const {data:fixtureArbitros} = await sb.from('fixture')
+      .select('zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
+      .not('arbitro','is',null).neq('arbitro','');
+    (fixtureArbitros||[]).forEach(p=>{
+      const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
+      arbitroPorPartido[key]=p.arbitro;
+    });
 
     // Build arbiStats from partido results
     ZONAS.forEach(z=>{
@@ -1807,7 +1810,8 @@ async function cargarEstadisticas(){
             else{h2h[m.local].pts++;h2h[m.visitante].pts++;h2h[m.local].e++;h2h[m.visitante].e++;}
           });
         }});
-        teams.forEach(t=>{ h2hData[t]=h2h[t]; });
+        const h2hMatches2 = (partidos||[]).filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
+        teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
       return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
@@ -1829,7 +1833,9 @@ async function cargarEstadisticas(){
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
-          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'}">${hasH2H?h.pts:'—'}</td>
+          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''}"
+            ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}>
+            ${hasH2H?h.pts:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
@@ -1856,8 +1862,8 @@ async function cargarEstadisticas(){
       const zc=zonaConfig(z);
       const rows=Object.entries(equipoStats).filter(([,s])=>s.zona===z)
         .map(([n,s])=>({n,...s,dif:s.gf-s.gc})).sort((a,b)=>b.pts-a.pts||(b.dif)-(a.dif)||b.gf-a.gf);
-      return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
-      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc)}</div>`;
+      return `<div><p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
+      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc)}</div></div>`;
     }).join('');
 
     // ÁRBITROS
