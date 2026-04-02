@@ -246,10 +246,43 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <!-- ESTADÍSTICAS -->
 <div class="page" id="page-estadisticas">
-  <div class="placeholder">
-    <div class="ph-icon">📊</div>
-    <div class="ph-title">Estadísticas</div>
-    <div class="ph-sub">Próximamente: goleadores, tarjetas, rendimiento por equipo y más</div>
+  <div id="stats-loading" style="text-align:center;padding:3rem;color:var(--muted);">Cargando estadísticas...</div>
+  <div id="stats-content" style="display:none;">
+    <div class="ztabs" id="stats-tabs" style="margin-bottom:1.25rem;">
+      <div class="ztab active" onclick="showStatsTab('jugadores',this)">Jugadores</div>
+      <div class="ztab" onclick="showStatsTab('equipos',this)">Equipos</div>
+      <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
+      <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
+    </div>
+    <div id="stats-jugadores">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">⚽ Goleadores</p><div class="tabla-mini" id="tbl-goleadores"></div></div>
+        <div><p class="sec">👟 Asistentes</p><div class="tabla-mini" id="tbl-asistentes"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">🟨 Amonestados</p><div class="tabla-mini" id="tbl-amarillas"></div></div>
+        <div><p class="sec">🟥 Expulsados</p><div class="tabla-mini" id="tbl-rojas"></div></div>
+      </div>
+      <div style="margin-bottom:1rem;"><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
+    </div>
+    <div id="stats-equipos" style="display:none;">
+      <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" id="tbl-general"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">🏠 Como local</p><div class="tabla-mini" id="tbl-local-stats"></div></div>
+        <div><p class="sec">✈️ Como visitante</p><div class="tabla-mini" id="tbl-visitante-stats"></div></div>
+      </div>
+      <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas"></div></div>
+    </div>
+    <div id="stats-arbitros" style="display:none;">
+      <p class="sec">🧑‍⚖️ Rendimiento de árbitros</p>
+      <div class="tabla-mini" id="tbl-arbitros"></div>
+    </div>
+    <div id="stats-penales" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div><p class="sec">⚽ Ejecutantes</p><div class="tabla-mini" id="tbl-pen-ejecutantes"></div></div>
+        <div><p class="sec">🧤 Arqueros</p><div class="tabla-mini" id="tbl-pen-arqueros"></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1397,6 +1430,264 @@ async function diagnosticoIntegridad(){
 
 
 function renderForo(){ cargarMensajesForo(); }
+
+// ── ESTADÍSTICAS ──
+let STATS_LOADED = false;
+
+function showStatsTab(tab, el){
+  document.querySelectorAll('#stats-tabs .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['jugadores','equipos','arbitros','penales'].forEach(t=>{
+    document.getElementById('stats-'+t).style.display = t===tab?'':'none';
+  });
+}
+
+async function cargarEstadisticas(){
+  if(STATS_LOADED) return;
+  document.getElementById('stats-loading').style.display='';
+  document.getElementById('stats-content').style.display='none';
+  try {
+    // Load all events with player and team info
+    const {data:eventos} = await sb.from('eventos')
+      .select('tipo,minuto,planillas(partido_id,equipo_id,titular,es_capitan,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre),partidos(id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante))');
+
+    // Load penales
+    const {data:penalesDB} = await sb.from('penales')
+      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,jugadores!penales_ejecutante_id_fkey(nombre,nombre_display),arqueros:jugadores!penales_arquero_id_fkey(nombre,nombre_display)');
+
+    // Process jugadores stats
+    const jugStats = {}; // id → {nombre, equipo, goles, asist, amarillas, rojas}
+    const equipoStats = {}; // nombre → {pj,g,e,p,gf,gc,pts, local:{}, visit:{}}
+    const arbiStats = {}; // nombre → {pj, vl, emp, vv, amarillas_l, amarillas_v, rojas_l, rojas_v, penales_l, penales_v}
+    const vallaStats = {}; // arquero id → {nombre, equipo, pj, vallas}
+
+    (eventos||[]).forEach(ev => {
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partido = pl.partidos;
+      if(!partido || partido.goles_local===null) return;
+      const jugador = pl.jugadores;
+      const equipo = pl.equipos?.nombre;
+      const jId = jugador?.id;
+      const jNombre = jugador?.nombre_display || jugador?.nombre || '?';
+      const key = jId || jNombre;
+
+      if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0};
+
+      if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
+      if(ev.tipo==='gol_contra') jugStats[key].goles++; // cuenta para el que lo metió
+      if(ev.tipo==='asistencia') jugStats[key].asist++;
+      if(ev.tipo==='amarilla') jugStats[key].amarillas++;
+      if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=2; jugStats[key].rojas++; }
+      if(ev.tipo==='roja') jugStats[key].rojas++;
+
+      // Vallas: track arqueros (nota=AR implied by position or es_capitan)
+      if(ev.tipo==='gol'||ev.tipo==='gol_penal'||ev.tipo==='gol_tiro_libre'){
+        // The goalkeeper of the team that conceded
+        // We'll calculate vallas separately from fixture data
+      }
+    });
+
+    // Equipo stats from FIXTURE
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          [m.local, m.visitante].forEach(eq=>{
+            if(!equipoStats[eq]) equipoStats[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,zona:z,
+              local:{pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0},
+              visit:{pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}};
+          });
+          const loc=equipoStats[m.local], vis=equipoStats[m.visitante];
+          loc.pj++; vis.pj++; loc.gf+=m.gl; loc.gc+=m.gv; vis.gf+=m.gv; vis.gc+=m.gl;
+          loc.local.pj++; loc.local.gf+=m.gl; loc.local.gc+=m.gv;
+          vis.visit.pj++; vis.visit.gf+=m.gv; vis.visit.gc+=m.gl;
+          if(m.gl>m.gv){ loc.g++;loc.pts+=3;vis.p++; loc.local.g++;loc.local.pts+=3;vis.visit.p++; }
+          else if(m.gl<m.gv){ vis.g++;vis.pts+=3;loc.p++; vis.visit.g++;vis.visit.pts+=3;loc.local.p++; }
+          else{ loc.e++;vis.e++;loc.pts++;vis.pts++; loc.local.e++;loc.local.pts++;vis.visit.e++;vis.visit.pts++; }
+          // Vallas invictas
+          // local: if m.gv===0 the local keeper kept a clean sheet
+          // visit: if m.gl===0 the visitante keeper kept a clean sheet
+        });
+      }
+    });
+
+    // Vallas from fixture
+    const vallasPorEquipo = {}; // equipo → {vallas, pj}
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          if(!vallasPorEquipo[m.local]) vallasPorEquipo[m.local]={vallas:0,pj:0};
+          if(!vallasPorEquipo[m.visitante]) vallasPorEquipo[m.visitante]={vallas:0,pj:0};
+          vallasPorEquipo[m.local].pj++;
+          vallasPorEquipo[m.visitante].pj++;
+          if(m.gv===0) vallasPorEquipo[m.local].vallas++;
+          if(m.gl===0) vallasPorEquipo[m.visitante].vallas++;
+        });
+      }
+    });
+
+    // Arbitros from fixture
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null || !m.arbitro) return;
+          if(!arbiStats[m.arbitro]) arbiStats[m.arbitro]={pj:0,vl:0,emp:0,vv:0,aml:0,amv:0,rl:0,rv:0,penl:0,penv:0};
+          const a=arbiStats[m.arbitro];
+          a.pj++;
+          if(m.gl>m.gv) a.vl++;
+          else if(m.gl<m.gv) a.vv++;
+          else a.emp++;
+        });
+      }
+    });
+
+    // Add tarjetas to arbitros
+    (eventos||[]).forEach(ev=>{
+      const pl=ev.planillas;
+      if(!pl?.partidos) return;
+      const partido=pl.partidos;
+      if(partido.goles_local===null) return;
+      // Find arbitro for this partido from FIXTURE
+      const ms=FIXTURE[partido.zona]?.[String(partido.fecha)];
+      if(!ms) return;
+      const m=ms.find(x=>x.local===partido.equipo_local_nombre&&x.visitante===partido.equipo_visitante_nombre);
+      if(!m?.arbitro) return;
+      const a=arbiStats[m.arbitro];
+      if(!a) return;
+      const esLocal = pl.equipos?.nombre===partido.equipo_local_nombre;
+      if(ev.tipo==='amarilla'||ev.tipo==='doble_amarilla'){ if(esLocal) a.aml++; else a.amv++; }
+      if(ev.tipo==='roja'||ev.tipo==='doble_amarilla'){ if(esLocal) a.rl++; else a.rv++; }
+      if(['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo)){ if(esLocal) a.penl++; else a.penv++; }
+    });
+
+    // ── RENDER FUNCTIONS ──
+    const fmtJug = (nombre, equipo) => `<div style="font-size:13px;font-weight:500;">${nombre}</div><div style="font-size:10px;color:var(--muted);">${equipo||''}</div>`;
+    const tblHead = (...cols) => `<table><thead><tr>${cols.map(([w,t,l])=>`<th${w?` style="width:${w}"`:''}${t?` title="${t}"`:''}>${l}</th>`).join('')}</tr></thead><tbody>`;
+
+    // GOLEADORES
+    const goleadores = Object.values(jugStats).filter(j=>j.goles>0).sort((a,b)=>b.goles-a.goles).slice(0,10);
+    document.getElementById('tbl-goleadores').innerHTML = goleadores.length ? tblHead(
+      ['28px','Posición','#'],['','Jugador','Jugador'],['40px','Goles','⚽']
+    ) + goleadores.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // ASISTENTES
+    const asistentes = Object.values(jugStats).filter(j=>j.asist>0).sort((a,b)=>b.asist-a.asist).slice(0,10);
+    document.getElementById('tbl-asistentes').innerHTML = asistentes.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Asistencias','👟']
+    ) + asistentes.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.asist}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // AMARILLAS
+    const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,10);
+    document.getElementById('tbl-amarillas').innerHTML = amonestados.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Amarillas','🟨']
+    ) + amonestados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.amarillas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // ROJAS
+    const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,10);
+    document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Rojas','🟥']
+    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // VALLAS INVICTAS
+    const vallas = Object.entries(vallasPorEquipo).filter(([,v])=>v.vallas>0)
+      .sort(([,a],[,b])=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
+    document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
+      ['28px','','#'],['','Equipo','Equipo'],['40px','PJ','PJ'],['50px','Vallas invictas','🧤']
+    ) + vallas.map(([eq,v],i)=>`<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(eq,'me')}<span style="font-size:13px;">${eq}</span></div></td><td>${v.pj}</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // TABLA GENERAL
+    const generalRows = Object.entries(equipoStats).map(([n,s])=>({n,...s,dif:s.gf-s.gc}))
+      .sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    const renderGeneralTable = (rows, getId) => tblHead(
+      ['28px','','#'],['','Equipo','Equipo'],['36px','PJ','PJ'],['36px','G','G'],['36px','E','E'],['36px','P','P'],['36px','GF','GF'],['36px','GC','GC'],['42px','+/-','+/-'],['42px','Pts','Pts']
+    ) + rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+    }).join('') + '</tbody></table>';
+    document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
+
+    // LOCAL
+    const localRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.local,dif:s.local.gf-s.local.gc}))
+      .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    document.getElementById('tbl-local-stats').innerHTML = renderGeneralTable(localRows);
+
+    // VISITANTE
+    const visitRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.visit,dif:s.visit.gf-s.visit.gc}))
+      .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    document.getElementById('tbl-visitante-stats').innerHTML = renderGeneralTable(visitRows);
+
+    // POSICIONES AMPLIADAS POR ZONA
+    const posAmpDiv = document.getElementById('tbl-posiciones-ampliadas');
+    posAmpDiv.innerHTML = ZONAS.map(z=>{
+      const zc=zonaConfig(z);
+      const rows=Object.entries(equipoStats).filter(([,s])=>s.zona===z)
+        .map(([n,s])=>({n,...s,dif:s.gf-s.gc})).sort((a,b)=>b.pts-a.pts||(b.dif)-(a.dif)||b.gf-a.gf);
+      return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
+      <div class="tabla-mini">${renderGeneralTable(rows)}</div>`;
+    }).join('');
+
+    // ÁRBITROS
+    const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
+    document.getElementById('tbl-arbitros').innerHTML = arbiRows.length ? tblHead(
+      ['','Árbitro','Árbitro'],['36px','PJ','PJ'],['36px','VL','VL'],['36px','Emp','Emp'],['36px','VV','VV'],['36px','AM L','🟨L'],['36px','AM V','🟨V'],['36px','RJ L','🟥L'],['36px','RJ V','🟥V'],['36px','Pen L','⚽L'],['36px','Pen V','⚽V']
+    ) + arbiRows.map(([nombre,a])=>`<tr>
+      <td style="font-size:13px;">${nombre}</td>
+      <td>${a.pj}</td><td>${a.vl}</td><td>${a.emp}</td><td>${a.vv}</td>
+      <td>${a.aml}</td><td>${a.amv}</td><td>${a.rl}</td><td>${a.rv}</td>
+      <td>${a.penl}</td><td>${a.penv}</td>
+    </tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // PENALES EJECUTANTES
+    const penEjec = {};
+    (penalesDB||[]).forEach(p=>{
+      const nombre = p.jugadores?.nombre_display||p.jugadores?.nombre||'?';
+      if(!penEjec[nombre]) penEjec[nombre]={nombre,ejecutados:0,goles:0,equipo:p.equipo_favor||''};
+      penEjec[nombre].ejecutados++;
+      if(p.resultado==='gol') penEjec[nombre].goles++;
+    });
+    const penEjecRows = Object.values(penEjec).sort((a,b)=>b.ejecutados-a.ejecutados);
+    document.getElementById('tbl-pen-ejecutantes').innerHTML = penEjecRows.length ? tblHead(
+      ['','Jugador','Jugador'],['50px','Pat.','Pateados'],['50px','Conv.','Convertidos'],['50px','%','Efectividad']
+    ) + penEjecRows.map(j=>{
+      const pct = j.ejecutados ? Math.round(j.goles/j.ejecutados*100)+'%' : '—';
+      return `<tr><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.ejecutados}</td><td>${j.goles}</td><td>${pct}</td></tr>`;
+    }).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // PENALES ARQUEROS
+    const penArq = {};
+    (penalesDB||[]).forEach(p=>{
+      if(!p.arquero_id) return;
+      const nombre = p.arqueros?.nombre_display||p.arqueros?.nombre||'?';
+      if(!penArq[nombre]) penArq[nombre]={nombre,recibidos:0,atajados:0};
+      penArq[nombre].recibidos++;
+      if(p.resultado==='atajado') penArq[nombre].atajados++;
+    });
+    const penArqRows = Object.values(penArq).sort((a,b)=>b.atajados-a.atajados);
+    document.getElementById('tbl-pen-arqueros').innerHTML = penArqRows.length ? tblHead(
+      ['','Arquero','Arquero'],['50px','Rec.','Recibidos'],['50px','Ataj.','Atajados'],['50px','%','Efectividad']
+    ) + penArqRows.map(j=>{
+      const pct = j.recibidos ? Math.round(j.atajados/j.recibidos*100)+'%' : '—';
+      return `<tr><td>${fmtJug(j.nombre,'')}</td><td>${j.recibidos}</td><td>${j.atajados}</td><td>${pct}</td></tr>`;
+    }).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    STATS_LOADED = true;
+    document.getElementById('stats-loading').style.display='none';
+    document.getElementById('stats-content').style.display='';
+  } catch(e){
+    document.getElementById('stats-loading').innerHTML = `<div style="color:#e57373;">Error cargando estadísticas: ${e.message}</div>`;
+    console.error(e);
+  }
+}
 // ── INIT ──
 async function init(){
   await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
