@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
 
-.sec{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;}
+.sec{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin-bottom:.6rem;}
 
 /* fecha nav */
 .fecha-hdr{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.6rem;}
@@ -93,7 +93,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
 .tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;}
 .tabla-mini tbody td:nth-child(2){text-align:left;}
-.pos{font-size:13px;font-weight:700;color:#888;}
+.pos{font-size:14px;font-weight:700;color:#bbb;}
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
 .pos.noclasif{color:#c0504d;}
@@ -250,7 +250,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div id="stats-content" style="display:none;">
     <div class="ztabs" id="stats-tabs" style="margin-bottom:1.25rem;">
       <div class="ztab active" onclick="showStatsTab('jugadores',this)">Jugadores</div>
-      <div class="ztab" onclick="showStatsTab('equipos',this)">Equipos</div>
+      <div class="ztab" onclick="showStatsTab('equipos',this)">Tablas</div>
       <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
       <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
     </div>
@@ -266,7 +266,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div style="margin-bottom:1rem;"><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
     </div>
     <div id="stats-equipos" style="display:none;">
-      <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" id="tbl-general"></div></div>
+      <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" style="max-width:600px;overflow-x:auto;" id="tbl-general"></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
         <div><p class="sec">🏠 Como local</p><div class="tabla-mini" id="tbl-local-stats"></div></div>
         <div><p class="sec">✈️ Como visitante</p><div class="tabla-mini" id="tbl-visitante-stats"></div></div>
@@ -1469,8 +1469,10 @@ async function cargarEstadisticas(){
     (planillasDB||[]).forEach(p=>{ planillaPartido[p.id]=p.partido_id; });
 
     // Query 4: penales
-    const {data:penalesDB} = await sb.from('penales')
-      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra');
+    const {data:penalesDB, error:penErr} = await sb.from('penales')
+      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id');
+    if(penErr) console.warn('Penales error:', penErr.message);
+    console.log('Penales loaded:', penalesDB?.length, penErr?.message);
 
     // Query 5: jugadores para penales
     const {data:jugsDB} = await sb.from('jugadores').select('id,nombre,nombre_display,equipo_id,equipos(nombre)');
@@ -1498,10 +1500,11 @@ async function cargarEstadisticas(){
       if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0};
 
       if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
-      if(ev.tipo==='gol_contra') jugStats[key].goles++; // cuenta para el que lo metió
+      // gol_contra does NOT count as a goal for that player
       if(ev.tipo==='asistencia') jugStats[key].asist++;
       if(ev.tipo==='amarilla') jugStats[key].amarillas++;
       if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=2; jugStats[key].rojas++; }
+      if(ev.tipo==='roja') jugStats[key].rojas++;
 
       // Vallas: track arqueros (nota=AR implied by position or es_capitan)
       if(ev.tipo==='gol'||ev.tipo==='gol_penal'||ev.tipo==='gol_tiro_libre'){
@@ -1594,8 +1597,8 @@ async function cargarEstadisticas(){
     });
 
     // ── RENDER FUNCTIONS ──
-    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div><div style="font-size:13px;font-weight:500;">${nombre}</div><div style="font-size:10px;color:var(--muted);">${equipo||''}</div></div></div>`;
-    const tblHead = (...cols) => `<table><thead><tr>${cols.map(([w,t,l])=>`<th${w?` style="width:${w}"`:''}${t?` title="${t}"`:''}>${l}</th>`).join('')}</tr></thead><tbody>`;
+    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div><div style="font-size:13px;font-weight:500;">${nombre}</div><div style="font-size:10px;color:#999;">${equipo||''}</div></div></div>`;
+    const tblHead = (...cols) => `<table><thead><tr>${cols.map(([w,t,l,al])=>`<th style="${w?`width:${w};`:''}${al?`text-align:${al};`:''}" ${t?`title="${t}"`:''} >${l}</th>`).join('')}</tr></thead><tbody>`;
 
     // GOLEADORES
     const goleadores = Object.values(jugStats).filter(j=>j.goles>0).sort((a,b)=>b.goles-a.goles).slice(0,10);
@@ -1667,7 +1670,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; });
       });
       return tblHead(
-        ['24px','','#'],['','Equipo','Equipo'],['30px','PJ','PJ'],['30px','G','G'],['30px','E','E'],['30px','P','P'],['30px','GF','GF'],['30px','GC','GC'],['34px','+/-','+/-'],['34px','Pts','Pts'],
+        ['24px','','#'],['140px','Equipo','Equipo'],['30px','PJ','PJ'],['30px','G','G'],['30px','E','E'],['30px','P','P'],['30px','GF','GF'],['30px','GC','GC'],['34px','+/-','+/-'],['34px','Pts','Pts'],
         ['34px','H2H','H2H'],['30px','GD','GD'],['30px','ED','ED'],['30px','PD','PD'],['30px','GFD','GFD'],['30px','GFV','GFV']
       ) + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
@@ -1713,9 +1716,9 @@ async function cargarEstadisticas(){
     // ÁRBITROS
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
     document.getElementById('tbl-arbitros').innerHTML = arbiRows.length ? tblHead(
-      ['','Árbitro','Árbitro'],['36px','PJ','PJ'],['36px','VL','VL'],['36px','Emp','Emp'],['36px','VV','VV'],['36px','AM L','🟨L'],['36px','AM V','🟨V'],['36px','RJ L','🟥L'],['36px','RJ V','🟥V'],['36px','Pen L','⚽L'],['36px','Pen V','⚽V']
+      ['160px','Árbitro','Árbitro'],['30px','PJ','PJ'],['30px','VL','VL'],['30px','Emp','Emp'],['30px','VV','VV'],['30px','AM L','🟨L'],['30px','AM V','🟨V'],['30px','RJ L','🟥L'],['30px','RJ V','🟥V'],['30px','P L','⚽L'],['30px','P V','⚽V']
     ) + arbiRows.map(([nombre,a])=>`<tr>
-      <td style="font-size:13px;">${nombre}</td>
+      <td style="font-size:13px;text-align:left;">${nombre}</td>
       <td>${a.pj}</td><td>${a.vl}</td><td>${a.emp}</td><td>${a.vv}</td>
       <td>${a.aml}</td><td>${a.amv}</td><td>${a.rl}</td><td>${a.rv}</td>
       <td>${a.penl}</td><td>${a.penv}</td>
