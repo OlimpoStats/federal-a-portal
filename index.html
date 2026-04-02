@@ -1735,14 +1735,6 @@ async function cargarEstadisticas(){
     const penEjecRows = Object.values(penEjec).sort((a,b)=>b.ejecutados-a.ejecutados);
     // Banner resumen penales - calculated after penArq is built below
     
-    const bannerHtml = totalPen>0 ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">
-      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--accent);">${totalPen}</div><div style="font-size:11px;color:var(--muted);">Penales pateados</div></div>
-      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:#4caf50;">${totalGol}</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>
-      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:#e57373;">${totalPen-totalGol}</div><div style="font-size:11px;color:var(--muted);">No convertidos</div></div>
-      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:#5daadd;">${totalAtaj}</div><div style="font-size:11px;color:var(--muted);">Atajados</div></div>
-      <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;">${totalPen>0?Math.round(totalGol/totalPen*100):0}%</div><div style="font-size:11px;color:var(--muted);">Efectividad global</div></div>
-    </div>` : "";
-    
     document.getElementById('tbl-pen-ejecutantes').innerHTML = penEjecRows.length ? tblHead(
       ['','Jugador','Jugador'],['50px','Pat.','Pateados'],['50px','Conv.','Convertidos'],['50px','%','Efectividad']
     ) + penEjecRows.map(j=>{
