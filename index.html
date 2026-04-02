@@ -1808,7 +1808,13 @@ async function cargarEstadisticas(){
             else{h2h[m.local].pts++;h2h[m.visitante].pts++;h2h[m.local].e++;h2h[m.visitante].e++;}
           });
         }});
-        const h2hMatches2 = (partidos||[]).filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
+        // Collect matches between these teams from FIXTURE
+    const h2hMatches2 = [];
+    ZONAS.forEach(zz=>{ for(let ff=1;ff<=18;ff++){
+      (FIXTURE[zz]?.[String(ff)]||[]).forEach(m=>{
+        if(teams.includes(m.local)&&teams.includes(m.visitante)&&m.gl!==null) h2hMatches2.push(m);
+      });
+    }});
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
