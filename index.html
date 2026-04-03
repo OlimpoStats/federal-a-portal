@@ -271,6 +271,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div><p class="sec">🏠 Como local</p><div class="tabla-mini" id="tbl-local-stats"></div></div>
         <div><p class="sec">✈️ Como visitante</p><div class="tabla-mini" id="tbl-visitante-stats"></div></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">1️⃣ Primer tiempo</p><div class="tabla-mini" id="tbl-1t"></div></div>
+        <div><p class="sec">2️⃣ Segundo tiempo</p><div class="tabla-mini" id="tbl-2t"></div></div>
+      </div>
       <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div></div>
     </div>
     <div id="stats-arbitros" style="display:none;">
@@ -1023,13 +1027,25 @@ async function verFicha(key, tienePlanilla){
       const penalesSec = penalesDeEsteEquipo.length ? (() => {
         const rows = penalesDeEsteEquipo.map(ev=>{
           const min = String(ev.minuto||"");
-          const icon = ev.tipo==="gol_penal" ? "⚽" : ev.tipo==="penal_atajado" ? (ev.extra==="arquero"?"🧤":"❌") : "❌";
-          const label = ev.tipo==="gol_penal" ? "Convertido" : ev.tipo==="penal_atajado" ? (ev.extra==="arquero"?"Atajado":"No convertido") : "Desviado";
-          return `<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
-            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${min}'</span>
-            <span style="font-size:13px;">${icon}</span>
-            <span style="font-size:13px;">${ev.nombre}</span>
-            <span style="font-size:11px;color:var(--muted);">${label}</span>
+          // Only show: desviado = EJECUTANTE falló un penal
+          //            atajado arquero = ARQUERO le atajó un penal a EJECUTANTE
+          //            gol_penal and atajado ejecutante = don't show in incidencias
+          if(ev.tipo==="gol_penal") return "";
+          if(ev.tipo==="penal_atajado" && ev.extra!=="arquero") return "";
+          let penLine = "";
+          if(ev.tipo==="penal_desviado"){
+            penLine = `❌ <strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span>`;
+          } else if(ev.tipo==="penal_atajado" && ev.extra==="arquero"){
+            // Find ejecutante: look for penal_atajado without extra="arquero" at same minuto in rival planilla
+            const allEvs = (jugadoresEquipo||[]).flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e, _nombre: p2.jugadores?.nombre_display||p2.jugadores?.nombre||""})));
+            const ejecutanteEv = allEvs.find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
+            const ejecutanteNombre = ejecutanteEv?._nombre || "";
+            penLine = `🧤 <strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejecutanteNombre?" a <strong>"+ejecutanteNombre+"</strong>":""}</span>`;
+          }
+          if(!penLine) return "";
+          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
+            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
+            ${penLine}
           </div>`;
         }).join("");
         return `<div class="tarjetas-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">${secHeader("⚽ PENALES")}${rows}</div>`;
@@ -1963,6 +1979,39 @@ async function cargarEstadisticas(){
     const visitRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.visit,dif:s.visit.gf-s.visit.gc}))
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     document.getElementById('tbl-visitante-stats').innerHTML = renderGeneralTable(visitRows);
+
+    // 1st / 2nd half goals from eventos
+    const half1 = {}, half2 = {};
+    (eventos||[]).forEach(ev=>{
+      if(!['gol','gol_penal','gol_tiro_libre','gol_contra'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const equipo = pl.equipos?.nombre;
+      if(!equipo) return;
+      const min = parseInt(String(ev.minuto||'').split('+')[0])||0;
+      // gol_contra counts for the OTHER team
+      let targetEquipo = equipo;
+      if(ev.tipo==='gol_contra'){
+        const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+        const partido = partidosById[partidoId];
+        if(!partido) return;
+        targetEquipo = equipo===partido.equipo_local_nombre ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
+      }
+      if(min<=45){ if(!half1[targetEquipo]) half1[targetEquipo]={gf:0}; half1[targetEquipo].gf++; }
+      else{ if(!half2[targetEquipo]) half2[targetEquipo]={gf:0}; half2[targetEquipo].gf++; }
+    });
+
+    const renderHalfTable = (halfData) => {
+      const rows = Object.entries(halfData).map(([n,d])=>({n,...d})).sort((a,b)=>b.gf-a.gf);
+      if(!rows.length) return '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+      return `<table><thead><tr>
+        <th style="width:24px;">#</th><th style="text-align:left;">Equipo</th><th title="Goles">⚽</th>
+      </tr></thead><tbody>`+
+      rows.map((r,i)=>`<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td><strong class="pts">${r.gf}</strong></td></tr>`).join('')+
+      '</tbody></table>';
+    };
+    document.getElementById('tbl-1t').innerHTML = renderHalfTable(half1);
+    document.getElementById('tbl-2t').innerHTML = renderHalfTable(half2);
 
     // POSICIONES AMPLIADAS POR ZONA
     const posAmpDiv = document.getElementById('tbl-posiciones-ampliadas');
