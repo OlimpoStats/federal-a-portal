@@ -1976,15 +1976,15 @@ async function cargarEstadisticas(){
 
     // ÁRBITROS
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
-        const colH = 'background:var(--surface2);border-bottom:1px solid var(--border);padding:.5rem .3rem;text-align:center;white-space:nowrap;font-size:12px;font-weight:700;color:#f5e99a;';
-    const colD = 'text-align:center;font-size:15px;padding:.45rem .3rem;border-bottom:1px solid var(--border);';
+        const colH = 'background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:36px;';
+    const colD = 'text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:36px;';
     const arbiTableHtml = `<table style="border-collapse:collapse;font-size:14px;">
       <thead><tr>
-        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.5rem .75rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;width:140px;max-width:140px;">Árbitro</th>
+        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.5rem .75rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;">Árbitro</th>
         ${['PJ','GAN L','Emp','GAN V','🟨L','🟨V','🟥L','🟥V','PEN L','PEN V'].map(h=>`<th style="${colH}">${h}</th>`).join('')}
       </tr></thead>
       <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
-        <td style="font-size:13px;text-align:left;padding:.45rem .75rem;max-width:140px;width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nombre}</td>
+        <td style="font-size:13px;text-align:left;padding:.45rem .75rem;white-space:nowrap;">${nombre}</td>
         <td style="${colD}">${a.pj}</td><td style="${colD}">${a.vl}</td>
         <td style="${colD}">${a.emp}</td><td style="${colD}">${a.vv}</td>
         <td style="${colD}">${a.aml}</td><td style="${colD}">${a.amv}</td>
@@ -2053,6 +2053,62 @@ async function cargarEstadisticas(){
         +'<div style="text-align:center;"><div style="'+bc+'">'+pct+'%</div><div style="font-size:11px;color:var(--muted);">Efectividad</div></div>'
         +'</div>';
       document.getElementById('stats-penales').insertAdjacentHTML('afterbegin', bannerHtml);
+    }
+
+    // Penales a favor / en contra por equipo
+    const penFavor = {}, penContra = {};
+    (penalesDB||[]).forEach(p=>{
+      if(p.equipo_favor){ if(!penFavor[p.equipo_favor]) penFavor[p.equipo_favor]=0; penFavor[p.equipo_favor]++; }
+      if(p.equipo_contra){ if(!penContra[p.equipo_contra]) penContra[p.equipo_contra]=0; penContra[p.equipo_contra]++; }
+    });
+    const penFavorRows = Object.entries(penFavor).sort((a,b)=>b[1]-a[1]);
+    const penContraRows = Object.entries(penContra).sort((a,b)=>b[1]-a[1]);
+
+    const tblEquiposPen = (rows, label) => rows.length ? `<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>
+        <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">${label}</th>
+        <th style="width:40px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">PEN</th>
+      </tr></thead><tbody>
+      ${rows.map(([eq,n],i)=>`<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:.35rem .5rem;font-size:13px;text-align:left;"><div class="tr-eq">${escudoHTML(eq,'me')}<span>${eq}</span></div></td>
+        <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
+      </tr>`).join('')}
+      </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>';
+
+    // Arbitros que cobraron penales
+    const penArbiStats = {};
+    (penalesDB||[]).forEach(p=>{
+      const arbKey2 = p.partido_id ? 
+        Object.entries(arbitroPorPartido).find(([k,v])=>{ 
+          const px = partidosById[p.partido_id]; 
+          return px && k===`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+        })?.[1] : null;
+      if(arbKey2){ if(!penArbiStats[arbKey2]) penArbiStats[arbKey2]=0; penArbiStats[arbKey2]++; }
+    });
+    const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
+
+    const penEquiposEl = document.getElementById('stats-penales');
+    if(penEquiposEl){
+      penEquiposEl.insertAdjacentHTML('beforeend', `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem;">
+          <div><p class="sec">🟢 Penales a favor</p><div class="tabla-mini">${tblEquiposPen(penFavorRows,'Equipo')}</div></div>
+          <div><p class="sec">🔴 Penales en contra</p><div class="tabla-mini">${tblEquiposPen(penContraRows,'Equipo')}</div></div>
+        </div>
+        <div style="margin-top:1rem;max-width:400px;">
+          <p class="sec">🧑‍⚖️ Árbitros que cobraron penales</p>
+          <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+              <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
+              <th style="width:50px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Penales</th>
+            </tr></thead><tbody>
+            ${penArbiRows.map(([arb,n])=>`<tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:.35rem .5rem;font-size:13px;text-align:left;">${arb}</td>
+              <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
+            </tr>`).join('')}
+            </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
+          </div>
+        </div>
+      `);
     }
     document.getElementById('tbl-pen-arqueros').innerHTML = penArqRows.length ? tblHead(
       ['180px','Arquero','Arquero'],['44px','Rec.','Recibidos'],['44px','Ataj.','Atajados'],['44px','%','Efectividad']
