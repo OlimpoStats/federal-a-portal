@@ -1742,6 +1742,22 @@ async function guardarPenal(){
   });
 
   if(error){ alert("Error al guardar penal: "+error.message); return; }
+
+  // If penal was saved (atajado), also add penal_atajado event to arquero's planilla in memory
+  if(resultado === "atajado" && arqueroDBId){
+    // Find arquero in the rival planilla and add event
+    const rivalSide = favor === (partidoActual?.local||"") ? "visit" : "local";
+    const rivalPlan = rivalSide === "local" ? planillaLocal : planillaVisit;
+    const rivalContId = rivalSide === "local" ? "tabla-local" : "tabla-visit";
+    const arqJug = (rivalPlan.jugadores||[]).find(j => j.numero == 1 || j.numero == 12);
+    if(arqJug){
+      if(!arqJug.eventos) arqJug.eventos = [];
+      arqJug.eventos.push({tipo:"penal_atajado", minuto, extra: ejecutanteNombre});
+      arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+      renderPlanilla(rivalContId, rivalPlan.jugadores);
+    }
+  }
+
   document.getElementById("modal-penal")?.remove();
   showFlash("✓ Penal registrado correctamente.", "ok");
 }
