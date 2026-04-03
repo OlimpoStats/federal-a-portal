@@ -1752,7 +1752,7 @@ async function guardarPenal(){
     const arqJug = (rivalPlan.jugadores||[]).find(j => j.numero == 1 || j.numero == 12);
     if(arqJug){
       if(!arqJug.eventos) arqJug.eventos = [];
-      arqJug.eventos.push({tipo:"penal_atajado", minuto, extra: ejecutanteNombre});
+      arqJug.eventos.push({tipo:"penal_atajado", minuto, extra: "arquero"});
       arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
       renderPlanilla(rivalContId, rivalPlan.jugadores);
     }
