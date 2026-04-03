@@ -1018,38 +1018,7 @@ async function verFicha(key, tienePlanilla){
 
       const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
 
-      // Penales section
-      const penalesDeEsteEquipo = (jugadoresEquipo||[]).flatMap(pl=>
-        (evByPlanilla[pl.id]||[])
-          .filter(ev=>['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo))
-          .map(ev=>({...ev, nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||""}))
-      ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-      const penalesSec = penalesDeEsteEquipo.length ? (() => {
-        const rows = penalesDeEsteEquipo.map(ev=>{
-          const min = String(ev.minuto||"");
-          // Only show: desviado = EJECUTANTE falló un penal
-          //            atajado arquero = ARQUERO le atajó un penal a EJECUTANTE
-          //            gol_penal and atajado ejecutante = don't show in incidencias
-          if(ev.tipo==="gol_penal") return "";
-          if(ev.tipo==="penal_atajado" && ev.extra!=="arquero") return "";
-          let penLine = "";
-          if(ev.tipo==="penal_desviado"){
-            penLine = `❌ <strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span>`;
-          } else if(ev.tipo==="penal_atajado" && ev.extra==="arquero"){
-            // Find ejecutante: look for penal_atajado without extra="arquero" at same minuto in rival planilla
-            const allEvs = (jugadoresEquipo||[]).flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e, _nombre: p2.jugadores?.nombre_display||p2.jugadores?.nombre||""})));
-            const ejecutanteEv = allEvs.find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
-            const ejecutanteNombre = ejecutanteEv?._nombre || "";
-            penLine = `🧤 <strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejecutanteNombre?" a <strong>"+ejecutanteNombre+"</strong>":""}</span>`;
-          }
-          if(!penLine) return "";
-          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
-            ${penLine}
-          </div>`;
-        }).join("");
-        return `<div class="tarjetas-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">${secHeader("⚽ PENALES")}${rows}</div>`;
-      })() : "";
+
 
       const cambiosSec = cambios.length ? `
         <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
@@ -1080,7 +1049,6 @@ async function verFicha(key, tienePlanilla){
         ${suplentes.length?`${secHeader("SUPLENTES")}${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
         ${cambiosSec}
         ${tarjetasSec}
-        ${penalesSec}
       `;
     };
 
@@ -1219,7 +1187,50 @@ async function verFicha(key, tienePlanilla){
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
         <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
-      </div>`;
+      </div>
+      ${(() => {
+        // Penales incidencias - spans both teams, below grid
+        const allPenEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
+          (evByPlanilla[pl.id]||[])
+            .filter(ev=>['penal_desviado','penal_atajado'].includes(ev.tipo))
+            .map(ev=>({...ev, 
+              nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
+              equipoNombre: pl.equipos?.nombre||""
+            }))
+        ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+
+        if(!allPenEvs.length) return "";
+
+        const rows = allPenEvs.map(ev=>{
+          const min = String(ev.minuto||"");
+          if(ev.tipo==="penal_desviado"){
+            return `<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;">
+              <span style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
+              <span>❌</span>
+              <span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span>
+            </div>`;
+          }
+          if(ev.tipo==="penal_atajado" && ev.extra==="arquero"){
+            // Find ejecutante in the OTHER team's planilla at same minute
+            const rivalPlan = ev.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
+            const ejecutanteEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e, _nombre: p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
+            const ejecutanteNombre = ejecutanteEv?._nombre || "";
+            return `<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;">
+              <span style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
+              <span>🧤</span>
+              <span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejecutanteNombre?" a <strong>"+ejecutanteNombre+"</strong>":""}</span></span>
+            </div>`;
+          }
+          return "";
+        }).filter(Boolean).join("");
+
+        if(!rows) return "";
+        return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>
+          ${rows}
+        </div>`;
+      })()}
+      `;
     // After render, equalize cambios/tarjetas sections height
     setTimeout(()=>{
       const alignSections = (cls) => {
