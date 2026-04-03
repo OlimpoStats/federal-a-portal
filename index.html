@@ -1972,14 +1972,20 @@ async function cargarEstadisticas(){
     document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
 
     // LOCAL
+    const renderLocalVisitTable = (rows) => tblHead(
+      ['24px','','#'],['','Equipo','Equipo'],['32px','PJ','PJ'],['32px','G','G'],['32px','E','E'],['32px','P','P'],['32px','GF','GF'],['32px','GC','GC'],['36px','GD','+/-'],['36px','Pts','Pts']
+    ) + rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+    }).join('') + '</tbody></table>';
+
     const localRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.local,dif:s.local.gf-s.local.gc}))
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
-    document.getElementById('tbl-local-stats').innerHTML = renderGeneralTable(localRows);
+    document.getElementById('tbl-local-stats').innerHTML = renderLocalVisitTable(localRows);
 
-    // VISITANTE
     const visitRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.visit,dif:s.visit.gf-s.visit.gc}))
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
-    document.getElementById('tbl-visitante-stats').innerHTML = renderGeneralTable(visitRows);
+    document.getElementById('tbl-visitante-stats').innerHTML = renderLocalVisitTable(visitRows);
 
     // 1st / 2nd half goals from eventos
     const half1 = {}, half2 = {};
@@ -2066,7 +2072,8 @@ async function cargarEstadisticas(){
     const penEjecRows = Object.values(penEjec).sort((a,b)=>{
       const pctA = a.ejecutados ? a.goles/a.ejecutados : 0;
       const pctB = b.ejecutados ? b.goles/b.ejecutados : 0;
-      return pctB-pctA || b.ejecutados-a.ejecutados;
+      if(Math.abs(pctB-pctA) > 0.001) return pctB-pctA;
+      return b.ejecutados-a.ejecutados; // more attempts = more reliable
     });
     // Banner resumen penales - calculated after penArq is built below
     
@@ -2074,7 +2081,7 @@ async function cargarEstadisticas(){
       ['180px','Jugador','Jugador'],['44px','Pat.','Pateados'],['44px','Conv.','Convertidos'],['44px','%','Efectividad']
     ) + penEjecRows.map(j=>{
       const pct = j.ejecutados ? Math.round(j.goles/j.ejecutados*100)+'%' : '—';
-      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo)}</td><td>${j.ejecutados}</td><td>${j.goles}</td><td>${pct}</td></tr>`;
+      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo)}</td><td style="text-align:center;">${j.ejecutados}</td><td style="text-align:center;">${j.goles}</td><td style="text-align:center;">${pct}</td></tr>`;
     }).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
@@ -2092,7 +2099,11 @@ async function cargarEstadisticas(){
     const penArqRows = Object.values(penArq).sort((a,b)=>{
       const pctA = a.recibidos ? a.atajados/a.recibidos : 0;
       const pctB = b.recibidos ? b.atajados/b.recibidos : 0;
-      return pctB-pctA || b.recibidos-a.recibidos;
+      if(pctB !== pctA) return pctB - pctA;
+      // Same pct: if both 0%, ascending by recibidos (0/1 is better than 0/3)
+      if(pctA === 0) return a.recibidos - b.recibidos;
+      // Otherwise: descending by recibidos (more is more impressive)
+      return b.recibidos - a.recibidos;
     });
 
     // Banner resumen penales (after both penEjecRows and penArqRows are ready)
@@ -2156,27 +2167,28 @@ async function cargarEstadisticas(){
           <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
             <thead><tr>
               <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
-              <th style="width:50px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th><th style="padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);">Equipos</th>
+              <th style="width:40px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
+              <th style="padding:.4rem .5rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);">A favor</th>
+              <th style="padding:.4rem .5rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);">En contra</th>
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
-              // Collect escudos of teams that received penales from this arb
-              const teamsContra = (penalesDB||[])
-                .filter(p=>{
-                  const px=p.partido_id?partidosById[p.partido_id]:null;
-                  if(!px) return false;
-                  const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
-                  return arbitroPorPartido[k]===arb;
-                })
-                .map(p=>p.equipo_contra)
-                .filter(Boolean);
-              const uniqueTeams=[...new Set(teamsContra)];
-              const escudosHtml=uniqueTeams.map(eq=>escudoHTML(eq,'me')).join('');
+              const pensByArb = (penalesDB||[]).filter(p=>{
+                const px=p.partido_id?partidosById[p.partido_id]:null;
+                if(!px) return false;
+                const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+                return arbitroPorPartido[k]===arb;
+              });
+              const teamsFavor=[...new Set(pensByArb.map(p=>p.equipo_favor).filter(Boolean))];
+              const teamsContra=[...new Set(pensByArb.map(p=>p.equipo_contra).filter(Boolean))];
+              const escFavor=teamsFavor.map(eq=>escudoHTML(eq,'me')).join('');
+              const escContra=teamsContra.map(eq=>escudoHTML(eq,'me')).join('');
               return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
-                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escudosHtml}</div></td>
+                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escFavor}</div></td>
+                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escContra}</div></td>
               </tr>`;
-            }).join('')}
+            }).join('')})}
             </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
           </div>
         </div>
@@ -2186,7 +2198,7 @@ async function cargarEstadisticas(){
       ['180px','Arquero','Arquero'],['44px','Rec.','Recibidos'],['44px','Ataj.','Atajados'],['44px','%','Efectividad']
     ) + penArqRows.map(j=>{
       const pct = j.recibidos ? Math.round(j.atajados/j.recibidos*100)+'%' : '—';
-      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo||'')}</td><td>${j.recibidos}</td><td>${j.atajados}</td><td>${pct}</td></tr>`;
+      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo||'')}</td><td style="text-align:center;">${j.recibidos}</td><td style="text-align:center;">${j.atajados}</td><td style="text-align:center;">${pct}</td></tr>`;
     }).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
