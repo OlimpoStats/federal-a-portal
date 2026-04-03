@@ -890,19 +890,53 @@ async function verFicha(key, tienePlanilla){
       const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
       const todosJugadores = [...titulares, ...suplentes];
 
-      const renderChip = (ev) => {
+      const evTooltip = (texto, chip) => {
+          const enc = encodeURIComponent(texto);
+          return `<span style="position:relative;display:inline-flex;cursor:default;"
+            onmouseenter="showEvTip(event,'${enc}')" onmouseleave="hideEvTip()"
+            ontouchstart="showEvTip(event,'${enc}',true)">${chip}</span>`;
+        };
+        const renderChip = (ev) => {
         const min = String(ev.minuto||"");
         const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
         if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
           const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':"⚽";
-          return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
+          const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
+          return evTooltip(`${tipo_label} — min. ${min}`, chip);
         }
-        if(ev.tipo==="amarilla") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
-        if(ev.tipo==="roja") return `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
-        if(ev.tipo==="doble_amarilla") return `<span style="display:inline-flex;align-items:center;gap:1px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;margin-left:-3px;"></span>${minSpan}</span>`;
-        if(ev.tipo==="cambio_entra") return `<span style="color:#4caf50;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↑${min}'</span>`;
-        if(ev.tipo==="cambio_sale") return `<span style="color:#e57373;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↓${min}'</span>`;
-        if(ev.tipo==="asistencia") return `<span style="font-size:12px;">👟</span>`;
+        if(ev.tipo==="amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta amarilla — min. ${min}`, chip);
+        }
+        if(ev.tipo==="roja"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta roja directa — min. ${min}`, chip);
+        }
+        if(ev.tipo==="doble_amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:1px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;margin-left:-3px;"></span>${minSpan}</span>`;
+          return evTooltip(`Segunda amarilla (expulsión) — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_entra"){
+          const chip = `<span style="color:#4caf50;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↑${min}'</span>`;
+          return evTooltip(`Ingresó — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_sale"){
+          const chip = `<span style="color:#e57373;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↓${min}'</span>`;
+          return evTooltip(`Salió — min. ${min}`, chip);
+        }
+        if(ev.tipo==="asistencia"){
+          const chip = `<span style="font-size:12px;">👟</span>`;
+          return evTooltip(`Asistencia — min. ${min}${ev.extra?` (a ${ev.extra})`:''}`, chip);
+        }
+        if(ev.tipo==="penal_atajado"){
+          const chip = `<span style="font-size:13px;">🧤</span>${minSpan}`;
+          return evTooltip(`Penal atajado — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
+        if(ev.tipo==="penal_desviado"){
+          const chip = `<span style="font-size:13px;">❌</span>${minSpan}`;
+          return evTooltip(`Penal desviado — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
         return "";
       };
 
@@ -1141,6 +1175,32 @@ async function verFicha(key, tienePlanilla){
 }
 
 let _h2hTimer = null;
+let _evTipTimer = null;
+
+function showEvTip(event, textEncoded, isTouch=false){
+  hideEvTip();
+  const text = decodeURIComponent(textEncoded);
+  const tip = document.createElement('div');
+  tip.id = 'ev-tooltip';
+  tip.style.cssText = 'position:fixed;z-index:600;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:.3rem .6rem;font-size:11px;color:#f0f0f0;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;';
+  tip.textContent = text;
+  document.body.appendChild(tip);
+  const rect = event.target.getBoundingClientRect();
+  let left = rect.left + rect.width/2 - tip.offsetWidth/2;
+  let top = rect.top - tip.offsetHeight - 6;
+  if(left < 4) left = 4;
+  if(left + tip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tip.offsetWidth - 4;
+  if(top < 4) top = rect.bottom + 6;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+  if(isTouch) _evTipTimer = setTimeout(hideEvTip, 2000);
+}
+
+function hideEvTip(){
+  document.getElementById('ev-tooltip')?.remove();
+  if(_evTipTimer){ clearTimeout(_evTipTimer); _evTipTimer=null; }
+}
+
 
 function showH2HTooltip(event, matchesEncoded, isTouch=false){
   hideH2HTooltip();
