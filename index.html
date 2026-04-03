@@ -105,9 +105,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* zona tabs */
 .ztabs{display:flex;gap:.35rem;margin-bottom:.85rem;flex-wrap:wrap;}
-.ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--muted);background:var(--surface);transition:all .15s;text-transform:uppercase;}
-.ztab:hover{color:var(--text);background:var(--surface2);}
-.ztab.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800;}
+.ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:20px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
+.ztab:hover{opacity:.85;}
+.ztab.active{background:#fff;color:#111;border-color:#fff;font-weight:800;}
 
 /* placeholders */
 .placeholder{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4rem 2rem;text-align:center;color:var(--muted);}
@@ -430,12 +430,21 @@ async function cargarPartidosDesdeDB(){
       if(ids.length){
         const {data:partidosPlanilla, error:ppErr} = await sb
           .from("partidos")
-          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre")
+          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id")
           .in("id", ids);
         if(!ppErr && partidosPlanilla){
           partidosPlanilla.forEach(p => {
-            const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
-            PLANILLA_CARGADA[key] = true;
+            // Key from partidos table names
+            const key1 = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+            PLANILLA_CARGADA[key1] = true;
+            // Also try matching via fixture data (equipo names from FIXTURE)
+            if(p.fixture_id){
+              const fx = (window._FIXTURE_RAW||[]).find(f=>f.id===p.fixture_id);
+              if(fx){
+                const key2 = `${fx.zona}_${fx.fecha}_${fx.equipo_local}_${fx.equipo_visitante}`;
+                PLANILLA_CARGADA[key2] = true;
+              }
+            }
           });
         }
       }
@@ -993,7 +1002,7 @@ async function verFicha(key, tienePlanilla){
       const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
 
       // Penales section
-      const penalesDeEsteEquipo = (planillaArr||[]).flatMap(pl=>
+      const penalesDeEsteEquipo = (jugadoresEquipo||[]).flatMap(pl=>
         (evByPlanilla[pl.id]||[])
           .filter(ev=>['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo))
           .map(ev=>({...ev, nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||""}))
@@ -1956,21 +1965,21 @@ async function cargarEstadisticas(){
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
         const arbiTableHtml = `<table style="width:100%;border-collapse:collapse;">
       <thead><tr>
-        <th style="width:130px;text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:11px;font-weight:700;border-bottom:1px solid var(--border);">Árbitro</th>
-        ${['PJ','GAN L','Emp','GAN V','🟨L','🟨V','🟥L','🟥V','PEN LOC','PEN VIS'].map(h=>`<th style="width:38px;padding:.35rem .2rem;background:var(--surface2);color:#e8c44a;font-size:10px;font-weight:700;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;">${h}</th>`).join('')}
+        <th style="width:110px;text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:11px;font-weight:700;border-bottom:1px solid var(--border);">Árbitro</th>
+        ${['PJ','GAN L','Emp','GAN V','🟨L','🟨V','🟥L','🟥V','PEN L','PEN V'].map(h=>`<th style="width:34px;padding:.35rem .2rem;background:var(--surface2);color:#f5e99a;font-size:11px;font-weight:600;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;">${h}</th>`).join('')}
       </tr></thead>
       <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
         <td style="font-size:12px;text-align:left;padding:.4rem .5rem;">${nombre}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.pj}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.vl}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.emp}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.vv}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.aml}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.amv}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.rl}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.rv}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.penl}</td>
-        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.penv}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.pj}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.vl}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.emp}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.vv}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.aml}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.amv}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.rl}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.rv}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.penl}</td>
+        <td style="text-align:center;font-size:13px;padding:.35rem .2rem;">${a.penv}</td>
       </tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('tbl-arbitros').innerHTML = arbiRows.length
