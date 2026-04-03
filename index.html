@@ -1976,22 +1976,27 @@ async function cargarEstadisticas(){
 
     // ÁRBITROS
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
-        const colH = 'background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:36px;';
-    const colD = 'text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:36px;';
-    const arbiTableHtml = `<table style="border-collapse:collapse;font-size:14px;">
+        const cW = '36px';
+    const colH = `background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:${cW};min-width:${cW};max-width:${cW};`;
+    const colD = `text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
+    const arbiTableHtml = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:180px;">
+        ${Array(10).fill(`<col style="width:${cW};">`).join('')}
+      </colgroup>
       <thead><tr>
-        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.5rem .75rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;">Árbitro</th>
-        ${['PJ','GAN L','Emp','GAN V','🟨L','🟨V','🟥L','🟥V','PEN L','PEN V'].map(h=>`<th style="${colH}">${h}</th>`).join('')}
+        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Árbitro</th>
+        ${['PJ','GL','Emp','GV','🟨L','🟨V','🟥L','🟥V','PL','PV'].map(h=>`<th style="${colH}">${h}</th>`).join('')}
       </tr></thead>
       <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
-        <td style="font-size:13px;text-align:left;padding:.45rem .75rem;white-space:nowrap;">${nombre}</td>
+        <td style="font-size:13px;text-align:left;padding:.4rem .6rem;width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nombre}">${nombre}</td>
         <td style="${colD}">${a.pj}</td><td style="${colD}">${a.vl}</td>
         <td style="${colD}">${a.emp}</td><td style="${colD}">${a.vv}</td>
         <td style="${colD}">${a.aml}</td><td style="${colD}">${a.amv}</td>
         <td style="${colD}">${a.rl}</td><td style="${colD}">${a.rv}</td>
         <td style="${colD}">${a.penl}</td><td style="${colD}">${a.penv}</td>
       </tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
     document.getElementById('tbl-arbitros').innerHTML = arbiRows.length
       ? arbiTableHtml
       : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';;
@@ -2099,12 +2104,27 @@ async function cargarEstadisticas(){
           <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
             <thead><tr>
               <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
-              <th style="width:50px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Penales</th>
+              <th style="width:50px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th><th style="padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);">Equipos</th>
             </tr></thead><tbody>
-            ${penArbiRows.map(([arb,n])=>`<tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:.35rem .5rem;font-size:13px;text-align:left;">${arb}</td>
-              <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
-            </tr>`).join('')}
+            ${penArbiRows.map(([arb,n])=>{
+              // Collect escudos of teams that received penales from this arb
+              const teamsContra = (penalesDB||[])
+                .filter(p=>{
+                  const px=p.partido_id?partidosById[p.partido_id]:null;
+                  if(!px) return false;
+                  const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+                  return arbitroPorPartido[k]===arb;
+                })
+                .map(p=>p.equipo_contra)
+                .filter(Boolean);
+              const uniqueTeams=[...new Set(teamsContra)];
+              const escudosHtml=uniqueTeams.map(eq=>escudoHTML(eq,'me')).join('');
+              return `<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
+                <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
+                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escudosHtml}</div></td>
+              </tr>`;
+            }).join('')}
             </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
           </div>
         </div>
