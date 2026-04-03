@@ -1117,6 +1117,36 @@ async function verFicha(key, tienePlanilla){
       return inicial + parts[parts.length-1];
     };
 
+    // Build incidencias (penales) section - spans both teams
+    const buildIncidencias = () => {
+      const allPenEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>ev.tipo==="penal_desviado" || (ev.tipo==="penal_atajado" && ev.extra==="arquero"))
+          .map(ev=>({...ev,
+            nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
+            equipoNombre: pl.equipos?.nombre||""
+          }))
+      ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+      if(!allPenEvs.length) return "";
+      const st = `style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;"`;
+      const rows = allPenEvs.map(ev=>{
+        const min = String(ev.minuto||"");
+        if(ev.tipo==="penal_desviado"){
+          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`;
+        }
+        if(ev.tipo==="penal_atajado"){
+          const rivalPlan = ev.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
+          const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
+          const ejNombre = ejEv?._n||"";
+          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`;
+        }
+        return "";
+      }).filter(Boolean).join("");
+      if(!rows) return "";
+      return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>${rows}</div>`;
+    };
+    const incidenciasHtml = buildIncidencias();
+
     fichaCont.innerHTML = `
       <div style="text-align:center;margin-bottom:1.25rem;">
         <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;margin-bottom:.5rem;">${partido.zona} — Fecha ${partido.fecha}</div>
@@ -1188,48 +1218,7 @@ async function verFicha(key, tienePlanilla){
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
         <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
       </div>
-      ${(() => {
-        // Penales incidencias - spans both teams, below grid
-        const allPenEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
-          (evByPlanilla[pl.id]||[])
-            .filter(ev=>['penal_desviado','penal_atajado'].includes(ev.tipo))
-            .map(ev=>({...ev, 
-              nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
-              equipoNombre: pl.equipos?.nombre||""
-            }))
-        ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-
-        if(!allPenEvs.length) return "";
-
-        const rows = allPenEvs.map(ev=>{
-          const min = String(ev.minuto||"");
-          if(ev.tipo==="penal_desviado"){
-            return `<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;">
-              <span style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
-              <span>❌</span>
-              <span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span>
-            </div>`;
-          }
-          if(ev.tipo==="penal_atajado" && ev.extra==="arquero"){
-            // Find ejecutante in the OTHER team's planilla at same minute
-            const rivalPlan = ev.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
-            const ejecutanteEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e, _nombre: p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
-            const ejecutanteNombre = ejecutanteEv?._nombre || "";
-            return `<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;">
-              <span style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;">${min}'</span>
-              <span>🧤</span>
-              <span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejecutanteNombre?" a <strong>"+ejecutanteNombre+"</strong>":""}</span></span>
-            </div>`;
-          }
-          return "";
-        }).filter(Boolean).join("");
-
-        if(!rows) return "";
-        return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;">
-          <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>
-          ${rows}
-        </div>`;
-      })()}
+      ${incidenciasHtml}
       `;
     // After render, equalize cambios/tarjetas sections height
     setTimeout(()=>{
@@ -1588,7 +1577,7 @@ async function cargarEstadisticas(){
   try {
     // Query 1: eventos con jugador y equipo
     const {data:eventos, error:evErr} = await sb.from('eventos')
-      .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,jugadores(id,nombre,nombre_display),equipos(nombre))');
+      .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))');
     if(evErr) throw evErr;
 
     // Query 2: partidos jugados para cruzar con eventos
