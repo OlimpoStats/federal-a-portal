@@ -440,12 +440,12 @@ async function cargarPartidosDesdeDB(){
     let allPlanillaPartidos = [];
     let plFrom = 0;
     while(true){
-      const {data:planillasRows, error:plErr} = await sb.from("planillas")
+      const {data:batchPl, error:batchPlErr} = await sb.from("planillas")
         .select("partido_id")
         .range(plFrom, plFrom + 999);
-      if(plErr || !planillasRows?.length) break;
-      allPlanillaPartidos = allPlanillaPartidos.concat(planillasRows);
-      if(planillasRows.length < 1000) break;
+      if(batchPlErr || !batchPl?.length) break;
+      allPlanillaPartidos = allPlanillaPartidos.concat(batchPl);
+      if(batchPl.length < 1000) break;
       plFrom += 1000;
     }
     const planillasRows = allPlanillaPartidos;
