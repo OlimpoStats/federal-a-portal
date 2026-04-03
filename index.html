@@ -992,6 +992,27 @@ async function verFicha(key, tienePlanilla){
 
       const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
 
+      // Penales section
+      const penalesDeEsteEquipo = (planillaArr||[]).flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo))
+          .map(ev=>({...ev, nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||""}))
+      ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+      const penalesSec = penalesDeEsteEquipo.length ? (() => {
+        const rows = penalesDeEsteEquipo.map(ev=>{
+          const min = String(ev.minuto||"");
+          const icon = ev.tipo==="gol_penal" ? "⚽" : ev.tipo==="penal_atajado" ? (ev.extra==="arquero"?"🧤":"❌") : "❌";
+          const label = ev.tipo==="gol_penal" ? "Convertido" : ev.tipo==="penal_atajado" ? (ev.extra==="arquero"?"Atajado":"No convertido") : "Desviado";
+          return `<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${min}'</span>
+            <span style="font-size:13px;">${icon}</span>
+            <span style="font-size:13px;">${ev.nombre}</span>
+            <span style="font-size:11px;color:var(--muted);">${label}</span>
+          </div>`;
+        }).join("");
+        return `<div class="tarjetas-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">${secHeader("⚽ PENALES")}${rows}</div>`;
+      })() : "";
+
       const cambiosSec = cambios.length ? `
         <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
           ${secHeader("CAMBIOS")}
@@ -1799,7 +1820,7 @@ async function cargarEstadisticas(){
     });
 
     // ── RENDER FUNCTIONS ──
-    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div><div style="font-size:13px;font-weight:500;">${nombre}</div><div style="font-size:10px;color:#999;">${equipo||''}</div></div></div>`;
+    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;overflow:hidden;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div style="overflow:hidden;min-width:0;"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nombre}</div><div style="font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${equipo||''}</div></div></div>`;
     const tblHead = (...cols) => `<table><thead><tr>${cols.map(([w,t,l,al])=>`<th style="${w?`width:${w};`:''}${al?`text-align:${al};`:''}" ${t?`title="${t}"`:''} >${l}</th>`).join('')}</tr></thead><tbody>`;
 
     // GOLEADORES
@@ -1933,15 +1954,28 @@ async function cargarEstadisticas(){
 
     // ÁRBITROS
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
-    document.getElementById('tbl-arbitros').innerHTML = arbiRows.length ? tblHead(
-      ['160px','Árbitro','Árbitro'],['30px','PJ','PJ'],['30px','VL','VL'],['30px','Emp','Emp'],['30px','VV','VV'],['30px','AM L','🟨L'],['30px','AM V','🟨V'],['30px','RJ L','🟥L'],['30px','RJ V','🟥V'],['30px','P L','⚽L'],['30px','P V','⚽V']
-    ) + arbiRows.map(([nombre,a])=>`<tr>
-      <td style="font-size:13px;text-align:left;">${nombre}</td>
-      <td>${a.pj}</td><td>${a.vl}</td><td>${a.emp}</td><td>${a.vv}</td>
-      <td>${a.aml}</td><td>${a.amv}</td><td>${a.rl}</td><td>${a.rv}</td>
-      <td>${a.penl}</td><td>${a.penv}</td>
-    </tr>`).join('') + '</tbody></table>'
-    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+        const arbiTableHtml = `<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>
+        <th style="width:130px;text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:11px;font-weight:700;border-bottom:1px solid var(--border);">Árbitro</th>
+        ${['PJ','GAN L','Emp','GAN V','🟨L','🟨V','🟥L','🟥V','PEN LOC','PEN VIS'].map(h=>`<th style="width:38px;padding:.35rem .2rem;background:var(--surface2);color:#e8c44a;font-size:10px;font-weight:700;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
+        <td style="font-size:12px;text-align:left;padding:.4rem .5rem;">${nombre}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.pj}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.vl}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.emp}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.vv}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.aml}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.amv}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.rl}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.rv}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.penl}</td>
+        <td style="text-align:center;font-size:12px;padding:.35rem .2rem;">${a.penv}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+    document.getElementById('tbl-arbitros').innerHTML = arbiRows.length
+      ? arbiTableHtml
+      : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';;
 
     // PENALES EJECUTANTES
     const penEjec = {};
