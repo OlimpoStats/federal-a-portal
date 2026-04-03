@@ -449,7 +449,8 @@ async function cargarPartidosDesdeDB(){
         }
       }
     }
-    console.log("PLANILLA_CARGADA:", Object.keys(PLANILLA_CARGADA).length, "keys. Sample:", Object.keys(PLANILLA_CARGADA)[0]);
+    console.log("PLANILLA_CARGADA:", Object.keys(PLANILLA_CARGADA).length, "keys:");
+    console.log(Object.keys(PLANILLA_CARGADA).sort().join("\n"));
   } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
 }
 
