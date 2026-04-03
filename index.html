@@ -105,9 +105,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* zona tabs */
 .ztabs{display:flex;gap:.35rem;margin-bottom:.85rem;flex-wrap:wrap;}
-.ztab{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;padding:5px 16px;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--muted);background:var(--surface);transition:all .15s;text-transform:uppercase;}
-.ztab:hover{color:var(--text);}
-.ztab.active{background:var(--accent);color:#111;border-color:var(--accent);}
+.ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--muted);background:var(--surface);transition:all .15s;text-transform:uppercase;}
+.ztab:hover{color:var(--text);background:var(--surface2);}
+.ztab.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800;}
 
 /* placeholders */
 .placeholder{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4rem 2rem;text-align:center;color:var(--muted);}
@@ -930,8 +930,12 @@ async function verFicha(key, tienePlanilla){
           return evTooltip(`Asistencia — min. ${min}${ev.extra?` (a ${ev.extra})`:''}`, chip);
         }
         if(ev.tipo==="penal_atajado"){
-          const chip = `<span style="font-size:13px;">🧤</span>${minSpan}`;
-          return evTooltip(`Penal atajado — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+          // If extra="arquero" → keeper chip 🧤, else → shooter missed ❌
+          const esArquero = ev.extra==="arquero";
+          const icon = esArquero ? "🧤" : "❌";
+          const label = esArquero ? "Penal atajado" : "Penal atajado (ejecutante)";
+          const chip = `<span style="font-size:13px;">${icon}</span>${minSpan}`;
+          return evTooltip(`${label} — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
         }
         if(ev.tipo==="penal_desviado"){
           const chip = `<span style="font-size:13px;">❌</span>${minSpan}`;
@@ -1017,6 +1021,7 @@ async function verFicha(key, tienePlanilla){
         ${suplentes.length?`${secHeader("SUPLENTES")}${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
         ${cambiosSec}
         ${tarjetasSec}
+        ${penalesSec}
       `;
     };
 
@@ -1775,23 +1780,19 @@ async function cargarEstadisticas(){
       }
     });
 
-    // Add tarjetas to arbitros
+    // Add tarjetas/penales to arbitros using arbitroPorPartido map
     (eventos||[]).forEach(ev=>{
-      const pl=ev.planillas;
-      if(!pl?.partidos) return;
+      if(!['amarilla','doble_amarilla','roja','gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
       const partidoId2 = planillaPartido[ev.planilla_id] || pl.partido_id;
-      const partido=partidosById[partidoId2];
+      const partido = partidosById[partidoId2];
       if(!partido || partido.goles_local===null) return;
-      // Find arbitro for this partido from FIXTURE
-      const ms=FIXTURE[partido.zona]?.[String(partido.fecha)];
-      if(!ms) return;
-      const m=ms.find(x=>x.local===partido.equipo_local_nombre&&x.visitante===partido.equipo_visitante_nombre);
-      const arbKey=`${partido.zona}_${partido.fecha}_${partido.equipo_local_nombre}_${partido.equipo_visitante_nombre}`;
-      const arbNombre = m?._arbitro || PARTIDO_META[arbKey]?.arbitro || "";
-      if(!arbNombre) return;
-      const a=arbiStats[arbNombre];
-      if(!a) return;
-      const esLocal = pl.equipos?.nombre===partido.equipo_local_nombre;
+      const arbKey = `${partido.zona}_${partido.fecha}_${partido.equipo_local_nombre}_${partido.equipo_visitante_nombre}`;
+      const arbNombre = arbitroPorPartido[arbKey] || "";
+      if(!arbNombre || !arbiStats[arbNombre]) return;
+      const a = arbiStats[arbNombre];
+      const esLocal = pl.equipos?.nombre === partido.equipo_local_nombre;
       if(ev.tipo==='amarilla'||ev.tipo==='doble_amarilla'){ if(esLocal) a.aml++; else a.amv++; }
       if(ev.tipo==='roja'||ev.tipo==='doble_amarilla'){ if(esLocal) a.rl++; else a.rv++; }
       if(['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo)){ if(esLocal) a.penl++; else a.penv++; }
@@ -1956,7 +1957,7 @@ async function cargarEstadisticas(){
     // Banner resumen penales - calculated after penArq is built below
     
     document.getElementById('tbl-pen-ejecutantes').innerHTML = penEjecRows.length ? tblHead(
-      ['','Jugador','Jugador'],['50px','Pat.','Pateados'],['50px','Conv.','Convertidos'],['50px','%','Efectividad']
+      ['180px','Jugador','Jugador'],['44px','Pat.','Pateados'],['44px','Conv.','Convertidos'],['44px','%','Efectividad']
     ) + penEjecRows.map(j=>{
       const pct = j.ejecutados ? Math.round(j.goles/j.ejecutados*100)+'%' : '—';
       return `<tr><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.ejecutados}</td><td>${j.goles}</td><td>${pct}</td></tr>`;
@@ -1993,7 +1994,7 @@ async function cargarEstadisticas(){
       document.getElementById('stats-penales').insertAdjacentHTML('afterbegin', bannerHtml);
     }
     document.getElementById('tbl-pen-arqueros').innerHTML = penArqRows.length ? tblHead(
-      ['','Arquero','Arquero'],['50px','Rec.','Recibidos'],['50px','Ataj.','Atajados'],['50px','%','Efectividad']
+      ['180px','Arquero','Arquero'],['44px','Rec.','Recibidos'],['44px','Ataj.','Atajados'],['44px','%','Efectividad']
     ) + penArqRows.map(j=>{
       const pct = j.recibidos ? Math.round(j.atajados/j.recibidos*100)+'%' : '—';
       return `<tr><td>${fmtJug(j.nombre,j.equipo||'')}</td><td>${j.recibidos}</td><td>${j.atajados}</td><td>${pct}</td></tr>`;
