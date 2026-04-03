@@ -1753,9 +1753,25 @@ async function guardarPenal(){
 
   if(error){ alert("Error al guardar penal: "+error.message); return; }
 
-  // If penal was saved (atajado), also add penal_atajado event to arquero's planilla in memory
+  // If penal was saved (atajado), persist event to DB for arquero
   if(resultado === "atajado" && arqueroDBId){
-    // Find arquero in the rival planilla and add event
+    // Find arquero's planilla_id in DB
+    if(partidoId){
+      const {data:arqPlan} = await sb.from("planillas")
+        .select("id")
+        .eq("partido_id", partidoId)
+        .eq("jugador_id", arqueroDBId)
+        .maybeSingle();
+      if(arqPlan?.id){
+        await sb.from("eventos").insert({
+          planilla_id: arqPlan.id,
+          tipo: "penal_atajado",
+          minuto: String(minuto),
+          extra: "arquero"
+        });
+      }
+    }
+    // Also update in memory
     const rivalSide = favor === (partidoActual?.local||"") ? "visit" : "local";
     const rivalPlan = rivalSide === "local" ? planillaLocal : planillaVisit;
     const rivalContId = rivalSide === "local" ? "tabla-local" : "tabla-visit";
