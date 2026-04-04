@@ -1,138 +1,107 @@
 // api/sync-live.js
-// Vercel serverless function - scrapes FotMob for live scores
-// Called by Vercel Cron every 60 seconds
+// No external dependencies - uses native fetch only
 
-const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-const sb = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY // Use service key (not anon) for server-side writes
-);
-
-function parseScore(html) {
-  // FotMob score pattern: "1 - 3" or "0 - 0"
-  const scoreMatch = html.match(/(\d+)\s*-\s*(\d+)/);
-  if (!scoreMatch) return null;
-  return {
-    local: parseInt(scoreMatch[1]),
-    visitante: parseInt(scoreMatch[2])
-  };
+async function sbGet(params) {
+  const url = `${SUPABASE_URL}/rest/v1/fixture?${params}`;
+  const r = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    }
+  });
+  return r.json();
 }
 
-function parseMinuto(html) {
-  // FotMob minute pattern like "67:07" or "45+2" 
-  const minMatch = html.match(/(\d+)(?:\+\d+)?:\d{2}/);
-  if (minMatch) return parseInt(minMatch[1]);
-  // Check for FT (full time)
-  if (html.includes('FT') || html.includes('Fin')) return 90;
-  return null;
+async function sbPatch(id, data) {
+  const url = `${SUPABASE_URL}/rest/v1/fixture?id=eq.${id}`;
+  const r = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+
+function parseScore(html) {
+  const m = html.match(/(\d+)\s*[-–]\s*(\d+)/);
+  return m ? { local: parseInt(m[1]), visitante: parseInt(m[2]) } : null;
+}
+
+function isFinished(html) {
+  return html.includes('FT') || html.includes('"finished":true') || html.includes('Full time');
 }
 
 function isLive(html) {
-  // Check if match is currently live
-  return html.includes(':') && !html.includes('FT') && !html.includes('Fin');
+  return /\d{1,3}'\s/.test(html) || html.includes('"live":true') || html.includes('"started":true');
 }
 
 module.exports = async (req, res) => {
-  // Allow manual trigger via GET, or cron trigger
-  try {
-    // Get all fixtures with fotmob_url that haven't finished
-    const { data: fixtures, error } = await sb
-      .from('fixture')
-      .select('id, equipo_local, equipo_visitante, zona, fecha, goles_local, goles_visitante, fotmob_url, estado')
-      .not('fotmob_url', 'is', null)
-      .neq('fotmob_url', '')
-      .neq('estado', 'finalizado');
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return res.status(500).json({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_KEY env vars' });
+  }
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: error.message });
+  try {
+    const fixtures = await sbGet(
+      'fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado'
+    );
+
+    if (!Array.isArray(fixtures)) {
+      return res.status(500).json({ error: 'Supabase error', data: fixtures });
     }
 
-    if (!fixtures?.length) {
-      return res.status(200).json({ message: 'No live fixtures to sync', updated: 0 });
+    if (!fixtures.length) {
+      return res.status(200).json({ ok: true, message: 'No fixtures with FotMob URL' });
     }
 
     const results = [];
 
-    for (const fixture of fixtures) {
+    for (const fx of fixtures) {
+      if (fx.estado === 'finalizado') { results.push({ id: fx.id, skip: 'finalizado' }); continue; }
+
       try {
-        // Fetch FotMob page
-        const response = await fetch(fixture.fotmob_url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; AscensoFederal/1.0)',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'es-AR,es;q=0.9',
-          },
+        const resp = await fetch(fx.fotmob_url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AscensoFederal/1.0)' },
           signal: AbortSignal.timeout(8000)
         });
 
-        if (!response.ok) {
-          results.push({ id: fixture.id, error: `HTTP ${response.status}` });
-          continue;
-        }
+        if (!resp.ok) { results.push({ id: fx.id, error: `HTTP ${resp.status}` }); continue; }
 
-        const html = await response.text();
+        const html = await resp.text();
         const score = parseScore(html);
-        
-        if (!score) {
-          results.push({ id: fixture.id, error: 'Score not found' });
-          continue;
-        }
 
-        const minuto = parseMinuto(html);
-        const live = isLive(html);
-        const finished = html.includes('FT') || html.includes('Fin') || 
-                        html.includes('Final') || (!live && minuto === 90);
+        if (!score) { results.push({ id: fx.id, error: 'score not found' }); continue; }
 
-        // Only update if score changed
-        if (score.local !== fixture.goles_local || score.visitante !== fixture.goles_visitante) {
-          const updateData = {
-            goles_local: score.local,
-            goles_visitante: score.visitante,
-          };
-          if (finished) {
-            updateData.estado = 'finalizado';
-          } else if (live) {
-            updateData.estado = 'en_curso';
-          }
+        const finished = isFinished(html);
+        const live = !finished && isLive(html);
+        const changed = score.local !== fx.goles_local || score.visitante !== fx.goles_visitante;
 
-          const { error: updateError } = await sb
-            .from('fixture')
-            .update(updateData)
-            .eq('id', fixture.id);
-
-          if (updateError) {
-            results.push({ id: fixture.id, error: updateError.message });
-          } else {
-            results.push({ 
-              id: fixture.id, 
-              updated: true, 
-              score: `${score.local}-${score.visitante}`,
-              minuto,
-              finished
-            });
-          }
+        if (changed || finished || live) {
+          const upd = { goles_local: score.local, goles_visitante: score.visitante };
+          if (finished) upd.estado = 'finalizado';
+          else if (live) upd.estado = 'en_curso';
+          const ok = await sbPatch(fx.id, upd);
+          results.push({ id: fx.id, updated: ok, score: `${score.local}-${score.visitante}`, estado: upd.estado });
         } else {
-          results.push({ id: fixture.id, unchanged: true, score: `${score.local}-${score.visitante}` });
+          results.push({ id: fx.id, unchanged: true, score: `${score.local}-${score.visitante}` });
         }
 
-        // Small delay between requests to be polite
-        await new Promise(r => setTimeout(r, 500));
-
-      } catch (err) {
-        results.push({ id: fixture.id, error: err.message });
+        await new Promise(r => setTimeout(r, 300));
+      } catch(e) {
+        results.push({ id: fx.id, error: e.message });
       }
     }
 
-    return res.status(200).json({ 
-      synced: fixtures.length, 
-      results,
-      timestamp: new Date().toISOString()
-    });
+    return res.status(200).json({ ok: true, synced: fixtures.length, results, ts: new Date().toISOString() });
 
-  } catch (err) {
-    console.error('Sync error:', err);
-    return res.status(500).json({ error: err.message });
+  } catch(e) {
+    return res.status(500).json({ error: e.message });
   }
 };
