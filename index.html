@@ -1127,31 +1127,51 @@ async function verFicha(key, tienePlanilla){
 
     // Build incidencias (penales) section - spans both teams
     const buildIncidencias = () => {
-      const allPenEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
+      // Collect all penal events from both planillas
+      const allEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
         (evByPlanilla[pl.id]||[])
-          .filter(ev=>ev.tipo==="penal_desviado" || (ev.tipo==="penal_atajado" && ev.extra==="arquero"))
+          .filter(ev=>['penal_desviado','penal_atajado'].includes(ev.tipo))
           .map(ev=>({...ev,
             nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
             equipoNombre: pl.equipos?.nombre||""
           }))
       ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-      if(!allPenEvs.length) return "";
-      const st = `style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;"`;
-      const rows = allPenEvs.map(ev=>{
+
+      if(!allEvs.length) return "";
+
+      const st = `style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;"`;
+      const rows = [];
+
+      // Group by minuto to match arquero+ejecutante
+      const byMinuto = {};
+      allEvs.forEach(ev=>{
         const min = String(ev.minuto||"");
-        if(ev.tipo==="penal_desviado"){
-          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`;
+        if(!byMinuto[min]) byMinuto[min]=[];
+        byMinuto[min].push(ev);
+      });
+
+      Object.entries(byMinuto).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).forEach(([min, evs])=>{
+        const arquero = evs.find(e=>e.tipo==='penal_atajado' && e.extra==='arquero');
+        const ejecutanteAtajado = evs.find(e=>e.tipo==='penal_atajado' && e.extra!=='arquero');
+        const desviado = evs.find(e=>e.tipo==='penal_desviado');
+
+        if(arquero){
+          // Find ejecutante: either the paired ejecutanteAtajado or look in rival planilla
+          let ejNombre = ejecutanteAtajado?.nombre || "";
+          if(!ejNombre){
+            // Try to find penal_atajado without arquero flag at same minute in rival planilla
+            const rivalPlan = arquero.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
+            const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==='penal_atajado' && String(e.minuto)===min && e.extra!=='arquero');
+            ejNombre = ejEv?._n || "";
+          }
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${arquero.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`);
+        } else if(desviado){
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${desviado.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`);
         }
-        if(ev.tipo==="penal_atajado"){
-          const rivalPlan = ev.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
-          const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==="penal_atajado" && String(e.minuto)===String(ev.minuto) && e.extra!=="arquero");
-          const ejNombre = ejEv?._n||"";
-          return `<div style="font-size:13px;padding:.2rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${ev.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`;
-        }
-        return "";
-      }).filter(Boolean).join("");
-      if(!rows) return "";
-      return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>${rows}</div>`;
+      });
+
+      if(!rows.length) return "";
+      return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>${rows.join("")}</div>`;
     };
     const incidenciasHtml = buildIncidencias();
 
