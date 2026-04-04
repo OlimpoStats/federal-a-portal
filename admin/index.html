@@ -2461,7 +2461,7 @@ async function hsGuardarTodo(){
     if(!fixtureId) continue;
 
     const {error} = await sb.from("fixture").update({
-      dia, hora, stream_url:stream, estadio:estadioVal,
+      dia, hora, stream_url:stream, fotmob_url:fotmob, estadio:estadioVal,
       arbitro, juez1, juez2, cuarto_arbitro:cuarto,
       estado:"programado"
     }).eq("id", fixtureId);
