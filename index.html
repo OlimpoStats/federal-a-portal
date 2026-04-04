@@ -913,8 +913,22 @@ async function verFicha(key, tienePlanilla){
       evByPlanilla[ev.planilla_id].push(ev);
     });
 
-    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre) => {
+    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre, rivalPlanilla) => {
       if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin planilla cargada.</div>';
+      // Goles en contra del rival que cuentan PARA este equipo
+      const golesContraFavor = (rivalPlanilla||[]).flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>ev.tipo==='gol_contra')
+          .map(ev=>({
+            icon: '<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>',
+            nombre: (pl.jugadores?.nombre_display||pl.jugadores?.nombre||"")+" (E/C)",
+            minuto: ev.minuto,
+            asist: "",
+            tipo: "gol_contra",
+            contra: true
+          }))
+      );
+
       const titulares = jugadoresEquipo.filter(j=>j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
       const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
       const todosJugadores = [...titulares, ...suplentes];
@@ -980,12 +994,8 @@ async function verFicha(key, tienePlanilla){
         });
         const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
         const esCapitan = pl.es_capitan;
-        // gol_contra shows in rival's column, not scorer's own column
-        const chipsEvs = evs.filter(ev=>ev.tipo!=='gol_contra');
-        const chips = chipsEvs.map(renderChip).filter(Boolean);
-        // But show (E/C) note in scorer's row as small text
-        const golesContraPropios = evs.filter(ev=>ev.tipo==='gol_contra');
-        const ecChips = golesContraPropios.map(ev=>`<span style="font-size:10px;color:#e57373;font-style:italic;">${String(ev.minuto||"")}'(E/C)</span>`).join('');
+        const chips = evs.map(renderChip).filter(Boolean);
+        const ecChips = "";
         const nombreSize = esTitular ? "14px" : "13px";
         const capStr = esCapitan ? ` <span style="color:var(--accent);font-size:11px;font-weight:700;">(C)</span>` : "";
         return `<div style="display:flex;align-items:center;gap:.5rem;padding:0 0;border-bottom:1px solid rgba(255,255,255,0.05);height:30px;box-sizing:border-box;overflow:hidden;">
@@ -1243,8 +1253,8 @@ async function verFicha(key, tienePlanilla){
         ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
       </div>
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local)}</div>
-        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante)}</div>
+        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
+        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante, localPlanilla)}</div>
       </div>
       ${incidenciasHtml}
       `;
