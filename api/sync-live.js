@@ -31,50 +31,43 @@ async function sbPatch(id, data) {
 }
 
 function parseScore(html) {
-  // FotMob score: small numbers (0-20) separated by dash/endash
-  // Must NOT match dates like "2026-04" or "22:18"
-  // Look for pattern like "1 - 3" or "0 - 0" with spaces around dash
-  // Or inside specific score contexts
-  
-  // Try to find score in the h1/title area first (most reliable)
-  // FotMob puts score like "Boca Unidos 1 - 3 Defensores"
-  const scorePatterns = [
-    /\b([0-9]|1[0-9]|20)\s*[-–]\s*([0-9]|1[0-9]|20)\b/g,
-  ];
-  
-  for (const pattern of scorePatterns) {
-    let m;
-    const candidates = [];
-    while ((m = pattern.exec(html)) !== null) {
-      const a = parseInt(m[1]);
-      const b = parseInt(m[2]);
-      // Filter out dates (year numbers) and times
-      if (a <= 20 && b <= 20) {
-        candidates.push({ local: a, visitante: b, pos: m.index });
-      }
-    }
-    if (candidates.length > 0) {
-      // Take the first match that's not in a date context
-      for (const c of candidates) {
-        const context = html.substring(Math.max(0, c.pos - 20), c.pos + 20);
-        // Skip if preceded by 4-digit year or time colon
-        if (/\d{4}/.test(context.substring(0, 20))) continue;
-        if (/\d:\d/.test(context)) continue;
-        return { local: c.local, visitante: c.visitante };
-      }
+  // FotMob puts score in a span with class containing "MFHeaderStatusScore"
+  // HTML looks like: <span class="...MFHeaderStatusScore...">1 - 1</span>
+  const scoreClassMatch = html.match(/MFHeaderStatusScore[^>]*>([^<]*)<\/span>/);
+  if (scoreClassMatch) {
+    const text = scoreClassMatch[1].trim();
+    const m = text.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (m) return { local: parseInt(m[1]), visitante: parseInt(m[2]) };
+  }
+
+  // Fallback: look for score in title tag
+  const titleMatch = html.match(/<title>[^<]*?(\d+)\s*[-–]\s*(\d+)[^<]*?<\/title>/i);
+  if (titleMatch) {
+    const a = parseInt(titleMatch[1]), b = parseInt(titleMatch[2]);
+    if (a <= 20 && b <= 20) return { local: a, visitante: b };
+  }
+
+  // Last resort: find small numbers separated by dash NOT preceded by 4 digits
+  const pattern = /(?<!\d{3})\b([0-9]|1[0-9]|20)\s*[-–]\s*([0-9]|1[0-9]|20)\b(?!\d)/g;
+  let m;
+  const candidates = [];
+  while ((m = pattern.exec(html)) !== null) {
+    const ctx = html.substring(Math.max(0, m.index - 30), m.index);
+    if (!/\d{3}/.test(ctx) && !/:/.test(ctx.slice(-5))) {
+      candidates.push({ local: parseInt(m[1]), visitante: parseInt(m[2]) });
     }
   }
-  return null;
+  return candidates.length ? candidates[0] : null;
 }
 
 function isFinished(html) {
-  return html.includes('Full time') || html.includes('"finished":true') || 
-         html.includes('FT\n') || html.includes('>FT<');
+  return html.includes('Full time') || html.includes('"finished":true') ||
+         html.includes('Partido finalizado') || />\s*FT\s*</.test(html);
 }
 
 function isLive(html) {
-  // FotMob shows minute like "67'" for live matches
-  return /\b\d{1,3}'\s/.test(html) || html.includes('"live":true');
+  return /\b\d{1,3}['′]\s/.test(html) || html.includes('"live":true') ||
+         /\d{1,3}:\d{2}\s*</.test(html);
 }
 
 module.exports = async (req, res) => {
@@ -102,7 +95,7 @@ module.exports = async (req, res) => {
 
       try {
         const resp = await fetch(fx.fotmob_url, {
-          headers: { 
+          headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept-Language': 'es-AR,es;q=0.9'
           },
@@ -114,14 +107,15 @@ module.exports = async (req, res) => {
         const html = await resp.text();
         const score = parseScore(html);
 
-        if (!score) { 
-          results.push({ id: fx.id, error: 'score not found', sample: html.substring(0, 200) }); 
-          continue; 
+        if (!score) {
+          // Return sample of HTML for debugging
+          const sample = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').substring(0, 300);
+          results.push({ id: fx.id, error: 'score not found', sample });
+          continue;
         }
 
         const finished = isFinished(html);
         const live = !finished && isLive(html);
-
         const changed = score.local !== fx.goles_local || score.visitante !== fx.goles_visitante;
 
         if (changed || finished || live) {
