@@ -2403,6 +2403,7 @@ function hsActualizar(){
           <div class="autocomplete-list" id="ac-hs-estadio-${i}"></div>
         </div>
         <div><label>Stream</label><input type="text" id="hs-stream-${i}" value="${p.stream_url||""}" placeholder="https://..." oninput="marcarModificado(${i})"></div>
+        <div><label>FotMob (en vivo)</label><input type="text" id="hs-fotmob-${i}" value="${p.fotmob_url||""}" placeholder="https://www.fotmob.com/..." oninput="marcarModificado(${i})"></div>
         <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('hs-arb-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-arb-${i}" value="${arb}" placeholder="Árbitro" oninput="acInput(this,'arbitros','hs-arb-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-arb-${i}"></div>
