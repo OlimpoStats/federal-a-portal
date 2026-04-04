@@ -120,6 +120,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .mini-gol-nombre{color:#f0f0f0;}
 .partido-wrap{margin-bottom:.85rem;}
 
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
 /* ── MOBILE ── */
 @media(max-width:700px){
   .hdr{padding:0 .75rem;gap:.4rem;height:54px;}
@@ -339,7 +340,7 @@ async function cargarPartidosDesdeDB(){
     // Fuente principal: fixture
     const {data:fixtureData, error:fixtureErr} = await sb
       .from("fixture")
-      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro");
+      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url");
     if(!fixtureErr && fixtureData){
       // Store globally for stats
       window._FIXTURE_RAW = fixtureData;
@@ -353,6 +354,8 @@ async function cargarPartidosDesdeDB(){
           match.gl = p.goles_local;
           match.gv = p.goles_visitante;
         }
+        if(p.estado) match.estado = p.estado;
+        if(p.fotmob_url) match.fotmob_url = p.fotmob_url;
         if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
           PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
@@ -2219,8 +2222,42 @@ async function init(){
   fechaActual = f;
   renderPartidos(f);
   renderTablas();
+  // Start live score polling
+  iniciarPollingEnVivo();
 }
 init();
+
+// ── LIVE SCORE POLLING ──
+let _liveInterval = null;
+
+async function iniciarPollingEnVivo(){
+  // Check if any fixture has fotmob_url (potential live match)
+  const hayEnVivo = Object.values(FIXTURE).some(zona=>
+    Object.values(zona).some(partidos=>
+      partidos.some(p=>p.estado==='en_curso')
+    )
+  );
+  if(hayEnVivo) activarPolling();
+}
+
+function activarPolling(){
+  if(_liveInterval) return;
+  console.log('⚽ Live polling activo');
+  _liveInterval = setInterval(async ()=>{
+    try {
+      // Call sync endpoint
+      await fetch('/api/sync-live');
+      // Reload fixture data
+      await cargarPartidosDesdeDB();
+      renderPartidos(fechaActual);
+      renderTablas();
+    } catch(e){ console.log('Polling error:', e); }
+  }, 60000); // 60 seconds
+}
+
+function detenerPolling(){
+  if(_liveInterval){ clearInterval(_liveInterval); _liveInterval=null; }
+}
 
 </script>
 <!-- FICHA MODAL -->
