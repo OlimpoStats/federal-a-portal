@@ -780,6 +780,9 @@ function renderPartidos(f){
   let html="";
   let diaActual = null;
   rows.forEach(({zona, m, meta}) => {
+    const esEnVivo = m.estado === "en_curso";
+    const esFuturo = m.gl === null && !esEnVivo;
+    const liveClass = esEnVivo ? " partido-live" : "";
     const dKey = diaKey(meta.dia);
     if(dKey !== diaActual){
       diaActual = dKey;
@@ -860,7 +863,7 @@ function renderPartidos(f){
 
     html+=`<div class="partido-wrap">
       <div style="display:flex;align-items:stretch;gap:.4rem">
-        <div class="partido topo-dia${esEnVivo?' partido-live':''}" style="flex:1;border-left-color:${zc.color};">
+        <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
           <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
           <div class="res">${centro}</div>
           <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
