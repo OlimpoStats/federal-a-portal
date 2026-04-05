@@ -1370,6 +1370,17 @@ function hideH2HTooltip(){
   if(_h2hTimer){ clearTimeout(_h2hTimer); _h2hTimer=null; }
 }
 
+function liveScoreBadge(equipo){
+  const allMatches = Object.values(FIXTURE).flatMap(z=>Object.values(z).flatMap(f=>f));
+  const liveM = allMatches.find(m=>m.estado==="en_curso"&&(m.local===equipo||m.visitante===equipo));
+  if(!liveM||liveM.gl===null) return "";
+  const esLocal = liveM.local===equipo;
+  const myG = esLocal?liveM.gl:liveM.gv;
+  const thG = esLocal?liveM.gv:liveM.gl;
+  const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
+  return `<span style="margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;">${myG}-${thG}</span>`;
+}
+
 function renderTablas(){
   // Zona A clasifica top 5, resto top 4. Quintos de B/C/D arman tabla propia.
   const clasificados = {"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
@@ -1403,17 +1414,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       html+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${(()=>{
-          // Check if this team is playing live
-          const liveM = Object.values(FIXTURE).flatMap(zona=>Object.values(zona).flatMap(f=>f))
-            .find(m=>m.estado==='en_curso'&&(m.local===r.n||m.visitante===r.n));
-          if(!liveM) return '';
-          const esLocal = liveM.local===r.n;
-          const myGoles = esLocal?liveM.gl:liveM.gv;
-          const theirGoles = esLocal?liveM.gv:liveM.gl;
-          const color = myGoles>theirGoles?'#2ea043':myGoles<theirGoles?'#e57373':'#e8c44a';
-          return `<span style="margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${color};animation:breathe 2s ease-in-out infinite;">${myGoles}-${theirGoles}</span>`;
-        })()}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
         <td>${r.g}</td>
@@ -1451,17 +1452,7 @@ function renderTablas(){
       const posClass=i===0?"clasif":"noclasif";
       html+=`<tr>
         <td><span class="pos ${posClass}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${(()=>{
-          // Check if this team is playing live
-          const liveM = Object.values(FIXTURE).flatMap(zona=>Object.values(zona).flatMap(f=>f))
-            .find(m=>m.estado==='en_curso'&&(m.local===r.n||m.visitante===r.n));
-          if(!liveM) return '';
-          const esLocal = liveM.local===r.n;
-          const myGoles = esLocal?liveM.gl:liveM.gv;
-          const theirGoles = esLocal?liveM.gv:liveM.gl;
-          const color = myGoles>theirGoles?'#2ea043':myGoles<theirGoles?'#e57373':'#e8c44a';
-          return `<span style="margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${color};animation:breathe 2s ease-in-out infinite;">${myGoles}-${theirGoles}</span>`;
-        })()}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td style="font-size:11px;color:var(--muted)">${r.zona.replace("Zona ","")}</td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
