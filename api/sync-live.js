@@ -43,37 +43,30 @@ function parseMinuto(html) {
 }
 
 function parseRojas(html, side) {
-  // From inspector: red card is SVG path with fill="#DD3636" inside MFHeaderRedCards
-  // Split HTML by team sections using TeamLink divs
-  const teamSections = html.split(/MFHeaderRedCards|MFHeaderStatusScoreAndRedCards/);
+  // Structure: MFHeaderStatusScoreAndRedCards contains:
+  //   MFHeaderRedCards (local) | MFHeaderStatusScore | MFHeaderRedCards (visitante)
+  // Each MFHeaderRedCards div contains ic-red-card-24dp SVGs
   
-  if (teamSections.length > side + 1) {
-    const section = teamSections[side + 1];
-    // Count DD3636 (red card color) or Card SVG paths
-    const byColor = (section.match(/DD3636|DD3030|E8453A/gi) || []).length;
-    if (byColor > 0) return byColor;
-  }
+  // Split by MFHeaderRedCards to get sections
+  const parts = html.split('MFHeaderRedCards');
+  // parts[0] = before first, parts[1] = after first div opening (local cards)
+  // parts[2] = after second div opening (visitante cards)
+  if (parts.length < 2) return 0;
   
-  // Fallback: split by TeamLink and count red fills
-  const byTeam = html.split('TeamLink');
-  if (byTeam.length > side + 1) {
-    const section = byTeam[side + 1];
-    const byColor = (section.match(/DD3636|DD3030|E8453A/gi) || []).length;
-    if (byColor > 0) return byColor;
-  }
-  return 0;
+  const section = parts[side + 1] || '';
+  // Count ic-red-card-24dp occurrences before the next closing div
+  const until = section.indexOf('MFHeaderStatusScore');
+  const relevant = until > 0 ? section.substring(0, until) : section.substring(0, 500);
+  const cards = (relevant.match(/ic-red-card-24dp/g) || []).length;
+  return cards;
 }
 
 function debugRedCards(html) {
-  // Look for red card color
-  const patterns = ['DD3636', 'MFHeaderRedCards', 'ic-red-card', 'RedCard'];
-  for (const p of patterns) {
-    const idx = html.indexOf(p);
-    if (idx !== -1) {
-      return `found:${p} ctx:` + html.substring(Math.max(0,idx-50), idx+100).replace(/<[^>]+>/g,' ').trim();
-    }
-  }
-  return 'none found';
+  const parts = html.split('MFHeaderRedCards');
+  if (parts.length < 2) return 'MFHeaderRedCards not found';
+  const local = (parts[1].match(/ic-red-card-24dp/g)||[]).length;
+  const visit = parts[2] ? (parts[2].match(/ic-red-card-24dp/g)||[]).length : 0;
+  return `sections:${parts.length} local:${local} visit:${visit}`;
 }
 
 function getStatusContext(html) {
