@@ -62,12 +62,8 @@ function parseRojas(html, side) {
 }
 
 function debugRedCards(html) {
-  // Look for event text patterns like "Álvarez" near red card icons
-  // FotMob event list has player names with minute numbers
-  const eventIdx = html.indexOf('MFMatchHeader');
-  if (eventIdx === -1) return 'no MFMatchHeader';
-  const ctx = html.substring(eventIdx, eventIdx+2000).replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
-  return ctx.substring(0,300);
+  const ctx = getStatusContext(html);
+  return ctx.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,200);
 }
 
 function parseEventos(html) {
@@ -118,6 +114,38 @@ function isLive(html) {
   return /MFStatusLiveTimeText/.test(html) || /HT|Half time/.test(getStatusContext(html));
 }
 
+async function fetchIncidentesSofascore(sofascoreId) {
+  if (!sofascoreId) return { golesLocal:[], golesVisit:[], rojasLocal:0, rojasVisit:0 };
+  try {
+    const r = await fetch(`https://api.sofascore.com/api/v1/event/${sofascoreId}/incidents`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.sofascore.com/'
+      },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    const data = await r.json();
+    const incidents = data?.incidents || [];
+    const result = { golesLocal:[], golesVisit:[], rojasLocal:0, rojasVisit:0 };
+    for (const inc of incidents) {
+      const isHome = inc.isHome;
+      const nombre = inc.player?.name || inc.playerName || '';
+      const min = inc.time ? `${inc.time}'` : '';
+      if (inc.incidentType === 'goal' || inc.incidentType === 'Goal') {
+        if (isHome) result.golesLocal.push({nombre, min});
+        else result.golesVisit.push({nombre, min});
+      }
+      if (inc.incidentType === 'card' && (inc.incidentClass === 'red' || inc.incidentClass === 'yellowRed')) {
+        if (isHome) result.rojasLocal++;
+        else result.rojasVisit++;
+      }
+    }
+    return result;
+  } catch(e) { return { error: e.message }; }
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -156,7 +184,7 @@ module.exports = async (req, res) => {
         const live = !finished && isLive(html);
 
         if (!live && !(finished && fx.estado === 'en_curso')) {
-          results.push({ id: fx.id, skip: `not live - finished:${finished}` });
+          const _sd = debugRedCards(html); results.push({ id: fx.id, skip: `not live - finished:${finished}`, statusCtx: _sd });
           continue;
         }
 
