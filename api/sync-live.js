@@ -37,36 +37,37 @@ function parseScore(html) {
 }
 
 function parseMinuto(html) {
-  // Use exact FotMob class for live time
   const m = html.match(/MFStatusLiveTimeText[^>]*>([^<]+)<\/span>/);
   if (m) {
     const t = m[1].trim();
     if (t.includes(':')) return t.split(':')[0] + "'";
     return t;
   }
-  // Half time indicators
-  if (html.includes('HT') || html.includes('Half time') || html.includes('Entretiempo')) return 'ET';
-  // Generic clock
-  const m2 = html.match(/(\d{1,3}):(\d{2})/);
-  if (m2 && parseInt(m2[1]) <= 120) return m2[1] + "'";
+  if (html.includes('HT') || html.includes('Half time')) return 'ET';
   return null;
 }
 
+function getStatusContext(html) {
+  // Only look at the header status wrapper area - not the full page
+  const m = html.match(/MFHeaderStatusWrapper[^>]*>([\s\S]{0,500})/);
+  return m ? m[1] : html.substring(0, 2000);
+}
+
 function isFinished(html) {
-  return html.includes('Full time')
-    || html.includes('"finished":true')
-    || />\s*FT\s*</.test(html)
-    || html.includes('"status":"finished"')
-    || html.includes('"statusCode":"FT"');
+  // Only check the status context, not the whole page
+  // "Full time" can appear in match history sections
+  const ctx = getStatusContext(html);
+  return />\s*FT\s*</.test(ctx)
+    || ctx.includes('"finished":true')
+    || ctx.includes('"statusCode":"FT"')
+    || ctx.includes('"status":"finished"');
 }
 
 function isLive(html) {
   if (isFinished(html)) return false;
-  // FotMob live time class is the most reliable indicator
+  // MFStatusLiveTimeText only exists when match is live
   if (/MFStatusLiveTimeText/.test(html)) return true;
   if (html.includes('HT') || html.includes('Half time')) return true;
-  if (/\d{1,3}:\d{2}/.test(html)) return true;
-  if (html.includes('"live":true') || html.includes('"started":true')) return true;
   return false;
 }
 
@@ -99,9 +100,8 @@ module.exports = async (req, res) => {
 
         const upd = {};
         if (score) { upd.goles_local = score.local; upd.goles_visitante = score.visitante; }
-        if (finished) { upd.estado = 'finalizado'; upd.minuto_actual = null; }
+        if (finished) { upd.estado = 'jugado'; upd.minuto_actual = null; }
         else if (live) { upd.estado = 'en_curso'; upd.minuto_actual = minuto; }
-        else if (fx.estado === 'en_curso') { upd.estado = 'programado'; upd.minuto_actual = null; }
 
         if (Object.keys(upd).length > 0) {
           const ok = await sbPatch(fx.id, upd);
