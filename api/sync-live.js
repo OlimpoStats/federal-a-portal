@@ -43,15 +43,37 @@ function parseMinuto(html) {
 }
 
 function parseRojas(html, side) {
-  // FotMob puts red cards in MFHeaderRedCards within each team section
-  // Teams are in order: local first, visitante second
-  // Count ic-red-card SVGs per side
-  const teamSections = html.split('MFHeaderRedCards');
-  if (teamSections.length < 2) return 0;
-  // side 0 = local, side 1 = visitante
-  const section = teamSections[side + 1] || '';
-  const matches = section.match(/ic-red-card/g);
-  return matches ? matches.length : 0;
+  // From inspector: red card is SVG path with fill="#DD3636" inside MFHeaderRedCards
+  // Split HTML by team sections using TeamLink divs
+  const teamSections = html.split(/MFHeaderRedCards|MFHeaderStatusScoreAndRedCards/);
+  
+  if (teamSections.length > side + 1) {
+    const section = teamSections[side + 1];
+    // Count DD3636 (red card color) or Card SVG paths
+    const byColor = (section.match(/DD3636|DD3030|E8453A/gi) || []).length;
+    if (byColor > 0) return byColor;
+  }
+  
+  // Fallback: split by TeamLink and count red fills
+  const byTeam = html.split('TeamLink');
+  if (byTeam.length > side + 1) {
+    const section = byTeam[side + 1];
+    const byColor = (section.match(/DD3636|DD3030|E8453A/gi) || []).length;
+    if (byColor > 0) return byColor;
+  }
+  return 0;
+}
+
+function debugRedCards(html) {
+  // Look for red card color
+  const patterns = ['DD3636', 'MFHeaderRedCards', 'ic-red-card', 'RedCard'];
+  for (const p of patterns) {
+    const idx = html.indexOf(p);
+    if (idx !== -1) {
+      return `found:${p} ctx:` + html.substring(Math.max(0,idx-50), idx+100).replace(/<[^>]+>/g,' ').trim();
+    }
+  }
+  return 'none found';
 }
 
 function getStatusContext(html) {
@@ -126,7 +148,8 @@ module.exports = async (req, res) => {
         else { upd.estado = 'en_curso'; upd.minuto_actual = minutoEncoded; }
 
         const ok = await sbPatch(fx.id, upd);
-        results.push({ id: fx.id, updated: ok, score: `${score.local}-${score.visitante}`, minuto, rojasLocal, rojasVisit, estado: upd.estado, live, finished });
+        const _dbg = debugRedCards(html);
+        results.push({ id: fx.id, updated: ok, score: `${score.local}-${score.visitante}`, minuto, rojasLocal, rojasVisit, estado: upd.estado, live, finished, dbgRoja: _dbg });
 
         await new Promise(r => setTimeout(r, 500));
       } catch(e) { results.push({ id: fx.id, error: e.message }); }
