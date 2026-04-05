@@ -64,9 +64,12 @@ function parseRojas(html, side) {
 function debugRedCards(html) {
   const parts = html.split('MFHeaderRedCards');
   if (parts.length < 2) return 'MFHeaderRedCards not found';
-  const local = (parts[1].match(/ic-red-card-24dp/g)||[]).length;
-  const visit = parts[2] ? (parts[2].match(/ic-red-card-24dp/g)||[]).length : 0;
-  return `sections:${parts.length} local:${local} visit:${visit}`;
+  // Show first 300 chars of section 1 (local) stripped of tags
+  const sample = parts[1].substring(0,300).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  // Also check for event names like player names near red card icons
+  const eventSection = html.match(/MFHeaderStatusScoreAndRedCards[^>]*>([\s\S]{0,1000})/);
+  const eventText = eventSection ? eventSection[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,200) : 'none';
+  return `sections:${parts.length} s1:${sample.substring(0,100)} events:${eventText}`;
 }
 
 function getStatusContext(html) {
@@ -153,3 +156,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 };
+
+// force redeploy Sun Apr  5 20:15:04 UTC 2026
