@@ -865,9 +865,9 @@ function renderPartidos(f){
     html+=`<div class="partido-wrap">
       <div style="display:flex;align-items:stretch;gap:.4rem">
         <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
-          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
+          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${esEnVivo&&rojasLocal?'&nbsp;'+rojasLocal:''}</div></div>
           <div class="res">${centro}</div>
-          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
+          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${esEnVivo&&rojasVisit?rojasVisit+'&nbsp;':''}${m.visitante}</div></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:.3rem;justify-content:center">
           ${streamBtn}
