@@ -800,7 +800,7 @@ function renderPartidos(f){
       const _rl = parseInt(_minParts[1]||'0');
       const _rv = parseInt(_minParts[2]||'0');
       const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
-      const rojaIcon = `<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>`;
+      const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
       const rojasLocal = esEnVivo && _rl > 0 ? rojaIcon.repeat(_rl) : "";
       const rojasVisit = esEnVivo && _rv > 0 ? rojaIcon.repeat(_rv) : "";
       const scoreClass = esEnVivo ? "score score-live" : "score";
@@ -872,9 +872,9 @@ function renderPartidos(f){
     html+=`<div class="partido-wrap">
       <div style="display:flex;align-items:stretch;gap:.4rem">
         <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
-          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${esEnVivo&&rojasLocal?'&nbsp;'+rojasLocal:''}</div></div>
+          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${esEnVivo&&_rl>0?' '+rojasLocal:''}</div></div>
           <div class="res">${centro}</div>
-          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${esEnVivo&&rojasVisit?rojasVisit+'&nbsp;':''}${m.visitante}</div></div>
+          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${esEnVivo&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:.3rem;justify-content:center">
           ${streamBtn}
