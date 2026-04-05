@@ -48,14 +48,11 @@ function parseMinuto(html) {
 }
 
 function getStatusContext(html) {
-  // Only look at the header status wrapper area - not the full page
   const m = html.match(/MFHeaderStatusWrapper[^>]*>([\s\S]{0,500})/);
   return m ? m[1] : html.substring(0, 2000);
 }
 
 function isFinished(html) {
-  // Only check the status context, not the whole page
-  // "Full time" can appear in match history sections
   const ctx = getStatusContext(html);
   return />\s*FT\s*</.test(ctx)
     || ctx.includes('"finished":true')
@@ -65,13 +62,16 @@ function isFinished(html) {
 
 function isLive(html) {
   if (isFinished(html)) return false;
-  // MFStatusLiveTimeText only exists when match is live
   if (/MFStatusLiveTimeText/.test(html)) return true;
   if (html.includes('HT') || html.includes('Half time')) return true;
   return false;
 }
 
 module.exports = async (req, res) => {
+  // Prevent Vercel from caching this response
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+
   if (!SUPABASE_URL || !SUPABASE_KEY)
     return res.status(500).json({ error: 'Missing env vars' });
 
@@ -83,11 +83,17 @@ module.exports = async (req, res) => {
     const results = [];
 
     for (const fx of fixtures) {
-      if (fx.estado === 'finalizado') { results.push({ id: fx.id, skip: 'done' }); continue; }
+      if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'done' }); continue; }
 
       try {
-        const resp = await fetch(fx.fotmob_url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        // Anti-cache: add timestamp to URL and headers
+        const urlWithTs = fx.fotmob_url + (fx.fotmob_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        const resp = await fetch(urlWithTs, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
+          },
           signal: AbortSignal.timeout(10000)
         });
         if (!resp.ok) { results.push({ id: fx.id, error: `HTTP ${resp.status}` }); continue; }
