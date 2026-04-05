@@ -192,8 +192,17 @@ module.exports = async (req, res) => {
         const finished = isFinished(html);
         const live = !finished && isLive(html);
 
-        if (!live && !(finished && fx.estado === 'en_curso')) {
-          const _sd = debugRedCards(html); results.push({ id: fx.id, skip: `not live - finished:${finished}`, statusCtx: _sd });
+        // Implicit finish: was en_curso but no longer live → finished
+        const implicitFinished = !live && !finished && fx.estado === 'en_curso';
+
+        if (!live && !implicitFinished) {
+          results.push({ id: fx.id, skip: 'not live' });
+          continue;
+        }
+
+        if (implicitFinished) {
+          const ok = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: null });
+          results.push({ id: fx.id, implicitFinished: true, updated: ok });
           continue;
         }
 
