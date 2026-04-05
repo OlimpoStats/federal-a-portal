@@ -792,17 +792,18 @@ function renderPartidos(f){
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
 
+    // minuto_actual: "19'|1|0" = minuto|rojas_local|rojas_visitante
+    const _minParts = m.minuto_actual ? m.minuto_actual.split('|') : [];
+    const _min = _minParts[0] || null;
+    const _rl = parseInt(_minParts[1]||'0');
+    const _rv = parseInt(_minParts[2]||'0');
+    const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
+    const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
+    const rojasLocal = esEnVivo && _rl > 0 ? rojaIcon.repeat(_rl) : "";
+    const rojasVisit = esEnVivo && _rv > 0 ? rojaIcon.repeat(_rv) : "";
+
     let centro;
     if(m.gl!==null){
-      // minuto_actual format: "19'|1|0" = minuto|rojas_local|rojas_visitante
-      const _minParts = m.minuto_actual ? m.minuto_actual.split('|') : [];
-      const _min = _minParts[0] || null;
-      const _rl = parseInt(_minParts[1]||'0');
-      const _rv = parseInt(_minParts[2]||'0');
-      const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
-      const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
-      const rojasLocal = esEnVivo && _rl > 0 ? rojaIcon.repeat(_rl) : "";
-      const rojasVisit = esEnVivo && _rv > 0 ? rojaIcon.repeat(_rv) : "";
       const scoreClass = esEnVivo ? "score score-live" : "score";
       centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
     } else if(meta.hora){
