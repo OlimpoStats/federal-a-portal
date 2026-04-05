@@ -794,7 +794,8 @@ function renderPartidos(f){
 
     let centro;
     if(m.gl!==null){
-      const minDiv = esEnVivo && m.minuto_actual ? `<div class="minuto-live">${m.minuto_actual}</div>` : "";
+      const _min = m.minuto_actual ? m.minuto_actual.split(':')[0]+"'" : null;
+      const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
       const scoreClass = esEnVivo ? "score score-live" : "score";
       centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
     } else if(meta.hora){
@@ -2297,7 +2298,6 @@ init();
 let _liveInterval = null;
 
 async function iniciarPollingEnVivo(){
-  // Always start polling - check every 60s if there are live matches
   activarPolling();
 }
 
@@ -2305,18 +2305,11 @@ function activarPolling(){
   if(_liveInterval) return;
   _liveInterval = setInterval(async ()=>{
     try {
-      // Check if any fixture is en_curso
-      const hayEnVivo = Object.values(FIXTURE).some(zona=>
-        Object.values(zona).some(ps=>ps.some(p=>p.estado==='en_curso'))
-      );
-      if(hayEnVivo){
-        // Reload fixture data from Supabase
-        await cargarPartidosDesdeDB();
-        renderPartidos(fechaActual);
-        renderTablas();
-      }
-    } catch(e){ console.log('Polling error:', e); }
-  }, 30000); // 30 seconds
+      await cargarPartidosDesdeDB();
+      renderPartidos(fechaActual);
+      renderTablas();
+    } catch(e){}
+  }, 60000);
 }
 
 function detenerPolling(){
