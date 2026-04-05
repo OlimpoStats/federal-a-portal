@@ -1381,7 +1381,7 @@ function liveScoreBadge(equipo){
   const myG = esLocal?liveM.gl:liveM.gv;
   const thG = esLocal?liveM.gv:liveM.gl;
   const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
-  return `<span style="margin-left:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;">${myG}-${thG}</span>`;
+  return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
 }
 
 function renderTablas(){
@@ -2297,28 +2297,26 @@ init();
 let _liveInterval = null;
 
 async function iniciarPollingEnVivo(){
-  // Check if any fixture has fotmob_url (potential live match)
-  const hayEnVivo = Object.values(FIXTURE).some(zona=>
-    Object.values(zona).some(partidos=>
-      partidos.some(p=>p.estado==='en_curso')
-    )
-  );
-  if(hayEnVivo) activarPolling();
+  // Always start polling - check every 60s if there are live matches
+  activarPolling();
 }
 
 function activarPolling(){
   if(_liveInterval) return;
-  console.log('⚽ Live polling activo');
   _liveInterval = setInterval(async ()=>{
     try {
-      // Call sync endpoint
-      await fetch('/api/sync-live');
-      // Reload fixture data
-      await cargarPartidosDesdeDB();
-      renderPartidos(fechaActual);
-      renderTablas();
+      // Check if any fixture is en_curso
+      const hayEnVivo = Object.values(FIXTURE).some(zona=>
+        Object.values(zona).some(ps=>ps.some(p=>p.estado==='en_curso'))
+      );
+      if(hayEnVivo){
+        // Reload fixture data from Supabase
+        await cargarPartidosDesdeDB();
+        renderPartidos(fechaActual);
+        renderTablas();
+      }
     } catch(e){ console.log('Polling error:', e); }
-  }, 60000); // 60 seconds
+  }, 30000); // 30 seconds
 }
 
 function detenerPolling(){
