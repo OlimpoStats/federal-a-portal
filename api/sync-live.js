@@ -62,14 +62,45 @@ function parseRojas(html, side) {
 }
 
 function debugRedCards(html) {
-  const parts = html.split('MFHeaderRedCards');
-  if (parts.length < 2) return 'MFHeaderRedCards not found';
-  // Show first 300 chars of section 1 (local) stripped of tags
-  const sample = parts[1].substring(0,300).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
-  // Also check for event names like player names near red card icons
-  const eventSection = html.match(/MFHeaderStatusScoreAndRedCards[^>]*>([\s\S]{0,1000})/);
-  const eventText = eventSection ? eventSection[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,200) : 'none';
-  return `sections:${parts.length} s1:${sample.substring(0,100)} events:${eventText}`;
+  // Look for event text patterns like "Álvarez" near red card icons
+  // FotMob event list has player names with minute numbers
+  const eventIdx = html.indexOf('MFMatchHeader');
+  if (eventIdx === -1) return 'no MFMatchHeader';
+  const ctx = html.substring(eventIdx, eventIdx+2000).replace(/<[^>]+>/g,' ').replace(/  +/g,' ').trim();
+  return ctx.substring(0,300);
+}
+
+function parseEventos(html) {
+  // Parse goals and red cards from FotMob event list in header
+  // Structure: team events appear as text with minute numbers
+  // Local events are on left, visitante on right
+  const eventos = { golesLocal:[], golesVisit:[], rojasLocal:0, rojasVisit:0 };
+  
+  // Find the header score area - events are listed there
+  // Local events: left side, visitante: right side
+  // Pattern: "PlayerName 25'" for goals, same for red cards with different icon
+  
+  // Split by score wrapper to get local side and visitante side
+  const scoreIdx = html.indexOf('MFHeaderStatusScore');
+  if (scoreIdx === -1) return eventos;
+  
+  const localSide = html.substring(0, scoreIdx);
+  const visitSide = html.substring(scoreIdx);
+  
+  // Extract player+minute from each side
+  // FotMob pattern: name followed by minute like "25'" or "25',33'"
+  const minutePattern = /([A-Za-záéíóúÁÉÍÓÚñÑüÜ][A-Za-záéíóúÁÉÍÓÚñÑüÜ\s\.\-]+?)\s+(\d{1,3}(?:[',]\d{1,3})*')/g;
+  
+  let m;
+  while ((m = minutePattern.exec(localSide)) !== null) {
+    eventos.golesLocal.push({ nombre: m[1].trim(), minuto: m[2] });
+  }
+  minutePattern.lastIndex = 0;
+  while ((m = minutePattern.exec(visitSide)) !== null) {
+    eventos.golesVisit.push({ nombre: m[1].trim(), minuto: m[2] });
+  }
+  
+  return eventos;
 }
 
 function getStatusContext(html) {
