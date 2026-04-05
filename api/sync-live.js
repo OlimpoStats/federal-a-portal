@@ -1,4 +1,4 @@
-// api/sync-live.js - FotMob JSON API
+// api/sync-live.js - HTML scraping with cache busting
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -22,9 +22,35 @@ async function sbPatch(id, data) {
   return r.ok;
 }
 
-function extractMatchId(fotmobUrl) {
-  const m = fotmobUrl.match(/#(\d+)$/);
-  return m ? m[1] : null;
+function parseScore(html) {
+  const m = html.match(/MFHeaderStatusScore[^>]*>([^<]+)<\/span>/);
+  if (m) {
+    const s = m[1].match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (s) return { local: parseInt(s[1]), visitante: parseInt(s[2]) };
+  }
+  return null;
+}
+
+function parseMinuto(html) {
+  const m = html.match(/MFStatusLiveTimeText[^>]*>([^<]+)<\/span>/);
+  if (m) return m[1].trim();
+  if (/HT|Half time/.test(html)) return 'ET';
+  return null;
+}
+
+function getStatusContext(html) {
+  const m = html.match(/MFHeaderStatusWrapper[^>]*>([\s\S]{0,600})/);
+  return m ? m[1] : html.substring(0, 3000);
+}
+
+function isFinished(html) {
+  const ctx = getStatusContext(html);
+  return />\s*FT\s*</.test(ctx) || ctx.includes('"finished":true');
+}
+
+function isLive(html) {
+  if (isFinished(html)) return false;
+  return /MFStatusLiveTimeText/.test(html) || /HT|Half time/.test(getStatusContext(html));
 }
 
 module.exports = async (req, res) => {
@@ -44,56 +70,47 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
-      const matchId = extractMatchId(fx.fotmob_url);
-      if (!matchId) { results.push({ id: fx.id, error: 'no matchId' }); continue; }
-
       try {
-        const apiUrl = `https://www.fotmob.com/api/matchDetails?matchId=${matchId}&_=${Date.now()}`;
-        const resp = await fetch(apiUrl, {
+        // Strip hash from URL and add cache buster
+        const baseUrl = fx.fotmob_url.split('#')[0];
+        const url = baseUrl + '?_=' + Date.now();
+
+        const resp = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Cache-Control': 'no-cache'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'es-AR,es;q=0.9',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(12000)
         });
 
         if (!resp.ok) { results.push({ id: fx.id, error: `HTTP ${resp.status}` }); continue; }
 
-        const data = await resp.json();
-        const status = data?.header?.status;
-        const teams = data?.header?.teams;
+        const html = await resp.text();
+        const finished = isFinished(html);
+        const live = !finished && isLive(html);
 
-        const started = status?.started === true;
-        const finished = status?.finished === true;
-        const live = started && !finished;
-
-        // LOGIC:
-        // - live → always update score + minuto + estado=en_curso
-        // - finished + we had it en_curso → save final result as jugado
-        // - finished + still programado → SKIP (partido cargado de antemano, no empezó aún en nuestro sistema)
-        // - not started → SKIP
-
+        // Skip if not started and not being tracked
         if (!live && !(finished && fx.estado === 'en_curso')) {
-          results.push({ id: fx.id, skip: `not actionable - started:${started} finished:${finished} estado:${fx.estado}` });
+          results.push({ id: fx.id, skip: `not live - finished:${finished}` });
           continue;
         }
 
-        if (!teams || teams.length < 2) { results.push({ id: fx.id, error: 'no teams' }); continue; }
+        const score = parseScore(html);
+        if (!score) { results.push({ id: fx.id, error: 'no score', live, finished }); continue; }
 
-        const scoreLocal = teams[0]?.score ?? null;
-        const scoreVisit = teams[1]?.score ?? null;
-        if (scoreLocal === null) { results.push({ id: fx.id, error: 'no score' }); continue; }
+        const minuto = live ? parseMinuto(html) : null;
 
-        const minuto = live ? (status?.liveTime?.short || status?.liveTime?.long || null) : null;
-
-        const upd = { goles_local: scoreLocal, goles_visitante: scoreVisit };
+        const upd = { goles_local: score.local, goles_visitante: score.visitante };
         if (finished) { upd.estado = 'jugado'; upd.minuto_actual = null; }
         else { upd.estado = 'en_curso'; upd.minuto_actual = minuto; }
 
         const ok = await sbPatch(fx.id, upd);
-        results.push({ id: fx.id, updated: ok, score: `${scoreLocal}-${scoreVisit}`, minuto, estado: upd.estado, live, finished });
+        results.push({ id: fx.id, updated: ok, score: `${score.local}-${score.visitante}`, minuto, estado: upd.estado, live, finished });
 
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 500));
       } catch(e) { results.push({ id: fx.id, error: e.message }); }
     }
 
