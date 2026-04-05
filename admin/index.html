@@ -618,6 +618,7 @@ async function cargarFixture(){
         hora: p.hora,
         stream_url: p.stream_url,
         fotmob_url: p.fotmob_url,
+        sofascore_url: p.sofascore_url,
         goles_local: p.goles_local,
         goles_visitante: p.goles_visitante,
         estadio: p.estadio,
@@ -2405,6 +2406,7 @@ function hsActualizar(){
         </div>
         <div><label>Stream</label><input type="text" id="hs-stream-${i}" value="${p.stream_url||""}" placeholder="https://..." oninput="marcarModificado(${i})"></div>
         <div><label>FotMob (en vivo)</label><input type="text" id="hs-fotmob-${i}" value="${p.fotmob_url||""}" placeholder="https://www.fotmob.com/..." oninput="marcarModificado(${i})"></div>
+        <div><label>Sofascore (en vivo)</label><input type="text" id="hs-sofascore-${i}" value="${p.sofascore_url||""}" placeholder="https://www.sofascore.com/..." oninput="marcarModificado(${i})"></div>
         <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('hs-arb-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-arb-${i}" value="${arb}" placeholder="Árbitro" oninput="acInput(this,'arbitros','hs-arb-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-arb-${i}"></div>
@@ -2448,6 +2450,7 @@ async function hsGuardarTodo(){
     const estadio = document.getElementById(`hs-estadio-${i}`)?.value||null;
     const stream = document.getElementById(`hs-stream-${i}`)?.value||null;
     const fotmob = document.getElementById(`hs-fotmob-${i}`)?.value.trim()||null;
+    const sofascore = document.getElementById(`hs-sofascore-${i}`)?.value.trim()||null;
     const arbitro = document.getElementById(`hs-arb-${i}`)?.value||null;
     const juez1 = document.getElementById(`hs-j1-${i}`)?.value||null;
     const juez2 = document.getElementById(`hs-j2-${i}`)?.value||null;
