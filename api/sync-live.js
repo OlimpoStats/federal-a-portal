@@ -62,8 +62,14 @@ function parseRojas(html, side) {
 }
 
 function debugRedCards(html) {
-  const ctx = getStatusContext(html);
-  return ctx.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,200);
+  // Find MFStatusLiveTimeText or any status text
+  const liveTime = html.match(/MFStatusLiveTimeText[^>]*>([^<]+)</);
+  if (liveTime) return 'liveTime:' + liveTime[1];
+  // Look for status near score
+  const scoreIdx = html.indexOf('MFHeaderStatusScore');
+  if (scoreIdx === -1) return 'no score element';
+  const area = html.substring(Math.max(0, scoreIdx-500), scoreIdx+500);
+  return area.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,300);
 }
 
 function parseEventos(html) {
@@ -100,7 +106,10 @@ function parseEventos(html) {
 }
 
 function getStatusContext(html) {
-  const m = html.match(/MFHeaderStatusWrapper[^>]*>([\s\S]{0,600})/);
+  // Look for status text around the score
+  const scoreIdx = html.indexOf('MFHeaderStatusScore');
+  if (scoreIdx > 0) return html.substring(Math.max(0, scoreIdx-1000), scoreIdx+1000);
+  const m = html.match(/MFHeaderStatusWrapper[^>]*>([\s\S]{0,1000})/);
   return m ? m[1] : html.substring(0, 3000);
 }
 
