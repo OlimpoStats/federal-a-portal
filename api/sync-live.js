@@ -42,23 +42,40 @@ function parseMinuto(html) {
   return null;
 }
 
-function parseRojas(html, side) {
-  // Structure: MFHeaderStatusScoreAndRedCards contains:
-  //   MFHeaderRedCards (local) | MFHeaderStatusScore | MFHeaderRedCards (visitante)
-  // Each MFHeaderRedCards div contains ic-red-card-24dp SVGs
-  
-  // Split by MFHeaderRedCards to get sections
-  const parts = html.split('MFHeaderRedCards');
-  // parts[0] = before first, parts[1] = after first div opening (local cards)
-  // parts[2] = after second div opening (visitante cards)
-  if (parts.length < 2) return 0;
-  
-  const section = parts[side + 1] || '';
-  // Count ic-red-card-24dp occurrences before the next closing div
-  const until = section.indexOf('MFHeaderStatusScore');
-  const relevant = until > 0 ? section.substring(0, until) : section.substring(0, 500);
-  const cards = (relevant.match(/ic-red-card-24dp/g) || []).length;
-  return cards;
+async function fetchSofascoreIncidents(sofascoreUrl) {
+  if (!sofascoreUrl) return null;
+  // Extract ID from URL: #id:15673170
+  const m = sofascoreUrl.match(/[#&]id[=:](\d+)/);
+  if (!m) return null;
+  const id = m[1];
+  try {
+    const r = await fetch(`https://api.sofascore.com/api/v1/event/${id}/incidents`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.sofascore.com/'
+      },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!r.ok) return { error: `SofaScore HTTP ${r.status}` };
+    const data = await r.json();
+    const incidents = data?.incidents || [];
+    const result = { golesLocal:[], golesVisit:[], rojasLocal:0, rojasVisit:0 };
+    for (const inc of incidents) {
+      const isHome = inc.isHome;
+      const nombre = inc.player?.shortName || inc.player?.name || '';
+      const min = inc.time ? `${inc.time}'` : '';
+      if (['goal','penaltyScored'].includes(inc.incidentType)) {
+        if (isHome) result.golesLocal.push({nombre, min});
+        else result.golesVisit.push({nombre, min});
+      }
+      if (inc.incidentType === 'card' && ['red','yellowRed'].includes(inc.incidentClass)) {
+        if (isHome) result.rojasLocal++;
+        else result.rojasVisit++;
+      }
+    }
+    return result;
+  } catch(e) { return { error: e.message }; }
 }
 
 function debugRedCards(html) {
@@ -163,7 +180,7 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Missing env vars' });
 
   try {
-    const fixtures = await sbGet('fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual');
+    const fixtures = await sbGet('fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,sofascore_url,estado,minuto_actual');
     if (!Array.isArray(fixtures)) return res.status(500).json({ error: 'DB error' });
     if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures' });
 
@@ -210,8 +227,16 @@ module.exports = async (req, res) => {
         if (!score) { results.push({ id: fx.id, error: 'no score', live, finished }); continue; }
 
         const minuto = live ? parseMinuto(html) : null;
-        const rojasLocal = live ? parseRojas(html, 0) : 0;
-        const rojasVisit = live ? parseRojas(html, 1) : 0;
+        // Fetch incidents from Sofascore if URL available
+        let rojasLocal = 0, rojasVisit = 0;
+        let sofaResult = null;
+        if (live && fx.sofascore_url) {
+          sofaResult = await fetchSofascoreIncidents(fx.sofascore_url);
+          if (sofaResult && !sofaResult.error) {
+            rojasLocal = sofaResult.rojasLocal || 0;
+            rojasVisit = sofaResult.rojasVisit || 0;
+          }
+        }
 
         // Encode as "19'|1|0" = minuto|rojas_local|rojas_visitante
         const minutoEncoded = minuto ? `${minuto}|${rojasLocal}|${rojasVisit}` : null;
