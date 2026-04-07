@@ -2029,7 +2029,7 @@ async function cargarEstadisticas(){
     }).join('') + '</tbody></table>';
 
     // Zona table with H2H columns
-    const renderZonaTable = (rows, _zc2={color:'#888'}) => {
+    const renderZonaTable = (rows, _zc2={color:'#888'}, zonaNombre='') => {
       // Compute H2H same as calcTabla
       const ptGroups={};
       rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
@@ -2060,7 +2060,7 @@ async function cargarEstadisticas(){
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
       return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
-        + `<tr><td colspan="10"></td><td colspan="7" style="border-left:3px solid ${_zc2.color};border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:3px 6px;"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-transform:uppercase;">Desempate mini-tabla</span><span style="font-size:11px;font-weight:700;color:${_zc2.color};margin-left:8px;">${z}</span></td></tr>`
+        + `<tr><td colspan="10"></td><td colspan="7" style="border-left:3px solid ${_zc2.color};border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:3px 6px;"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-transform:uppercase;">Desempate mini-tabla</span><span style="font-size:11px;font-weight:700;color:${_zc2.color};margin-left:8px;">${zonaNombre}</span></td></tr>`
         + `<tr>`
         + `<th style="width:24px;"></th><th style="width:120px;text-align:left;">Equipo</th>`
         + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
@@ -2141,8 +2141,6 @@ async function cargarEstadisticas(){
       rows.map((r,i)=>`<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td><strong class="pts">${r.gf}</strong></td></tr>`).join('')+
       '</tbody></table>';
     };
-    console.log('Half1:', JSON.stringify(half1));
-    console.log('Half2:', JSON.stringify(half2));
     document.getElementById('tbl-1t').innerHTML = renderHalfTable(half1);
     document.getElementById('tbl-2t').innerHTML = renderHalfTable(half2);
 
@@ -2153,7 +2151,7 @@ async function cargarEstadisticas(){
       const rows=Object.entries(equipoStats).filter(([,s])=>s.zona===z)
         .map(([n,s])=>({n,...s,dif:s.gf-s.gc})).sort((a,b)=>b.pts-a.pts||(b.dif)-(a.dif)||b.gf-a.gf);
       return `<div><p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
-      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc)}</div></div>`;
+      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}</div></div>`;
     }).join('');
 
     // ÁRBITROS
