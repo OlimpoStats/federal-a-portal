@@ -270,7 +270,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div><p class="sec">🟨 Amonestaciones <span style="font-size:10px;color:var(--muted);font-weight:400;">(incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
         <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:var(--muted);font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
       </div>
-      <div style="margin-bottom:1rem;"><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
+        <div><p class="sec">🎯 Goles de tiro libre</p><div class="tabla-mini" id="tbl-tiro-libre"></div></div>
+      </div>
     </div>
     <div id="stats-equipos" style="display:none;">
       <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" style="max-width:600px;overflow-x:auto;" id="tbl-general"></div></div>
@@ -971,7 +974,7 @@ async function verFicha(key, tienePlanilla){
           const icon = ev.tipo==="gol_contra"
             ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
             : ev.tipo==="gol_tiro_libre"
-            ? '<span style="filter:sepia(1) saturate(4) hue-rotate(60deg) brightness(1.1);">⚽</span>'
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(75deg) brightness(0.95);">⚽</span>'
             : "⚽";
           const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
           const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
@@ -1119,7 +1122,7 @@ async function verFicha(key, tienePlanilla){
             const icon = ev.tipo==="gol_contra"
             ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
             : ev.tipo==="gol_tiro_libre"
-            ? '<span style="filter:sepia(1) saturate(4) hue-rotate(60deg) brightness(1.1);">⚽</span>'
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(75deg) brightness(0.95);">⚽</span>'
             : "⚽";
             goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
           }
@@ -1657,8 +1660,7 @@ function showStatsTab(tab, el){
 }
 
 async function cargarEstadisticas(){
-  if(STATS_LOADED) return;
-  // Force reset for development
+  // Always recalculate to pick up new match data
   document.getElementById('stats-loading').style.display='';
   document.getElementById('stats-content').style.display='none';
   try {
@@ -1724,6 +1726,21 @@ async function cargarEstadisticas(){
         // The goalkeeper of the team that conceded
         // We'll calculate vallas separately from fixture data
       }
+    });
+
+    // GOLES DE TIRO LIBRE
+    const tirLibreMap = {};
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo!=='gol_tiro_libre') return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const jug = pl.jugadores;
+      const equipo = pl.equipos?.nombre;
+      const jId = jug?.id;
+      const nombre = jug?.nombre_display||jug?.nombre||'?';
+      const key = jId||nombre;
+      if(!tirLibreMap[key]) tirLibreMap[key]={nombre, equipo, goles:0};
+      tirLibreMap[key].goles++;
     });
 
     // Equipo stats from FIXTURE
@@ -1864,7 +1881,7 @@ async function cargarEstadisticas(){
       // Normalize: full game = 9000-0 = 9000, treat as 90
       const minutosEfectivos = minuteOut===9000 ? 90 - (minuteIn===0?0:minuteIn/100) : (minuteOut-minuteIn)/100;
 
-      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0};
+      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0, minutos:0};
 
       // Goals conceded BY this keeper's team while he was on
       const golesContra = (golesConcedidosMap[pl.partido_id]?.[equipo] || []);
@@ -1878,6 +1895,7 @@ async function cargarEstadisticas(){
       // - If clean sheet: only count if played 60+ minutes
       if(!tuvoValla || minJugados>=60){
         vallasPorArquero[jId].pj++;
+        vallasPorArquero[jId].minutos += Math.round(minJugados);
         if(tuvoValla) vallasPorArquero[jId].vallas++;
       }
     });
@@ -1962,6 +1980,13 @@ async function cargarEstadisticas(){
     ) + asistentes.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.asist}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
+    // TIRO LIBRE
+    const tirLibreRows = Object.values(tirLibreMap).sort((a,b)=>b.goles-a.goles);
+    document.getElementById('tbl-tiro-libre').innerHTML = tirLibreRows.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Goles','🎯']
+    ) + tirLibreRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
     // AMARILLAS
     const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,10);
     document.getElementById('tbl-amarillas').innerHTML = amonestados.length ? tblHead(
@@ -1980,8 +2005,8 @@ async function cargarEstadisticas(){
     const vallas = Object.values(vallasPorArquero)
       .sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
     document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
-      ['28px','','#'],['','Arquero','Arquero'],['40px','PJ','PJ'],['50px','Vallas','🧤']
-    ) + vallas.map((v,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
+      ['28px','','#'],['','Arquero','Arquero'],['40px','PJ','PJ'],['55px','Minutos','⏱'],['50px','Vallas','🧤']
+    ) + vallas.map((v,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // TABLA GENERAL
