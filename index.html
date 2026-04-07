@@ -2060,7 +2060,7 @@ async function cargarEstadisticas(){
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
       return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
-        + `<tr><td colspan="10"></td><td colspan="6" style="${h2hBg}border-radius:4px 4px 0 0;font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-align:center;padding:2px;text-transform:uppercase;">Desempate mini-tabla</td></tr>`
+        + `<tr><td colspan="10"></td><td colspan="7" style="border-left:3px solid ${_zc2.color};border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:3px 6px;"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-transform:uppercase;">Desempate mini-tabla</span><span style="font-size:11px;font-weight:700;color:${_zc2.color};margin-left:8px;">${zona}</span></td></tr>`
         + `<tr>`
         + `<th style="width:24px;"></th><th style="width:120px;text-align:left;">Equipo</th>`
         + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
@@ -2078,13 +2078,14 @@ async function cargarEstadisticas(){
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
-          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''}"
+          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''};border-left:2px solid ${_zc2.color}30;"
             ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}>
             ${hasH2H?h.pts:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gf:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gc:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gfv:'—'}</td>
         </tr>`;
       }).join('') + `</tbody></table>`;
@@ -2107,27 +2108,29 @@ async function cargarEstadisticas(){
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     document.getElementById('tbl-visitante-stats').innerHTML = renderLocalVisitTable(visitRows);
 
-    // 1st / 2nd half goals from eventos
+    // 1st / 2nd half tables from fixture ht_local/ht_visitante fields
     const half1 = {}, half2 = {};
-    (eventos||[]).forEach(ev=>{
-      if(!['gol','gol_penal','gol_tiro_libre','gol_contra'].includes(ev.tipo)) return;
-      const pl = ev.planillas;
-      if(!pl) return;
-      const equipo = pl.equipos?.nombre;
-      if(!equipo) return;
-      const min = parseInt(String(ev.minuto||'').split('+')[0])||0;
-      // gol_contra counts for the OTHER team
-      let targetEquipo = equipo;
-      if(ev.tipo==='gol_contra'){
-        const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
-        const partido = partidosById[partidoId];
-        if(!partido) return;
-        targetEquipo = equipo===partido.equipo_local_nombre ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          // 1st half
+          if(m.ht_local!==undefined && m.ht_visitante!==undefined){
+            if(!half1[m.local]) half1[m.local]={gf:0};
+            if(!half1[m.visitante]) half1[m.visitante]={gf:0};
+            half1[m.local].gf += m.ht_local||0;
+            half1[m.visitante].gf += m.ht_visitante||0;
+            // 2nd half = total - 1st half
+            const ht2l = (m.gl||0) - (m.ht_local||0);
+            const ht2v = (m.gv||0) - (m.ht_visitante||0);
+            if(!half2[m.local]) half2[m.local]={gf:0};
+            if(!half2[m.visitante]) half2[m.visitante]={gf:0};
+            half2[m.local].gf += ht2l;
+            half2[m.visitante].gf += ht2v;
+          }
+        });
       }
-      if(min<=45){ if(!half1[targetEquipo]) half1[targetEquipo]={gf:0}; half1[targetEquipo].gf++; }
-      else{ if(!half2[targetEquipo]) half2[targetEquipo]={gf:0}; half2[targetEquipo].gf++; }
     });
-
     const renderHalfTable = (halfData) => {
       const rows = Object.entries(halfData).map(([n,d])=>({n,...d})).sort((a,b)=>b.gf-a.gf);
       if(!rows.length) return '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
