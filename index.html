@@ -2108,27 +2108,28 @@ async function cargarEstadisticas(){
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     document.getElementById('tbl-visitante-stats').innerHTML = renderLocalVisitTable(visitRows);
 
-    // 1st / 2nd half tables from fixture ht_local/ht_visitante fields
+    // 1st / 2nd half tables from eventos minutes
     const half1 = {}, half2 = {};
-    ZONAS.forEach(z=>{
-      for(let f=1;f<=18;f++){
-        (FIXTURE[z][String(f)]||[]).forEach(m=>{
-          if(m.gl===null) return;
-          // 1st half
-          if(m.ht_local!==undefined && m.ht_visitante!==undefined){
-            if(!half1[m.local]) half1[m.local]={gf:0};
-            if(!half1[m.visitante]) half1[m.visitante]={gf:0};
-            half1[m.local].gf += m.ht_local||0;
-            half1[m.visitante].gf += m.ht_visitante||0;
-            // 2nd half = total - 1st half
-            const ht2l = (m.gl||0) - (m.ht_local||0);
-            const ht2v = (m.gv||0) - (m.ht_visitante||0);
-            if(!half2[m.local]) half2[m.local]={gf:0};
-            if(!half2[m.visitante]) half2[m.visitante]={gf:0};
-            half2[m.local].gf += ht2l;
-            half2[m.visitante].gf += ht2v;
-          }
-        });
+    eventos.forEach(ev=>{
+      if(!['gol','gol_penal','gol_tiro_libre','gol_contra'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const equipo = pl.equipos?.nombre;
+      if(!equipo) return;
+      const min = parseInt(String(ev.minuto||'').split('+')[0])||0;
+      let target = equipo;
+      if(ev.tipo==='gol_contra'){
+        const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+        const partido = partidosById[partidoId];
+        if(!partido) return;
+        target = equipo===partido.equipo_local_nombre ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
+      }
+      if(min<=45){
+        if(!half1[target]) half1[target]={gf:0};
+        half1[target].gf++;
+      } else {
+        if(!half2[target]) half2[target]={gf:0};
+        half2[target].gf++;
       }
     });
     const renderHalfTable = (halfData) => {
