@@ -1710,22 +1710,35 @@ async function guardarPenal(){
 
   // Find jugador DB ids - fetch from DB directly to ensure correctness
   let ejecutanteDBId = null;
-  let arqueroDBId = parseInt(arqueroId) || null;
+  let arqueroDBId = null;
 
   if(ejecutanteId){
-    // Try JUGADORES_CACHE first
     const cached = JUGADORES_CACHE.find(j => String(j.id_federal)===String(ejecutanteId) || String(j.id)===String(ejecutanteId));
     if(cached){
       ejecutanteDBId = cached.id;
     } else {
-      // Fetch from DB
       const {data:jFetch} = await sb.from("jugadores")
         .select("id").eq("id_federal", ejecutanteId).maybeSingle();
       if(jFetch) ejecutanteDBId = jFetch.id;
       else {
-        // Try by db id directly
         const parsed = parseInt(ejecutanteId);
         if(parsed) ejecutanteDBId = parsed;
+      }
+    }
+  }
+
+  if(arqueroId){
+    // Look up arquero same way as ejecutante - id_federal or db id
+    const cachedArq = JUGADORES_CACHE.find(j => String(j.id_federal)===String(arqueroId) || String(j.id)===String(arqueroId));
+    if(cachedArq){
+      arqueroDBId = cachedArq.id;
+    } else {
+      const {data:aFetch} = await sb.from("jugadores")
+        .select("id").eq("id_federal", arqueroId).maybeSingle();
+      if(aFetch) arqueroDBId = aFetch.id;
+      else {
+        const parsed = parseInt(arqueroId);
+        if(parsed) arqueroDBId = parsed;
       }
     }
   }
