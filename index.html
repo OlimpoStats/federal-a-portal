@@ -968,7 +968,11 @@ async function verFicha(key, tienePlanilla){
         const min = String(ev.minuto||"");
         const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
         if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
-          const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':"⚽";
+          const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(4) hue-rotate(60deg) brightness(1.1);">⚽</span>'
+            : "⚽";
           const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
           const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
           return evTooltip(`${tipo_label} — min. ${min}`, chip);
@@ -1102,7 +1106,7 @@ async function verFicha(key, tienePlanilla){
       const goles = [];
       planillaArr.forEach(pl => {
         (evByPlanilla[pl.id]||[]).forEach(ev => {
-          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"){
+          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
             const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
             let asistNombre = "";
             planillaArr.forEach(pl2=>{
@@ -1112,7 +1116,11 @@ async function verFicha(key, tienePlanilla){
                 }
               });
             });
-            const icon = ev.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>':"⚽";
+            const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(4) hue-rotate(60deg) brightness(1.1);">⚽</span>'
+            : "⚽";
             goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
           }
         });
