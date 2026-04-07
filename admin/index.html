@@ -2464,7 +2464,7 @@ async function hsGuardarTodo(){
     if(!fixtureId) continue;
 
     const {error} = await sb.from("fixture").update({
-      dia, hora, stream_url:stream, fotmob_url:fotmob, estadio:estadioVal,
+      dia, hora, stream_url:stream, fotmob_url:fotmob, sofascore_url:sofascore, estadio:estadioVal,
       arbitro, juez1, juez2, cuarto_arbitro:cuarto,
       estado:"programado"
     }).eq("id", fixtureId);
@@ -2535,7 +2535,7 @@ async function hsGuardar(){
     const juez2 = document.getElementById("hs-juez2").value || null;
     const cuarto = document.getElementById("hs-cuarto").value || null;
     const {error:fxErr} = await sb.from("fixture").update({
-      dia, hora, stream_url: stream, arbitro, juez1, juez2, cuarto_arbitro: cuarto, estado: "programado"
+      dia, hora, stream_url: stream, fotmob_url: fotmob, sofascore_url: sofascore, arbitro, juez1, juez2, cuarto_arbitro: cuarto, estado: "programado"
     }).eq("id", fixtureId);
     // Save arbitros to cache if new
     await upsertABMSiNuevo("arbitros", arbitro);
