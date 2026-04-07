@@ -974,7 +974,7 @@ async function verFicha(key, tienePlanilla){
           const icon = ev.tipo==="gol_contra"
             ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
             : ev.tipo==="gol_tiro_libre"
-            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(75deg) brightness(0.95);">⚽</span>'
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
             : "⚽";
           const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
           const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
@@ -1122,7 +1122,7 @@ async function verFicha(key, tienePlanilla){
             const icon = ev.tipo==="gol_contra"
             ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
             : ev.tipo==="gol_tiro_libre"
-            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(75deg) brightness(0.95);">⚽</span>'
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
             : "⚽";
             goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
           }
@@ -1665,9 +1665,18 @@ async function cargarEstadisticas(){
   document.getElementById('stats-content').style.display='none';
   try {
     // Query 1: eventos con jugador y equipo
-    const {data:eventos, error:evErr} = await sb.from('eventos')
-      .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))');
-    if(evErr) throw evErr;
+    // Paginate eventos to get ALL rows (Supabase limit is 1000 per request)
+    let eventos = [], evFrom = 0;
+    while(true){
+      const {data:evBatch, error:evErr} = await sb.from('eventos')
+        .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))')
+        .range(evFrom, evFrom+999);
+      if(evErr) throw evErr;
+      if(!evBatch?.length) break;
+      eventos = eventos.concat(evBatch);
+      if(evBatch.length < 1000) break;
+      evFrom += 1000;
+    }
 
     // Query 2: partidos jugados para cruzar con eventos
     const {data:partidosDB, error:pErr} = await sb.from('partidos')
