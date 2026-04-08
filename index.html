@@ -382,7 +382,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    storageKey: 'federala-auth',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
@@ -594,9 +601,12 @@ async function registrarUsuario(){
   if(!nombre||!apellido||!email||!pass||!username||!equipoId){errDiv.textContent='Completá todos los campos.';errDiv.style.display='';return;}
   if(pass!==pass2){errDiv.textContent='Las contraseñas no coinciden.';errDiv.style.display='';return;}
   if(pass.length<6){errDiv.textContent='La contraseña debe tener al menos 6 caracteres.';errDiv.style.display='';return;}
-  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre,apellido,username}}});
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre,apellido,username,equipo_id:equipoId==='otro'?null:parseInt(equipoId)}}});
   if(error){errDiv.textContent=error.message;errDiv.style.display='';return;}
-  if(data.user) await sb.from('perfiles').insert({id:data.user.id,nombre,apellido,username,equipo_id:equipoId==='otro'?null:parseInt(equipoId),rol:'usuario',rango:'Simpatizante'});
+  if(data.user && data.session){
+    // Email confirmación desactivada - crear perfil inmediatamente
+    await sb.from('perfiles').insert({id:data.user.id,nombre,apellido,username,equipo_id:equipoId==='otro'?null:parseInt(equipoId),rol:'usuario',rango:'Simpatizante'});
+  }
   errDiv.style.color='#4caf50';
   errDiv.textContent='¡Cuenta creada! Revisá tu email para confirmar.';
   errDiv.style.display='';
@@ -640,8 +650,28 @@ function actualizarBtnUsuario(){
 
 sb.auth.onAuthStateChange(async(event,session)=>{
   USUARIO_ACTUAL=session?.user||null;
-  if(USUARIO_ACTUAL) await cargarPerfil(USUARIO_ACTUAL.id);
-  else{PERFIL_ACTUAL=null;actualizarBtnUsuario();}
+  if(USUARIO_ACTUAL){
+    // If first sign in after email confirmation, create perfil if missing
+    if(event==='SIGNED_IN'){
+      const {data:existing}=await sb.from('perfiles').select('id').eq('id',USUARIO_ACTUAL.id).maybeSingle();
+      if(!existing){
+        const meta=USUARIO_ACTUAL.user_metadata||{};
+        await sb.from('perfiles').insert({
+          id:USUARIO_ACTUAL.id,
+          nombre:meta.nombre||'',
+          apellido:meta.apellido||'',
+          username:meta.username||USUARIO_ACTUAL.email.split('@')[0],
+          equipo_id:meta.equipo_id||null,
+          rol:'usuario',
+          rango:'Simpatizante'
+        });
+      }
+    }
+    await cargarPerfil(USUARIO_ACTUAL.id);
+  } else {
+    PERFIL_ACTUAL=null;
+    actualizarBtnUsuario();
+  }
   if(document.getElementById('page-foro')?.classList.contains('active')) renderForoPage();
 });
 
