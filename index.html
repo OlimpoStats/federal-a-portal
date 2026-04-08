@@ -169,7 +169,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <body>
 
 <div class="hdr">
-  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
+  <div class="logo">FEDERAL <span>A</span></div>
   <div class="nav">
     <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
@@ -185,54 +185,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <!-- login modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
-  <div class="modal" style="width:380px;max-width:92vw;max-height:90vh;overflow-y:auto;">
+  <div class="modal">
     <button class="modal-close" onclick="toggleModal()">&#10005;</button>
-    <div id="modal-login">
-      <div class="modal-title">Iniciar sesión</div>
-      <input type="email" placeholder="Email" id="inp-email" autocomplete="email" onkeydown="if(event.key==='Enter')loginConEmail()">
-      <input type="password" placeholder="Contraseña" id="inp-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginConEmail()">
-      <div id="login-error" style="color:#e57373;font-size:12px;display:none;margin-bottom:.5rem;"></div>
-      <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
-      <div class="modal-sub">¿Olvidaste tu contraseña? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalRecuperar()">Recuperar</span></div>
-      <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalRegistro()">Registrate</span></div>
-    </div>
-    <div id="modal-registro" style="display:none;">
-      <div class="modal-title">Crear cuenta</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">
-        <input type="text" placeholder="Nombre" id="reg-nombre" style="margin:0;">
-        <input type="text" placeholder="Apellido" id="reg-apellido" style="margin:0;">
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">Nombre y apellido no serán visibles.</div>
-      <input type="email" placeholder="Email" id="reg-email">
-      <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">El email no será visible.</div>
-      <input type="password" placeholder="Contraseña" id="reg-pass">
-      <input type="password" placeholder="Repetir contraseña" id="reg-pass2">
-      <input type="text" placeholder="Nombre de usuario (visible en el foro)" id="reg-username">
-      <select id="reg-equipo" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;color:var(--text);font-size:14px;width:100%;margin-bottom:.75rem;">
-        <option value="">— Equipo del que sos hincha —</option>
-      </select>
-      <div id="reg-error" style="color:#e57373;font-size:12px;display:none;margin-bottom:.5rem;"></div>
-      <button class="modal-btn" onclick="registrarUsuario()">Crear cuenta</button>
-      <div class="modal-sub">¿Ya tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalLogin()">Iniciá sesión</span></div>
-    </div>
-    <div id="modal-recuperar" style="display:none;">
-      <div class="modal-title">Recuperar contraseña</div>
-      <input type="email" placeholder="Tu email" id="rec-email">
-      <div id="rec-msg" style="font-size:12px;display:none;margin-bottom:.5rem;"></div>
-      <button class="modal-btn" onclick="recuperarPass()">Enviar link</button>
-      <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarModalLogin()">← Volver</span></div>
-    </div>
-    <div id="modal-perfil" style="display:none;">
-      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;">
-        <div id="perfil-escudo" style="width:36px;height:36px;"></div>
-        <div>
-          <div style="font-weight:700;font-size:16px;" id="perfil-username"></div>
-          <div style="font-size:11px;color:var(--muted);" id="perfil-rango"></div>
-          <div style="font-size:11px;color:var(--muted);" id="perfil-equipo"></div>
-        </div>
-      </div>
-      <button class="modal-btn" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="cerrarSesion()">Cerrar sesión</button>
-    </div>
+    <div class="modal-title" id="modal-titulo">Iniciar sesión</div>
+    <input type="email" placeholder="Correo electrónico" id="inp-email">
+    <input type="password" placeholder="Contraseña" id="inp-pass">
+    <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
+    <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="registrarUsuario()">Registrate</span></div>
   </div>
 </div>
 
@@ -273,7 +232,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <!-- FORO -->
-<div class="page" id="page-foro"></div>
+<div class="page" id="page-foro">
+  <div style="max-width:700px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
+      <div id="foro-input-area"></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="background:var(--surface2);padding:.55rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Mensajes recientes</div>
+      <div id="foro-msgs"></div>
+    </div>
+  </div>
+</div>
 <div class="page" id="page-planteles">
   <div class="placeholder">
     <div class="ph-icon">👥</div>
@@ -372,7 +341,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {auth:{storageKey:"federala-auth"}});
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 // Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
@@ -522,225 +491,85 @@ async function cargarEscudos(){
   } catch(e){}
 }
 
-// ── AUTH ──
-let USUARIO_ACTUAL = null, PERFIL_ACTUAL = null;
-
-function mostrarModalLogin(){
-  ['modal-registro','modal-recuperar','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('modal-login').style.display='';
-  document.getElementById('login-error').style.display='none';
-}
-function mostrarModalRegistro(){
-  ['modal-login','modal-recuperar','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('modal-registro').style.display='';
-  cargarEquiposEnSelect();
-}
-function mostrarModalRecuperar(){
-  ['modal-login','modal-registro','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('modal-recuperar').style.display='';
-}
-function mostrarModalPerfil(){
-  ['modal-login','modal-registro','modal-recuperar'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('modal-perfil').style.display='';
-  if(PERFIL_ACTUAL){
-    document.getElementById('perfil-username').textContent=PERFIL_ACTUAL.username||'';
-    document.getElementById('perfil-rango').textContent=PERFIL_ACTUAL.rango||'';
-    const eq=PERFIL_ACTUAL._equipo_nombre||'';
-    document.getElementById('perfil-equipo').textContent=eq?'🔴 '+eq:'';
-    document.getElementById('perfil-escudo').innerHTML=eq?escudoHTML(eq,'me'):'';
-  }
-}
-async function cargarEquiposEnSelect(){
-  const sel=document.getElementById('reg-equipo');
-  if(sel.children.length>1) return;
-  const {data}=await sb.from('equipos').select('id,nombre').order('nombre');
-  (data||[]).forEach(eq=>{const o=document.createElement('option');o.value=eq.id;o.textContent=eq.nombre;sel.appendChild(o);});
-  const o=document.createElement('option');o.value='otro';o.textContent='Otro';sel.appendChild(o);
-}
-async function loginConEmail(){
-  const email=document.getElementById('inp-email').value.trim();
-  const pass=document.getElementById('inp-pass').value;
-  const err=document.getElementById('login-error');
-  err.style.display='none';
-  if(!email||!pass){err.textContent='Completá email y contraseña.';err.style.display='';return;}
-  const {error}=await sb.auth.signInWithPassword({email,password:pass});
-  if(error){err.textContent=error.message.includes('Invalid')?'Email o contraseña incorrectos.':error.message;err.style.display='';}
-  else toggleModal();
-}
-async function registrarUsuario(){
-  const nombre=document.getElementById('reg-nombre').value.trim();
-  const apellido=document.getElementById('reg-apellido').value.trim();
-  const email=document.getElementById('reg-email').value.trim();
-  const pass=document.getElementById('reg-pass').value;
-  const pass2=document.getElementById('reg-pass2').value;
-  const username=document.getElementById('reg-username').value.trim();
-  const equipoId=document.getElementById('reg-equipo').value;
-  const err=document.getElementById('reg-error');
-  err.style.display='none';err.style.color='#e57373';
-  if(!nombre||!apellido||!email||!pass||!username||!equipoId){err.textContent='Completá todos los campos.';err.style.display='';return;}
-  if(pass!==pass2){err.textContent='Las contraseñas no coinciden.';err.style.display='';return;}
-  if(pass.length<6){err.textContent='Mínimo 6 caracteres.';err.style.display='';return;}
-  const eqId=equipoId==='otro'?null:parseInt(equipoId);
-  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre,apellido,username,equipo_id:eqId}}});
-  if(error){err.textContent=error.message;err.style.display='';return;}
-  if(data.user&&data.session) await sb.from('perfiles').insert({id:data.user.id,nombre,apellido,username,equipo_id:eqId,rol:'usuario',rango:'Simpatizante'});
-  err.style.color='#4caf50';
-  err.textContent='¡Cuenta creada! Ya podés ingresar.';
-  err.style.display='';
-}
-async function recuperarPass(){
-  const email=document.getElementById('rec-email').value.trim();
-  const msg=document.getElementById('rec-msg');
-  if(!email){msg.textContent='Ingresá tu email.';msg.style.color='#e57373';msg.style.display='';return;}
-  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
-  msg.textContent=error?error.message:'Si existe, recibirás el link.';
-  msg.style.color=error?'#e57373':'#4caf50';
-  msg.style.display='';
-}
-async function cerrarSesion(){
-  await sb.auth.signOut();
-  USUARIO_ACTUAL=null;PERFIL_ACTUAL=null;
-  actualizarBtnUsuario();toggleModal();
-}
-async function cargarPerfil(uid){
-  const {data}=await sb.from('perfiles').select('*,equipos(nombre)').eq('id',uid).maybeSingle();
-  if(data){PERFIL_ACTUAL=data;PERFIL_ACTUAL._equipo_nombre=data.equipos?.nombre||'';}
-  actualizarBtnUsuario();
-}
-function actualizarBtnUsuario(){
-  const btn=document.querySelector('.user-btn');
-  if(!btn) return;
-  if(PERFIL_ACTUAL){
-    btn.innerHTML=escudoHTML(PERFIL_ACTUAL._equipo_nombre,'me')||'👤';
-    btn.title=PERFIL_ACTUAL.username;
-    btn.onclick=()=>{mostrarModalPerfil();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();};
-  } else {
-    btn.innerHTML='👤';btn.title='Iniciar sesión';
-    btn.onclick=()=>{mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();};
-  }
-}
-sb.auth.onAuthStateChange(async(event,session)=>{
-  USUARIO_ACTUAL=session?.user||null;
-  if(USUARIO_ACTUAL){
-    if(event==='SIGNED_IN'){
-      const {data:ex}=await sb.from('perfiles').select('id').eq('id',USUARIO_ACTUAL.id).maybeSingle();
-      if(!ex){
-        const m=USUARIO_ACTUAL.user_metadata||{};
-        await sb.from('perfiles').insert({id:USUARIO_ACTUAL.id,nombre:m.nombre||'',apellido:m.apellido||'',username:m.username||USUARIO_ACTUAL.email.split('@')[0],equipo_id:m.equipo_id||null,rol:'usuario',rango:'Simpatizante'});
-      }
-    }
-    await cargarPerfil(USUARIO_ACTUAL.id);
-  } else {PERFIL_ACTUAL=null;actualizarBtnUsuario();}
-  if(document.getElementById('page-foro')?.classList.contains('active')) renderForoPage();
+// Auth — manejo de sesión
+let usuarioActual = null;
+sb.auth.onAuthStateChange((event, session) => {
+  usuarioActual = session?.user || null;
+  actualizarIconoUsuario();
+  if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
 });
 
-// ── FORO ──
-let FORO_MENSAJES=[], FORO_REFRESH=null;
-function tiempoRelativo(ts){
-  const d=(Date.now()-new Date(ts))/1000;
-  if(d<60)return 'ahora';if(d<3600)return `hace ${Math.floor(d/60)}min`;
-  if(d<86400)return `hace ${Math.floor(d/3600)}h`;return `hace ${Math.floor(d/86400)}d`;
-}
-async function renderForoPage(){
-  const page=document.getElementById('page-foro');
-  if(!page) return;
-  if(!USUARIO_ACTUAL){
-    page.innerHTML=`<div style="max-width:600px;margin:2rem auto;text-align:center;padding:1rem;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2.5rem 1.5rem;">
-        <div style="font-size:48px;margin-bottom:1rem;">⚽</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Foro Federal A</div>
-        <div style="color:var(--muted);font-size:14px;margin-bottom:1.5rem;">Iniciá sesión para participar.</div>
-        <button class="modal-btn" style="width:auto;padding:.6rem 2rem;" onclick="mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();">Iniciar sesión</button>
-      </div>
-    </div>`;
-    return;
+function actualizarIconoUsuario(){
+  const btn = document.getElementById("user-btn");
+  if(!btn) return;
+  if(usuarioActual){
+    btn.style.borderColor = "var(--accent)";
+    btn.title = "Mi cuenta";
+  } else {
+    btn.style.borderColor = "";
+    btn.title = "Iniciar sesión";
   }
-  page.innerHTML=`
-    <div id="foro-msgs-cont" style="flex:1;overflow-y:auto;padding:.5rem 1.5rem;"></div>
-    <div style="border-top:1px solid var(--border);padding:.4rem 1rem;background:var(--surface);">
-      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;">
-        ${escudoHTML(PERFIL_ACTUAL?._equipo_nombre||'','me')}
-        <span style="font-weight:700;font-size:13px;">${PERFIL_ACTUAL?.username||''}</span>
-        <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${PERFIL_ACTUAL?.rango||''}</span>
-      </div>
-      <div style="display:flex;gap:.5rem;align-items:flex-end;">
-        <textarea id="foro-input" placeholder="Escribí tu mensaje..." style="flex:1;min-height:44px;max-height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
-        <button class="modal-btn" style="width:auto;padding:.5rem 1.25rem;flex-shrink:0;" onclick="publicarMensaje()">Publicar</button>
-      </div>
-    </div>`;
-  page.style.display='flex';
-  page.style.flexDirection='column';
-  page.style.height='calc(100vh - 52px)';
-  await cargarMensajesForo();
-  if(FORO_REFRESH) clearInterval(FORO_REFRESH);
-  FORO_REFRESH=setInterval(cargarMensajesForo,30000);
 }
+
+async function loginConEmail(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signInWithPassword({email, password: pass});
+  if(error){
+    if(error.message.includes("Invalid")) alert("Email o contraseña incorrectos");
+    else alert(error.message);
+  } else { toggleModal(); }
+}
+
+async function registrarUsuario(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signUp({email, password: pass});
+  if(error) alert(error.message);
+  else alert("¡Registrado! Revisá tu mail para confirmar la cuenta.");
+}
+
+async function cerrarSesion(){
+  await sb.auth.signOut();
+  toggleModal();
+}
+
+// Foro desde Supabase
 async function cargarMensajesForo(){
-  const cont=document.getElementById('foro-msgs-cont');
-  if(!cont) return;
-  const {data}=await sb.from('mensajes')
-    .select('id,contenido,created_at,usuario_id,perfiles(username,rango,equipos(nombre))')
-    .eq('eliminado',false).order('created_at',{ascending:false}).limit(100);
-  FORO_MENSAJES=data||[];
-  await renderMensajes();
+  try {
+    const {data} = await sb.from("mensajes_foro")
+      .select("texto, created_at, usuarios(username)")
+      .order("created_at", {ascending: false})
+      .limit(50);
+    if(!data){ renderForoLocal(); return; }
+    const msgs = data.map(m => ({
+      user: m.usuarios?.username || "Anónimo",
+      tiempo: tiempoRelativo(m.created_at),
+      texto: m.texto
+    }));
+    renderForoMsgs(msgs);
+  } catch(e){ renderForoLocal(); }
 }
-async function renderMensajes(){
-  const cont=document.getElementById('foro-msgs-cont');
-  if(!cont) return;
-  if(!FORO_MENSAJES.length){cont.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún.</div>';return;}
-  const ids=FORO_MENSAJES.map(m=>m.id);
-  const {data:vd}=await sb.from('votos').select('mensaje_id,valor,usuario_id').in('mensaje_id',ids);
-  const vm={};
-  (vd||[]).forEach(v=>{
-    if(!vm[v.mensaje_id])vm[v.mensaje_id]={total:0,mio:null};
-    vm[v.mensaje_id].total+=v.valor;
-    if(USUARIO_ACTUAL&&v.usuario_id===USUARIO_ACTUAL.id)vm[v.mensaje_id].mio=v.valor;
-  });
-  cont.innerHTML=FORO_MENSAJES.map(m=>{
-    const p=m.perfiles,eq=p?.equipos?.nombre||'';
-    const v=vm[m.id]||{total:0,mio:null};
-    const vc=v.total>0?'#4caf50':v.total<0?'#e57373':'var(--muted)';
-    const esMio=USUARIO_ACTUAL&&m.usuario_id===USUARIO_ACTUAL.id;
-    const f=new Date(m.created_at);
-    const fs=`${f.toLocaleDateString('es-AR')} ${f.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
-    return `<div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:100px;">
-      <div style="width:15%;min-width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;padding:.75rem .5rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
-        ${escudoHTML(eq,'esc')}
-        <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;line-height:1.3;word-break:break-word;width:100%;padding:0 4px;">${p?.username||'?'}</span>
-        <span style="font-size:10px;color:#aaa;text-align:center;background:var(--surface2);padding:1px 8px;border-radius:8px;">${p?.rango||''}</span>
-        <span style="font-size:9px;color:#666;text-align:center;">${fs}</span>
-        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
-          <button onclick="votar(${m.id},1)" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:${v.mio===1?1:.4};padding:1px;" title="Me gusta">👍</button>
-          <span style="font-size:11px;font-weight:700;color:${vc};min-width:14px;text-align:center;">${v.total>0?'+':''}${v.total}</span>
-          <button onclick="votar(${m.id},-1)" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:${v.mio===-1?1:.4};padding:1px;" title="No me gusta">👎</button>
-          ${esMio?`<button onclick="eliminarMensaje(${m.id})" style="background:none;border:none;cursor:pointer;font-size:12px;color:#e57373;padding:1px;margin-left:2px;">🗑</button>`:''}
-        </div>
-      </div>
-      <div style="flex:1;padding:.85rem 1.25rem;font-size:16px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#e8e8e8;">${m.contenido.replace(/</g,'&lt;')}</div>
-    </div>`;
-  }).join('');
-}
+
 async function publicarMensaje(){
-  if(!USUARIO_ACTUAL||!PERFIL_ACTUAL){mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();return;}
-  const txt=document.getElementById('foro-input')?.value.trim();
+  if(!usuarioActual){ toggleModal(); return; }
+  const txt = document.getElementById("foro-input").value.trim();
   if(!txt) return;
-  await sb.from('mensajes').insert({foro_id:1,usuario_id:USUARIO_ACTUAL.id,contenido:txt});
-  document.getElementById('foro-input').value='';
-  await cargarMensajesForo();
+  const {data: userData} = await sb.from("usuarios").select("id").eq("auth_id", usuarioActual.id).single();
+  if(!userData){ alert("Completá tu perfil primero"); return; }
+  const {error} = await sb.from("mensajes_foro").insert({usuario_id: userData.id, texto: txt});
+  if(!error){ document.getElementById("foro-input").value=""; cargarMensajesForo(); }
 }
-async function votar(mid,val){
-  if(!USUARIO_ACTUAL){mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();return;}
-  const {data:ex}=await sb.from('votos').select('id,valor').eq('mensaje_id',mid).eq('usuario_id',USUARIO_ACTUAL.id).maybeSingle();
-  if(ex){if(ex.valor===val)await sb.from('votos').delete().eq('id',ex.id);else await sb.from('votos').update({valor:val}).eq('id',ex.id);}
-  else await sb.from('votos').insert({mensaje_id:mid,usuario_id:USUARIO_ACTUAL.id,valor:val});
-  await renderMensajes();
+
+function tiempoRelativo(ts){
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if(diff < 60) return "ahora";
+  if(diff < 3600) return `hace ${Math.floor(diff/60)}min`;
+  if(diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
 }
-async function eliminarMensaje(id){
-  if(!confirm('¿Eliminar?')) return;
-  await sb.from('mensajes').update({eliminado:true}).eq('id',id).eq('usuario_id',USUARIO_ACTUAL.id);
-  await cargarMensajesForo();
-}
-function renderForoLocal(){renderForoPage();}
 
 const ESCUDOS = {};
 const FIXTURE = {"Zona A":{"1":[{"local":"El Linqueño","visitante":"Sp. Las Parejas","gl":1,"gv":0},{"local":"Independiente (Ch)","visitante":"Atlético Escobar","gl":2,"gv":1},{"local":"Sp. Belgrano","visitante":"9 de Julio (Rafaela)","gl":3,"gv":0},{"local":"Douglas Haig","visitante":"Gimnasia (Ch)","gl":2,"gv":1},{"local":"Defensores (VR)","visitante":"Gimnasia (CDU)","gl":2,"gv":1}],"2":[{"local":"Defensores (VR)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Las Parejas","gl":null,"gv":null}],"3":[{"local":"El Linqueño","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Defensores (VR)","gl":null,"gv":null}],"4":[{"local":"Douglas Haig","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Atlético Escobar","gl":null,"gv":null}],"5":[{"local":"El Linqueño","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Douglas Haig","gl":null,"gv":null}],"6":[{"local":"Sp. Belgrano","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"7":[{"local":"El Linqueño","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null}],"8":[{"local":"Independiente (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"9":[{"local":"El Linqueño","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Independiente (Ch)","gl":null,"gv":null}],"10":[{"local":"Sp. Las Parejas","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Defensores (VR)","gl":null,"gv":null}],"11":[{"local":"El Linqueño","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Atlético Escobar","gl":null,"gv":null}],"12":[{"local":"Atlético Escobar","visitante":"El Linqueño","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Douglas Haig","gl":null,"gv":null}],"13":[{"local":"El Linqueño","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"14":[{"local":"9 de Julio (Rafaela)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Belgrano","gl":null,"gv":null}],"15":[{"local":"El Linqueño","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"16":[{"local":"Gimnasia (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Independiente (Ch)","gl":null,"gv":null}],"17":[{"local":"El Linqueño","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null}],"18":[{"local":"Gimnasia (CDU)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null}]},"Zona B":{"1":[{"local":"Sarmiento (R)","visitante":"Juv. Antoniana","gl":1,"gv":3},{"local":"Boca Unidos","visitante":"Sarmiento (LB)","gl":3,"gv":1},{"local":"Tucumán Central","visitante":"Bartolomé Mitre","gl":1,"gv":0},{"local":"San Martín (F)","visitante":"Defensores (PV)","gl":2,"gv":1}],"2":[{"local":"Defensores (PV)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sol de América (F)","gl":null,"gv":null}],"3":[{"local":"Sol de América (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"San Martín (F)","gl":null,"gv":null}],"4":[{"local":"San Martín (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"5":[{"local":"Juv. Antoniana","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Tucumán Central","gl":null,"gv":null}],"6":[{"local":"Tucumán Central","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"7":[{"local":"Sarmiento (LB)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Boca Unidos","gl":null,"gv":null}],"8":[{"local":"Boca Unidos","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"9":[{"local":"Bartolomé Mitre","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Sarmiento (R)","gl":null,"gv":null}],"10":[{"local":"Juv. Antoniana","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"San Martín (F)","gl":null,"gv":null}],"11":[{"local":"Tucumán Central","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"12":[{"local":"Sarmiento (LB)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Tucumán Central","gl":null,"gv":null}],"13":[{"local":"Boca Unidos","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"14":[{"local":"Bartolomé Mitre","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Boca Unidos","gl":null,"gv":null}],"15":[{"local":"Sarmiento (R)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"16":[{"local":"Defensores (PV)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Sarmiento (R)","gl":null,"gv":null}],"17":[{"local":"Sol de América (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Defensores (PV)","gl":null,"gv":null}],"18":[{"local":"San Martín (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sol de América (F)","gl":null,"gv":null}]},"Zona C":{"1":[{"local":"Costa Brava","visitante":"FADEP","gl":3,"gv":0},{"local":"Huracán LH","visitante":"Argentino (MM)","gl":0,"gv":0},{"local":"San Martín (M)","visitante":"Juv. Unida (SL)","gl":0,"gv":0},{"local":"Atenas (RC)","visitante":"Cipolletti","gl":3,"gv":1}],"2":[{"local":"Cipolletti","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"FADEP","visitante":"Dep. Rincón","gl":null,"gv":null}],"3":[{"local":"Dep. Rincón","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Cipolletti","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Atenas (RC)","gl":null,"gv":null}],"4":[{"local":"Atenas (RC)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"FADEP","gl":null,"gv":null}],"5":[{"local":"FADEP","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"San Martín (M)","gl":null,"gv":null}],"6":[{"local":"San Martín (M)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Cipolletti","visitante":"FADEP","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Argentino (MM)","gl":null,"gv":null}],"7":[{"local":"Argentino (MM)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"FADEP","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Huracán LH","gl":null,"gv":null}],"8":[{"local":"Huracán LH","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"FADEP","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"9":[{"local":"Juv. Unida (SL)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"FADEP","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Costa Brava","gl":null,"gv":null}],"10":[{"local":"FADEP","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Atenas (RC)","gl":null,"gv":null}],"11":[{"local":"San Martín (M)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"FADEP","gl":null,"gv":null}],"12":[{"local":"Argentino (MM)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"San Martín (M)","gl":null,"gv":null}],"13":[{"local":"Huracán LH","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"FADEP","visitante":"Argentino (MM)","gl":null,"gv":null}],"14":[{"local":"Juv. Unida (SL)","visitante":"FADEP","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Huracán LH","gl":null,"gv":null}],"15":[{"local":"Costa Brava","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"FADEP","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"16":[{"local":"Cipolletti","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"FADEP","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Costa Brava","gl":null,"gv":null}],"17":[{"local":"Dep. Rincón","visitante":"Huracán LH","gl":null,"gv":null},{"local":"FADEP","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Cipolletti","gl":null,"gv":null}],"18":[{"local":"Atenas (RC)","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"FADEP","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Dep. Rincón","gl":null,"gv":null}]},"Zona D":{"1":[{"local":"Kimberley","visitante":"Villa Mitre","gl":1,"gv":0},{"local":"Sol de Mayo","visitante":"Germinal","gl":1,"gv":1},{"local":"Gmo. Brown (PM)","visitante":"Santamarina","gl":2,"gv":2},{"local":"Olimpo","visitante":"Alvarado","gl":2,"gv":0}],"2":[{"local":"Alvarado","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Santamarina","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Germinal","visitante":"Kimberley","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Círculo Dep.","gl":null,"gv":null}],"3":[{"local":"Círculo Dep.","visitante":"Germinal","gl":null,"gv":null},{"local":"Kimberley","visitante":"Santamarina","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Alvarado","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Olimpo","gl":null,"gv":null}],"4":[{"local":"Olimpo","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Alvarado","visitante":"Kimberley","gl":null,"gv":null},{"local":"Santamarina","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Germinal","visitante":"Villa Mitre","gl":null,"gv":null}],"5":[{"local":"Villa Mitre","visitante":"Santamarina","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Alvarado","gl":null,"gv":null},{"local":"Kimberley","visitante":"Olimpo","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"6":[{"local":"Gmo. Brown (PM)","visitante":"Kimberley","gl":null,"gv":null},{"local":"Olimpo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Alvarado","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Santamarina","visitante":"Germinal","gl":null,"gv":null}],"7":[{"local":"Germinal","visitante":"Alvarado","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Olimpo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Kimberley","visitante":"Sol de Mayo","gl":null,"gv":null}],"8":[{"local":"Sol de Mayo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Olimpo","visitante":"Germinal","gl":null,"gv":null},{"local":"Alvarado","visitante":"Santamarina","gl":null,"gv":null}],"9":[{"local":"Santamarina","visitante":"Olimpo","gl":null,"gv":null},{"local":"Germinal","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Kimberley","gl":null,"gv":null}],"10":[{"local":"Villa Mitre","visitante":"Kimberley","gl":null,"gv":null},{"local":"Germinal","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Alvarado","visitante":"Olimpo","gl":null,"gv":null}],"11":[{"local":"Gmo. Brown (PM)","visitante":"Alvarado","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Kimberley","visitante":"Germinal","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Villa Mitre","gl":null,"gv":null}],"12":[{"local":"Germinal","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Santamarina","visitante":"Kimberley","gl":null,"gv":null},{"local":"Alvarado","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Olimpo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"13":[{"local":"Sol de Mayo","visitante":"Olimpo","gl":null,"gv":null},{"local":"Kimberley","visitante":"Alvarado","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Santamarina","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Germinal","gl":null,"gv":null}],"14":[{"local":"Santamarina","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Alvarado","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Olimpo","visitante":"Kimberley","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Sol de Mayo","gl":null,"gv":null}],"15":[{"local":"Kimberley","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Olimpo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Alvarado","gl":null,"gv":null},{"local":"Germinal","visitante":"Santamarina","gl":null,"gv":null}],"16":[{"local":"Alvarado","visitante":"Germinal","gl":null,"gv":null},{"local":"Olimpo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Kimberley","gl":null,"gv":null}],"17":[{"local":"Círculo Dep.","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Germinal","visitante":"Olimpo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Alvarado","gl":null,"gv":null}],"18":[{"local":"Olimpo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Germinal","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Kimberley","visitante":"Círculo Dep.","gl":null,"gv":null}]}};
@@ -1723,13 +1552,45 @@ function goPage(id,el){
   el.classList.add("active");
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas"){cargarEstadisticas();}
-  if(id==="foro"){renderForoPage();}
 }
 
 function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
 function closeModalOutside(e){if(e.target===document.getElementById("modal-overlay"))toggleModal();}
 
+function renderForoLocal(){
+  const msgs=[
+    {user:"Hincha Belgrano",tiempo:"hace 2h",texto:"Sp. Belgrano arrancó muy bien, 3 puntos en casa."},
+    {user:"Del_Norte_23",tiempo:"hace 4h",texto:"Boca Unidos goleó 3-1, se viene fuerte esta zona B."},
+    {user:"FederalFan",tiempo:"hace 6h",texto:"Costa Brava goleó 3-0 en la zona C, prometedor arranque."},
+    {user:"ElLinqueño10",tiempo:"ayer",texto:"El Linqueño ganó en casa, a seguir sumando. Vamos!"},
+  ];
+  renderForoMsgs(msgs);
+}
 
+function renderForoMsgs(msgs){
+  const logueado = !!usuarioActual;
+  const inputArea = logueado
+    ? `<textarea id="foro-input" placeholder="Escribí tu mensaje..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;"></textarea>
+       <div style="display:flex;justify-content:flex-end;margin-top:.6rem;gap:.6rem;">
+         <button onclick="cerrarSesion()" style="background:transparent;color:var(--muted);font-size:13px;border:none;cursor:pointer;">Cerrar sesión</button>
+         <button onclick="publicarMensaje()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Publicar</button>
+       </div>`
+    : `<div style="font-size:13px;color:var(--muted);margin-bottom:.75rem;">Iniciá sesión para participar en el foro</div>
+       <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>`;
+
+  document.getElementById("foro-input-area").innerHTML = inputArea;
+  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
+    <div style="padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;">${m.user[0].toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="display:flex;gap:.6rem;align-items:baseline;margin-bottom:.25rem;">
+          <span style="font-size:13px;font-weight:600;">${m.user}</span>
+          <span style="font-size:11px;color:var(--muted);">${m.tiempo}</span>
+        </div>
+        <div style="font-size:13px;color:#bbb;line-height:1.5;">${m.texto}</div>
+      </div>
+    </div>`).join("");
+}
 
 async function diagnosticoIntegridad(){
   try {
