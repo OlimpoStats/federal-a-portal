@@ -1593,7 +1593,7 @@ function renderForoMsgs(msgs){
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
       </div>
-      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${m.texto.replace(/</g,'&lt;')}</div>
+      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
     </div>`).join("");
 }
 
