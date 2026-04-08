@@ -349,7 +349,7 @@ async function cargarPartidosDesdeDB(){
     // Fuente principal: fixture
     const {data:fixtureData, error:fixtureErr} = await sb
       .from("fixture")
-      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual");
+      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual");
     if(!fixtureErr && fixtureData){
       // Store globally for stats
       window._FIXTURE_RAW = fixtureData;
@@ -608,7 +608,7 @@ function calcTabla(zona){
     partidos.forEach(m=>{
       if(!equipos.includes(m.local)||!equipos.includes(m.visitante)) return;
       h2h[m.local].gf+=m.gl; h2h[m.local].dif+=m.gl-m.gv; h2h[m.visitante].gf+=m.gv; h2h[m.visitante].dif+=m.gv-m.gl;
-      h2h[m.visitante].gv+=m.gv; // goles como visitante
+      h2h[m.visitante].gfv=(h2h[m.visitante].gfv||0)+m.gv; // goles como visitante en H2H
       if(m.gl>m.gv){h2h[m.local].pts+=3;}
       else if(m.gl<m.gv){h2h[m.visitante].pts+=3;}
       else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
@@ -2038,12 +2038,12 @@ async function cargarEstadisticas(){
         if(teams.length<2) return;
         // find matches between these teams in FIXTURE
         const h2h={};
-        teams.forEach(t=>h2h[t]={pts:0,dif:0,gf:0,gfv:0,g:0,e:0,p:0});
+        teams.forEach(t=>h2h[t]={pts:0,dif:0,gf:0,gc:0,gfv:0,g:0,e:0,p:0});
         ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
           (FIXTURE[z]?.[String(f)]||[]).forEach(m=>{
             if(!teams.includes(m.local)||!teams.includes(m.visitante)||m.gl===null) return;
-            h2h[m.local].gf+=m.gl; h2h[m.local].dif+=m.gl-m.gv;
-            h2h[m.visitante].gf+=m.gv; h2h[m.visitante].dif+=m.gv-m.gl; h2h[m.visitante].gfv+=m.gv;
+            h2h[m.local].gf+=m.gl; h2h[m.local].gc+=m.gv; h2h[m.local].dif+=m.gl-m.gv;
+            h2h[m.visitante].gf+=m.gv; h2h[m.visitante].gc+=m.gl; h2h[m.visitante].dif+=m.gv-m.gl; h2h[m.visitante].gfv+=m.gv;
             if(m.gl>m.gv){h2h[m.local].pts+=3;h2h[m.local].g++; h2h[m.visitante].p++;}
             else if(m.gl<m.gv){h2h[m.visitante].pts+=3;h2h[m.visitante].g++; h2h[m.local].p++;}
             else{h2h[m.local].pts++;h2h[m.visitante].pts++;h2h[m.local].e++;h2h[m.visitante].e++;}
@@ -2060,13 +2060,18 @@ async function cargarEstadisticas(){
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
       return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
-        + `<tr><td colspan="10"></td><td colspan="7" style="border-left:3px solid ${_zc2.color};border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:3px 6px;"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#888;text-transform:uppercase;">Desempate mini-tabla</span><span style="font-size:11px;font-weight:700;color:${_zc2.color};margin-left:8px;">${zonaNombre}</span></td></tr>`
+        + `<tr>
+          <td style="width:24px;"></td>
+          <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
+          <td colspan="8"></td>
+          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
+        </tr>`
         + `<tr>`
-        + `<th style="width:24px;"></th><th style="width:120px;text-align:left;">Equipo</th>`
+        + `<th style="width:24px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
         + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
         + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
         + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
-        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GC desempate">GCD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
         + `</tr></thead><tbody>`
         + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
@@ -2108,38 +2113,78 @@ async function cargarEstadisticas(){
       .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     document.getElementById('tbl-visitante-stats').innerHTML = renderLocalVisitTable(visitRows);
 
-    // 1st / 2nd half tables from eventos minutes
+    // 1T/2T standings from goal minutes (<=45 = 1T, >=46 = 2T)
     const half1 = {}, half2 = {};
+    const initHalf = (eq, t) => { if(!t[eq]) t[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; };
+
+    // First init all played teams
+    ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        if(m.gl===null) return;
+        initHalf(m.local,half1); initHalf(m.visitante,half1);
+        initHalf(m.local,half2); initHalf(m.visitante,half2);
+        half1[m.local].pj++; half1[m.visitante].pj++;
+        half2[m.local].pj++; half2[m.visitante].pj++;
+      });
+    }});
+
+    // Count goals per half per team from eventos
+    const golesHT = {}; // "partido_id|equipo" -> {h1, h2}
     eventos.forEach(ev=>{
       if(!['gol','gol_penal','gol_tiro_libre','gol_contra'].includes(ev.tipo)) return;
       const pl = ev.planillas;
       if(!pl) return;
-      const equipo = pl.equipos?.nombre;
-      if(!equipo) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidosById[partidoId];
+      if(!partido || partido.goles_local===null) return;
       const min = parseInt(String(ev.minuto||'').split('+')[0])||0;
-      let target = equipo;
+      let targetEquipo = pl.equipos?.nombre;
       if(ev.tipo==='gol_contra'){
-        const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
-        const partido = partidosById[partidoId];
-        if(!partido) return;
-        target = equipo===partido.equipo_local_nombre ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
+        targetEquipo = targetEquipo===partido.equipo_local_nombre
+          ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
       }
-      if(min<=45){
-        if(!half1[target]) half1[target]={gf:0};
-        half1[target].gf++;
-      } else {
-        if(!half2[target]) half2[target]={gf:0};
-        half2[target].gf++;
-      }
+      if(!targetEquipo) return;
+      const key = `${partidoId}|${targetEquipo}`;
+      if(!golesHT[key]) golesHT[key]={h1:0,h2:0};
+      if(min<=45) golesHT[key].h1++; else golesHT[key].h2++;
     });
+
+    // Build standings per half
+    ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        if(m.gl===null) return;
+        // Find partido_id for this fixture match
+        const pid = Object.keys(partidosById).find(id=>{
+          const p=partidosById[id];
+          return p.equipo_local_nombre===m.local && p.equipo_visitante_nombre===m.visitante;
+        });
+        if(!pid) return;
+        const gl1 = (golesHT[`${pid}|${m.local}`]||{}).h1||0;
+        const gv1 = (golesHT[`${pid}|${m.visitante}`]||{}).h1||0;
+        const gl2 = (golesHT[`${pid}|${m.local}`]||{}).h2||0;
+        const gv2 = (golesHT[`${pid}|${m.visitante}`]||{}).h2||0;
+        // 1T
+        half1[m.local].gf+=gl1; half1[m.local].gc+=gv1;
+        half1[m.visitante].gf+=gv1; half1[m.visitante].gc+=gl1;
+        if(gl1>gv1){half1[m.local].g++;half1[m.local].pts+=3;half1[m.visitante].p++;}
+        else if(gl1<gv1){half1[m.visitante].g++;half1[m.visitante].pts+=3;half1[m.local].p++;}
+        else{half1[m.local].e++;half1[m.visitante].e++;half1[m.local].pts++;half1[m.visitante].pts++;}
+        // 2T
+        half2[m.local].gf+=gl2; half2[m.local].gc+=gv2;
+        half2[m.visitante].gf+=gv2; half2[m.visitante].gc+=gl2;
+        if(gl2>gv2){half2[m.local].g++;half2[m.local].pts+=3;half2[m.visitante].p++;}
+        else if(gl2<gv2){half2[m.visitante].g++;half2[m.visitante].pts+=3;half2[m.local].p++;}
+        else{half2[m.local].e++;half2[m.visitante].e++;half2[m.local].pts++;half2[m.visitante].pts++;}
+      });
+    }});
     const renderHalfTable = (halfData) => {
-      const rows = Object.entries(halfData).map(([n,d])=>({n,...d})).sort((a,b)=>b.gf-a.gf);
-      if(!rows.length) return '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
-      return `<table><thead><tr>
-        <th style="width:24px;">#</th><th style="text-align:left;">Equipo</th><th title="Goles">⚽</th>
-      </tr></thead><tbody>`+
-      rows.map((r,i)=>`<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td><strong class="pts">${r.gf}</strong></td></tr>`).join('')+
-      '</tbody></table>';
+      const rows = Object.entries(halfData).map(([n,d])=>({n,...d,dif:d.gf-d.gc})).sort((a,b)=>b.pts-a.pts||(b.dif-a.dif)||b.gf-a.gf);
+      if(!rows.length) return '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos de entretiempos cargados aún.</div>';
+      return tblHead(['24px','','#'],['','Equipo','Equipo'],['28px','PJ','PJ'],['24px','G','G'],['24px','E','E'],['24px','P','P'],['28px','GF','GF'],['28px','GC','GC'],['28px','+/-','+/-'],['32px','Pts','Pts'])+
+      rows.map((r,i)=>{
+        const d=r.dif;
+        return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${d>0?'#4caf50':d<0?'#e57373':'var(--muted)'}">${d>0?'+':''}${d}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+      }).join('')+'</tbody></table>';
     };
     document.getElementById('tbl-1t').innerHTML = renderHalfTable(half1);
     document.getElementById('tbl-2t').innerHTML = renderHalfTable(half2);
@@ -2150,7 +2195,7 @@ async function cargarEstadisticas(){
       const zc=zonaConfig(z);
       const rows=Object.entries(equipoStats).filter(([,s])=>s.zona===z)
         .map(([n,s])=>({n,...s,dif:s.gf-s.gc})).sort((a,b)=>b.pts-a.pts||(b.dif)-(a.dif)||b.gf-a.gf);
-      return `<div><p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>
+      return `<div>
       <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}</div></div>`;
     }).join('');
 
@@ -2289,9 +2334,9 @@ async function cargarEstadisticas(){
           <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
             <thead><tr>
               <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
-              <th style="width:40px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
-              <th style="padding:.4rem .5rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);">A favor</th>
-              <th style="padding:.4rem .5rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);">En contra</th>
+              <th style="width:55px;padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
+              <th style="padding:.4rem 1rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);">A favor</th>
+              <th style="padding:.4rem 1rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);">En contra</th>
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
               const pensByArb = (penalesDB||[]).filter(p=>{
@@ -2307,10 +2352,10 @@ async function cargarEstadisticas(){
               return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
-                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escFavor}</div></td>
-                <td style="padding:.35rem .5rem;"><div style="display:flex;gap:2px;flex-wrap:wrap;">${escContra}</div></td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${escFavor}</div></td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:wrap;">${escContra}</div></td>
               </tr>`;
-            }).join('')})}
+            }).join('')}
             </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
           </div>
         </div>
