@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
 .page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
-.page.active{display:block;}
+.page.active{display:block;}.page.active#page-foro{display:flex!important;}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
@@ -232,16 +232,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <!-- FORO -->
-<div class="page" id="page-foro">
-  <div style="max-width:700px;">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
-      <div id="foro-input-area"></div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-      <div style="background:var(--surface2);padding:.55rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Mensajes recientes</div>
-      <div id="foro-msgs"></div>
-    </div>
-  </div>
+<div class="page" id="page-foro" style="display:none;flex-direction:column;">
+  <div id="foro-msgs" style="flex:1;overflow-y:auto;"></div>
+  <div id="foro-input-area" style="border-top:2px solid #1a1a1a;padding:.5rem 1rem;background:var(--surface);flex-shrink:0;"></div>
 </div>
 <div class="page" id="page-planteles">
   <div class="placeholder">
@@ -539,27 +532,30 @@ async function cerrarSesion(){
 // Foro desde Supabase
 async function cargarMensajesForo(){
   try {
-    const {data} = await sb.from("mensajes_foro")
-      .select("texto, created_at, usuarios(username)")
+    const {data} = await sb.from("mensajes")
+      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, equipos(nombre))")
+      .eq("eliminado", false)
       .order("created_at", {ascending: false})
-      .limit(50);
-    if(!data){ renderForoLocal(); return; }
+      .limit(100);
+    if(!data){ renderForoMsgs([]); return; }
     const msgs = data.map(m => ({
-      user: m.usuarios?.username || "Anónimo",
+      id: m.id,
+      user: m.perfiles?.username || "Anónimo",
+      rango: m.perfiles?.rango || "",
+      equipo: m.perfiles?.equipos?.nombre || "",
       tiempo: tiempoRelativo(m.created_at),
-      texto: m.texto
+      texto: m.contenido,
+      usuario_id: m.usuario_id
     }));
     renderForoMsgs(msgs);
-  } catch(e){ renderForoLocal(); }
+  } catch(e){ console.error(e); renderForoMsgs([]); }
 }
 
 async function publicarMensaje(){
   if(!usuarioActual){ toggleModal(); return; }
   const txt = document.getElementById("foro-input").value.trim();
   if(!txt) return;
-  const {data: userData} = await sb.from("usuarios").select("id").eq("auth_id", usuarioActual.id).single();
-  if(!userData){ alert("Completá tu perfil primero"); return; }
-  const {error} = await sb.from("mensajes_foro").insert({usuario_id: userData.id, texto: txt});
+  const {error} = await sb.from("mensajes").insert({foro_id: 1, usuario_id: usuarioActual.id, contenido: txt});
   if(!error){ document.getElementById("foro-input").value=""; cargarMensajesForo(); }
 }
 
@@ -1552,6 +1548,12 @@ function goPage(id,el){
   el.classList.add("active");
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas"){cargarEstadisticas();}
+  if(id==="foro"){
+    const fp=document.getElementById("page-foro");
+    fp.style.display="flex";
+    fp.style.height="calc(100vh - 52px)";
+    cargarMensajesForo();
+  }
 }
 
 function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
@@ -1579,14 +1581,19 @@ function renderForoMsgs(msgs){
        <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>`;
 
   document.getElementById("foro-input-area").innerHTML = inputArea;
+  if(!msgs.length){
+    document.getElementById("foro-msgs").innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún.</div>';
+    return;
+  }
   document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;">
       <div style="width:15%;min-width:110px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .5rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
-        <div style="width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--accent);">${m.user[0].toUpperCase()}</div>
+        ${escudoHTML(m.equipo,'esc')}
         <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${m.user}</span>
+        <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
       </div>
-      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${m.texto}</div>
+      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${m.texto.replace(/</g,'&lt;')}</div>
     </div>`).join("");
 }
 
