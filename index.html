@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
 .page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
-.page.active{display:block;}.page.active#page-foro{display:flex!important;}
+.page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;padding:0!important;}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
@@ -530,14 +530,19 @@ async function cerrarSesion(){
 }
 
 // Foro desde Supabase
-async function cargarMensajesForo(){
+let FORO_PAGINA = 0;
+const FORO_POR_PAGINA = 15;
+
+async function cargarMensajesForo(pagina=0){
+  FORO_PAGINA = pagina;
   try {
-    const {data} = await sb.from("mensajes")
-      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, equipos(nombre))")
+    const from = pagina * FORO_POR_PAGINA;
+    const {data, count} = await sb.from("mensajes")
+      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, equipos(nombre))", {count:"exact"})
       .eq("eliminado", false)
       .order("created_at", {ascending: false})
-      .limit(100);
-    if(!data){ renderForoMsgs([]); return; }
+      .range(from, from + FORO_POR_PAGINA - 1);
+    if(!data){ renderForoMsgs([], 0, 0); return; }
     const msgs = data.map(m => ({
       id: m.id,
       user: m.perfiles?.username || "Anónimo",
@@ -547,8 +552,8 @@ async function cargarMensajesForo(){
       texto: m.contenido,
       usuario_id: m.usuario_id
     }));
-    renderForoMsgs(msgs);
-  } catch(e){ console.error(e); renderForoMsgs([]); }
+    renderForoMsgs(msgs, pagina, count||0);
+  } catch(e){ console.error(e); renderForoMsgs([], 0, 0); }
 }
 
 async function publicarMensaje(){
@@ -1570,14 +1575,13 @@ function renderForoLocal(){
   renderForoMsgs(msgs);
 }
 
-function renderForoMsgs(msgs){
+function renderForoMsgs(msgs, pagina=0, total=0){
   const logueado = !!usuarioActual;
   const inputArea = logueado
     ? `<textarea id="foro-input" placeholder="Escribí tu mensaje..." maxlength="100" oninput="document.getElementById('foro-chars').textContent=this.value.length+'/100'" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;"></textarea>
        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;gap:.6rem;">
-         <span id="foro-chars" style="font-size:11px;color:var(--muted);">0/100</span>
+         <span id="foro-chars" style="font-size:11px;color:#aaa;">0/100</span>
          <div style="display:flex;gap:.6rem;">
-           <button onclick="cerrarSesion()" style="background:transparent;color:var(--muted);font-size:13px;border:none;cursor:pointer;">Cerrar sesión</button>
            <button onclick="publicarMensaje()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Publicar</button>
          </div>
        </div>`
@@ -1599,6 +1603,17 @@ function renderForoMsgs(msgs){
       </div>
       <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
     </div>`).join("");
+  // Pagination nav
+  const totalPags = Math.ceil(total / FORO_POR_PAGINA);
+  if(totalPags > 1){
+    const nav = document.createElement('div');
+    nav.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem;border-top:2px solid #1a1a1a;';
+    nav.innerHTML =
+      (pagina > 0 ? `<button onclick="cargarMensajesForo(${pagina-1})" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:4px;cursor:pointer;">← Ant</button>` : '') +
+      `<span style="font-size:12px;color:var(--muted);">Página ${pagina+1} de ${totalPags}</span>` +
+      (pagina < totalPags-1 ? `<button onclick="cargarMensajesForo(${pagina+1})" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:4px;cursor:pointer;">Sig →</button>` : '');
+    document.getElementById("foro-msgs").appendChild(nav);
+  }
 }
 
 async function diagnosticoIntegridad(){
