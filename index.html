@@ -36,6 +36,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 .page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
 .page.active{display:block;}
+#page-foro.active{display:flex!important;flex-direction:column;height:calc(100vh - 52px);}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
@@ -169,7 +170,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <body>
 
 <div class="hdr">
-  <div class="logo">FEDERAL <span>A</span></div>
+  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
   <div class="nav">
     <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
@@ -189,8 +190,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <button class="modal-close" onclick="toggleModal()">&#10005;</button>
     <div id="modal-login">
       <div class="modal-title">Iniciar sesión</div>
-      <input type="email" placeholder="Email" id="inp-email" autocomplete="email">
-      <input type="password" placeholder="Contraseña" id="inp-pass" autocomplete="current-password">
+      <input type="email" placeholder="Email" id="inp-email" autocomplete="email" onkeydown="if(event.key==='Enter')loginConEmail()">
+      <input type="password" placeholder="Contraseña" id="inp-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginConEmail()">
       <div id="login-error" style="color:#e57373;font-size:12px;display:none;margin-bottom:.5rem;"></div>
       <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
       <div class="modal-sub">¿Olvidaste tu contraseña? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalRecuperar()">Recuperar</span></div>
@@ -273,7 +274,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <!-- FORO -->
-<div class="page" id="page-foro" style="display:none;flex-direction:column;height:calc(100vh - 52px);max-width:100%;">
+<div class="page" id="page-foro" style="flex-direction:column;height:calc(100vh - 52px);max-width:100%;">
   <div style="max-width:700px;">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
       <div id="foro-input-area"></div>
@@ -705,14 +706,14 @@ async function renderForoPage(){
   }
   page.innerHTML=`
     <div id="foro-mensajes-cont" style="flex:1;overflow-y:auto;padding:.5rem 1.5rem;"></div>
-    <div style="border-top:1px solid var(--border);padding:.75rem 1rem;background:var(--surface);">
+    <div style="border-top:1px solid var(--border);padding:.4rem 1rem;background:var(--surface);">
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
         ${escudoHTML(PERFIL_ACTUAL?._equipo_nombre||'','me')}
         <span style="font-weight:700;font-size:13px;">${PERFIL_ACTUAL?.username||''}</span>
         <span style="font-size:11px;color:#aaa;background:var(--surface2);padding:1px 8px;border-radius:8px;">${PERFIL_ACTUAL?.rango||''}</span>
       </div>
       <div style="display:flex;gap:.5rem;align-items:flex-end;">
-        <textarea id="foro-input" placeholder="Escribí tu mensaje..." style="flex:1;min-height:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
+        <textarea id="foro-input" placeholder="Escribí tu mensaje..." style="flex:1;min-height:44px;max-height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
         <button class="modal-btn" style="width:auto;padding:.5rem 1.25rem;flex-shrink:0;" onclick="publicarMensaje()">Publicar</button>
       </div>
     </div>`;
@@ -1778,10 +1779,7 @@ function goPage(id,el){
   el.classList.add("active");
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas"){cargarEstadisticas();}
-  if(id==="foro"){
-    document.getElementById("page-foro").style.display="flex";
-    renderForoPage();
-  }
+  if(id==="foro"){renderForoPage();}
 }
 
 function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
