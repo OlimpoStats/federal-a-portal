@@ -187,8 +187,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
   <div class="modal" style="width:380px;max-width:92vw;max-height:90vh;overflow-y:auto;">
     <button class="modal-close" onclick="toggleModal()">&#10005;</button>
-
-    <!-- LOGIN -->
     <div id="modal-login">
       <div class="modal-title">Iniciar sesión</div>
       <input type="email" placeholder="Email" id="inp-email" autocomplete="email">
@@ -198,15 +196,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div class="modal-sub">¿Olvidaste tu contraseña? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalRecuperar()">Recuperar</span></div>
       <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalRegistro()">Registrate</span></div>
     </div>
-
-    <!-- REGISTRO -->
     <div id="modal-registro" style="display:none;">
       <div class="modal-title">Crear cuenta</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">
         <input type="text" placeholder="Nombre" id="reg-nombre" autocomplete="given-name" style="margin:0;">
         <input type="text" placeholder="Apellido" id="reg-apellido" autocomplete="family-name" style="margin:0;">
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">Nombre y apellido no serán visibles públicamente.</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">Nombre y apellido no serán visibles.</div>
       <input type="email" placeholder="Email" id="reg-email" autocomplete="email">
       <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">El email no será visible. Necesitás validarlo para operar.</div>
       <input type="password" placeholder="Contraseña" id="reg-pass" autocomplete="new-password">
@@ -219,8 +215,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <button class="modal-btn" onclick="registrarUsuario()">Crear cuenta</button>
       <div class="modal-sub">¿Ya tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarModalLogin()">Iniciá sesión</span></div>
     </div>
-
-    <!-- RECUPERAR CONTRASEÑA -->
     <div id="modal-recuperar" style="display:none;">
       <div class="modal-title">Recuperar contraseña</div>
       <input type="email" placeholder="Tu email" id="rec-email" autocomplete="email">
@@ -228,8 +222,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <button class="modal-btn" onclick="recuperarPass()">Enviar link</button>
       <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarModalLogin()">← Volver</span></div>
     </div>
-
-    <!-- PERFIL (logueado) -->
     <div id="modal-perfil" style="display:none;">
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;">
         <div id="perfil-escudo" style="width:36px;height:36px;"></div>
@@ -239,9 +231,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div style="font-size:11px;color:var(--muted);" id="perfil-equipo"></div>
         </div>
       </div>
-      <button class="modal-btn" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:.5rem;" onclick="cerrarSesion()">Cerrar sesión</button>
+      <button class="modal-btn" style="background:transparent;border:1px solid var(--border);color:var(--muted);" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
-
   </div>
 </div>
 
@@ -566,144 +557,117 @@ let USUARIO_ACTUAL = null;
 let PERFIL_ACTUAL = null;
 
 function mostrarModalLogin(){
+  ['modal-registro','modal-recuperar','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('modal-login').style.display='';
-  document.getElementById('modal-registro').style.display='none';
-  document.getElementById('modal-recuperar').style.display='none';
-  document.getElementById('modal-perfil').style.display='none';
   document.getElementById('login-error').style.display='none';
 }
 function mostrarModalRegistro(){
-  document.getElementById('modal-login').style.display='none';
+  ['modal-login','modal-recuperar','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('modal-registro').style.display='';
-  document.getElementById('modal-recuperar').style.display='none';
-  document.getElementById('modal-perfil').style.display='none';
   cargarEquiposEnSelect();
 }
 function mostrarModalRecuperar(){
-  document.getElementById('modal-login').style.display='none';
-  document.getElementById('modal-registro').style.display='none';
+  ['modal-login','modal-registro','modal-perfil'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('modal-recuperar').style.display='';
-  document.getElementById('modal-perfil').style.display='none';
 }
 function mostrarModalPerfil(){
-  document.getElementById('modal-login').style.display='none';
-  document.getElementById('modal-registro').style.display='none';
-  document.getElementById('modal-recuperar').style.display='none';
+  ['modal-login','modal-registro','modal-recuperar'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('modal-perfil').style.display='';
   if(PERFIL_ACTUAL){
-    document.getElementById('perfil-username').textContent = PERFIL_ACTUAL.username||'';
-    document.getElementById('perfil-rango').textContent = PERFIL_ACTUAL.rango||'';
-    const eq = PERFIL_ACTUAL._equipo_nombre||'';
-    document.getElementById('perfil-equipo').textContent = eq ? '🔴 '+eq : '';
-    document.getElementById('perfil-escudo').innerHTML = eq ? escudoHTML(eq,'me') : '';
+    document.getElementById('perfil-username').textContent=PERFIL_ACTUAL.username||'';
+    document.getElementById('perfil-rango').textContent=PERFIL_ACTUAL.rango||'';
+    const eq=PERFIL_ACTUAL._equipo_nombre||'';
+    document.getElementById('perfil-equipo').textContent=eq?'🔴 '+eq:'';
+    document.getElementById('perfil-escudo').innerHTML=eq?escudoHTML(eq,'me'):'';
   }
 }
 
 async function cargarEquiposEnSelect(){
-  const sel = document.getElementById('reg-equipo');
-  if(sel.children.length > 1) return;
-  const {data} = await sb.from('equipos').select('id,nombre').order('nombre');
-  (data||[]).forEach(eq=>{
-    const opt = document.createElement('option');
-    opt.value = eq.id; opt.textContent = eq.nombre;
-    sel.appendChild(opt);
-  });
-  const otro = document.createElement('option');
-  otro.value='otro'; otro.textContent='Otro';
-  sel.appendChild(otro);
+  const sel=document.getElementById('reg-equipo');
+  if(sel.children.length>1) return;
+  const {data}=await sb.from('equipos').select('id,nombre').order('nombre');
+  (data||[]).forEach(eq=>{const opt=document.createElement('option');opt.value=eq.id;opt.textContent=eq.nombre;sel.appendChild(opt);});
+  const otro=document.createElement('option');otro.value='otro';otro.textContent='Otro';sel.appendChild(otro);
 }
 
 async function loginConEmail(){
-  const email = document.getElementById('inp-email').value.trim();
-  const pass = document.getElementById('inp-pass').value;
-  const errDiv = document.getElementById('login-error');
+  const email=document.getElementById('inp-email').value.trim();
+  const pass=document.getElementById('inp-pass').value;
+  const errDiv=document.getElementById('login-error');
   errDiv.style.display='none';
-  if(!email||!pass){ errDiv.textContent='Completá email y contraseña.'; errDiv.style.display=''; return; }
-  const {error} = await sb.auth.signInWithPassword({email, password: pass});
-  if(error){
-    errDiv.textContent = error.message.includes('Invalid') ? 'Email o contraseña incorrectos.' : error.message;
-    errDiv.style.display='';
-  } else { toggleModal(); }
+  if(!email||!pass){errDiv.textContent='Completá email y contraseña.';errDiv.style.display='';return;}
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){errDiv.textContent=error.message.includes('Invalid')?'Email o contraseña incorrectos.':error.message;errDiv.style.display='';}
+  else toggleModal();
 }
 
 async function registrarUsuario(){
-  const nombre = document.getElementById('reg-nombre').value.trim();
-  const apellido = document.getElementById('reg-apellido').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  const pass2 = document.getElementById('reg-pass2').value;
-  const username = document.getElementById('reg-username').value.trim();
-  const equipoId = document.getElementById('reg-equipo').value;
-  const errDiv = document.getElementById('reg-error');
-  errDiv.style.display='none'; errDiv.style.color='#e57373';
-  if(!nombre||!apellido||!email||!pass||!username||!equipoId){
-    errDiv.textContent='Completá todos los campos.'; errDiv.style.display=''; return;
-  }
-  if(pass!==pass2){ errDiv.textContent='Las contraseñas no coinciden.'; errDiv.style.display=''; return; }
-  if(pass.length<6){ errDiv.textContent='La contraseña debe tener al menos 6 caracteres.'; errDiv.style.display=''; return; }
-  const {data,error} = await sb.auth.signUp({email, password:pass, options:{data:{nombre,apellido,username}}});
-  if(error){ errDiv.textContent=error.message; errDiv.style.display=''; return; }
-  if(data.user){
-    await sb.from('perfiles').insert({
-      id:data.user.id, nombre, apellido, username,
-      equipo_id: equipoId==='otro'?null:parseInt(equipoId),
-      rol:'usuario', rango:'Simpatizante'
-    });
-  }
+  const nombre=document.getElementById('reg-nombre').value.trim();
+  const apellido=document.getElementById('reg-apellido').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  const pass2=document.getElementById('reg-pass2').value;
+  const username=document.getElementById('reg-username').value.trim();
+  const equipoId=document.getElementById('reg-equipo').value;
+  const errDiv=document.getElementById('reg-error');
+  errDiv.style.display='none';errDiv.style.color='#e57373';
+  if(!nombre||!apellido||!email||!pass||!username||!equipoId){errDiv.textContent='Completá todos los campos.';errDiv.style.display='';return;}
+  if(pass!==pass2){errDiv.textContent='Las contraseñas no coinciden.';errDiv.style.display='';return;}
+  if(pass.length<6){errDiv.textContent='La contraseña debe tener al menos 6 caracteres.';errDiv.style.display='';return;}
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre,apellido,username}}});
+  if(error){errDiv.textContent=error.message;errDiv.style.display='';return;}
+  if(data.user) await sb.from('perfiles').insert({id:data.user.id,nombre,apellido,username,equipo_id:equipoId==='otro'?null:parseInt(equipoId),rol:'usuario',rango:'Simpatizante'});
   errDiv.style.color='#4caf50';
   errDiv.textContent='¡Cuenta creada! Revisá tu email para confirmar.';
   errDiv.style.display='';
 }
 
 async function recuperarPass(){
-  const email = document.getElementById('rec-email').value.trim();
-  const msgDiv = document.getElementById('rec-msg');
-  if(!email){ msgDiv.textContent='Ingresá tu email.'; msgDiv.style.color='#e57373'; msgDiv.style.display=''; return; }
-  const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo: window.location.origin+window.location.pathname});
-  msgDiv.textContent = error ? error.message : 'Si el email existe, recibirás el link en minutos.';
-  msgDiv.style.color = error ? '#e57373' : '#4caf50';
+  const email=document.getElementById('rec-email').value.trim();
+  const msgDiv=document.getElementById('rec-msg');
+  if(!email){msgDiv.textContent='Ingresá tu email.';msgDiv.style.color='#e57373';msgDiv.style.display='';return;}
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  msgDiv.textContent=error?error.message:'Si el email existe, recibirás el link en minutos.';
+  msgDiv.style.color=error?'#e57373':'#4caf50';
   msgDiv.style.display='';
 }
 
 async function cerrarSesion(){
   await sb.auth.signOut();
-  USUARIO_ACTUAL=null; PERFIL_ACTUAL=null;
+  USUARIO_ACTUAL=null;PERFIL_ACTUAL=null;
   actualizarBtnUsuario();
   toggleModal();
 }
 
 async function cargarPerfil(userId){
-  const {data} = await sb.from('perfiles').select('*,equipos(nombre)').eq('id',userId).maybeSingle();
-  if(data){ PERFIL_ACTUAL=data; PERFIL_ACTUAL._equipo_nombre=data.equipos?.nombre||''; }
+  const {data}=await sb.from('perfiles').select('*,equipos(nombre)').eq('id',userId).maybeSingle();
+  if(data){PERFIL_ACTUAL=data;PERFIL_ACTUAL._equipo_nombre=data.equipos?.nombre||'';}
   actualizarBtnUsuario();
 }
 
 function actualizarBtnUsuario(){
-  const btn = document.querySelector('.user-btn');
+  const btn=document.querySelector('.user-btn');
   if(!btn) return;
   if(PERFIL_ACTUAL){
-    btn.innerHTML = escudoHTML(PERFIL_ACTUAL._equipo_nombre,'me')||'👤';
-    btn.title = PERFIL_ACTUAL.username;
-    btn.onclick = ()=>{ mostrarModalPerfil(); if(!document.getElementById('modal-overlay').classList.contains('open')) toggleModal(); };
+    btn.innerHTML=escudoHTML(PERFIL_ACTUAL._equipo_nombre,'me')||'👤';
+    btn.title=PERFIL_ACTUAL.username;
+    btn.onclick=()=>{mostrarModalPerfil();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();};
   } else {
-    btn.innerHTML = '👤';
-    btn.title = 'Iniciar sesión';
-    btn.onclick = ()=>{ mostrarModalLogin(); if(!document.getElementById('modal-overlay').classList.contains('open')) toggleModal(); };
+    btn.innerHTML='👤';btn.title='Iniciar sesión';
+    btn.onclick=()=>{mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();};
   }
 }
 
-sb.auth.onAuthStateChange(async (event, session)=>{
-  USUARIO_ACTUAL = session?.user||null;
-  if(USUARIO_ACTUAL){ await cargarPerfil(USUARIO_ACTUAL.id); }
-  else { PERFIL_ACTUAL=null; actualizarBtnUsuario(); }
+sb.auth.onAuthStateChange(async(event,session)=>{
+  USUARIO_ACTUAL=session?.user||null;
+  if(USUARIO_ACTUAL) await cargarPerfil(USUARIO_ACTUAL.id);
+  else{PERFIL_ACTUAL=null;actualizarBtnUsuario();}
   if(document.getElementById('page-foro')?.classList.contains('active')) renderForoPage();
 });
 
 // ── FORO ──
 let FORO_MENSAJES = [];
-let FORO_CARGADO = false;
 let FORO_REFRESH_INTERVAL = null;
-const COOLDOWN_MS = 60000; // 1 minuto entre mensajes
 
 function tiempoRelativo(ts){
   const diff=(Date.now()-new Date(ts))/1000;
@@ -714,24 +678,21 @@ function tiempoRelativo(ts){
 }
 
 async function renderForoPage(){
-  const page = document.getElementById('page-foro');
+  const page=document.getElementById('page-foro');
   if(!page) return;
-
   if(!USUARIO_ACTUAL){
-    page.innerHTML = `<div style="max-width:600px;margin:2rem auto;text-align:center;">
+    page.innerHTML=`<div style="max-width:600px;margin:2rem auto;text-align:center;">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2.5rem 1.5rem;">
         <div style="font-size:48px;margin-bottom:1rem;">⚽</div>
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.5rem;">Foro Federal A</div>
-        <div style="color:var(--muted);font-size:14px;margin-bottom:1.5rem;">Iniciá sesión para participar del foro.</div>
-        <button class="modal-btn" style="width:auto;padding:.6rem 2rem;" onclick="mostrarModalLogin();toggleModal();">Iniciar sesión</button>
-        <div style="margin-top:1rem;font-size:13px;color:var(--muted);">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer;" onclick="mostrarModalRegistro();toggleModal();">Registrate</span></div>
+        <div style="color:var(--muted);font-size:14px;margin-bottom:1.5rem;">Iniciá sesión para participar.</div>
+        <button class="modal-btn" style="width:auto;padding:.6rem 2rem;" onclick="mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();">Iniciar sesión</button>
+        <div style="margin-top:1rem;font-size:13px;color:var(--muted);">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer;" onclick="mostrarModalRegistro();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();">Registrate</span></div>
       </div>
     </div>`;
     return;
   }
-
-  // Render input area
-  const inputHtml = `<div style="max-width:700px;margin:0 auto 1rem;">
+  const inputHtml=`<div style="max-width:700px;margin:0 auto 1rem;">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;">
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
         ${escudoHTML(PERFIL_ACTUAL?._equipo_nombre||'','me')}
@@ -744,93 +705,77 @@ async function renderForoPage(){
       </div>
     </div>
   </div>`;
-
-  page.innerHTML = inputHtml + `<div id="foro-mensajes-cont" style="max-width:700px;margin:0 auto;"></div>`;
-
+  page.innerHTML=inputHtml+`<div id="foro-mensajes-cont" style="max-width:700px;margin:0 auto;"></div>`;
   await cargarMensajesForo();
-
-  // Refresh every 30s
   if(FORO_REFRESH_INTERVAL) clearInterval(FORO_REFRESH_INTERVAL);
-  FORO_REFRESH_INTERVAL = setInterval(cargarMensajesForo, 30000);
+  FORO_REFRESH_INTERVAL=setInterval(cargarMensajesForo,30000);
 }
 
 async function cargarMensajesForo(){
-  const cont = document.getElementById('foro-mensajes-cont');
+  const cont=document.getElementById('foro-mensajes-cont');
   if(!cont) return;
-  const {data} = await sb.from('mensajes')
-    .select('id,contenido,created_at,editado,usuario_id,perfiles(username,rango,equipo_id,equipos(nombre))')
+  const {data}=await sb.from('mensajes')
+    .select('id,contenido,created_at,editado,usuario_id,perfiles(username,rango,equipos(nombre))')
     .eq('eliminado',false)
     .order('created_at',{ascending:false})
     .limit(100);
-  FORO_MENSAJES = data||[];
-  renderMensajes();
-}
-
-async function cargarVotos(){
-  if(!FORO_MENSAJES.length) return {};
-  const ids = FORO_MENSAJES.map(m=>m.id);
-  const {data} = await sb.from('votos').select('mensaje_id,valor,usuario_id').in('mensaje_id',ids);
-  const map = {};
-  (data||[]).forEach(v=>{
-    if(!map[v.mensaje_id]) map[v.mensaje_id]={total:0,mio:null};
-    map[v.mensaje_id].total+=v.valor;
-    if(USUARIO_ACTUAL && v.usuario_id===USUARIO_ACTUAL.id) map[v.mensaje_id].mio=v.valor;
-  });
-  return map;
+  FORO_MENSAJES=data||[];
+  await renderMensajes();
 }
 
 async function renderMensajes(){
-  const cont = document.getElementById('foro-mensajes-cont');
-  if(!cont||!FORO_MENSAJES.length){ if(cont) cont.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún. ¡Sé el primero!</div>'; return; }
-  const votos = await cargarVotos();
-  cont.innerHTML = FORO_MENSAJES.map(m=>{
-    const perfil = m.perfiles;
-    const equipoNombre = perfil?.equipos?.nombre||'';
-    const escudo = escudoHTML(equipoNombre,'me');
-    const v = votos[m.id]||{total:0,mio:null};
-    const vColor = v.total>0?'#4caf50':v.total<0?'#e57373':'var(--muted)';
-    const esMio = USUARIO_ACTUAL && m.usuario_id===USUARIO_ACTUAL.id;
+  const cont=document.getElementById('foro-mensajes-cont');
+  if(!cont) return;
+  if(!FORO_MENSAJES.length){cont.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún. ¡Sé el primero!</div>';return;}
+  // Load votes
+  const ids=FORO_MENSAJES.map(m=>m.id);
+  const {data:votosData}=await sb.from('votos').select('mensaje_id,valor,usuario_id').in('mensaje_id',ids);
+  const votosMap={};
+  (votosData||[]).forEach(v=>{
+    if(!votosMap[v.mensaje_id]) votosMap[v.mensaje_id]={total:0,mio:null};
+    votosMap[v.mensaje_id].total+=v.valor;
+    if(USUARIO_ACTUAL&&v.usuario_id===USUARIO_ACTUAL.id) votosMap[v.mensaje_id].mio=v.valor;
+  });
+  cont.innerHTML=FORO_MENSAJES.map(m=>{
+    const p=m.perfiles;
+    const eq=p?.equipos?.nombre||'';
+    const v=votosMap[m.id]||{total:0,mio:null};
+    const vCol=v.total>0?'#4caf50':v.total<0?'#e57373':'var(--muted)';
+    const esMio=USUARIO_ACTUAL&&m.usuario_id===USUARIO_ACTUAL.id;
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.85rem 1rem;margin-bottom:.65rem;">
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
-        ${escudo}
-        <span style="font-weight:700;font-size:13px;">${perfil?.username||'?'}</span>
-        <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:1px 7px;border-radius:8px;">${perfil?.rango||''}</span>
+        ${escudoHTML(eq,'me')}
+        <span style="font-weight:700;font-size:13px;">${p?.username||'?'}</span>
+        <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:1px 7px;border-radius:8px;">${p?.rango||''}</span>
         <span style="font-size:11px;color:var(--muted);margin-left:auto;">${tiempoRelativo(m.created_at)}</span>
-        ${esMio?`<span style="font-size:11px;color:#e57373;cursor:pointer;" onclick="eliminarMensaje(${m.id})">🗑</span>`:''}
+        ${esMio?`<span style="font-size:11px;color:#e57373;cursor:pointer;margin-left:.25rem;" onclick="eliminarMensaje(${m.id})">🗑</span>`:''}
       </div>
-      <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;">${m.contenido}</div>
-      <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
-        <button onclick="votar(${m.id},1)" style="background:none;border:none;cursor:pointer;font-size:16px;opacity:${v.mio===1?1:.4};padding:0;" title="Me gusta">👍</button>
-        <span style="font-size:12px;font-weight:700;color:${vColor};min-width:20px;text-align:center;">${v.total>0?'+':''}${v.total}</span>
-        <button onclick="votar(${m.id},-1)" style="background:none;border:none;cursor:pointer;font-size:16px;opacity:${v.mio===-1?1:.4};padding:0;" title="No me gusta">👎</button>
+      <div style="font-size:14px;line-height:1.55;white-space:pre-wrap;">${m.contenido.replace(/</g,'&lt;')}</div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;">
+        <button onclick="votar(${m.id},1)" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${v.mio===1?1:.4};padding:2px;">👍</button>
+        <span style="font-size:12px;font-weight:700;color:${vCol};min-width:20px;text-align:center;">${v.total>0?'+':''}${v.total}</span>
+        <button onclick="votar(${m.id},-1)" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${v.mio===-1?1:.4};padding:2px;">👎</button>
       </div>
     </div>`;
   }).join('');
 }
 
 async function publicarMensaje(){
-  if(!USUARIO_ACTUAL||!PERFIL_ACTUAL){ mostrarModalLogin(); toggleModal(); return; }
-  const txt = document.getElementById('foro-input')?.value.trim();
+  if(!USUARIO_ACTUAL||!PERFIL_ACTUAL){mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();return;}
+  const txt=document.getElementById('foro-input')?.value.trim();
   if(!txt) return;
-  const {error} = await sb.from('mensajes').insert({
-    foro_id:1, usuario_id:USUARIO_ACTUAL.id, contenido:txt
-  });
-  if(!error){
-    document.getElementById('foro-input').value='';
-    await cargarMensajesForo();
-  }
+  const {error}=await sb.from('mensajes').insert({foro_id:1,usuario_id:USUARIO_ACTUAL.id,contenido:txt});
+  if(!error){document.getElementById('foro-input').value='';await cargarMensajesForo();}
 }
 
-async function votar(mensajeId, valor){
-  if(!USUARIO_ACTUAL){ mostrarModalLogin(); toggleModal(); return; }
-  // Toggle: if same vote, remove it
-  const {data:existing} = await sb.from('votos')
-    .select('id,valor').eq('mensaje_id',mensajeId).eq('usuario_id',USUARIO_ACTUAL.id).maybeSingle();
-  if(existing){
-    if(existing.valor===valor){ await sb.from('votos').delete().eq('id',existing.id); }
-    else { await sb.from('votos').update({valor}).eq('id',existing.id); }
+async function votar(mensajeId,valor){
+  if(!USUARIO_ACTUAL){mostrarModalLogin();if(!document.getElementById('modal-overlay').classList.contains('open'))toggleModal();return;}
+  const {data:ex}=await sb.from('votos').select('id,valor').eq('mensaje_id',mensajeId).eq('usuario_id',USUARIO_ACTUAL.id).maybeSingle();
+  if(ex){
+    if(ex.valor===valor) await sb.from('votos').delete().eq('id',ex.id);
+    else await sb.from('votos').update({valor}).eq('id',ex.id);
   } else {
-    await sb.from('votos').insert({mensaje_id:mensajeId, usuario_id:USUARIO_ACTUAL.id, valor});
+    await sb.from('votos').insert({mensaje_id:mensajeId,usuario_id:USUARIO_ACTUAL.id,valor});
   }
   await renderMensajes();
 }
@@ -841,11 +786,1019 @@ async function eliminarMensaje(id){
   await cargarMensajesForo();
 }
 
-function renderForoLocal(){ renderForoPage(); }
+const ESCUDOS = {};
+const FIXTURE = {"Zona A":{"1":[{"local":"El Linqueño","visitante":"Sp. Las Parejas","gl":1,"gv":0},{"local":"Independiente (Ch)","visitante":"Atlético Escobar","gl":2,"gv":1},{"local":"Sp. Belgrano","visitante":"9 de Julio (Rafaela)","gl":3,"gv":0},{"local":"Douglas Haig","visitante":"Gimnasia (Ch)","gl":2,"gv":1},{"local":"Defensores (VR)","visitante":"Gimnasia (CDU)","gl":2,"gv":1}],"2":[{"local":"Defensores (VR)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Las Parejas","gl":null,"gv":null}],"3":[{"local":"El Linqueño","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Defensores (VR)","gl":null,"gv":null}],"4":[{"local":"Douglas Haig","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Atlético Escobar","gl":null,"gv":null}],"5":[{"local":"El Linqueño","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Douglas Haig","gl":null,"gv":null}],"6":[{"local":"Sp. Belgrano","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"7":[{"local":"El Linqueño","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null}],"8":[{"local":"Independiente (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"9":[{"local":"El Linqueño","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Independiente (Ch)","gl":null,"gv":null}],"10":[{"local":"Sp. Las Parejas","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Defensores (VR)","gl":null,"gv":null}],"11":[{"local":"El Linqueño","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Atlético Escobar","gl":null,"gv":null}],"12":[{"local":"Atlético Escobar","visitante":"El Linqueño","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Douglas Haig","gl":null,"gv":null}],"13":[{"local":"El Linqueño","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"14":[{"local":"9 de Julio (Rafaela)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Belgrano","gl":null,"gv":null}],"15":[{"local":"El Linqueño","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"16":[{"local":"Gimnasia (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Independiente (Ch)","gl":null,"gv":null}],"17":[{"local":"El Linqueño","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null}],"18":[{"local":"Gimnasia (CDU)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null}]},"Zona B":{"1":[{"local":"Sarmiento (R)","visitante":"Juv. Antoniana","gl":1,"gv":3},{"local":"Boca Unidos","visitante":"Sarmiento (LB)","gl":3,"gv":1},{"local":"Tucumán Central","visitante":"Bartolomé Mitre","gl":1,"gv":0},{"local":"San Martín (F)","visitante":"Defensores (PV)","gl":2,"gv":1}],"2":[{"local":"Defensores (PV)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sol de América (F)","gl":null,"gv":null}],"3":[{"local":"Sol de América (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"San Martín (F)","gl":null,"gv":null}],"4":[{"local":"San Martín (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"5":[{"local":"Juv. Antoniana","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Tucumán Central","gl":null,"gv":null}],"6":[{"local":"Tucumán Central","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"7":[{"local":"Sarmiento (LB)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Boca Unidos","gl":null,"gv":null}],"8":[{"local":"Boca Unidos","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"9":[{"local":"Bartolomé Mitre","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Sarmiento (R)","gl":null,"gv":null}],"10":[{"local":"Juv. Antoniana","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"San Martín (F)","gl":null,"gv":null}],"11":[{"local":"Tucumán Central","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"12":[{"local":"Sarmiento (LB)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Tucumán Central","gl":null,"gv":null}],"13":[{"local":"Boca Unidos","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"14":[{"local":"Bartolomé Mitre","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Boca Unidos","gl":null,"gv":null}],"15":[{"local":"Sarmiento (R)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"16":[{"local":"Defensores (PV)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Sarmiento (R)","gl":null,"gv":null}],"17":[{"local":"Sol de América (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Defensores (PV)","gl":null,"gv":null}],"18":[{"local":"San Martín (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sol de América (F)","gl":null,"gv":null}]},"Zona C":{"1":[{"local":"Costa Brava","visitante":"FADEP","gl":3,"gv":0},{"local":"Huracán LH","visitante":"Argentino (MM)","gl":0,"gv":0},{"local":"San Martín (M)","visitante":"Juv. Unida (SL)","gl":0,"gv":0},{"local":"Atenas (RC)","visitante":"Cipolletti","gl":3,"gv":1}],"2":[{"local":"Cipolletti","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"FADEP","visitante":"Dep. Rincón","gl":null,"gv":null}],"3":[{"local":"Dep. Rincón","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Cipolletti","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Atenas (RC)","gl":null,"gv":null}],"4":[{"local":"Atenas (RC)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"FADEP","gl":null,"gv":null}],"5":[{"local":"FADEP","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"San Martín (M)","gl":null,"gv":null}],"6":[{"local":"San Martín (M)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Cipolletti","visitante":"FADEP","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Argentino (MM)","gl":null,"gv":null}],"7":[{"local":"Argentino (MM)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"FADEP","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Huracán LH","gl":null,"gv":null}],"8":[{"local":"Huracán LH","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"FADEP","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"9":[{"local":"Juv. Unida (SL)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"FADEP","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Costa Brava","gl":null,"gv":null}],"10":[{"local":"FADEP","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Atenas (RC)","gl":null,"gv":null}],"11":[{"local":"San Martín (M)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"FADEP","gl":null,"gv":null}],"12":[{"local":"Argentino (MM)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"San Martín (M)","gl":null,"gv":null}],"13":[{"local":"Huracán LH","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"FADEP","visitante":"Argentino (MM)","gl":null,"gv":null}],"14":[{"local":"Juv. Unida (SL)","visitante":"FADEP","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Huracán LH","gl":null,"gv":null}],"15":[{"local":"Costa Brava","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"FADEP","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"16":[{"local":"Cipolletti","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"FADEP","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Costa Brava","gl":null,"gv":null}],"17":[{"local":"Dep. Rincón","visitante":"Huracán LH","gl":null,"gv":null},{"local":"FADEP","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Cipolletti","gl":null,"gv":null}],"18":[{"local":"Atenas (RC)","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"FADEP","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Dep. Rincón","gl":null,"gv":null}]},"Zona D":{"1":[{"local":"Kimberley","visitante":"Villa Mitre","gl":1,"gv":0},{"local":"Sol de Mayo","visitante":"Germinal","gl":1,"gv":1},{"local":"Gmo. Brown (PM)","visitante":"Santamarina","gl":2,"gv":2},{"local":"Olimpo","visitante":"Alvarado","gl":2,"gv":0}],"2":[{"local":"Alvarado","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Santamarina","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Germinal","visitante":"Kimberley","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Círculo Dep.","gl":null,"gv":null}],"3":[{"local":"Círculo Dep.","visitante":"Germinal","gl":null,"gv":null},{"local":"Kimberley","visitante":"Santamarina","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Alvarado","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Olimpo","gl":null,"gv":null}],"4":[{"local":"Olimpo","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Alvarado","visitante":"Kimberley","gl":null,"gv":null},{"local":"Santamarina","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Germinal","visitante":"Villa Mitre","gl":null,"gv":null}],"5":[{"local":"Villa Mitre","visitante":"Santamarina","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Alvarado","gl":null,"gv":null},{"local":"Kimberley","visitante":"Olimpo","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"6":[{"local":"Gmo. Brown (PM)","visitante":"Kimberley","gl":null,"gv":null},{"local":"Olimpo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Alvarado","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Santamarina","visitante":"Germinal","gl":null,"gv":null}],"7":[{"local":"Germinal","visitante":"Alvarado","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Olimpo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Kimberley","visitante":"Sol de Mayo","gl":null,"gv":null}],"8":[{"local":"Sol de Mayo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Olimpo","visitante":"Germinal","gl":null,"gv":null},{"local":"Alvarado","visitante":"Santamarina","gl":null,"gv":null}],"9":[{"local":"Santamarina","visitante":"Olimpo","gl":null,"gv":null},{"local":"Germinal","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Kimberley","gl":null,"gv":null}],"10":[{"local":"Villa Mitre","visitante":"Kimberley","gl":null,"gv":null},{"local":"Germinal","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Alvarado","visitante":"Olimpo","gl":null,"gv":null}],"11":[{"local":"Gmo. Brown (PM)","visitante":"Alvarado","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Kimberley","visitante":"Germinal","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Villa Mitre","gl":null,"gv":null}],"12":[{"local":"Germinal","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Santamarina","visitante":"Kimberley","gl":null,"gv":null},{"local":"Alvarado","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Olimpo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"13":[{"local":"Sol de Mayo","visitante":"Olimpo","gl":null,"gv":null},{"local":"Kimberley","visitante":"Alvarado","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Santamarina","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Germinal","gl":null,"gv":null}],"14":[{"local":"Santamarina","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Alvarado","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Olimpo","visitante":"Kimberley","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Sol de Mayo","gl":null,"gv":null}],"15":[{"local":"Kimberley","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Olimpo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Alvarado","gl":null,"gv":null},{"local":"Germinal","visitante":"Santamarina","gl":null,"gv":null}],"16":[{"local":"Alvarado","visitante":"Germinal","gl":null,"gv":null},{"local":"Olimpo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Kimberley","gl":null,"gv":null}],"17":[{"local":"Círculo Dep.","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Germinal","visitante":"Olimpo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Alvarado","gl":null,"gv":null}],"18":[{"local":"Olimpo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Germinal","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Kimberley","visitante":"Círculo Dep.","gl":null,"gv":null}]}};
+
+const ZONAS=["Zona A","Zona B","Zona C","Zona D"];
+let fechaActual=1,fxZona="Zona A";
+
+function ini(n){return n.split(/\s+/).map(p=>p[0]).join("").substring(0,2).toUpperCase();}
+
+function calcTabla(zona){
+  const eq={};
+  // Collect all matches
+  const partidos=[];
+  for(let f=1;f<=18;f++){
+    (FIXTURE[zona][String(f)]||[]).forEach(m=>{
+      [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+      if(m.gl===null)return;
+      partidos.push(m);
+      eq[m.local].pj++;eq[m.visitante].pj++;
+      eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
+      eq[m.visitante].gf+=m.gv;eq[m.visitante].gc+=m.gl;
+      if(m.gl>m.gv){eq[m.local].g++;eq[m.local].pts+=3;eq[m.visitante].p++;}
+      else if(m.gl<m.gv){eq[m.visitante].g++;eq[m.visitante].pts+=3;eq[m.local].p++;}
+      else{eq[m.local].e++;eq[m.visitante].e++;eq[m.local].pts++;eq[m.visitante].pts++;}
+    });
+  }
+  const all=new Set();
+  for(let f=1;f<=18;f++){(FIXTURE[zona][String(f)]||[]).forEach(m=>{all.add(m.local);all.add(m.visitante);});}
+  all.forEach(t=>{if(!eq[t])eq[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+
+  // H2H: calcular minitabla entre equipos empatados en puntos
+  const calcH2H = (equipos) => {
+    // Only between the tied teams
+    const h2h={};
+    equipos.forEach(e=>{h2h[e]={pts:0,dif:0,gf:0,gv:0};});
+    partidos.forEach(m=>{
+      if(!equipos.includes(m.local)||!equipos.includes(m.visitante)) return;
+      h2h[m.local].gf+=m.gl; h2h[m.local].dif+=m.gl-m.gv; h2h[m.visitante].gf+=m.gv; h2h[m.visitante].dif+=m.gv-m.gl;
+      h2h[m.visitante].gfv=(h2h[m.visitante].gfv||0)+m.gv; // goles como visitante en H2H
+      if(m.gl>m.gv){h2h[m.local].pts+=3;}
+      else if(m.gl<m.gv){h2h[m.visitante].pts+=3;}
+      else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
+    });
+    return h2h;
+  };
+
+  // Sort with H2H tiebreaker
+  const rows = Object.entries(eq).map(([n,s])=>({n,...s,h2h:'—'}));
+
+  // Group by pts, apply H2H within groups
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    return 0; // temp, will resolve below
+  });
+
+  // Find groups with same pts
+  const ptGroups={};
+  rows.forEach(r=>{
+    if(!ptGroups[r.pts]) ptGroups[r.pts]=[];
+    ptGroups[r.pts].push(r.n);
+  });
+
+  // For each group with 2+ teams, compute H2H and assign rank
+  const h2hRank={};
+  Object.entries(ptGroups).forEach(([pts,teams])=>{
+    if(teams.length<2) return;
+    const h2h=calcH2H(teams);
+    // Sort by H2H: pts → dif → gf → gv
+    const sorted=[...teams].sort((a,b)=>
+      (h2h[b].pts-h2h[a].pts)||
+      (h2h[b].dif-h2h[a].dif)||
+      (h2h[b].gf-h2h[a].gf)||
+      (h2h[b].gv-h2h[a].gv)||
+      ((eq[b].gf-eq[b].gc)-(eq[a].gf-eq[a].gc))||
+      (eq[b].gf-eq[a].gf)||
+      0
+    );
+    // Assign H2H display string and rank within group
+    sorted.forEach((t,i)=>{
+      h2hRank[t]={rank:i, label:`${h2h[t].pts}`};
+    });
+    // Store H2H match data for tooltip
+    const h2hMatches = partidos.filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
+    // Update h2h field in rows
+    rows.forEach(r=>{
+      if(teams.includes(r.n)){
+        r.h2h = h2hRank[r.n]?.label||'—';
+        r.h2hMatches = h2hMatches;
+        r.h2hGroup = teams;
+      }
+    });
+  });
+
+  // Final sort: pts → H2H rank → general dif → general gf → gv visitante
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    // Same pts group: use H2H rank
+    const ra=h2hRank[a.n]?.rank??0;
+    const rb=h2hRank[b.n]?.rank??0;
+    if(ra!==rb) return ra-rb;
+    // General tiebreakers
+    return ((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||(b.gf-b.pj)-(a.gf-a.pj)||0;
+  });
+
+  return rows;
+}
+
+// Datos extra por partido: hora programada y stream URL
+// Clave: "ZonaX_f_local_visitante" — se puede cargar desde el admin
+const PARTIDO_META = {
+  // Ejemplo: "Zona A_1_El Linqueño_Sp. Las Parejas": {dia:"2026-04-01", hora:"15:30", stream:"https://youtube.com/..."}
+};
+const PLANILLA_CARGADA = {};
+const ZONA_COLORES = {
+  "Zona A": { color: "#cc7733", text: "#f5f5f5", code: "A" },
+  "Zona B": { color: "#e87aaa", text: "#111111", code: "B" },
+  "Zona C": { color: "#ffff33", text: "#111111", code: "C" },
+  "Zona D": { color: "#3366cc", text: "#ffffff", code: "D" },
+};
+
+function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
+function letraZona(z){ return (z || "").replace("Zona ","").trim(); }
+function zonaConfig(z){
+  return ZONA_COLORES[z] || { color: "#888888", text: "#111111", code: letraZona(z) };
+}
+function horaOrden(h){
+  if(!h) return 9999;
+  const m = String(h).match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return 9999;
+  return (parseInt(m[1],10) * 60) + parseInt(m[2],10);
+}
+function diaKey(metaDia){
+  if(!metaDia) return "sin_dia";
+  return String(metaDia).slice(0,10);
+}
+function diaTitulo(metaDia){
+  if(!metaDia) return { dia: "Sin día confirmado", fecha: "" };
+  const d = new Date(String(metaDia) + "T00:00:00");
+  const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const dia = dias[d.getDay()] || "Día";
+  const p = String(metaDia).split("-");
+  const fecha = p.length >= 3 ? `${p[2]}/${p[1]}` : "";
+  return { dia, fecha };
+}
+
+function fechaInteligente(){
+  // 1. Buscar fecha con al menos un partido programado (tiene dia u hora en PARTIDO_META)
+  for(let f=1;f<=18;f++){
+    const tieneProgramado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>{
+      const key = `${z}_${f}_${m.local}_${m.visitante}`;
+      const meta = PARTIDO_META[key];
+      return m.gl===null && (meta?.dia || meta?.hora);
+    }));
+    if(tieneProgramado) return f;
+  }
+  // 2. Si no hay programados, mostrar la última fecha con partidos jugados
+  let ultimaJugada = 1;
+  for(let f=1;f<=18;f++){
+    const tieneJugado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
+    if(tieneJugado) ultimaJugada = f;
+  }
+  return ultimaJugada;
+  // fallbackstrar la última
+}
+
+function escudoHTML(nombre, size='esc'){
+  const url = ESCUDOS[nombre];
+  const i = ini(nombre);
+  return url
+    ? `<div class="${size}"><img src="${url}" alt="${nombre}"></div>`
+    : `<div class="${size}">${i}</div>`;
+}
+
+function renderPartidos(f){
+  document.getElementById("fnum-txt").textContent="Fecha "+f;
+  // Highlight active fecha in picker
+  for(let i=1;i<=18;i++){
+    const el=document.getElementById("fp-"+i);
+    if(el) el.style.color = i===f ? "var(--accent)" : "";
+    if(el) el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
+  }
+  const todosJugados=ZONAS.every(z=>(FIXTURE[z][String(f)]||[]).every(m=>m.gl!==null));
+  const algunoJugado=ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
+  const badge=document.getElementById("badge");
+  if(todosJugados){badge.textContent="JUGADO";badge.className="badge-j";}
+  else if(algunoJugado){badge.textContent="EN CURSO";badge.className="badge-ec";}
+  else{badge.textContent="PRÓXIMA";badge.className="badge-p";}
+  document.getElementById("btn-prev").classList.toggle("dis",f<=1);
+  document.getElementById("btn-next").classList.toggle("dis",f>=18);
+  const rows = [];
+  ZONAS.forEach(z => {
+    const ms = FIXTURE[z][String(f)] || [];
+    ms.forEach(m => {
+      const meta = PARTIDO_META[getMetaKey(z,f,m.local,m.visitante)] || {};
+      rows.push({ zona: z, m, meta });
+    });
+  });
+
+  rows.sort((a,b)=>{
+    // Sin día van al final
+    const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
+    const kd = ad.localeCompare(bd);
+    if(kd !== 0) return kd;
+    // Por hora
+    const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+    if(kh !== 0) return kh;
+    // Por zona
+    return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
+  });
+
+  let html="";
+  let diaActual = null;
+  rows.forEach(({zona, m, meta}) => {
+    const esEnVivo = m.estado === "en_curso";
+    const esFuturo = m.gl === null && !esEnVivo;
+    const liveClass = esEnVivo ? " partido-live" : "";
+    const dKey = diaKey(meta.dia);
+    if(dKey !== diaActual){
+      diaActual = dKey;
+      const t = diaTitulo(meta.dia);
+      html += t.fecha
+        ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
+        : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
+    }
+
+    // minuto_actual: "19'|1|0" = minuto|rojas_local|rojas_visitante
+    const _minParts = m.minuto_actual ? m.minuto_actual.split('|') : [];
+    const _min = _minParts[0] || null;
+    const _rl = parseInt(_minParts[1]||'0');
+    const _rv = parseInt(_minParts[2]||'0');
+    const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
+    const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
+    const rojasLocal = esEnVivo && _rl > 0 ? rojaIcon.repeat(_rl) : "";
+    const rojasVisit = esEnVivo && _rv > 0 ? rojaIcon.repeat(_rv) : "";
+
+    let centro;
+    if(m.gl!==null){
+      const scoreClass = esEnVivo ? "score score-live" : "score";
+      centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+    } else if(meta.hora){
+      centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
+    } else {
+      centro=`<div class="vs">VS</div>`;
+    }
+
+    // gol_contra: swap sides - counts for the OTHER team
+    const golesLocal = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="visitante":g.equipo==="local");
+    const golesVisit = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="local":g.equipo==="visitante");
+    const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
+    // Format: "N. Apellido" - primera letra del nombre + apellido
+    const fmtMiniNombre = nombre => {
+      if(!nombre) return "?";
+      const parts = nombre.trim().split(/\s+/);
+      if(parts.length === 1) return parts[0];
+      return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
+    };
+    const fmtMiniGol = g => {
+      const ec = g.tipo==="gol_contra" ? " <span style='color:vf0f0f0;font-size:10px;'>(E/C)</span>" : "";
+      const min = g.minuto || "";
+      return "<span class='mini-gol-min'>" + min + "'</span> <span class='mini-gol-nombre'>" + fmtMiniNombre(g.nombre) + "</span>" + ec;
+    };
+    const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
+      .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+    const _zc = zonaConfig(zona);
+    const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
+    const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
+
+    // Info bar: for live = arbitro only; for programmed = estadio + arbitro
+    const infoItems = [];
+    if(esEnVivo){
+      if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
+    } else {
+      if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
+      if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
+    }
+    const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
+      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
+        ${infoItems.join(' &nbsp;')}
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>` : "";
+
+    goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
+        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>` : "";
+
+    const streamBtn = meta.stream
+      ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
+      : `<div style="width:32px;flex-shrink:0"></div>`;
+    const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
+    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
+    const fichaBtn = m.gl!==null
+      ? tienePlanilla
+        ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
+        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
+      : `<div style="width:32px;flex-shrink:0"></div>`;
+    const zc = zonaConfig(zona);
+    const zonaShort = zc.code || letraZona(zona);
+
+    html+=`<div class="partido-wrap">
+      <div style="display:flex;align-items:stretch;gap:.4rem">
+        <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
+          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${esEnVivo&&_rl>0?' '+rojasLocal:''}</div></div>
+          <div class="res">${centro}</div>
+          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${esEnVivo&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.3rem;justify-content:center">
+          ${streamBtn}
+          ${fichaBtn}
+        </div>
+      </div>
+      ${goleadoresHTML}
+      ${infoBarHTML}
+    </div>`;
+  });
+  document.getElementById("partidos-cont").innerHTML=html;
+}
+
+async function verFicha(key, tienePlanilla){
+  if(!tienePlanilla){ alert("Planilla pendiente de carga."); return; }
+
+  // Find partido data from key
+  const [zona, fecha, ...rest] = key.split("_");
+  // key format: zona_fecha_local_visitante (but names have spaces replaced by _)
+  // Better: find in FIXTURE
+  const fichaModal = document.getElementById("ficha-modal");
+  const fichaCont = document.getElementById("ficha-cont");
+  if(!fichaModal||!fichaCont) return;
+
+  fichaCont.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">Cargando ficha...</div>';
+  fichaModal.style.display = "flex";
+
+  try {
+    // Find partido from PLANILLA_CARGADA key
+    const [pZona, pFecha, ...pRest] = key.split("_");
+    // Get partido from DB
+    const {data:partidos} = await sb.from("partidos")
+      .select("id, zona, fecha, equipo_local_nombre, equipo_visitante_nombre, goles_local, goles_visitante, estadio, arbitro, juez1, juez2, cuarto_arbitro, dia, hora, dt_local, dt_visitante")
+      .eq("zona", pZona)
+      .eq("fecha", parseInt(pFecha));
+
+    let partido = null;
+    if(partidos?.length){
+      // Find matching by key
+      partido = partidos.find(p => {
+        const k = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+        return k === key;
+      });
+    }
+    if(!partido){ fichaCont.innerHTML = '<div style="color:#e57373;padding:2rem;">No se encontró el partido.</div>'; return; }
+
+    // Get planillas
+    const {data:planillas} = await sb.from("planillas")
+      .select("id, equipo_id, numero_camiseta, titular, es_capitan, jugadores(id_federal, nombre_display, nombre), equipos(nombre)")
+      .eq("partido_id", partido.id)
+      .order("numero_camiseta");
+
+    const {data:eventos} = await sb.from("eventos")
+      .select("planilla_id, tipo, minuto, extra")
+      .in("planilla_id", (planillas||[]).map(p=>p.id));
+
+    const evByPlanilla = {};
+    (eventos||[]).forEach(ev => {
+      if(!evByPlanilla[ev.planilla_id]) evByPlanilla[ev.planilla_id] = [];
+      evByPlanilla[ev.planilla_id].push(ev);
+    });
+
+    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre, rivalPlanilla) => {
+      if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin planilla cargada.</div>';
+      // Goles en contra del rival que cuentan PARA este equipo
+      const golesContraFavor = (rivalPlanilla||[]).flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>ev.tipo==='gol_contra')
+          .map(ev=>({
+            icon: '<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>',
+            nombre: (pl.jugadores?.nombre_display||pl.jugadores?.nombre||"")+" (E/C)",
+            minuto: ev.minuto,
+            asist: "",
+            tipo: "gol_contra",
+            contra: true
+          }))
+      );
+
+      const titulares = jugadoresEquipo.filter(j=>j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+      const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+      const todosJugadores = [...titulares, ...suplentes];
+
+      const evTooltip = (texto, chip) => {
+          const enc = encodeURIComponent(texto);
+          return `<span style="position:relative;display:inline-flex;cursor:default;"
+            onmouseenter="showEvTip(event,'${enc}')" onmouseleave="hideEvTip()"
+            ontouchstart="showEvTip(event,'${enc}',true)">${chip}</span>`;
+        };
+        const renderChip = (ev) => {
+        const min = String(ev.minuto||"");
+        const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
+        if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
+          const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
+            : "⚽";
+          const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
+          return evTooltip(`${tipo_label} — min. ${min}`, chip);
+        }
+        if(ev.tipo==="amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta amarilla — min. ${min}`, chip);
+        }
+        if(ev.tipo==="roja"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta roja directa — min. ${min}`, chip);
+        }
+        if(ev.tipo==="doble_amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:1px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;margin-left:-3px;"></span>${minSpan}</span>`;
+          return evTooltip(`Segunda amarilla (expulsión) — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_entra"){
+          const chip = `<span style="color:#4caf50;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↑${min}'</span>`;
+          return evTooltip(`Ingresó — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_sale"){
+          const chip = `<span style="color:#e57373;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↓${min}'</span>`;
+          return evTooltip(`Salió — min. ${min}`, chip);
+        }
+        if(ev.tipo==="asistencia"){
+          const chip = `<span style="font-size:12px;">👟</span>`;
+          return evTooltip(`Asistencia — min. ${min}${ev.extra?` (a ${ev.extra})`:''}`, chip);
+        }
+        if(ev.tipo==="penal_atajado"){
+          // If extra="arquero" → keeper chip 🧤, else → shooter missed ❌
+          const esArquero = ev.extra==="arquero";
+          const icon = esArquero ? "🧤" : "❌";
+          const label = esArquero ? "Penal atajado" : "Penal atajado (ejecutante)";
+          const chip = `<span style="font-size:13px;">${icon}</span>${minSpan}`;
+          return evTooltip(`${label} — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
+        if(ev.tipo==="penal_desviado"){
+          const chip = `<span style="font-size:13px;">❌</span>${minSpan}`;
+          return evTooltip(`Penal desviado — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
+        return "";
+      };
+
+      const renderJug = (pl, esTitular) => {
+        const evs = (evByPlanilla[pl.id] || []).sort((a,b)=>{
+          const n = s => { const p=String(s||"").split("+"); return parseInt(p[0]||0)*100+(parseInt(p[1]||0)); };
+          return n(a.minuto)-n(b.minuto);
+        });
+        const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
+        const esCapitan = pl.es_capitan;
+        const chips = evs.map(renderChip).filter(Boolean);
+        const ecChips = "";
+        const nombreSize = esTitular ? "14px" : "13px";
+        const capStr = esCapitan ? ` <span style="color:var(--accent);font-size:11px;font-weight:700;">(C)</span>` : "";
+        return `<div style="display:flex;align-items:center;gap:.5rem;padding:0 0;border-bottom:1px solid rgba(255,255,255,0.05);height:30px;box-sizing:border-box;overflow:hidden;">
+          <span style="font-size:13px;color:#bbb;width:20px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';font-weight:600;">${pl.numero_camiseta||""}</span>
+          <span style="font-size:${nombreSize};flex:1;line-height:1.3;font-family:'Barlow',sans-serif;${!esTitular&&!evs.length?'color:var(--muted);':''}">${nombre}${capStr}</span>
+          <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${chips.join("")}${ecChips}</span>
+        </div>`;
+      };
+
+      // Cambios summary
+      const cambios = [];
+      suplentes.forEach(sup => {
+        const entradaEv = (evByPlanilla[sup.id]||[]).find(e=>e.tipo==="cambio_entra");
+        if(!entradaEv) return;
+        const salePl = todosJugadores.find(j=>String(j.numero_camiseta)===String(entradaEv.extra));
+        const saleNombre = salePl ? (salePl.jugadores?.nombre_display||salePl.jugadores?.nombre||"?") : "?";
+        const entraNombre = sup.jugadores?.nombre_display||sup.jugadores?.nombre||"?";
+        cambios.push({minuto:entradaEv.minuto, entra:entraNombre, sale:saleNombre});
+      });
+      cambios.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+
+      // Tarjetas summary
+      const tarjetas = [];
+      todosJugadores.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="amarilla"||ev.tipo==="roja"||ev.tipo==="doble_amarilla"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            const icon = ev.tipo==="roja"
+              ? `<span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;vertical-align:middle;flex-shrink:0;"></span>`
+              : ev.tipo==="doble_amarilla"
+              ? `<span style="display:inline-flex;gap:1px;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;margin-left:-3px;"></span></span>`
+              : `<span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;vertical-align:middle;flex-shrink:0;"></span>`;
+            tarjetas.push({minuto:ev.minuto, nombre, icon});
+          }
+        });
+      });
+      tarjetas.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+
+      const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
+
+
+
+      const cambiosSec = cambios.length ? `
+        <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
+          ${secHeader("CAMBIOS")}
+          ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.35rem;min-height:24px;">
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${c.minuto}'</span>
+            <span style="color:#4caf50;font-size:13px;">${c.entra}</span>
+            <span style="color:var(--muted);font-size:12px;">⇄</span>
+            <span style="color:#e57373;font-size:13px;">${c.sale}</span>
+          </div>`).join("")}
+        </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
+
+      const tarjetasSec = tarjetas.length ? `
+        <div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
+          ${secHeader("TARJETAS")}
+          ${tarjetas.map(t=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
+            ${t.icon}
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${t.minuto}'</span>
+            <span style="font-size:13px;">${t.nombre}</span>
+          </div>`).join("")}
+        </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
+
+      return `
+        ${secHeader("👕 TITULARES")}
+        ${titulares.map(j=>renderJug(j,true)).join("")}
+        ${dtNombre?`<div style="font-size:14px;color:#ccc;padding:.55rem 0 .3rem;margin-top:.1rem;display:flex;align-items:center;gap:.5rem;"><span style="width:18px;text-align:right;flex-shrink:0;font-size:11px;color:transparent;">0</span><span>👔 ${dtNombre}</span></div>`:""}
+        <div style="height:.5rem;"></div>
+        ${suplentes.length?`${secHeader("SUPLENTES")}${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
+        ${cambiosSec}
+        ${tarjetasSec}
+      `;
+    };
+
+    const localPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_local_nombre);
+    const visitPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_visitante_nombre);
+
+    const recogerGoles = (planillaArr) => {
+      const goles = [];
+      planillaArr.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            let asistNombre = "";
+            planillaArr.forEach(pl2=>{
+              (evByPlanilla[pl2.id]||[]).forEach(e2=>{
+                if(e2.tipo==="asistencia"&&String(e2.minuto)===String(ev.minuto)){
+                  asistNombre = pl2.jugadores?.nombre_display||pl2.jugadores?.nombre||"";
+                }
+              });
+            });
+            const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
+            : "⚽";
+            goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
+          }
+        });
+      });
+      return goles.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+    };
+
+    // Build goles - gol_contra counts for RIVAL team
+    const _rawL = recogerGoles(localPlanilla);
+    const _rawV = recogerGoles(visitPlanilla);
+    const sortGoles = arr => arr.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+parseInt(p[1]||0);};return n(a.minuto)-n(b.minuto);});
+    const golesLocal = sortGoles([..._rawL.filter(g=>g.tipo!=='gol_contra'),..._rawV.filter(g=>g.tipo==='gol_contra')]);
+    const golesVisit = sortGoles([..._rawV.filter(g=>g.tipo!=='gol_contra'),..._rawL.filter(g=>g.tipo==='gol_contra')]);
+
+    const renderGoles = (goles) => {
+      if(!goles.length) return "";
+      return goles.map(g=>{
+        const min = String(g.minuto||"");
+        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+          <span style="font-size:14px;line-height:1;flex-shrink:0;">${g.icon}</span>
+          <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+          <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+          ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:2px;">(${g.asist})</span>`:""}
+        </div>`;
+      }).join("");
+    };
+    
+    // Get escudos
+    const escLocal = ESCUDOS[partido.equipo_local_nombre] ? `<img src="${ESCUDOS[partido.equipo_local_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
+    const escVisit = ESCUDOS[partido.equipo_visitante_nombre] ? `<img src="${ESCUDOS[partido.equipo_visitante_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
+
+    // Merge with PARTIDO_META for dia/hora (might not be in partidos table)
+    const metaKey = `${partido.zona}_${partido.fecha}_${partido.equipo_local_nombre}_${partido.equipo_visitante_nombre}`;
+    const meta = PARTIDO_META[metaKey] || {};
+    const diaFinal = partido.dia || meta.dia || "";
+    const horaFinal = partido.hora || meta.hora || "";
+    const estadioFinal = partido.estadio || meta.estadio || "";
+    const diaDate = diaFinal ? new Date(diaFinal+"T12:00:00") : null;
+    const diaStr = diaDate ? diaDate.toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"long"}) : "";
+    const diaHoraStr = [diaStr, horaFinal].filter(Boolean).join(" — ");
+    const estadioLine = estadioFinal;
+
+    // Format asistente as N.Apellido
+    const fmtAsist = (nombre) => {
+      if(!nombre) return "";
+      const parts = nombre.trim().split(/\s+/);
+      if(parts.length === 1) return parts[0];
+      const inicial = parts[0].charAt(0).toUpperCase() + ".";
+      return inicial + parts[parts.length-1];
+    };
+
+    // Build incidencias (penales) section - spans both teams
+    const buildIncidencias = () => {
+      // Collect all penal events from both planillas
+      const allEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>['penal_desviado','penal_atajado'].includes(ev.tipo))
+          .map(ev=>({...ev,
+            nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
+            equipoNombre: pl.equipos?.nombre||""
+          }))
+      ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+
+      if(!allEvs.length) return "";
+
+      const st = `style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;"`;
+      const rows = [];
+
+      // Group by minuto to match arquero+ejecutante
+      const byMinuto = {};
+      allEvs.forEach(ev=>{
+        const min = String(ev.minuto||"");
+        if(!byMinuto[min]) byMinuto[min]=[];
+        byMinuto[min].push(ev);
+      });
+
+      Object.entries(byMinuto).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).forEach(([min, evs])=>{
+        const arquero = evs.find(e=>e.tipo==='penal_atajado' && e.extra==='arquero');
+        const ejecutanteAtajado = evs.find(e=>e.tipo==='penal_atajado' && e.extra!=='arquero');
+        const desviado = evs.find(e=>e.tipo==='penal_desviado');
+
+        if(arquero){
+          // Find ejecutante: either the paired ejecutanteAtajado or look in rival planilla
+          let ejNombre = ejecutanteAtajado?.nombre || "";
+          if(!ejNombre){
+            // Try to find penal_atajado without arquero flag at same minute in rival planilla
+            const rivalPlan = arquero.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
+            const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==='penal_atajado' && String(e.minuto)===min && e.extra!=='arquero');
+            ejNombre = ejEv?._n || "";
+          }
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${arquero.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`);
+        } else if(desviado){
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${desviado.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`);
+        }
+      });
+
+      if(!rows.length) return "";
+      return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>${rows.join("")}</div>`;
+    };
+    const incidenciasHtml = buildIncidencias();
+
+    fichaCont.innerHTML = `
+      <div style="text-align:center;margin-bottom:1.25rem;">
+        <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;margin-bottom:.5rem;">${partido.zona} — Fecha ${partido.fecha}</div>
+
+        <div style="margin-bottom:.4rem;">
+          <!-- Grid: local | marcador | visitante - 3 columnas, centro fijo -->
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0;">
+            <!-- Col 1: escudo + nombre local -->
+            <div style="text-align:right;padding-right:12px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                ${escLocal}
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</span>
+              </div>
+            </div>
+            <!-- Col 2: marcador siempre centrado -->
+            <div style="text-align:center;padding:0 8px;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;white-space:nowrap;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span>
+            </div>
+            <!-- Col 3: nombre visitante + escudo -->
+            <div style="text-align:left;padding-left:12px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</span>
+                ${escVisit}
+              </div>
+            </div>
+          </div>
+          <!-- Fila goles: mismo grid -->
+          ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;">
+            <div style="text-align:right;padding-right:12px;">
+              <div style="display:inline-flex;flex-direction:column;align-items:flex-start;">
+                ${golesLocal.map(g=>{
+                  const min=String(g.minuto||"");
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="width:36px;flex-shrink:0;"></span>
+                    <span style="width:6px;flex-shrink:0;"></span>
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                    ${asist}
+                  </div>`;
+                }).join("")}
+              </div>
+            </div>
+            <div style="visibility:hidden;padding:0 8px;"><span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;line-height:1;white-space:nowrap;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span></div>
+            <div style="text-align:left;padding-left:12px;">
+              <div style="display:inline-block;text-align:left;">
+                ${golesVisit.map(g=>{
+                  const min=String(g.minuto||"");
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                    ${asist}
+                  </div>`;
+                }).join("")}
+              </div>
+            </div>
+          </div>`:""}
+        </div>
+
+        <div style="margin-top:1.1rem;">
+          ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
+        </div>
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
+      </div>
+      <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
+        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante, localPlanilla)}</div>
+      </div>
+      ${incidenciasHtml}
+      `;
+    // After render, equalize cambios/tarjetas sections height
+    setTimeout(()=>{
+      const alignSections = (cls) => {
+        const els = document.querySelectorAll('.'+cls);
+        if(els.length < 2) return;
+        const maxH = Math.max(...[...els].map(e=>e.offsetHeight));
+        els.forEach(e=>e.style.minHeight=maxH+'px');
+      };
+      alignSections('ficha-cambios-sec');
+      alignSections('ficha-tarjetas-sec');
+    }, 50);
+
+  } catch(e){
+    fichaCont.innerHTML = `<div style="color:#e57373;padding:2rem;">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+let _h2hTimer = null;
+let _evTipTimer = null;
+
+function showEvTip(event, textEncoded, isTouch=false){
+  hideEvTip();
+  const text = decodeURIComponent(textEncoded);
+  const tip = document.createElement('div');
+  tip.id = 'ev-tooltip';
+  tip.style.cssText = 'position:fixed;z-index:600;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:.3rem .6rem;font-size:11px;color:#f0f0f0;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;';
+  tip.textContent = text;
+  document.body.appendChild(tip);
+  const rect = event.target.getBoundingClientRect();
+  let left = rect.left + rect.width/2 - tip.offsetWidth/2;
+  let top = rect.top - tip.offsetHeight - 6;
+  if(left < 4) left = 4;
+  if(left + tip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tip.offsetWidth - 4;
+  if(top < 4) top = rect.bottom + 6;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+  if(isTouch) _evTipTimer = setTimeout(hideEvTip, 2000);
+}
+
+function hideEvTip(){
+  document.getElementById('ev-tooltip')?.remove();
+  if(_evTipTimer){ clearTimeout(_evTipTimer); _evTipTimer=null; }
+}
+
+
+function showH2HTooltip(event, matchesEncoded, isTouch=false){
+  hideH2HTooltip();
+  const matches = JSON.parse(decodeURIComponent(matchesEncoded));
+  if(!matches.length) return;
+
+  const tip = document.createElement("div");
+  tip.id = "h2h-tooltip";
+  tip.style.cssText = `position:fixed;z-index:500;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:.4rem .6rem;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;width:auto;`;
+
+  tip.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">H2H</div>` +
+    matches.map(m=>{
+      const escL = ESCUDOS[m.local] ? `<img src="${ESCUDOS[m.local]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.local.charAt(0)}</span>`;
+      const escV = ESCUDOS[m.visitante] ? `<img src="${ESCUDOS[m.visitante]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.visitante.charAt(0)}</span>`;
+      return `<div style="display:flex;align-items:center;gap:.4rem;padding:.15rem 0;">
+        <span style="display:flex;justify-content:flex-end;width:24px;">${escL}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);white-space:nowrap;min-width:40px;text-align:center;">${m.gl} — ${m.gv}</span>
+        <span style="display:flex;width:24px;">${escV}</span>
+      </div>`;
+    }).join("");
+
+  document.body.appendChild(tip);
+
+  // Position near the cell
+  const rect = event.target.getBoundingClientRect();
+  const tipW = 200;
+  let left = rect.left + rect.width/2 - 50;
+  let top = rect.bottom + 6;
+  if(left + 120 > window.innerWidth - 8) left = window.innerWidth - 120 - 8;
+  if(left < 8) left = 8;
+  if(top + 80 > window.innerHeight) top = rect.top - 80 - 6;
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+
+  if(isTouch){
+    _h2hTimer = setTimeout(hideH2HTooltip, 2000);
+    // Close on any touch elsewhere
+    const closeOnTouch = (e) => {
+      if(!e.target.closest('#h2h-tooltip')){ hideH2HTooltip(); document.removeEventListener('touchstart', closeOnTouch); }
+    };
+    setTimeout(()=>document.addEventListener('touchstart', closeOnTouch), 100);
+  }
+}
+
+function hideH2HTooltip(){
+  const tip = document.getElementById("h2h-tooltip");
+  if(tip) tip.remove();
+  if(_h2hTimer){ clearTimeout(_h2hTimer); _h2hTimer=null; }
+}
+
+function liveScoreBadge(equipo){
+  const allMatches = Object.values(FIXTURE).flatMap(z=>Object.values(z).flatMap(f=>f));
+  const liveM = allMatches.find(m=>m.estado==="en_curso"&&(m.local===equipo||m.visitante===equipo));
+  if(!liveM||liveM.gl===null) return "";
+  const esLocal = liveM.local===equipo;
+  const myG = esLocal?liveM.gl:liveM.gv;
+  const thG = esLocal?liveM.gv:liveM.gl;
+  const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
+  return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
+}
+
+function renderTablas(){
+  // Zona A clasifica top 5, resto top 4. Quintos de B/C/D arman tabla propia.
+  const clasificados = {"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
+  let html="";
+  const quintosRows=[];
+
+  ZONAS.forEach(z=>{
+    const rows=calcTabla(z);
+    const clasif=clasificados[z];
+    const zc = zonaConfig(z);
+    html+=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:.65rem 0 .28rem;">${z}</p>`;
+    html+=`<div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+        <th title="Head to head">H2H</th>
+      </tr></thead><tbody>`;
+    rows.forEach((r,i)=>{
+      const pos=i+1;
+      const dif=r.gf-r.gc;
+      let posClass="noclasif";
+      if(pos<=clasif) posClass="clasif";
+      else if(pos===5&&z!=="Zona A") posClass="quinto";
+      html+=`<tr>
+        <td><span class="pos ${posClass}">${pos}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td>
+        <td>${r.g}</td>
+        <td>${r.e}</td>
+        <td>${r.p}</td>
+        <td>${r.gf}</td>
+        <td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'};${r.h2hMatches?'cursor:pointer;':''}position:relative;"
+          ${r.h2hMatches?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}',true)" `:''}
+        >${r.h2h}</td>
+      </tr>`;
+      // Guardar quinto de B/C/D
+      if(pos===5 && z!=="Zona A") quintosRows.push({...r, zona:z});
+    });
+    html+=`</tbody></table></div>`;
+  });
+
+  // Tabla de quintos
+  if(quintosRows.length>0){
+    quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    html+=`<p class="tabla-quintos-hdr">Tabla de quintos</p>`;
+    html+=`<div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left">Equipo</th>
+        <th>Zona</th>
+        <th>Pts</th>
+        <th>PJ</th>
+        <th>G</th><th>E</th><th>P</th>
+        <th>GF</th><th>GC</th><th>+/-</th>
+      </tr></thead><tbody>`;
+    quintosRows.forEach((r,i)=>{
+      const dif=r.gf-r.gc;
+      const posClass=i===0?"clasif":"noclasif";
+      html+=`<tr>
+        <td><span class="pos ${posClass}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td style="font-size:11px;color:var(--muted)">${r.zona.replace("Zona ","")}</td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td>
+        <td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+
+  document.getElementById("tablas-cont").innerHTML=html;
+}
+
+function toggleFechaPicker(){
+  const picker = document.getElementById("fecha-picker");
+  if(!picker) return;
+  const grid = document.getElementById("fecha-picker-grid");
+  if(grid && !grid.children.length){
+    grid.innerHTML = Array.from({length:18},(_,i)=>{
+      const n = i+1;
+      return `<div onclick="irAFecha(${n})" id="fp-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual?'var(--accent)':'var(--text)'};border-color:${n===fechaActual?'var(--accent)':'var(--border)'};">${n}</div>`;
+    }).join("");
+  }
+  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
+}
+
+function irAFecha(n){
+  const picker = document.getElementById("fecha-picker");
+  if(picker) picker.style.display = "none";
+  if(n < 1 || n > 18) return;
+  fechaActual = n;
+  renderPartidos(fechaActual);
+}
+
+// Close picker on outside click
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".fi")){
+    const picker = document.getElementById("fecha-picker");
+    if(picker) picker.style.display = "none";
+  }
+});
+
+function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
+
+function renderFxTabs(){
+  document.getElementById("fx-tabs").innerHTML=ZONAS.map(z=>
+    `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
+  ).join("");
+}
+function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
+function renderFxCont(){
+  let html="";
+  for(let f=1;f<=18;f++){
+    const ms=FIXTURE[fxZona][String(f)]||[];
+    html+=`<div class="zona-lbl">Fecha ${f}</div>`;
+    ms.forEach(m=>{
+      const meta=PARTIDO_META[getMetaKey(fxZona,f,m.local,m.visitante)]||{};
+      const r=m.gl!==null
+        ? `<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`
+        : (meta.hora
+          ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`
+          : `<div class="vs">VS</div>`);
+      html+=`<div class="partido"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
+    });
+  }
+  document.getElementById("fx-cont").innerHTML=html;
+}
+
+function goPage(id,el){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  el.classList.add("active");
+  if(id==="fixture"){renderFxTabs();renderFxCont();}
+  if(id==="estadisticas"){cargarEstadisticas();}
+  if(id==="foro"){renderForoPage();}
+}
 
 function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
 function closeModalOutside(e){if(e.target===document.getElementById("modal-overlay"))toggleModal();}
 
+function renderForoLocal(){ renderForoPage(); }
+
+function renderForoMsgs(msgs){
+  const logueado = !!usuarioActual;
+  const inputArea = logueado
+    ? `<textarea id="foro-input" placeholder="Escribí tu mensaje..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;"></textarea>
+       <div style="display:flex;justify-content:flex-end;margin-top:.6rem;gap:.6rem;">
+         <button onclick="cerrarSesion()" style="background:transparent;color:var(--muted);font-size:13px;border:none;cursor:pointer;">Cerrar sesión</button>
+         <button onclick="publicarMensaje()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Publicar</button>
+       </div>`
+    : `<div style="font-size:13px;color:var(--muted);margin-bottom:.75rem;">Iniciá sesión para participar en el foro</div>
+       <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>`;
+
+  document.getElementById("foro-input-area").innerHTML = inputArea;
+  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
+    <div style="padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;">${m.user[0].toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="display:flex;gap:.6rem;align-items:baseline;margin-bottom:.25rem;">
+          <span style="font-size:13px;font-weight:600;">${m.user}</span>
+          <span style="font-size:11px;color:var(--muted);">${m.tiempo}</span>
+        </div>
+        <div style="font-size:13px;color:#bbb;line-height:1.5;">${m.texto}</div>
+      </div>
+    </div>`).join("");
+}
 
 async function diagnosticoIntegridad(){
   try {
@@ -901,7 +1854,6 @@ async function diagnosticoIntegridad(){
 }
 
 
-function renderForo(){ cargarMensajesForo(); }
 
 // ── ESTADÍSTICAS ──
 let STATS_LOADED = false;
