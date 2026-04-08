@@ -36,7 +36,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 .page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
 .page.active{display:block;}
-#page-foro.active{display:flex!important;flex-direction:column;height:calc(100vh - 52px);}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
@@ -274,17 +273,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <!-- FORO -->
-<div class="page" id="page-foro" style="flex-direction:column;height:calc(100vh - 52px);max-width:100%;">
-  <div style="max-width:700px;">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
-      <div id="foro-input-area"></div>
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-      <div style="background:var(--surface2);padding:.55rem 1rem;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Mensajes recientes</div>
-      <div id="foro-msgs"></div>
-    </div>
-  </div>
-</div>
+<div class="page" id="page-foro"></div>
 <div class="page" id="page-planteles">
   <div class="placeholder">
     <div class="ph-icon">👥</div>
@@ -388,8 +377,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
     storageKey: 'federala-auth',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    lock: async (name, acquireTimeout, fn) => fn()
+    detectSessionInUrl: true
   }
 });
 
