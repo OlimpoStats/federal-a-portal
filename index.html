@@ -34,7 +34,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;margin-top:-4px;}
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
-.page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
+.page{display:none;max-width:1400px;margin:0 auto;padding:1.5rem 1.5rem;}
 .page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
 
 /* inicio: two columns */
@@ -129,6 +129,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .minuto-live{color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;animation:breathe 2s ease-in-out infinite;}
 .live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
 /* ── MOBILE ── */
+@media(max-width:900px){
+  .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
+}
 @media(max-width:700px){
   .hdr{padding:0 .75rem;gap:.4rem;height:54px;}
   .logo{font-size:17px;}
@@ -137,7 +140,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
   .nav::-webkit-scrollbar{display:none;}
   .page{padding:1rem .65rem;}
-  .inicio-grid{grid-template-columns:1fr;gap:1rem;}
+  .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .fecha-hdr{padding:.6rem .75rem;}
   .fnum{font-size:17px;}
   .fsub{font-size:11px;}
@@ -2448,10 +2451,10 @@ function renderSegundaFase(){
   // Remaining quintos (not best)
   const restQuintos = quintos.slice(1);
 
-  // Revalida A: 6-10 ZonaA + 6-9 ZonaB (fixed=9)
-  const revA = [...tabA.slice(5,10), ...tabB.slice(4,9)];
-  // Revalida B: 6-9 ZonaC + 6-9 ZonaD (fixed=8)
-  const revB = [...tabC.slice(4,9), ...tabD.slice(4,9)];
+  // Revalida A: 6-10 ZonaA (idx 5-9) + 6-9 ZonaB (idx 5-8) = 9 base
+  const revA = [...tabA.slice(5,10), ...tabB.slice(5,9)];
+  // Revalida B: 6-9 ZonaC (idx 5-8) + 6-9 ZonaD (idx 5-8) = 8 base
+  const revB = [...tabC.slice(5,9), ...tabD.slice(5,9)];
 
   // Distribute remaining quintos
   if(bestQuintoZona !== "Zona B"){
