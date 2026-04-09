@@ -177,7 +177,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
     <div class="ni" onclick="goPage('foro',this)">Foro</div>
-    <div class="user-btn" onclick="toggleModal()" title="Iniciar sesión">
+    <div class="user-btn" id="user-btn" onclick="abrirModal()" title="Iniciar sesión">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </div>
   </div>
@@ -187,11 +187,39 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <button class="modal-close" onclick="toggleModal()">&#10005;</button>
-    <div class="modal-title" id="modal-titulo">Iniciar sesión</div>
-    <input type="email" placeholder="Correo electrónico" id="inp-email">
-    <input type="password" placeholder="Contraseña" id="inp-pass">
-    <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
-    <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="registrarUsuario()">Registrate</span></div>
+
+    <div id="panel-login">
+      <div class="modal-title">Iniciar sesión</div>
+      <input type="email" placeholder="Correo electrónico" id="inp-email" onkeydown="if(event.key==='Enter')loginConEmail()">
+      <input type="password" placeholder="Contraseña" id="inp-pass" onkeydown="if(event.key==='Enter')loginConEmail()">
+      <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
+      <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('registro')">Registrate</span></div>
+    </div>
+
+    <div id="panel-registro" style="display:none;">
+      <div class="modal-title">Crear cuenta</div>
+      <input type="email" placeholder="Correo electrónico" id="reg-email">
+      <input type="password" placeholder="Contraseña" id="reg-pass">
+      <button class="modal-btn" onclick="registrarUsuario()">Registrarme</button>
+      <div class="modal-sub">¿Ya tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('login')">Iniciá sesión</span></div>
+    </div>
+
+    <div id="panel-perfil" style="display:none;">
+      <div id="perfil-info" style="margin-bottom:1.25rem;"></div>
+      <button class="modal-btn" onclick="mostrarPanel('cambiar-email')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">Cambiar email</button>
+      <button class="modal-btn" onclick="cerrarSesion()" style="background:transparent;border:1px solid #e57373;color:#e57373;margin-top:.5rem;">Cerrar sesión</button>
+    </div>
+
+    <div id="panel-cambiar-email" style="display:none;">
+      <div class="modal-title" style="font-size:18px;">Cambiar email</div>
+      <input type="email" placeholder="Email actual" id="ce-actual">
+      <input type="email" placeholder="Nuevo email" id="ce-nuevo">
+      <input type="email" placeholder="Repetir nuevo email" id="ce-nuevo2">
+      <div id="ce-error" style="font-size:12px;display:none;margin-bottom:.5rem;"></div>
+      <button class="modal-btn" onclick="cambiarEmail()">Confirmar cambio</button>
+      <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('perfil')">← Volver</span></div>
+    </div>
+
   </div>
 </div>
 
@@ -492,16 +520,69 @@ sb.auth.onAuthStateChange((event, session) => {
   if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
 });
 
-function actualizarIconoUsuario(){
+let PERFIL_USUARIO = null;
+
+function mostrarPanel(panel){
+  ['login','registro','perfil','cambiar-email'].forEach(p=>{
+    const el = document.getElementById('panel-'+p);
+    if(el) el.style.display = p===panel ? '' : 'none';
+  });
+}
+
+function abrirModal(){
+  if(usuarioActual) mostrarPanel('perfil');
+  else mostrarPanel('login');
+  toggleModal();
+}
+
+async function actualizarIconoUsuario(){
   const btn = document.getElementById("user-btn");
   if(!btn) return;
   if(usuarioActual){
     btn.style.borderColor = "var(--accent)";
     btn.title = "Mi cuenta";
+    if(!PERFIL_USUARIO){
+      const {data} = await sb.from("perfiles")
+        .select("username, nombre, apellido, rango, equipos(nombre)")
+        .eq("id", usuarioActual.id).maybeSingle();
+      PERFIL_USUARIO = data;
+    }
+    const equipoNombre = PERFIL_USUARIO?.equipos?.nombre || "";
+    const escudoUrl = ESCUDOS[equipoNombre] || "";
+    btn.innerHTML = escudoUrl
+      ? `<div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+           <img src="${escudoUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.3;border-radius:50%;">
+           <svg viewBox="0 0 24 24" style="position:relative;width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+         </div>`
+      : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    const pi = document.getElementById("perfil-info");
+    if(pi && PERFIL_USUARIO){
+      pi.innerHTML = `
+        <div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.3rem;">${usuarioActual.email}</div>
+        <div style="font-size:11px;color:var(--accent);margin-top:.25rem;">${PERFIL_USUARIO.rango||''}</div>`;
+    }
   } else {
+    PERFIL_USUARIO = null;
     btn.style.borderColor = "";
     btn.title = "Iniciar sesión";
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
   }
+}
+
+async function cambiarEmail(){
+  const actual = document.getElementById("ce-actual").value.trim();
+  const nuevo = document.getElementById("ce-nuevo").value.trim();
+  const nuevo2 = document.getElementById("ce-nuevo2").value.trim();
+  const err = document.getElementById("ce-error");
+  err.style.display = "none";
+  if(!actual||!nuevo||!nuevo2){ err.style.color="#e57373"; err.textContent="Completá todos los campos."; err.style.display=""; return; }
+  if(nuevo !== nuevo2){ err.style.color="#e57373"; err.textContent="Los emails nuevos no coinciden."; err.style.display=""; return; }
+  if(actual !== usuarioActual.email){ err.style.color="#e57373"; err.textContent="El email actual no es correcto."; err.style.display=""; return; }
+  if(nuevo === actual){ err.style.color="#e57373"; err.textContent="El nuevo email es igual al actual."; err.style.display=""; return; }
+  const {error} = await sb.auth.updateUser({email: nuevo});
+  if(error){ err.style.color="#e57373"; err.textContent=error.message; err.style.display=""; return; }
+  err.style.color="#4caf50"; err.textContent="Revisá ambos emails para confirmar el cambio."; err.style.display="";
 }
 
 async function loginConEmail(){
