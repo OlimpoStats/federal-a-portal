@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
 .page{display:none;max-width:1100px;margin:0 auto;padding:1.5rem 1rem;}
-.page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:1100px!important;margin:0 auto!important;padding:0!important;}
+.page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
@@ -1601,7 +1601,7 @@ function renderForoMsgs(msgs, pagina=0, total=0){
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
       </div>
-      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
+      <div style="flex:1;max-width:1010px;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
     </div>`).join("");
   // Pagination nav
   const totalPags = Math.ceil(total / FORO_POR_PAGINA);
