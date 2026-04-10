@@ -1607,7 +1607,8 @@ function renderFxCont(){
 function goPage(id,el){
   document.querySelectorAll(".page").forEach(p=>{
     p.classList.remove("active");
-    p.style.display=''; // reset any inline display
+    if(p.id !== "page-foro") p.style.display='';
+    else p.style.display='none';
   });
   document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
   const page = document.getElementById("page-"+id);
