@@ -248,12 +248,21 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     </div>
     <div id="partidos-cont"></div>
     </div>
-    <div>
-      <p class="sec" style="color:var(--accent);">Posiciones</p>
-      <div id="tablas-cont"></div>
-    </div>
-    <div>
-      <div id="cont-2dafase"></div>
+    <div style="grid-column:2/4;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
+        <div>
+          <div id="tablas-zona-a"></div>
+          <div id="tablas-zona-c" style="margin-top:2rem;"></div>
+          <div id="cont-quintos" style="margin-top:1.5rem;"></div>
+          <div id="cont-goleadores" style="margin-top:1.5rem;"></div>
+        </div>
+        <div>
+          <div id="tablas-zona-b"></div>
+          <div id="tablas-zona-d" style="margin-top:calc(2rem + 37px);"></div>
+          <div id="cont-2dafase" style="margin-top:1.5rem;"></div>
+        </div>
+      </div>
+      <div id="tablas-cont" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -279,7 +288,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 </div>
 
 <!-- ESTADÍSTICAS -->
-<div class="page" id="page-estadisticas">
+<div class="page" id="page-estadisticas" style="max-width:1100px!important;">
   <div id="stats-loading" style="text-align:center;padding:3rem;color:var(--muted);">Cargando estadísticas...</div>
   <div id="stats-content" style="display:none;">
     <div class="ztabs" id="stats-tabs" style="margin-bottom:1.25rem;">
@@ -2582,8 +2591,9 @@ function renderSegundaFase(){
 })();
 
 
-  el.innerHTML = quintosTable + `
-    <p class="sec-2dafase" style="margin:2rem 0 .5rem;">2DA FASE: PARCIAL</p>` + `
+  el.innerHTML = `
+    <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">2DA FASE: PARCIAL</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
     <div style="margin-bottom:1.25rem;">
       <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
       ${renderLista(nonA,'#cc7733')}
@@ -2602,6 +2612,90 @@ function renderSegundaFase(){
     </div>`;
 }
 
+
+function renderZonasMini(){
+  var zmap={"Zona A":"tablas-zona-a","Zona B":"tablas-zona-b","Zona C":"tablas-zona-c","Zona D":"tablas-zona-d"};
+  var cl={"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
+  var qs=[];
+  ZONAS.forEach(function(z){
+    var el=document.getElementById(zmap[z]);
+    if(!el) return;
+    var zr=calcTabla(z);
+    var zc=zonaConfig(z);
+    var h='<p style="font-size:16px;font-weight:700;text-transform:uppercase;color:'+zc.color+';margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">'+z+'</p>';
+    h+='<div class="tabla-mini"><table><thead><tr>';
+    h+='<th style="width:24px">#</th><th style="text-align:left">Equipo</th>';
+    h+='<th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>';
+    h+='</tr></thead><tbody>';
+    zr.forEach(function(r,i){
+      var p=i+1,d=r.gf-r.gc,pc="noclasif";
+      if(p<=cl[z]) pc="clasif";
+      else if(p===5&&z!=="Zona A"){pc="quinto";qs.push({n:r.n,pts:r.pts,pj:r.pj,g:r.g,e:r.e,p:r.p,gf:r.gf,gc:r.gc,zona:z});}
+      h+='<tr><td><span class="pos '+pc+'">'+p+'</span></td>';
+      h+='<td><div class="tr-eq">'+escudoHTML(r.n,'me')+'<span style="font-size:13px">'+r.n+'</span></div></td>';
+      h+='<td><strong class="pts">'+r.pts+'</strong></td>';
+      h+='<td>'+r.pj+'</td><td>'+r.g+'</td><td>'+r.e+'</td><td>'+r.p+'</td>';
+      h+='<td>'+r.gf+'</td><td>'+r.gc+'</td>';
+      h+='<td style="color:'+(d>0?'#4caf50':d<0?'#e57373':'var(--muted)')+'">'+( d>0?'+':'')+d+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+    el.innerHTML=h;
+  });
+  var qel=document.getElementById('cont-quintos');
+  if(qel&&qs.length){
+    qs.sort(function(a,b){return b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf;});
+    var qh='<p style="font-size:13px;font-weight:700;text-transform:uppercase;color:#aaa;margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">Tabla de quintos</p>';
+    qh+='<div class="tabla-mini"><table><thead><tr>';
+    qh+='<th style="width:24px">#</th><th style="text-align:left">Equipo</th><th>Zona</th>';
+    qh+='<th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>';
+    qh+='</tr></thead><tbody>';
+    qs.forEach(function(r,i){
+      var d=r.gf-r.gc;
+      qh+='<tr><td><span class="pos '+(i===0?'clasif':'noclasif')+'">'+(i+1)+'</span></td>';
+      qh+='<td><div class="tr-eq">'+escudoHTML(r.n,'me')+'<span style="font-size:13px">'+r.n+'</span></div></td>';
+      qh+='<td style="font-size:11px;color:var(--muted)">'+r.zona.replace('Zona ','')+'</td>';
+      qh+='<td><strong class="pts">'+r.pts+'</strong></td>';
+      qh+='<td>'+r.pj+'</td><td>'+r.g+'</td><td>'+r.e+'</td><td>'+r.p+'</td>';
+      qh+='<td>'+r.gf+'</td><td>'+r.gc+'</td>';
+      qh+='<td style="color:'+(d>0?'#4caf50':d<0?'#e57373':'var(--muted)')+'">'+( d>0?'+':'')+d+'</td>';
+      qh+='</tr>';
+    });
+    qh+='</tbody></table></div>';
+    qel.innerHTML=qh;
+  }
+}
+
+async function renderGoleadoresResumen(){
+  var el=document.getElementById('cont-goleadores');
+  if(!el) return;
+  try{
+    var res=await sb.from('eventos').select('tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))').in('tipo',['gol','gol_penal','gol_tiro_libre']);
+    var m={};
+    (res.data||[]).forEach(function(ev){
+      var j=ev.planillas&&ev.planillas.jugadores;
+      var eq=ev.planillas&&ev.planillas.equipos&&ev.planillas.equipos.nombre||'';
+      if(!j) return;
+      var n=j.nombre_display||j.nombre||'?';
+      if(!m[n]) m[n]={nombre:n,equipo:eq,goles:0};
+      m[n].goles++;
+    });
+    var top=Object.values(m).sort(function(a,b){return b.goles-a.goles;}).slice(0,10);
+    if(!top.length) return;
+    var h='<p style="font-size:13px;font-weight:700;text-transform:uppercase;color:#aaa;margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">Goleadores</p>';
+    h+='<div class="tabla-mini"><table><thead><tr>';
+    h+='<th style="width:24px">#</th><th style="text-align:left">Jugador</th><th>Goles</th>';
+    h+='</tr></thead><tbody>';
+    top.forEach(function(j,i){
+      h+='<tr><td><span class="pos">'+(i+1)+'</span></td>';
+      h+='<td><div class="tr-eq">'+escudoHTML(j.equipo,'me')+'<span style="font-size:13px">'+j.nombre+'</span></div></td>';
+      h+='<td><strong class="pts">'+j.goles+'</strong></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    el.innerHTML=h;
+  }catch(e){console.error('goleadores:',e);}
+}
+
 async function init(){
   await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
   await diagnosticoIntegridad();
@@ -2610,7 +2704,9 @@ async function init(){
   fechaActual = f;
   renderPartidos(f);
   renderTablas();
+  renderZonasMini();
   renderSegundaFase();
+  await renderGoleadoresResumen();
   // Start live score polling
   iniciarPollingEnVivo();
 }
