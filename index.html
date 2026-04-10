@@ -1605,16 +1605,19 @@ function renderFxCont(){
 }
 
 function goPage(id,el){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(p=>{
+    p.classList.remove("active");
+    p.style.display=''; // reset any inline display
+  });
   document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
-  document.getElementById("page-"+id).classList.add("active");
+  const page = document.getElementById("page-"+id);
+  page.classList.add("active");
   el.classList.add("active");
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas"){cargarEstadisticas();}
   if(id==="foro"){
-    const fp=document.getElementById("page-foro");
-    fp.style.display="flex";
-    fp.style.height="calc(100vh - 52px)";
+    page.style.display="flex";
+    page.style.height="calc(100vh - 52px)";
     cargarMensajesForo();
   }
 }
