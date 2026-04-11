@@ -164,6 +164,2788 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .tabla-mini thead th{font-size:8px;padding:.18rem .12rem;white-space:nowrap;}
   .tabla-mini .pts{font-size:11px;}
   .tabla-mini .pos{font-size:10px;width:14px;min-width:14px;}
+  .tr-eq{gap:.15rem;min-width:0;}
+  .tr-eq span{font-size:10px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65px;display:inline-block;}
+  .me{width:13px!important;height:13px!important;flex-shrink:0;}
+  /* Stats - all 1 col */
+  #stats-jugadores > div[style*="grid"],
+  #subtab-cont-generales > div[style*="grid"],
+  #subtab-cont-grupos > div[style*="grid"],
+  #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
+  #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
+  .tabla-mini tbody tr:empty{display:none;}
+  .tabla-mini{border-radius:7px;}
+  /* Penales banner */
+  #stats-penales > div[style*="background"]{padding:.3rem .5rem!important;gap:.5rem!important;}
+  /* Listas nonagonal */
+  .lista-2dafase{width:100%!important;}
+  /* Fixture */
+  .fecha-hdr{padding:.5rem .6rem;}
+  .fnum{font-size:16px;}
+  .fsub{font-size:10px;}
+  .fnav{width:24px;height:24px;font-size:12px;}
+  .partido{padding:.4rem .5rem;gap:.2rem;}
+  .eqn{font-size:12px;}
+  .score{font-size:18px;letter-spacing:1px;}
+  .esc{width:20px;height:20px;}
+  .ficha-btn,.stream-btn{width:24px;height:24px;font-size:12px;}
+  .res{min-width:46px;}
+  .ztabs{gap:.2rem;}
+  .ztab{font-size:10px;padding:3px 8px;}
+  #ficha-modal{padding:.3rem;}
+  #ficha-cont{padding:.5rem;max-height:92vh;}
+  .planillas-grid{grid-template-columns:1fr!important;}
+  #fecha-picker-grid{width:160px!important;}
+  .mini-goles{font-size:10px;padding:.2rem .5rem .3rem;}
+  #page-foro{height:calc(100vh - 54px)!important;}
+}
+@media(max-width:400px){
+  .ni{font-size:11px;padding:0 .35rem;}
+  .eqn{font-size:12px;}
+  .score{font-size:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
+  <div class="nav">
+    <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
+    <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
+    <div class="ni" onclick="goPage('planteles',this)">Planteles</div>
+    <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
+    <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
+    <div class="ni" onclick="goPage('foro',this)">Foro</div>
+    <div class="user-btn" id="user-btn" onclick="abrirModal()" title="Iniciar sesión">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- login modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="toggleModal()">&#10005;</button>
+    <div id="panel-login">
+      <div class="modal-title">Iniciar sesión</div>
+      <input type="email" placeholder="Correo electrónico" id="inp-email" onkeydown="if(event.key==='Enter')loginConEmail()">
+      <input type="password" placeholder="Contraseña" id="inp-pass" onkeydown="if(event.key==='Enter')loginConEmail()">
+      <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
+      <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('registro')">Registrate</span></div>
+    </div>
+    <div id="panel-registro" style="display:none;">
+      <div class="modal-title">Crear cuenta</div>
+      <input type="email" placeholder="Correo electrónico" id="reg-email">
+      <input type="password" placeholder="Contraseña" id="reg-pass">
+      <button class="modal-btn" onclick="registrarUsuario()">Registrarme</button>
+      <div class="modal-sub">¿Ya tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('login')">Iniciá sesión</span></div>
+    </div>
+    <div id="panel-perfil" style="display:none;">
+      <div id="perfil-info" style="margin-bottom:1.25rem;"></div>
+      <button class="modal-btn" onclick="mostrarPanel('cambiar-email')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">Cambiar email</button>
+      <button class="modal-btn" onclick="cerrarSesion()" style="background:transparent;border:1px solid #e57373;color:#e57373;margin-top:.5rem;">Cerrar sesión</button>
+    </div>
+    <div id="panel-cambiar-email" style="display:none;">
+      <div class="modal-title" style="font-size:18px;">Cambiar email</div>
+      <input type="email" placeholder="Email actual" id="ce-actual">
+      <input type="email" placeholder="Nuevo email" id="ce-nuevo">
+      <input type="email" placeholder="Repetir nuevo email" id="ce-nuevo2">
+      <div id="ce-error" style="font-size:12px;display:none;margin-bottom:.5rem;"></div>
+      <button class="modal-btn" onclick="cambiarEmail()">Confirmar cambio</button>
+      <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('perfil')">← Volver</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- INICIO -->
+<div class="page active" id="page-inicio">
+  <div class="inicio-grid">
+    <div>
+      <p class="sec" style="color:#fff;">Resultados</p>
+      <div style="display:flex;align-items:stretch;gap:.4rem;">
+      <div class="fecha-hdr" style="flex:1;">
+        <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
+        <div class="fi" style="position:relative;">
+          <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
+            <span id="fnum-txt">Fecha 1</span>
+            <span style="font-size:11px;color:var(--muted);">▼</span>
+          </div>
+          <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+            <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+          </div>
+          <div class="fsub">Primera Fase — 2026</div>
+        </div>
+
+        <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>
+    <div id="partidos-cont"></div>
+    </div>
+    <div style="grid-column:2/4;">
+      <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
+        <div id="col-izq">
+          <div id="tablas-zona-a"></div>
+          <div id="tablas-zona-c" style="margin-top:2rem;"></div>
+          <div id="cont-quintos" style="margin-top:1.5rem;"></div>
+          <div id="cont-goleadores" style="margin-top:1.5rem;"></div>
+        </div>
+        <div id="col-der">
+          <div id="tablas-zona-b"></div>
+          <div id="tablas-zona-d" style="margin-top:calc(2rem + 37px);"></div>
+          <div id="cont-2dafase" style="margin-top:1.5rem;"></div>
+        </div>
+      </div>
+      <div id="tablas-cont" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FIXTURE -->
+<div class="page" id="page-fixture">
+  <p class="sec">Fixture completo — Primera Fase 2026</p>
+  <div class="ztabs" id="fx-tabs"></div>
+  <div id="fx-cont"></div>
+</div>
+
+<!-- FORO -->
+<div class="page" id="page-foro" style="display:none;flex-direction:column;">
+  <div id="foro-msgs" style="flex:1;overflow-y:auto;"></div>
+  <div id="foro-input-area" style="border-top:2px solid #1a1a1a;padding:.5rem 1rem;background:var(--surface);flex-shrink:0;max-width:1450px;margin-left:158px;"></div>
+</div>
+<div class="page" id="page-planteles">
+  <div class="placeholder">
+    <div class="ph-icon">👥</div>
+    <div class="ph-title">Planteles</div>
+    <div class="ph-sub">Próximamente: perfiles de jugadores, cuerpo técnico y árbitros por club</div>
+  </div>
+</div>
+
+<!-- ESTADÍSTICAS -->
+<div class="page" id="page-estadisticas" style="max-width:1100px!important;">
+  <div id="stats-loading" style="text-align:center;padding:3rem;color:var(--muted);">Cargando estadísticas...</div>
+  <div id="stats-content" style="display:none;">
+    <div class="ztabs" id="stats-tabs" style="margin-bottom:1.25rem;">
+      <div class="ztab active" onclick="showStatsTab('jugadores',this)">Jugadores</div>
+      <div class="ztab" onclick="showStatsTab('equipos',this)">Tablas</div>
+      <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
+      <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
+    </div>
+    <div id="stats-jugadores">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">⚽ Goleadores</p><div class="tabla-mini" id="tbl-goleadores"></div></div>
+        <div><p class="sec">👟 Asistentes</p><div class="tabla-mini" id="tbl-asistentes"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">🟨 Amonestaciones <span style="font-size:10px;color:var(--muted);font-weight:400;">(incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
+        <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:var(--muted);font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
+        <div><p class="sec">🎯 Goles de tiro libre</p><div class="tabla-mini" id="tbl-tiro-libre"></div></div>
+      </div>
+    </div>
+    <div id="stats-equipos" style="display:none;">
+      <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <div class="ztab active" id="subtab-grupos" onclick="showSubTab('grupos',this)" style="font-size:12px;padding:.3rem .8rem;">Grupos</div>
+        <div class="ztab" id="subtab-generales" onclick="showSubTab('generales',this)" style="font-size:12px;padding:.3rem .8rem;">Generales</div>
+      </div>
+      <div id="subtab-cont-grupos">
+        <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div></div>
+      </div>
+      <div id="subtab-cont-generales" style="display:none;">
+        <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" style="max-width:600px;overflow-x:auto;" id="tbl-general"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">🏠 Como local</p><div class="tabla-mini" id="tbl-local-stats"></div></div>
+          <div><p class="sec">✈️ Como visitante</p><div class="tabla-mini" id="tbl-visitante-stats"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">1️⃣ Primer tiempo</p><div class="tabla-mini" id="tbl-1t"></div></div>
+          <div><p class="sec">2️⃣ Segundo tiempo</p><div class="tabla-mini" id="tbl-2t"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="stats-arbitros" style="display:none;">
+      <p class="sec">🧑‍⚖️ Rendimiento de árbitros</p>
+      <div class="tabla-mini" id="tbl-arbitros"></div>
+    </div>
+    <div id="stats-penales" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div><p class="sec">⚽ Ejecutantes</p><div class="tabla-mini" id="tbl-pen-ejecutantes"></div></div>
+        <div><p class="sec">🧤 Arqueros</p><div class="tabla-mini" id="tbl-pen-arqueros"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGLAMENTO -->
+<div class="page" id="page-reglamento">
+  <div style="padding:1rem;max-width:900px;margin:0 auto;">
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1rem;color:var(--accent);">📋 Reglamento Federal A 2026</h2>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <iframe 
+        src="https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/docs/reglamento-federal-a-2026.pdf"
+        id="reglamento-iframe"
+        style="width:100%;height:80vh;border:none;display:none;"
+        title="Reglamento Federal A 2026">
+      </iframe>
+      <div id="reglamento-fallback" style="padding:2rem;text-align:center;">
+        <div style="font-size:48px;margin-bottom:1rem;">📄</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:.5rem;">Reglamento Federal A 2026</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Descargá el reglamento oficial del torneo</div>
+        <a href="https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/docs/reglamento-federal-a-2026.pdf" 
+           target="_blank"
+           style="display:inline-flex;align-items:center;gap:.5rem;background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;padding:.6rem 1.25rem;border-radius:6px;text-decoration:none;">
+          📥 Descargar PDF
+        </a>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Try to show the PDF in iframe, fallback to download link
+    (function(){
+      const iframe = document.getElementById('reglamento-iframe');
+      const fallback = document.getElementById('reglamento-fallback');
+      if(iframe){
+        iframe.onload = function(){ iframe.style.display='block'; fallback.style.display='none'; };
+        iframe.onerror = function(){ iframe.style.display='none'; fallback.style.display='block'; };
+        iframe.src = iframe.src; // trigger load
+      }
+    })();
+  </script>
+</div>
+
+<script>
+// ── SUPABASE ──
+const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Carga datos reales desde Supabase y los mezcla con el fixture local
+async function cargarPartidosDesdeDB(){
+  try {
+    // Fuente principal: fixture
+    const {data:fixtureData, error:fixtureErr} = await sb
+      .from("fixture")
+      .select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual");
+    if(!fixtureErr && fixtureData){
+      // Store globally for stats
+      window._FIXTURE_RAW = fixtureData;
+      fixtureData.forEach(p => {
+        if(!p.zona || !p.fecha) return;
+        const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
+        if(!ms) return;
+        const match = ms.find(m => m.local === p.equipo_local && m.visitante === p.equipo_visitante);
+        if(!match) return;
+        if(p.goles_local !== null && p.goles_visitante !== null){
+          match.gl = p.goles_local;
+          match.gv = p.goles_visitante;
+        }
+        if(p.estado) match.estado = p.estado;
+        if(p.fotmob_url) match.fotmob_url = p.fotmob_url;
+        if(p.minuto_actual) match.minuto_actual = p.minuto_actual;
+        if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
+          const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
+          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
+        }
+      });
+    }
+
+    // Compatibilidad: overlay desde partidos (si hubiera filas viejas no reflejadas en fixture)
+    const {data, error} = await sb.from("partidos").select("*");
+    if(!error && data){
+      data.forEach(p => {
+        if(!p.zona || !p.fecha) return;
+        const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
+        if(!ms) return;
+        const match = ms.find(m => m.local === p.equipo_local_nombre && m.visitante === p.equipo_visitante_nombre);
+        if(!match) return;
+        if(match.gl === null && p.goles_local !== null && p.goles_visitante !== null){
+          match.gl = p.goles_local;
+          match.gv = p.goles_visitante;
+        }
+        if(p.dia || p.hora || p.stream_url){
+          const key = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+          const prev = PARTIDO_META[key] || {};
+          PARTIDO_META[key] = {
+            dia: prev.dia || p.dia || "",
+            hora: prev.hora || p.hora || "",
+            stream: prev.stream || p.stream_url || "",
+            estadio: prev.estadio || p.estadio || "",
+            arbitro: prev.arbitro || p.arbitro || ""
+          };
+        }
+      });
+    }
+
+    // Cargar goleadores para mini-display en fixture
+    try {
+      const {data:golesDB} = await sb
+        .from("eventos")
+        .select("tipo, minuto, planillas(partido_id, titular, equipos(nombre), jugadores(nombre_display,nombre))")
+        .in("tipo", ["gol","gol_penal","gol_tiro_libre","gol_contra"]);
+      if(golesDB?.length){
+        // Group by partido_id
+        const golesPorPartido = {};
+        golesDB.forEach(ev => {
+          const pl = ev.planillas;
+          if(!pl?.partido_id) return;
+          if(!golesPorPartido[pl.partido_id]) golesPorPartido[pl.partido_id] = [];
+          golesPorPartido[pl.partido_id].push({
+            tipo: ev.tipo,
+            minuto: ev.minuto,
+            nombre: pl.jugadores?.nombre_display || pl.jugadores?.nombre || "?",
+            equipo: pl.equipos?.nombre || "",
+          });
+        });
+        // Match to FIXTURE
+        const {data:partidosGoles} = await sb
+          .from("partidos")
+          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre")
+          .in("id", Object.keys(golesPorPartido).map(Number));
+        if(partidosGoles){
+          partidosGoles.forEach(p => {
+            const ms = FIXTURE[p.zona]?.[String(p.fecha)];
+            if(!ms) return;
+            const match = ms.find(m => m.local===p.equipo_local_nombre && m.visitante===p.equipo_visitante_nombre);
+            if(!match) return;
+            const goles = golesPorPartido[p.id] || [];
+            match.goleadores = goles.map(g => ({
+              ...g,
+              equipo: g.equipo === p.equipo_local_nombre ? "local" : "visitante"
+            })).sort((a,b) => (parseInt(a.minuto)||0) - (parseInt(b.minuto)||0));
+          });
+        }
+      }
+    } catch(e){ console.log("Error cargando goleadores:", e); }
+
+    // Get distinct partido_ids with planillas - fetch in pages to avoid limit
+    let allPlanillaPartidos = [];
+    let plFrom = 0;
+    while(true){
+      const {data:batchPl, error:batchPlErr} = await sb.from("planillas")
+        .select("partido_id")
+        .range(plFrom, plFrom + 999);
+      if(batchPlErr || !batchPl?.length) break;
+      allPlanillaPartidos = allPlanillaPartidos.concat(batchPl);
+      if(batchPl.length < 1000) break;
+      plFrom += 1000;
+    }
+    const planillasRows = allPlanillaPartidos;
+    const plErr = null;
+    if(!plErr && planillasRows?.length){
+      const ids = [...new Set(planillasRows.map(x => x.partido_id).filter(Boolean))];
+      if(ids.length){
+        const {data:partidosPlanilla, error:ppErr} = await sb
+          .from("partidos")
+          .select("id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id")
+          .in("id", ids);
+        if(!ppErr && partidosPlanilla){
+          partidosPlanilla.forEach(p => {
+            // Key from partidos table names
+            const key1 = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+            PLANILLA_CARGADA[key1] = true;
+            // Also try matching via fixture data (equipo names from FIXTURE)
+            if(p.fixture_id){
+              const fx = (window._FIXTURE_RAW||[]).find(f=>f.id===p.fixture_id);
+              if(fx){
+                const key2 = `${fx.zona}_${fx.fecha}_${fx.equipo_local}_${fx.equipo_visitante}`;
+                PLANILLA_CARGADA[key2] = true;
+              }
+            }
+          });
+        }
+      }
+    }
+  } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
+}
+
+// Carga escudos desde Supabase
+async function cargarEscudos(){
+  try {
+    const {data} = await sb.from("equipos").select("nombre, escudo_url");
+    if(!data) return;
+    data.forEach(eq => { if(eq.escudo_url) ESCUDOS[eq.nombre] = eq.escudo_url; });
+  } catch(e){}
+}
+
+// Auth — manejo de sesión
+let usuarioActual = null;
+sb.auth.onAuthStateChange((event, session) => {
+  usuarioActual = session?.user || null;
+  actualizarIconoUsuario();
+  if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
+});
+
+let PERFIL_USUARIO = null;
+
+function mostrarPanel(panel){
+  ['login','registro','perfil','cambiar-email'].forEach(p=>{
+    const el=document.getElementById('panel-'+p);
+    if(el) el.style.display=p===panel?'':'none';
+  });
+}
+
+function abrirModal(){
+  if(usuarioActual) mostrarPanel('perfil');
+  else mostrarPanel('login');
+  toggleModal();
+}
+
+async function actualizarIconoUsuario(){
+  const btn=document.getElementById("user-btn");
+  if(!btn) return;
+  if(usuarioActual){
+    btn.style.borderColor="var(--accent)";
+    btn.title="Mi cuenta";
+    if(!PERFIL_USUARIO){
+      const {data}=await sb.from("perfiles").select("username,nombre,apellido,rango,equipos(nombre)").eq("id",usuarioActual.id).maybeSingle();
+      PERFIL_USUARIO=data;
+    }
+    const eq=PERFIL_USUARIO?.equipos?.nombre||"";
+    const escUrl=ESCUDOS[eq]||"";
+    btn.innerHTML=escUrl
+      ? `<div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><img src="${escUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.3;border-radius:50%;"><svg viewBox="0 0 24 24" style="position:relative;width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>`
+      : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    const pi=document.getElementById("perfil-info");
+    if(pi&&PERFIL_USUARIO){
+      pi.innerHTML=`<div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.3rem;">${usuarioActual.email}</div>
+        <div style="font-size:11px;color:var(--accent);margin-top:.25rem;">${PERFIL_USUARIO.rango||''}</div>`;
+    }
+  } else {
+    PERFIL_USUARIO=null;
+    btn.style.borderColor="";
+    btn.title="Iniciar sesión";
+    btn.innerHTML=`<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+  }
+}
+
+async function cambiarEmail(){
+  const actual=document.getElementById("ce-actual").value.trim();
+  const nuevo=document.getElementById("ce-nuevo").value.trim();
+  const nuevo2=document.getElementById("ce-nuevo2").value.trim();
+  const err=document.getElementById("ce-error");
+  err.style.display="none";
+  if(!actual||!nuevo||!nuevo2){err.style.color="#e57373";err.textContent="Completá todos los campos.";err.style.display="";return;}
+  if(nuevo!==nuevo2){err.style.color="#e57373";err.textContent="Los emails nuevos no coinciden.";err.style.display="";return;}
+  if(actual!==usuarioActual.email){err.style.color="#e57373";err.textContent="El email actual no es correcto.";err.style.display="";return;}
+  if(nuevo===actual){err.style.color="#e57373";err.textContent="El nuevo email es igual al actual.";err.style.display="";return;}
+  const {error}=await sb.auth.updateUser({email:nuevo});
+  if(error){err.style.color="#e57373";err.textContent=error.message;err.style.display="";return;}
+  err.style.color="#4caf50";err.textContent="Revisá ambos emails para confirmar el cambio.";err.style.display="";
+}
+
+async function loginConEmail(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signInWithPassword({email, password: pass});
+  if(error){
+    if(error.message.includes("Invalid")) alert("Email o contraseña incorrectos");
+    else alert(error.message);
+  } else { toggleModal(); }
+}
+
+async function registrarUsuario(){
+  const email = document.getElementById("inp-email").value;
+  const pass = document.getElementById("inp-pass").value;
+  if(!email||!pass){ alert("Completá email y contraseña"); return; }
+  const {error} = await sb.auth.signUp({email, password: pass});
+  if(error) alert(error.message);
+  else alert("¡Registrado! Revisá tu mail para confirmar la cuenta.");
+}
+
+async function cerrarSesion(){
+  await sb.auth.signOut();
+  toggleModal();
+}
+
+// Foro desde Supabase
+let FORO_PAGINA = 0;
+const FORO_POR_PAGINA = 15;
+
+async function cargarMensajesForo(pagina=0){
+  FORO_PAGINA = pagina;
+  try {
+    const from = pagina * FORO_POR_PAGINA;
+    const {data, count} = await sb.from("mensajes")
+      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, equipos(nombre))", {count:"exact"})
+      .eq("eliminado", false)
+      .order("created_at", {ascending: false})
+      .range(from, from + FORO_POR_PAGINA - 1);
+    if(!data){ renderForoMsgs([], 0, 0); return; }
+    const msgs = data.map(m => ({
+      id: m.id,
+      user: m.perfiles?.username || "Anónimo",
+      rango: m.perfiles?.rango || "",
+      equipo: m.perfiles?.equipos?.nombre || "",
+      tiempo: tiempoRelativo(m.created_at),
+      texto: m.contenido,
+      usuario_id: m.usuario_id
+    }));
+    renderForoMsgs(msgs, pagina, count||0);
+  } catch(e){ console.error(e); renderForoMsgs([], 0, 0); }
+}
+
+async function publicarMensaje(){
+  if(!usuarioActual){ toggleModal(); return; }
+  const txt = document.getElementById("foro-input").value.trim();
+  if(!txt) return;
+  if(txt.length > 100){ alert("El mensaje no puede superar los 100 caracteres."); return; }
+  const {error} = await sb.from("mensajes").insert({foro_id: 1, usuario_id: usuarioActual.id, contenido: txt});
+  if(!error){ document.getElementById("foro-input").value=""; cargarMensajesForo(); }
+}
+
+function tiempoRelativo(ts){
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if(diff < 60) return "ahora";
+  if(diff < 3600) return `hace ${Math.floor(diff/60)}min`;
+  if(diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
+}
+
+const ESCUDOS = {};
+const FIXTURE = {"Zona A":{"1":[{"local":"El Linqueño","visitante":"Sp. Las Parejas","gl":1,"gv":0},{"local":"Independiente (Ch)","visitante":"Atlético Escobar","gl":2,"gv":1},{"local":"Sp. Belgrano","visitante":"9 de Julio (Rafaela)","gl":3,"gv":0},{"local":"Douglas Haig","visitante":"Gimnasia (Ch)","gl":2,"gv":1},{"local":"Defensores (VR)","visitante":"Gimnasia (CDU)","gl":2,"gv":1}],"2":[{"local":"Defensores (VR)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Las Parejas","gl":null,"gv":null}],"3":[{"local":"El Linqueño","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Defensores (VR)","gl":null,"gv":null}],"4":[{"local":"Douglas Haig","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Atlético Escobar","gl":null,"gv":null}],"5":[{"local":"El Linqueño","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Douglas Haig","gl":null,"gv":null}],"6":[{"local":"Sp. Belgrano","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"7":[{"local":"El Linqueño","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Belgrano","gl":null,"gv":null}],"8":[{"local":"Independiente (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"9":[{"local":"El Linqueño","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Independiente (Ch)","gl":null,"gv":null}],"10":[{"local":"Sp. Las Parejas","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Defensores (VR)","gl":null,"gv":null}],"11":[{"local":"El Linqueño","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Atlético Escobar","gl":null,"gv":null}],"12":[{"local":"Atlético Escobar","visitante":"El Linqueño","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Douglas Haig","gl":null,"gv":null}],"13":[{"local":"El Linqueño","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null}],"14":[{"local":"9 de Julio (Rafaela)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Belgrano","gl":null,"gv":null}],"15":[{"local":"El Linqueño","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Gimnasia (CDU)","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Gimnasia (Ch)","gl":null,"gv":null}],"16":[{"local":"Gimnasia (Ch)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Gimnasia (CDU)","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"Sp. Las Parejas","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Independiente (Ch)","gl":null,"gv":null}],"17":[{"local":"El Linqueño","visitante":"Independiente (Ch)","gl":null,"gv":null},{"local":"Sp. Las Parejas","visitante":"Sp. Belgrano","gl":null,"gv":null},{"local":"Atlético Escobar","visitante":"Douglas Haig","gl":null,"gv":null},{"local":"9 de Julio (Rafaela)","visitante":"Defensores (VR)","gl":null,"gv":null},{"local":"Gimnasia (Ch)","visitante":"Gimnasia (CDU)","gl":null,"gv":null}],"18":[{"local":"Gimnasia (CDU)","visitante":"El Linqueño","gl":null,"gv":null},{"local":"Defensores (VR)","visitante":"Gimnasia (Ch)","gl":null,"gv":null},{"local":"Douglas Haig","visitante":"9 de Julio (Rafaela)","gl":null,"gv":null},{"local":"Sp. Belgrano","visitante":"Atlético Escobar","gl":null,"gv":null},{"local":"Independiente (Ch)","visitante":"Sp. Las Parejas","gl":null,"gv":null}]},"Zona B":{"1":[{"local":"Sarmiento (R)","visitante":"Juv. Antoniana","gl":1,"gv":3},{"local":"Boca Unidos","visitante":"Sarmiento (LB)","gl":3,"gv":1},{"local":"Tucumán Central","visitante":"Bartolomé Mitre","gl":1,"gv":0},{"local":"San Martín (F)","visitante":"Defensores (PV)","gl":2,"gv":1}],"2":[{"local":"Defensores (PV)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sol de América (F)","gl":null,"gv":null}],"3":[{"local":"Sol de América (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"San Martín (F)","gl":null,"gv":null}],"4":[{"local":"San Martín (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"5":[{"local":"Juv. Antoniana","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Tucumán Central","gl":null,"gv":null}],"6":[{"local":"Tucumán Central","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"7":[{"local":"Sarmiento (LB)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Boca Unidos","gl":null,"gv":null}],"8":[{"local":"Boca Unidos","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"9":[{"local":"Bartolomé Mitre","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Sarmiento (R)","gl":null,"gv":null}],"10":[{"local":"Juv. Antoniana","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"San Martín (F)","gl":null,"gv":null}],"11":[{"local":"Tucumán Central","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Juv. Antoniana","gl":null,"gv":null}],"12":[{"local":"Sarmiento (LB)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Tucumán Central","gl":null,"gv":null}],"13":[{"local":"Boca Unidos","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Sarmiento (LB)","gl":null,"gv":null}],"14":[{"local":"Bartolomé Mitre","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Defensores (PV)","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Sarmiento (R)","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Boca Unidos","gl":null,"gv":null}],"15":[{"local":"Sarmiento (R)","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sol de América (F)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Defensores (PV)","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"Bartolomé Mitre","gl":null,"gv":null}],"16":[{"local":"Defensores (PV)","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"San Martín (F)","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sol de América (F)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Sarmiento (R)","gl":null,"gv":null}],"17":[{"local":"Sol de América (F)","visitante":"Boca Unidos","gl":null,"gv":null},{"local":"Juv. Antoniana","visitante":"Tucumán Central","gl":null,"gv":null},{"local":"Sarmiento (LB)","visitante":"San Martín (F)","gl":null,"gv":null},{"local":"Bartolomé Mitre","visitante":"Defensores (PV)","gl":null,"gv":null}],"18":[{"local":"San Martín (F)","visitante":"Bartolomé Mitre","gl":null,"gv":null},{"local":"Tucumán Central","visitante":"Sarmiento (LB)","gl":null,"gv":null},{"local":"Boca Unidos","visitante":"Juv. Antoniana","gl":null,"gv":null},{"local":"Sarmiento (R)","visitante":"Sol de América (F)","gl":null,"gv":null}]},"Zona C":{"1":[{"local":"Costa Brava","visitante":"FADEP","gl":3,"gv":0},{"local":"Huracán LH","visitante":"Argentino (MM)","gl":0,"gv":0},{"local":"San Martín (M)","visitante":"Juv. Unida (SL)","gl":0,"gv":0},{"local":"Atenas (RC)","visitante":"Cipolletti","gl":3,"gv":1}],"2":[{"local":"Cipolletti","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"FADEP","visitante":"Dep. Rincón","gl":null,"gv":null}],"3":[{"local":"Dep. Rincón","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Cipolletti","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Atenas (RC)","gl":null,"gv":null}],"4":[{"local":"Atenas (RC)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"FADEP","gl":null,"gv":null}],"5":[{"local":"FADEP","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"San Martín (M)","gl":null,"gv":null}],"6":[{"local":"San Martín (M)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Cipolletti","visitante":"FADEP","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Argentino (MM)","gl":null,"gv":null}],"7":[{"local":"Argentino (MM)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"FADEP","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Huracán LH","gl":null,"gv":null}],"8":[{"local":"Huracán LH","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"FADEP","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"9":[{"local":"Juv. Unida (SL)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"FADEP","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Costa Brava","gl":null,"gv":null}],"10":[{"local":"FADEP","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Atenas (RC)","gl":null,"gv":null}],"11":[{"local":"San Martín (M)","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"FADEP","gl":null,"gv":null}],"12":[{"local":"Argentino (MM)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Huracán LH","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"San Martín (M)","gl":null,"gv":null}],"13":[{"local":"Huracán LH","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"FADEP","visitante":"Argentino (MM)","gl":null,"gv":null}],"14":[{"local":"Juv. Unida (SL)","visitante":"FADEP","gl":null,"gv":null},{"local":"Cipolletti","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"Costa Brava","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Huracán LH","gl":null,"gv":null}],"15":[{"local":"Costa Brava","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Dep. Rincón","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"FADEP","visitante":"Cipolletti","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Juv. Unida (SL)","gl":null,"gv":null}],"16":[{"local":"Cipolletti","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Atenas (RC)","visitante":"FADEP","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Dep. Rincón","gl":null,"gv":null},{"local":"Huracán LH","visitante":"Costa Brava","gl":null,"gv":null}],"17":[{"local":"Dep. Rincón","visitante":"Huracán LH","gl":null,"gv":null},{"local":"FADEP","visitante":"San Martín (M)","gl":null,"gv":null},{"local":"Argentino (MM)","visitante":"Atenas (RC)","gl":null,"gv":null},{"local":"Juv. Unida (SL)","visitante":"Cipolletti","gl":null,"gv":null}],"18":[{"local":"Atenas (RC)","visitante":"Juv. Unida (SL)","gl":null,"gv":null},{"local":"San Martín (M)","visitante":"Argentino (MM)","gl":null,"gv":null},{"local":"Huracán LH","visitante":"FADEP","gl":null,"gv":null},{"local":"Costa Brava","visitante":"Dep. Rincón","gl":null,"gv":null}]},"Zona D":{"1":[{"local":"Kimberley","visitante":"Villa Mitre","gl":1,"gv":0},{"local":"Sol de Mayo","visitante":"Germinal","gl":1,"gv":1},{"local":"Gmo. Brown (PM)","visitante":"Santamarina","gl":2,"gv":2},{"local":"Olimpo","visitante":"Alvarado","gl":2,"gv":0}],"2":[{"local":"Alvarado","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Santamarina","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Germinal","visitante":"Kimberley","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Círculo Dep.","gl":null,"gv":null}],"3":[{"local":"Círculo Dep.","visitante":"Germinal","gl":null,"gv":null},{"local":"Kimberley","visitante":"Santamarina","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Alvarado","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Olimpo","gl":null,"gv":null}],"4":[{"local":"Olimpo","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Alvarado","visitante":"Kimberley","gl":null,"gv":null},{"local":"Santamarina","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Germinal","visitante":"Villa Mitre","gl":null,"gv":null}],"5":[{"local":"Villa Mitre","visitante":"Santamarina","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Alvarado","gl":null,"gv":null},{"local":"Kimberley","visitante":"Olimpo","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"6":[{"local":"Gmo. Brown (PM)","visitante":"Kimberley","gl":null,"gv":null},{"local":"Olimpo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Alvarado","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Santamarina","visitante":"Germinal","gl":null,"gv":null}],"7":[{"local":"Germinal","visitante":"Alvarado","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Olimpo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Kimberley","visitante":"Sol de Mayo","gl":null,"gv":null}],"8":[{"local":"Sol de Mayo","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Olimpo","visitante":"Germinal","gl":null,"gv":null},{"local":"Alvarado","visitante":"Santamarina","gl":null,"gv":null}],"9":[{"local":"Santamarina","visitante":"Olimpo","gl":null,"gv":null},{"local":"Germinal","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Kimberley","gl":null,"gv":null}],"10":[{"local":"Villa Mitre","visitante":"Kimberley","gl":null,"gv":null},{"local":"Germinal","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Alvarado","visitante":"Olimpo","gl":null,"gv":null}],"11":[{"local":"Gmo. Brown (PM)","visitante":"Alvarado","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Kimberley","visitante":"Germinal","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Villa Mitre","gl":null,"gv":null}],"12":[{"local":"Germinal","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Santamarina","visitante":"Kimberley","gl":null,"gv":null},{"local":"Alvarado","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Olimpo","visitante":"Gmo. Brown (PM)","gl":null,"gv":null}],"13":[{"local":"Sol de Mayo","visitante":"Olimpo","gl":null,"gv":null},{"local":"Kimberley","visitante":"Alvarado","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Santamarina","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Germinal","gl":null,"gv":null}],"14":[{"local":"Santamarina","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Alvarado","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Olimpo","visitante":"Kimberley","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Sol de Mayo","gl":null,"gv":null}],"15":[{"local":"Kimberley","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Círculo Dep.","visitante":"Olimpo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Alvarado","gl":null,"gv":null},{"local":"Germinal","visitante":"Santamarina","gl":null,"gv":null}],"16":[{"local":"Alvarado","visitante":"Germinal","gl":null,"gv":null},{"local":"Olimpo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Círculo Dep.","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Kimberley","gl":null,"gv":null}],"17":[{"local":"Círculo Dep.","visitante":"Sol de Mayo","gl":null,"gv":null},{"local":"Villa Mitre","visitante":"Gmo. Brown (PM)","gl":null,"gv":null},{"local":"Germinal","visitante":"Olimpo","gl":null,"gv":null},{"local":"Santamarina","visitante":"Alvarado","gl":null,"gv":null}],"18":[{"local":"Olimpo","visitante":"Santamarina","gl":null,"gv":null},{"local":"Gmo. Brown (PM)","visitante":"Germinal","gl":null,"gv":null},{"local":"Sol de Mayo","visitante":"Villa Mitre","gl":null,"gv":null},{"local":"Kimberley","visitante":"Círculo Dep.","gl":null,"gv":null}]}};
+
+const ZONAS=["Zona A","Zona B","Zona C","Zona D"];
+let fechaActual=1,fxZona="Zona A";
+
+function ini(n){return n.split(/\s+/).map(p=>p[0]).join("").substring(0,2).toUpperCase();}
+
+function calcTabla(zona){
+  const eq={};
+  // Collect all matches
+  const partidos=[];
+  for(let f=1;f<=18;f++){
+    (FIXTURE[zona][String(f)]||[]).forEach(m=>{
+      [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+      if(m.gl===null)return;
+      partidos.push(m);
+      eq[m.local].pj++;eq[m.visitante].pj++;
+      eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
+      eq[m.visitante].gf+=m.gv;eq[m.visitante].gc+=m.gl;
+      if(m.gl>m.gv){eq[m.local].g++;eq[m.local].pts+=3;eq[m.visitante].p++;}
+      else if(m.gl<m.gv){eq[m.visitante].g++;eq[m.visitante].pts+=3;eq[m.local].p++;}
+      else{eq[m.local].e++;eq[m.visitante].e++;eq[m.local].pts++;eq[m.visitante].pts++;}
+    });
+  }
+  const all=new Set();
+  for(let f=1;f<=18;f++){(FIXTURE[zona][String(f)]||[]).forEach(m=>{all.add(m.local);all.add(m.visitante);});}
+  all.forEach(t=>{if(!eq[t])eq[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+
+  // H2H: calcular minitabla entre equipos empatados en puntos
+  const calcH2H = (equipos) => {
+    // Only between the tied teams
+    const h2h={};
+    equipos.forEach(e=>{h2h[e]={pts:0,dif:0,gf:0,gv:0};});
+    partidos.forEach(m=>{
+      if(!equipos.includes(m.local)||!equipos.includes(m.visitante)) return;
+      h2h[m.local].gf+=m.gl; h2h[m.local].gc+=m.gv; h2h[m.local].dif+=m.gl-m.gv;
+      h2h[m.visitante].gf+=m.gv; h2h[m.visitante].gc+=m.gl; h2h[m.visitante].dif+=m.gv-m.gl;
+      h2h[m.visitante].gv=(h2h[m.visitante].gv||0)+m.gv; // goles como visitante en H2H
+      if(m.gl>m.gv){h2h[m.local].pts+=3;}
+      else if(m.gl<m.gv){h2h[m.visitante].pts+=3;}
+      else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
+    });
+    return h2h;
+  };
+
+  // Sort with H2H tiebreaker
+  const rows = Object.entries(eq).map(([n,s])=>({n,...s,h2h:'—'}));
+
+  // Group by pts, apply H2H within groups
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    return 0; // temp, will resolve below
+  });
+
+  // Find groups with same pts
+  const ptGroups={};
+  rows.forEach(r=>{
+    if(!ptGroups[r.pts]) ptGroups[r.pts]=[];
+    ptGroups[r.pts].push(r.n);
+  });
+
+  // For each group with 2+ teams, compute H2H and assign rank
+  const h2hRank={};
+  Object.entries(ptGroups).forEach(([pts,teams])=>{
+    if(teams.length<2) return;
+    const h2h=calcH2H(teams);
+    // Sort by H2H: pts → dif → gf → gv
+    const sorted=[...teams].sort((a,b)=>
+      (h2h[b].pts-h2h[a].pts)||
+      (h2h[b].dif-h2h[a].dif)||
+      (h2h[b].gf-h2h[a].gf)||
+      ((h2h[b].gv||0)-(h2h[a].gv||0))||
+      ((eq[b].gf-eq[b].gc)-(eq[a].gf-eq[a].gc))||
+      (eq[b].gf-eq[a].gf)||
+      0
+    );
+    // Assign H2H display string and rank within group
+    sorted.forEach((t,i)=>{
+      h2hRank[t]={rank:i, label:`${h2h[t].pts}`};
+    });
+    // Store H2H match data for tooltip
+    const h2hMatches = partidos.filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
+    // Update h2h field in rows
+    rows.forEach(r=>{
+      if(teams.includes(r.n)){
+        r.h2h = h2hRank[r.n]?.label||'—';
+        r.h2hMatches = h2hMatches;
+        r.h2hGroup = teams;
+      }
+    });
+  });
+
+  // Final sort: pts → H2H rank → general dif → general gf → gv visitante
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    // Same pts group: use H2H rank
+    const ra=h2hRank[a.n]?.rank??0;
+    const rb=h2hRank[b.n]?.rank??0;
+    if(ra!==rb) return ra-rb;
+    // General tiebreakers
+    return ((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||(b.gf-b.pj)-(a.gf-a.pj)||0;
+  });
+
+  return rows;
+}
+
+// Datos extra por partido: hora programada y stream URL
+// Clave: "ZonaX_f_local_visitante" — se puede cargar desde el admin
+const PARTIDO_META = {
+  // Ejemplo: "Zona A_1_El Linqueño_Sp. Las Parejas": {dia:"2026-04-01", hora:"15:30", stream:"https://youtube.com/..."}
+};
+const PLANILLA_CARGADA = {};
+const ZONA_COLORES = {
+  "Zona A": { color: "#cc7733", text: "#f5f5f5", code: "A" },
+  "Zona B": { color: "#e87aaa", text: "#111111", code: "B" },
+  "Zona C": { color: "#ffff33", text: "#111111", code: "C" },
+  "Zona D": { color: "#3366cc", text: "#ffffff", code: "D" },
+};
+
+function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
+function letraZona(z){ return (z || "").replace("Zona ","").trim(); }
+function zonaConfig(z){
+  return ZONA_COLORES[z] || { color: "#888888", text: "#111111", code: letraZona(z) };
+}
+function horaOrden(h){
+  if(!h) return 9999;
+  const m = String(h).match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return 9999;
+  return (parseInt(m[1],10) * 60) + parseInt(m[2],10);
+}
+function diaKey(metaDia){
+  if(!metaDia) return "sin_dia";
+  return String(metaDia).slice(0,10);
+}
+function diaTitulo(metaDia){
+  if(!metaDia) return { dia: "Sin día confirmado", fecha: "" };
+  const d = new Date(String(metaDia) + "T00:00:00");
+  const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const dia = dias[d.getDay()] || "Día";
+  const p = String(metaDia).split("-");
+  const fecha = p.length >= 3 ? `${p[2]}/${p[1]}` : "";
+  return { dia, fecha };
+}
+
+function fechaInteligente(){
+  // 1. Buscar fecha con al menos un partido programado (tiene dia u hora en PARTIDO_META)
+  for(let f=1;f<=18;f++){
+    const tieneProgramado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>{
+      const key = `${z}_${f}_${m.local}_${m.visitante}`;
+      const meta = PARTIDO_META[key];
+      return m.gl===null && (meta?.dia || meta?.hora);
+    }));
+    if(tieneProgramado) return f;
+  }
+  // 2. Si no hay programados, mostrar la última fecha con partidos jugados
+  let ultimaJugada = 1;
+  for(let f=1;f<=18;f++){
+    const tieneJugado = ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
+    if(tieneJugado) ultimaJugada = f;
+  }
+  return ultimaJugada;
+  // fallbackstrar la última
+}
+
+function escudoHTML(nombre, size='esc'){
+  const url = ESCUDOS[nombre];
+  const i = ini(nombre);
+  return url
+    ? `<div class="${size}"><img src="${url}" alt="${nombre}"></div>`
+    : `<div class="${size}">${i}</div>`;
+}
+
+function renderPartidos(f){
+  document.getElementById("fnum-txt").textContent="Fecha "+f;
+  // Highlight active fecha in picker
+  for(let i=1;i<=18;i++){
+    const el=document.getElementById("fp-"+i);
+    if(el) el.style.color = i===f ? "var(--accent)" : "";
+    if(el) el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
+  }
+  const todosJugados=ZONAS.every(z=>(FIXTURE[z][String(f)]||[]).every(m=>m.gl!==null));
+  const algunoJugado=ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
+
+  document.getElementById("btn-prev").classList.toggle("dis",f<=1);
+  document.getElementById("btn-next").classList.toggle("dis",f>=18);
+  const rows = [];
+  ZONAS.forEach(z => {
+    const ms = FIXTURE[z][String(f)] || [];
+    ms.forEach(m => {
+      const meta = PARTIDO_META[getMetaKey(z,f,m.local,m.visitante)] || {};
+      rows.push({ zona: z, m, meta });
+    });
+  });
+
+  rows.sort((a,b)=>{
+    // Sin día van al final
+    const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
+    const kd = ad.localeCompare(bd);
+    if(kd !== 0) return kd;
+    // Por hora
+    const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+    if(kh !== 0) return kh;
+    // Por zona
+    return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
+  });
+
+  let html="";
+  let diaActual = null;
+  rows.forEach(({zona, m, meta}) => {
+    const esEnVivo = m.estado === "en_curso";
+    const esFuturo = m.gl === null && !esEnVivo;
+    const liveClass = esEnVivo ? " partido-live" : "";
+    const dKey = diaKey(meta.dia);
+    if(dKey !== diaActual){
+      diaActual = dKey;
+      const t = diaTitulo(meta.dia);
+      html += t.fecha
+        ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
+        : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
+    }
+
+    // minuto_actual: "19'|1|0" = minuto|rojas_local|rojas_visitante
+    const _minParts = m.minuto_actual ? m.minuto_actual.split('|') : [];
+    const _min = _minParts[0] || null;
+    const _rl = parseInt(_minParts[1]||'0');
+    const _rv = parseInt(_minParts[2]||'0');
+    const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
+    const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
+    const rojasLocal = esEnVivo && _rl > 0 ? rojaIcon.repeat(_rl) : "";
+    const rojasVisit = esEnVivo && _rv > 0 ? rojaIcon.repeat(_rv) : "";
+
+    let centro;
+    if(m.gl!==null){
+      const scoreClass = esEnVivo ? "score score-live" : "score";
+      centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+    } else if(meta.hora){
+      centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
+    } else {
+      centro=`<div class="vs">VS</div>`;
+    }
+
+    // gol_contra: swap sides - counts for the OTHER team
+    const golesLocal = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="visitante":g.equipo==="local");
+    const golesVisit = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="local":g.equipo==="visitante");
+    const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
+    // Format: "N. Apellido" - primera letra del nombre + apellido
+    const fmtMiniNombre = nombre => {
+      if(!nombre) return "?";
+      const parts = nombre.trim().split(/\s+/);
+      if(parts.length === 1) return parts[0];
+      return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
+    };
+    const fmtMiniGol = g => {
+      const ec = g.tipo==="gol_contra" ? " <span style='color:vf0f0f0;font-size:10px;'>(E/C)</span>" : "";
+      const min = g.minuto || "";
+      return "<span class='mini-gol-min'>" + min + "'</span> <span class='mini-gol-nombre'>" + fmtMiniNombre(g.nombre) + "</span>" + ec;
+    };
+    const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
+      .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+    const _zc = zonaConfig(zona);
+    const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
+    const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
+
+    // Info bar: for live = arbitro only; for programmed = estadio + arbitro
+    const infoItems = [];
+    if(esEnVivo){
+      if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
+    } else {
+      if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
+      if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
+    }
+    const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
+      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
+        ${infoItems.join(' &nbsp;')}
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>` : "";
+
+    goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+        <span style="text-align:left;word-break:break-word;align-self:center;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
+        <span style="text-align:right;word-break:break-word;align-self:center;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>` : "";
+
+    const streamBtn = meta.stream
+      ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
+      : `<div style="width:32px;flex-shrink:0"></div>`;
+    const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
+    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
+    const fichaBtn = m.gl!==null
+      ? tienePlanilla
+        ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
+        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
+      : `<div style="width:32px;flex-shrink:0"></div>`;
+    const zc = zonaConfig(zona);
+    const zonaShort = zc.code || letraZona(zona);
+
+    html+=`<div class="partido-wrap">
+      <div style="display:flex;align-items:stretch;gap:.4rem">
+        <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
+          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${esEnVivo&&_rl>0?' '+rojasLocal:''}</div></div>
+          <div class="res">${centro}</div>
+          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${esEnVivo&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.3rem;justify-content:center">
+          ${streamBtn}
+          ${fichaBtn}
+        </div>
+      </div>
+      ${goleadoresHTML}
+      ${infoBarHTML}
+    </div>`;
+  });
+  document.getElementById("partidos-cont").innerHTML=html;
+}
+
+async function verFicha(key, tienePlanilla){
+  if(!tienePlanilla){ alert("Planilla pendiente de carga."); return; }
+
+  // Find partido data from key
+  const [zona, fecha, ...rest] = key.split("_");
+  // key format: zona_fecha_local_visitante (but names have spaces replaced by _)
+  // Better: find in FIXTURE
+  const fichaModal = document.getElementById("ficha-modal");
+  const fichaCont = document.getElementById("ficha-cont");
+  if(!fichaModal||!fichaCont) return;
+
+  fichaCont.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">Cargando ficha...</div>';
+  fichaModal.style.display = "flex";
+
+  try {
+    // Find partido from PLANILLA_CARGADA key
+    const [pZona, pFecha, ...pRest] = key.split("_");
+    // Get partido from DB
+    const {data:partidos} = await sb.from("partidos")
+      .select("id, zona, fecha, equipo_local_nombre, equipo_visitante_nombre, goles_local, goles_visitante, estadio, arbitro, juez1, juez2, cuarto_arbitro, dia, hora, dt_local, dt_visitante")
+      .eq("zona", pZona)
+      .eq("fecha", parseInt(pFecha));
+
+    let partido = null;
+    if(partidos?.length){
+      // Find matching by key
+      partido = partidos.find(p => {
+        const k = `${p.zona}_${p.fecha}_${p.equipo_local_nombre}_${p.equipo_visitante_nombre}`;
+        return k === key;
+      });
+    }
+    if(!partido){ fichaCont.innerHTML = '<div style="color:#e57373;padding:2rem;">No se encontró el partido.</div>'; return; }
+
+    // Get planillas
+    const {data:planillas} = await sb.from("planillas")
+      .select("id, equipo_id, numero_camiseta, titular, es_capitan, jugadores(id_federal, nombre_display, nombre), equipos(nombre)")
+      .eq("partido_id", partido.id)
+      .order("numero_camiseta");
+
+    const {data:eventos} = await sb.from("eventos")
+      .select("planilla_id, tipo, minuto, extra")
+      .in("planilla_id", (planillas||[]).map(p=>p.id));
+
+    const evByPlanilla = {};
+    (eventos||[]).forEach(ev => {
+      if(!evByPlanilla[ev.planilla_id]) evByPlanilla[ev.planilla_id] = [];
+      evByPlanilla[ev.planilla_id].push(ev);
+    });
+
+    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre, rivalPlanilla) => {
+      if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin planilla cargada.</div>';
+      // Goles en contra del rival que cuentan PARA este equipo
+      const golesContraFavor = (rivalPlanilla||[]).flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>ev.tipo==='gol_contra')
+          .map(ev=>({
+            icon: '<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>',
+            nombre: (pl.jugadores?.nombre_display||pl.jugadores?.nombre||"")+" (E/C)",
+            minuto: ev.minuto,
+            asist: "",
+            tipo: "gol_contra",
+            contra: true
+          }))
+      );
+
+      const titulares = jugadoresEquipo.filter(j=>j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+      const suplentes = jugadoresEquipo.filter(j=>!j.titular).sort((a,b)=>a.numero_camiseta-b.numero_camiseta);
+      const todosJugadores = [...titulares, ...suplentes];
+
+      const evTooltip = (texto, chip) => {
+          const enc = encodeURIComponent(texto);
+          return `<span style="position:relative;display:inline-flex;cursor:default;"
+            onmouseenter="showEvTip(event,'${enc}')" onmouseleave="hideEvTip()"
+            ontouchstart="showEvTip(event,'${enc}',true)">${chip}</span>`;
+        };
+        const renderChip = (ev) => {
+        const min = String(ev.minuto||"");
+        const minSpan = `<span style="font-size:13px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-weight:600;">${min}'</span>`;
+        if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
+          const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
+            : "⚽";
+          const tipo_label = ev.tipo==="gol_penal"?"Gol de penal":ev.tipo==="gol_tiro_libre"?"Gol de tiro libre":ev.tipo==="gol_contra"?"Gol en contra":"Gol";
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">${icon}${minSpan}</span>`;
+          return evTooltip(`${tipo_label} — min. ${min}`, chip);
+        }
+        if(ev.tipo==="amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta amarilla — min. ${min}`, chip);
+        }
+        if(ev.tipo==="roja"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;"></span>${minSpan}</span>`;
+          return evTooltip(`Tarjeta roja directa — min. ${min}`, chip);
+        }
+        if(ev.tipo==="doble_amarilla"){
+          const chip = `<span style="display:inline-flex;align-items:center;gap:1px;white-space:nowrap;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;flex-shrink:0;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;flex-shrink:0;margin-left:-3px;"></span>${minSpan}</span>`;
+          return evTooltip(`Segunda amarilla (expulsión) — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_entra"){
+          const chip = `<span style="color:#4caf50;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↑${min}'</span>`;
+          return evTooltip(`Ingresó — min. ${min}`, chip);
+        }
+        if(ev.tipo==="cambio_sale"){
+          const chip = `<span style="color:#e57373;font-size:13px;font-family:'Barlow',sans-serif;font-weight:600;white-space:nowrap;">↓${min}'</span>`;
+          return evTooltip(`Salió — min. ${min}`, chip);
+        }
+        if(ev.tipo==="asistencia"){
+          const chip = `<span style="font-size:12px;">👟</span>`;
+          return evTooltip(`Asistencia — min. ${min}${ev.extra?` (a ${ev.extra})`:''}`, chip);
+        }
+        if(ev.tipo==="penal_atajado"){
+          // If extra="arquero" → keeper chip 🧤, else → shooter missed ❌
+          const esArquero = ev.extra==="arquero";
+          const icon = esArquero ? "🧤" : "❌";
+          const label = esArquero ? "Penal atajado" : "Penal atajado (ejecutante)";
+          const chip = `<span style="font-size:13px;">${icon}</span>${minSpan}`;
+          return evTooltip(`${label} — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
+        if(ev.tipo==="penal_desviado"){
+          const chip = `<span style="font-size:13px;">❌</span>${minSpan}`;
+          return evTooltip(`Penal desviado — min. ${min}`, `<span style="display:inline-flex;align-items:center;gap:2px;">${chip}</span>`);
+        }
+        return "";
+      };
+
+      const renderJug = (pl, esTitular) => {
+        const evs = (evByPlanilla[pl.id] || []).sort((a,b)=>{
+          const n = s => { const p=String(s||"").split("+"); return parseInt(p[0]||0)*100+(parseInt(p[1]||0)); };
+          return n(a.minuto)-n(b.minuto);
+        });
+        const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
+        const esCapitan = pl.es_capitan;
+        const chips = evs.map(renderChip).filter(Boolean);
+        const ecChips = "";
+        const nombreSize = esTitular ? "14px" : "13px";
+        const capStr = esCapitan ? ` <span style="color:var(--accent);font-size:11px;font-weight:700;">(C)</span>` : "";
+        return `<div style="display:flex;align-items:center;gap:.5rem;padding:0 0;border-bottom:1px solid rgba(255,255,255,0.05);height:30px;box-sizing:border-box;overflow:hidden;">
+          <span style="font-size:13px;color:#bbb;width:20px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';font-weight:600;">${pl.numero_camiseta||""}</span>
+          <span style="font-size:${nombreSize};flex:1;line-height:1.3;font-family:'Barlow',sans-serif;${!esTitular&&!evs.length?'color:var(--muted);':''}">${nombre}${capStr}</span>
+          <span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${chips.join("")}${ecChips}</span>
+        </div>`;
+      };
+
+      // Cambios summary
+      const cambios = [];
+      suplentes.forEach(sup => {
+        const entradaEv = (evByPlanilla[sup.id]||[]).find(e=>e.tipo==="cambio_entra");
+        if(!entradaEv) return;
+        const salePl = todosJugadores.find(j=>String(j.numero_camiseta)===String(entradaEv.extra));
+        const saleNombre = salePl ? (salePl.jugadores?.nombre_display||salePl.jugadores?.nombre||"?") : "?";
+        const entraNombre = sup.jugadores?.nombre_display||sup.jugadores?.nombre||"?";
+        cambios.push({minuto:entradaEv.minuto, entra:entraNombre, sale:saleNombre});
+      });
+      cambios.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+
+      // Tarjetas summary
+      const tarjetas = [];
+      todosJugadores.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="amarilla"||ev.tipo==="roja"||ev.tipo==="doble_amarilla"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            const icon = ev.tipo==="roja"
+              ? `<span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;vertical-align:middle;flex-shrink:0;"></span>`
+              : ev.tipo==="doble_amarilla"
+              ? `<span style="display:inline-flex;gap:1px;"><span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;"></span><span style="display:inline-block;width:8px;height:11px;background:#e57373;border-radius:1px;margin-left:-3px;"></span></span>`
+              : `<span style="display:inline-block;width:8px;height:11px;background:#e8c44a;border-radius:1px;vertical-align:middle;flex-shrink:0;"></span>`;
+            tarjetas.push({minuto:ev.minuto, nombre, icon});
+          }
+        });
+      });
+      tarjetas.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+
+      const secHeader = (txt) => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;padding:.5rem 0 .3rem;">${txt}</div>`;
+
+
+
+      const cambiosSec = cambios.length ? `
+        <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
+          ${secHeader("CAMBIOS")}
+          ${cambios.map(c=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.35rem;min-height:24px;">
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${c.minuto}'</span>
+            <span style="color:#4caf50;font-size:13px;">${c.entra}</span>
+            <span style="color:var(--muted);font-size:12px;">⇄</span>
+            <span style="color:#e57373;font-size:13px;">${c.sale}</span>
+          </div>`).join("")}
+        </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
+
+      const tarjetasSec = tarjetas.length ? `
+        <div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
+          ${secHeader("TARJETAS")}
+          ${tarjetas.map(t=>`<div style="font-size:12px;padding:.2rem 0;display:flex;align-items:center;gap:.4rem;min-height:24px;">
+            ${t.icon}
+            <span style="color:var(--accent);font-size:11px;font-family:'Barlow',sans-serif;font-weight:600;flex-shrink:0;">${t.minuto}'</span>
+            <span style="font-size:13px;">${t.nombre}</span>
+          </div>`).join("")}
+        </div>` : `<div style="border-top:1px solid var(--border);margin-top:.75rem;"></div>`;
+
+      return `
+        ${secHeader("👕 TITULARES")}
+        ${titulares.map(j=>renderJug(j,true)).join("")}
+        ${dtNombre?`<div style="font-size:14px;color:#ccc;padding:.55rem 0 .3rem;margin-top:.1rem;display:flex;align-items:center;gap:.5rem;"><span style="width:18px;text-align:right;flex-shrink:0;font-size:11px;color:transparent;">0</span><span>👔 ${dtNombre}</span></div>`:""}
+        <div style="height:.5rem;"></div>
+        ${suplentes.length?`${secHeader("SUPLENTES")}${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
+        ${cambiosSec}
+        ${tarjetasSec}
+      `;
+    };
+
+    const localPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_local_nombre);
+    const visitPlanilla = (planillas||[]).filter(p=>p.equipos?.nombre===partido.equipo_visitante_nombre);
+
+    const recogerGoles = (planillaArr) => {
+      const goles = [];
+      planillaArr.forEach(pl => {
+        (evByPlanilla[pl.id]||[]).forEach(ev => {
+          if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_contra"||ev.tipo==="gol_tiro_libre"){
+            const nombre = pl.jugadores?.nombre_display||pl.jugadores?.nombre||"?";
+            let asistNombre = "";
+            planillaArr.forEach(pl2=>{
+              (evByPlanilla[pl2.id]||[]).forEach(e2=>{
+                if(e2.tipo==="asistencia"&&String(e2.minuto)===String(ev.minuto)){
+                  asistNombre = pl2.jugadores?.nombre_display||pl2.jugadores?.nombre||"";
+                }
+              });
+            });
+            const icon = ev.tipo==="gol_contra"
+            ? '<span style="filter:sepia(1) saturate(8) hue-rotate(300deg) brightness(0.9);">⚽</span>'
+            : ev.tipo==="gol_tiro_libre"
+            ? '<span style="filter:sepia(1) saturate(2) hue-rotate(80deg) brightness(0.75);">⚽</span>'
+            : "⚽";
+            goles.push({icon, nombre, minuto:ev.minuto, asist:asistNombre, tipo:ev.tipo, contra:ev.tipo==="gol_contra"});
+          }
+        });
+      });
+      return goles.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto);});
+    };
+
+    // Build goles - gol_contra counts for RIVAL team
+    const _rawL = recogerGoles(localPlanilla);
+    const _rawV = recogerGoles(visitPlanilla);
+    const sortGoles = arr => arr.sort((a,b)=>{const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+parseInt(p[1]||0);};return n(a.minuto)-n(b.minuto);});
+    const golesLocal = sortGoles([..._rawL.filter(g=>g.tipo!=='gol_contra'),..._rawV.filter(g=>g.tipo==='gol_contra')]);
+    const golesVisit = sortGoles([..._rawV.filter(g=>g.tipo!=='gol_contra'),..._rawL.filter(g=>g.tipo==='gol_contra')]);
+
+    const renderGoles = (goles) => {
+      if(!goles.length) return "";
+      return goles.map(g=>{
+        const min = String(g.minuto||"");
+        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+          <span style="font-size:14px;line-height:1;flex-shrink:0;">${g.icon}</span>
+          <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+          <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+          ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:2px;">(${g.asist})</span>`:""}
+        </div>`;
+      }).join("");
+    };
+    
+    // Get escudos
+    const escLocal = ESCUDOS[partido.equipo_local_nombre] ? `<img src="${ESCUDOS[partido.equipo_local_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
+    const escVisit = ESCUDOS[partido.equipo_visitante_nombre] ? `<img src="${ESCUDOS[partido.equipo_visitante_nombre]}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">` : "";
+
+    // Merge with PARTIDO_META for dia/hora (might not be in partidos table)
+    const metaKey = `${partido.zona}_${partido.fecha}_${partido.equipo_local_nombre}_${partido.equipo_visitante_nombre}`;
+    const meta = PARTIDO_META[metaKey] || {};
+    const diaFinal = partido.dia || meta.dia || "";
+    const horaFinal = partido.hora || meta.hora || "";
+    const estadioFinal = partido.estadio || meta.estadio || "";
+    const diaDate = diaFinal ? new Date(diaFinal+"T12:00:00") : null;
+    const diaStr = diaDate ? diaDate.toLocaleDateString("es-AR",{weekday:"short",day:"numeric",month:"long"}) : "";
+    const diaHoraStr = [diaStr, horaFinal].filter(Boolean).join(" — ");
+    const estadioLine = estadioFinal;
+
+    // Format asistente as N.Apellido
+    const fmtAsist = (nombre) => {
+      if(!nombre) return "";
+      const parts = nombre.trim().split(/\s+/);
+      if(parts.length === 1) return parts[0];
+      const inicial = parts[0].charAt(0).toUpperCase() + ".";
+      return inicial + parts[parts.length-1];
+    };
+
+    // Build incidencias (penales) section - spans both teams
+    const buildIncidencias = () => {
+      // Collect all penal events from both planillas
+      const allEvs = [...localPlanilla, ...visitPlanilla].flatMap(pl=>
+        (evByPlanilla[pl.id]||[])
+          .filter(ev=>['penal_desviado','penal_atajado'].includes(ev.tipo))
+          .map(ev=>({...ev,
+            nombre: pl.jugadores?.nombre_display||pl.jugadores?.nombre||"",
+            equipoNombre: pl.equipos?.nombre||""
+          }))
+      ).sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+
+      if(!allEvs.length) return "";
+
+      const st = `style="color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-weight:700;flex-shrink:0;"`;
+      const rows = [];
+
+      // Group by minuto to match arquero+ejecutante
+      const byMinuto = {};
+      allEvs.forEach(ev=>{
+        const min = String(ev.minuto||"");
+        if(!byMinuto[min]) byMinuto[min]=[];
+        byMinuto[min].push(ev);
+      });
+
+      Object.entries(byMinuto).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).forEach(([min, evs])=>{
+        const arquero = evs.find(e=>e.tipo==='penal_atajado' && e.extra==='arquero');
+        const ejecutanteAtajado = evs.find(e=>e.tipo==='penal_atajado' && e.extra!=='arquero');
+        const desviado = evs.find(e=>e.tipo==='penal_desviado');
+
+        if(arquero){
+          // Find ejecutante: either the paired ejecutanteAtajado or look in rival planilla
+          let ejNombre = ejecutanteAtajado?.nombre || "";
+          if(!ejNombre){
+            // Try to find penal_atajado without arquero flag at same minute in rival planilla
+            const rivalPlan = arquero.equipoNombre===partido.equipo_local_nombre ? visitPlanilla : localPlanilla;
+            const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==='penal_atajado' && String(e.minuto)===min && e.extra!=='arquero');
+            ejNombre = ejEv?._n || "";
+          }
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${arquero.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`);
+        } else if(desviado){
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${desviado.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`);
+        }
+      });
+
+      if(!rows.length) return "";
+      return `<div style="border-top:1px solid var(--border);margin-top:1rem;padding:.75rem 0 .25rem;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:.5rem;">INCIDENCIAS</div>${rows.join("")}</div>`;
+    };
+    const incidenciasHtml = buildIncidencias();
+
+    fichaCont.innerHTML = `
+      <div style="text-align:center;margin-bottom:1.25rem;">
+        <div style="font-size:15px;font-weight:600;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;margin-bottom:.5rem;">${partido.zona} — Fecha ${partido.fecha}</div>
+
+        <div style="margin-bottom:.4rem;">
+          <!-- Grid: local | marcador | visitante - 3 columnas, centro fijo -->
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0;">
+            <!-- Col 1: escudo + nombre local -->
+            <div style="text-align:right;padding-right:12px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                ${escLocal}
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_local_nombre}</span>
+              </div>
+            </div>
+            <!-- Col 2: marcador siempre centrado -->
+            <div style="text-align:center;padding:0 8px;">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;color:var(--accent);line-height:1;white-space:nowrap;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span>
+            </div>
+            <!-- Col 3: nombre visitante + escudo -->
+            <div style="text-align:left;padding-left:12px;">
+              <div style="display:inline-flex;align-items:center;gap:6px;">
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;line-height:1.1;">${partido.equipo_visitante_nombre}</span>
+                ${escVisit}
+              </div>
+            </div>
+          </div>
+          <!-- Fila goles: mismo grid -->
+          ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;align-items:start;">
+            <div style="text-align:right;padding-right:12px;">
+              <div style="display:inline-flex;flex-direction:column;align-items:flex-end;">
+                ${golesLocal.map(g=>{
+                  const min=String(g.minuto||"");
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                    ${asist}
+                  </div>`;
+                }).join("")}
+              </div>
+            </div>
+            <div style="width:0;overflow:hidden;"></div>
+            <div style="text-align:left;padding-left:12px;">
+              <div style="display:inline-block;text-align:left;">
+                ${golesVisit.map(g=>{
+                  const min=String(g.minuto||"");
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+                    ${asist}
+                  </div>`;
+                }).join("")}
+              </div>
+            </div>
+          </div>`:""}
+        </div>
+
+        <div style="margin-top:1.1rem;">
+          ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
+        </div>
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
+      </div>
+      <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
+        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante, localPlanilla)}</div>
+      </div>
+      ${incidenciasHtml}
+      `;
+    // After render, equalize cambios/tarjetas sections height
+    setTimeout(()=>{
+      const alignSections = (cls) => {
+        const els = document.querySelectorAll('.'+cls);
+        if(els.length < 2) return;
+        const maxH = Math.max(...[...els].map(e=>e.offsetHeight));
+        els.forEach(e=>e.style.minHeight=maxH+'px');
+      };
+      alignSections('ficha-cambios-sec');
+      alignSections('ficha-tarjetas-sec');
+    }, 50);
+
+  } catch(e){
+    fichaCont.innerHTML = `<div style="color:#e57373;padding:2rem;">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+let _h2hTimer = null;
+let _evTipTimer = null;
+
+function showEvTip(event, textEncoded, isTouch=false){
+  hideEvTip();
+  const text = decodeURIComponent(textEncoded);
+  const tip = document.createElement('div');
+  tip.id = 'ev-tooltip';
+  tip.style.cssText = 'position:fixed;z-index:600;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:.3rem .6rem;font-size:11px;color:#f0f0f0;box-shadow:0 4px 12px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;';
+  tip.textContent = text;
+  document.body.appendChild(tip);
+  const rect = event.target.getBoundingClientRect();
+  let left = rect.left + rect.width/2 - tip.offsetWidth/2;
+  let top = rect.top - tip.offsetHeight - 6;
+  if(left < 4) left = 4;
+  if(left + tip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tip.offsetWidth - 4;
+  if(top < 4) top = rect.bottom + 6;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+  if(isTouch) _evTipTimer = setTimeout(hideEvTip, 2000);
+}
+
+function hideEvTip(){
+  document.getElementById('ev-tooltip')?.remove();
+  if(_evTipTimer){ clearTimeout(_evTipTimer); _evTipTimer=null; }
+}
+
+
+function showH2HTooltip(event, matchesEncoded, isTouch=false){
+  hideH2HTooltip();
+  const matches = JSON.parse(decodeURIComponent(matchesEncoded));
+  if(!matches.length) return;
+
+  const tip = document.createElement("div");
+  tip.id = "h2h-tooltip";
+  tip.style.cssText = `position:fixed;z-index:500;background:#1a1a1a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:.4rem .6rem;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;width:auto;`;
+
+  tip.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.35rem;">H2H</div>` +
+    matches.map(m=>{
+      const escL = ESCUDOS[m.local] ? `<img src="${ESCUDOS[m.local]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.local.charAt(0)}</span>`;
+      const escV = ESCUDOS[m.visitante] ? `<img src="${ESCUDOS[m.visitante]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.visitante.charAt(0)}</span>`;
+      return `<div style="display:flex;align-items:center;gap:.4rem;padding:.15rem 0;">
+        <span style="display:flex;justify-content:flex-end;width:24px;">${escL}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);white-space:nowrap;min-width:40px;text-align:center;">${m.gl} — ${m.gv}</span>
+        <span style="display:flex;width:24px;">${escV}</span>
+      </div>`;
+    }).join("");
+
+  document.body.appendChild(tip);
+
+  // Position near the cell
+  const rect = event.target.getBoundingClientRect();
+  const tipW = 200;
+  let left = rect.left + rect.width/2 - 50;
+  let top = rect.bottom + 6;
+  if(left + 120 > window.innerWidth - 8) left = window.innerWidth - 120 - 8;
+  if(left < 8) left = 8;
+  if(top + 80 > window.innerHeight) top = rect.top - 80 - 6;
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+
+  if(isTouch){
+    _h2hTimer = setTimeout(hideH2HTooltip, 2000);
+    // Close on any touch elsewhere
+    const closeOnTouch = (e) => {
+      if(!e.target.closest('#h2h-tooltip')){ hideH2HTooltip(); document.removeEventListener('touchstart', closeOnTouch); }
+    };
+    setTimeout(()=>document.addEventListener('touchstart', closeOnTouch), 100);
+  }
+}
+
+function hideH2HTooltip(){
+  const tip = document.getElementById("h2h-tooltip");
+  if(tip) tip.remove();
+  if(_h2hTimer){ clearTimeout(_h2hTimer); _h2hTimer=null; }
+}
+
+function liveScoreBadge(equipo){
+  const allMatches = Object.values(FIXTURE).flatMap(z=>Object.values(z).flatMap(f=>f));
+  const liveM = allMatches.find(m=>m.estado==="en_curso"&&(m.local===equipo||m.visitante===equipo));
+  if(!liveM||liveM.gl===null) return "";
+  const esLocal = liveM.local===equipo;
+  const myG = esLocal?liveM.gl:liveM.gv;
+  const thG = esLocal?liveM.gv:liveM.gl;
+  const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
+  return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
+}
+
+function renderTablas(){
+  // Zona A clasifica top 5, resto top 4. Quintos de B/C/D arman tabla propia.
+  const clasificados = {"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
+  let html="";
+  const quintosRows=[];
+
+  ZONAS.forEach(z=>{
+    const rows=calcTabla(z);
+    const clasif=clasificados[z];
+    const zc = zonaConfig(z);
+    html+=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:1.5rem 0 .28rem;">${z}</p>`;
+    html+=`<div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+        <th title="Head to head">H2H</th>
+      </tr></thead><tbody>`;
+    rows.forEach((r,i)=>{
+      const pos=i+1;
+      const dif=r.gf-r.gc;
+      let posClass="noclasif";
+      if(pos<=clasif) posClass="clasif";
+      else if(pos===5&&z!=="Zona A") posClass="quinto";
+      html+=`<tr>
+        <td><span class="pos ${posClass}">${pos}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td>
+        <td>${r.g}</td>
+        <td>${r.e}</td>
+        <td>${r.p}</td>
+        <td>${r.gf}</td>
+        <td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'};${r.h2hMatches?'cursor:pointer;':''}position:relative;"
+          ${r.h2hMatches?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}',true)" `:''}
+        >${r.h2h}</td>
+      </tr>`;
+      // Guardar quinto de B/C/D
+      if(pos===5 && z!=="Zona A") quintosRows.push({...r, zona:z});
+    });
+    html+=`</tbody></table></div>`;
+  });
+
+  document.getElementById("tablas-cont").innerHTML=html;
+
+}
+
+function toggleFechaPicker(){
+  const picker = document.getElementById("fecha-picker");
+  if(!picker) return;
+  const grid = document.getElementById("fecha-picker-grid");
+  if(grid && !grid.children.length){
+    grid.innerHTML = Array.from({length:18},(_,i)=>{
+      const n = i+1;
+      return `<div onclick="irAFecha(${n})" id="fp-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual?'var(--accent)':'var(--text)'};border-color:${n===fechaActual?'var(--accent)':'var(--border)'};">${n}</div>`;
+    }).join("");
+  }
+  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
+}
+
+function irAFecha(n){
+  const picker = document.getElementById("fecha-picker");
+  if(picker) picker.style.display = "none";
+  if(n < 1 || n > 18) return;
+  fechaActual = n;
+  renderPartidos(fechaActual);
+}
+
+// Close picker on outside click
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".fi")){
+    const picker = document.getElementById("fecha-picker");
+    if(picker) picker.style.display = "none";
+  }
+});
+
+function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
+
+function renderFxTabs(){
+  document.getElementById("fx-tabs").innerHTML=ZONAS.map(z=>
+    `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
+  ).join("");
+}
+function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
+function renderFxCont(){
+  let html="";
+  for(let f=1;f<=18;f++){
+    const ms=FIXTURE[fxZona][String(f)]||[];
+    html+=`<div class="zona-lbl">Fecha ${f}</div>`;
+    ms.forEach(m=>{
+      const meta=PARTIDO_META[getMetaKey(fxZona,f,m.local,m.visitante)]||{};
+      const r=m.gl!==null
+        ? `<div class="score">${m.gl}<span class="sep">—</span>${m.gv}</div>`
+        : (meta.hora
+          ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`
+          : `<div class="vs">VS</div>`);
+      html+=`<div class="partido"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
+    });
+  }
+  document.getElementById("fx-cont").innerHTML=html;
+}
+
+function goPage(id,el){
+  document.querySelectorAll(".page").forEach(p=>{
+    p.classList.remove("active");
+    if(p.id !== "page-foro") p.style.display='';
+    else p.style.display='none';
+  });
+  document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+  const page = document.getElementById("page-"+id);
+  page.classList.add("active");
+  el.classList.add("active");
+  if(id==="fixture"){renderFxTabs();renderFxCont();}
+  if(id==="estadisticas"){cargarEstadisticas();}
+  if(id==="foro"){
+    page.style.display="flex";
+    page.style.height="calc(100vh - 52px)";
+    cargarMensajesForo();
+  }
+}
+
+function showSubTab(tab, el){
+  document.querySelectorAll('#stats-equipos .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['grupos','generales'].forEach(t=>{
+    const c=document.getElementById('subtab-cont-'+t);
+    if(c) c.style.display=t===tab?'':'none';
+  });
+}
+
+function toggleModal(){document.getElementById("modal-overlay").classList.toggle("open");}
+function closeModalOutside(e){if(e.target===document.getElementById("modal-overlay"))toggleModal();}
+
+function renderForoLocal(){
+  const msgs=[
+    {user:"Hincha Belgrano",tiempo:"hace 2h",texto:"Sp. Belgrano arrancó muy bien, 3 puntos en casa."},
+    {user:"Del_Norte_23",tiempo:"hace 4h",texto:"Boca Unidos goleó 3-1, se viene fuerte esta zona B."},
+    {user:"FederalFan",tiempo:"hace 6h",texto:"Costa Brava goleó 3-0 en la zona C, prometedor arranque."},
+    {user:"ElLinqueño10",tiempo:"ayer",texto:"El Linqueño ganó en casa, a seguir sumando. Vamos!"},
+  ];
+  renderForoMsgs(msgs);
+}
+
+function renderForoMsgs(msgs, pagina=0, total=0){
+  const logueado = !!usuarioActual;
+  const inputArea = logueado
+    ? `<textarea id="foro-input" placeholder="Escribí tu mensaje..." maxlength="100" oninput="document.getElementById('foro-chars').textContent=this.value.length+'/100'" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.7rem .9rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:80px;outline:none;"></textarea>
+       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;gap:.6rem;">
+         <span id="foro-chars" style="font-size:11px;color:#aaa;">0/100</span>
+         <div style="display:flex;gap:.6rem;">
+           <button onclick="publicarMensaje()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Publicar</button>
+         </div>
+       </div>`
+    : `<div style="font-size:13px;color:var(--muted);margin-bottom:.75rem;">Iniciá sesión para participar en el foro</div>
+       <button onclick="toggleModal()" style="background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:6px;padding:.5rem 1.25rem;cursor:pointer;">Ingresar para publicar</button>`;
+
+  document.getElementById("foro-input-area").innerHTML = inputArea;
+  if(!msgs.length){
+    document.getElementById("foro-msgs").innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún.</div>';
+    return;
+  }
+  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
+    <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;">
+      <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
+        ${escudoHTML(m.equipo,'esc')}
+        <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${m.user}</span>
+        <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
+        <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
+      </div>
+      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
+    </div>`).join("");
+  // Pagination nav
+  const totalPags = Math.ceil(total / FORO_POR_PAGINA);
+  if(totalPags > 1){
+    const nav = document.createElement('div');
+    nav.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem;border-top:2px solid #1a1a1a;';
+    nav.innerHTML =
+      (pagina > 0 ? `<button onclick="cargarMensajesForo(${pagina-1})" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:4px;cursor:pointer;">← Ant</button>` : '') +
+      `<span style="font-size:12px;color:var(--muted);">Página ${pagina+1} de ${totalPags}</span>` +
+      (pagina < totalPags-1 ? `<button onclick="cargarMensajesForo(${pagina+1})" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.3rem .8rem;border-radius:4px;cursor:pointer;">Sig →</button>` : '');
+    document.getElementById("foro-msgs").appendChild(nav);
+  }
+}
+
+async function diagnosticoIntegridad(){
+  try {
+    const teams = new Set();
+    Object.values(FIXTURE).forEach(fechas => {
+      Object.values(fechas).forEach(partidos => {
+        partidos.forEach(p => {
+          teams.add(p.local);
+          teams.add(p.visitante);
+        });
+      });
+    });
+
+    const sinEscudo = [...teams].filter(t => !ESCUDOS[t]);
+    if (sinEscudo.length) {
+      console.warn("[Diagnóstico] Equipos sin escudo:", sinEscudo.length, sinEscudo);
+    } else {
+      console.info("[Diagnóstico] Todos los equipos del fixture tienen escudo.");
+    }
+
+    const fixtureKeys = new Set();
+    Object.entries(FIXTURE).forEach(([zona, fechas]) => {
+      Object.entries(fechas).forEach(([fecha, partidos]) => {
+        partidos.forEach(p => {
+          fixtureKeys.add(`${zona}|${fecha}|${p.local}|${p.visitante}`);
+        });
+      });
+    });
+
+    const { data, error } = await sb
+      .from("partidos")
+      .select("zona, fecha, equipo_local_nombre, equipo_visitante_nombre")
+      .limit(1000);
+
+    if (error || !data) {
+      console.warn("[Diagnóstico] No se pudo leer tabla partidos:", error?.message || "sin datos");
+      return;
+    }
+
+    const noMatchean = data.filter(p => {
+      const key = `${p.zona}|${p.fecha}|${p.equipo_local_nombre}|${p.equipo_visitante_nombre}`;
+      return !fixtureKeys.has(key);
+    });
+
+    if (noMatchean.length) {
+      console.warn("[Diagnóstico] Partidos en DB que no matchean con FIXTURE:", noMatchean.length, noMatchean);
+    } else {
+      console.info("[Diagnóstico] Todos los partidos de DB matchean con FIXTURE.");
+    }
+  } catch (e) {
+    console.warn("[Diagnóstico] Error:", e);
+  }
+}
+
+
+function renderForo(){ cargarMensajesForo(); }
+
+// ── ESTADÍSTICAS ──
+let STATS_LOADED = false;
+
+function showStatsTab(tab, el){
+  document.querySelectorAll('#stats-tabs .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['jugadores','equipos','arbitros','penales'].forEach(t=>{
+    document.getElementById('stats-'+t).style.display = t===tab?'':'none';
+  });
+}
+
+async function cargarEstadisticas(){
+  // Always recalculate to pick up new match data
+  document.getElementById('stats-loading').style.display='';
+  document.getElementById('stats-content').style.display='none';
+  try {
+    // Query 1: eventos con jugador y equipo
+    // Paginate eventos to get ALL rows (Supabase limit is 1000 per request)
+    let eventos = [], evFrom = 0;
+    while(true){
+      const {data:evBatch, error:evErr} = await sb.from('eventos')
+        .select('tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))')
+        .range(evFrom, evFrom+999);
+      if(evErr) throw evErr;
+      if(!evBatch?.length) break;
+      eventos = eventos.concat(evBatch);
+      if(evBatch.length < 1000) break;
+      evFrom += 1000;
+    }
+
+    // Query 2: partidos jugados para cruzar con eventos
+    const {data:partidosDB, error:pErr} = await sb.from('partidos')
+      .select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante')
+      .not('goles_local','is',null);
+    if(pErr) throw pErr;
+    const partidosById = {};
+    (partidosDB||[]).forEach(p=>{ partidosById[p.id]=p; });
+
+    // Query 3: planillas para cruzar partido_id
+    const {data:planillasDB} = await sb.from('planillas')
+      .select('id,partido_id,equipo_id');
+    const planillaPartido = {};
+    (planillasDB||[]).forEach(p=>{ planillaPartido[p.id]=p.partido_id; });
+
+    // Query 4: penales
+    const {data:penalesDB, error:penErr} = await sb.from('penales')
+      .select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id');
+    if(penErr) console.warn('Penales error:', penErr.message);
+    console.log('Penales loaded:', penalesDB?.length, 'error:', penErr?.message);
+    console.log('Sample penal:', penalesDB?.[0]);
+    // Query 5: jugadores para penales
+    const {data:jugsDB} = await sb.from('jugadores').select('id,nombre,nombre_display,equipo_id,equipos(nombre)');
+    const jugsById = {};
+    (jugsDB||[]).forEach(j=>{ jugsById[j.id]=j; jugsById[String(j.id)]=j; jugsById[Number(j.id)]=j; });
+
+    // Process jugadores stats
+    const jugStats = {}; // id → {nombre, equipo, goles, asist, amarillas, rojas}
+    const equipoStats = {}; // nombre → {pj,g,e,p,gf,gc,pts, local:{}, visit:{}}
+    const arbiStats = {}; // nombre → {pj, vl, emp, vv, amarillas_l, amarillas_v, rojas_l, rojas_v, penales_l, penales_v}
+    const vallaStats = {}; // arquero id → {nombre, equipo, pj, vallas}
+
+    (eventos||[]).forEach(ev => {
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidosById[partidoId];
+      if(!partido) return;
+      const jugador = pl.jugadores;
+      const equipo = pl.equipos?.nombre;
+      const jId = jugador?.id;
+      const jNombre = jugador?.nombre_display || jugador?.nombre || '?';
+      const key = jId || jNombre;
+
+      if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0};
+
+      if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
+      // gol_contra does NOT count as a goal for that player
+      if(ev.tipo==='asistencia') jugStats[key].asist++;
+      if(ev.tipo==='amarilla') jugStats[key].amarillas++;
+      if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=2; jugStats[key].rojas++; }
+      if(ev.tipo==='roja') jugStats[key].rojas++;
+
+      // Vallas: track arqueros (nota=AR implied by position or es_capitan)
+      if(ev.tipo==='gol'||ev.tipo==='gol_penal'||ev.tipo==='gol_tiro_libre'){
+        // The goalkeeper of the team that conceded
+        // We'll calculate vallas separately from fixture data
+      }
+    });
+
+    // GOLES DE TIRO LIBRE
+    const tirLibreMap = {};
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo!=='gol_tiro_libre') return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const jug = pl.jugadores;
+      const equipo = pl.equipos?.nombre;
+      const jId = jug?.id;
+      const nombre = jug?.nombre_display||jug?.nombre||'?';
+      const key = jId||nombre;
+      if(!tirLibreMap[key]) tirLibreMap[key]={nombre, equipo, goles:0};
+      tirLibreMap[key].goles++;
+    });
+
+    // Equipo stats from FIXTURE
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          [m.local, m.visitante].forEach(eq=>{
+            if(!equipoStats[eq]) equipoStats[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,zona:z,
+              local:{pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0},
+              visit:{pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}};
+          });
+          const loc=equipoStats[m.local], vis=equipoStats[m.visitante];
+          loc.pj++; vis.pj++; loc.gf+=m.gl; loc.gc+=m.gv; vis.gf+=m.gv; vis.gc+=m.gl;
+          loc.local.pj++; loc.local.gf+=m.gl; loc.local.gc+=m.gv;
+          vis.visit.pj++; vis.visit.gf+=m.gv; vis.visit.gc+=m.gl;
+          if(m.gl>m.gv){ loc.g++;loc.pts+=3;vis.p++; loc.local.g++;loc.local.pts+=3;vis.visit.p++; }
+          else if(m.gl<m.gv){ vis.g++;vis.pts+=3;loc.p++; vis.visit.g++;vis.visit.pts+=3;loc.local.p++; }
+          else{ loc.e++;vis.e++;loc.pts++;vis.pts++; loc.local.e++;loc.local.pts++;vis.visit.e++;vis.visit.pts++; }
+          // Vallas invictas
+          // local: if m.gv===0 the local keeper kept a clean sheet
+          // visit: if m.gl===0 the visitante keeper kept a clean sheet
+        });
+      }
+    });
+
+    // Vallas por arquero (#1 titular, #12 suplente)
+    // Cross planillasDB (has partido_id, equipo_id, numero_camiseta, jugador_id) with fixture results
+    const vallasPorArquero = {}; // jugador_id → {nombre, equipo, pj, vallas}
+
+    // Build a map: partido_id → {local_equipo_id, visit_equipo_id, gl, gv, zona, fecha, local, visitante}
+    const partidoMap = {};
+    (partidosDB||[]).forEach(p=>{
+      partidoMap[p.id] = p;
+    });
+
+    // For each planilla row that is a keeper (numero 1 o 12), find if they played
+    // planillasDB has: id, partido_id, equipo_id
+    // We need planillas with jugador info and numero - but planillasDB only has id/partido_id/equipo_id
+    // We need a richer query - let's use eventos to find cambio_entra/sale for #12
+
+    // Simpler approach: query planillas with numero_camiseta filter
+    const {data:arquerosPlanilla} = await sb.from('planillas')
+      .select('id,partido_id,equipo_id,numero_camiseta,titular,jugadores(id,nombre,nombre_display),equipos(nombre)')
+      .in('numero_camiseta',[1,12]);
+
+    // Build set of partido_ids where keeper #12 entered (cambio_entra)
+    const arqSustitutos = new Set(); // planilla ids where #12 has cambio_entra
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo==='cambio_entra'){
+        const pl = ev.planillas;
+        if(pl && [1,12].includes(Number(pl.numero_camiseta || 0))){
+          arqSustitutos.add(ev.planilla_id);
+        }
+      }
+    });
+    // Build set of planilla ids where #1 has cambio_sale (left early)
+    const arqSalieron = new Set();
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo==='cambio_sale'){
+        const pl = ev.planillas;
+        if(pl && Number(pl.numero_camiseta||0)===1){
+          arqSalieron.add(ev.planilla_id);
+        }
+      }
+    });
+
+    // Build event map by planilla_id for keeper minute tracking
+    const evsByPlanilla = {};
+    (eventos||[]).forEach(ev=>{
+      if(!evsByPlanilla[ev.planilla_id]) evsByPlanilla[ev.planilla_id]=[];
+      evsByPlanilla[ev.planilla_id].push(ev);
+    });
+
+    // Build goles concedidos per partido per equipo with minutes
+    // goles_concedidos[partido_id][equipo_id] = [{minuto}]
+    const golesConcedidosMap = {};
+    (eventos||[]).forEach(ev=>{
+      if(!['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidoMap[partidoId];
+      if(!partido) return;
+      // This goal was scored BY pl.equipo_id AGAINST the other team
+      // Find the other team's equipo_id
+      if(!golesConcedidosMap[partidoId]) golesConcedidosMap[partidoId]={};
+      // We'll track by "equipo que recibió" = the other team
+      // Store goal minutes indexed by scoring equipo (to invert later)
+      const scoringEquipo = pl.equipos?.nombre;
+      const concedidoPor = scoringEquipo===partido.equipo_local_nombre
+        ? partido.equipo_visitante_nombre
+        : partido.equipo_local_nombre;
+      if(!golesConcedidosMap[partidoId][concedidoPor]) golesConcedidosMap[partidoId][concedidoPor]=[];
+      golesConcedidosMap[partidoId][concedidoPor].push(parseInt(ev.minuto)||0);
+    });
+    // Also gol_contra: scored by own team, counts against them
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo!=='gol_contra') return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidoMap[partidoId];
+      if(!partido) return;
+      const ownEquipo = pl.equipos?.nombre;
+      if(!golesConcedidosMap[partidoId]) golesConcedidosMap[partidoId]={};
+      if(!golesConcedidosMap[partidoId][ownEquipo]) golesConcedidosMap[partidoId][ownEquipo]=[];
+      golesConcedidosMap[partidoId][ownEquipo].push(parseInt(ev.minuto)||0);
+    });
+
+    const parseMin = m => { const s=String(m||'').split('+'); return parseInt(s[0]||0)*100+(parseInt(s[1]||0)); };
+
+    (arquerosPlanilla||[]).forEach(pl=>{
+      const partido = partidoMap[pl.partido_id];
+      if(!partido || partido.goles_local===null) return;
+      const jug = pl.jugadores;
+      if(!jug) return;
+      const jId = jug.id;
+      const nombre = jug.nombre_display || jug.nombre || '?';
+      const equipo = pl.equipos?.nombre || '';
+      const num = Number(pl.numero_camiseta);
+      const plEvs = evsByPlanilla[pl.id] || [];
+
+      // Determine minutes played
+      let minuteIn = null, minuteOut = null;
+      if(num===1 && pl.titular){
+        minuteIn = 0;
+        const saleEv = plEvs.find(e=>e.tipo==='cambio_sale');
+        minuteOut = saleEv ? parseMin(saleEv.minuto) : 9000; // 9000 = played full
+      } else if(num===12){
+        const entraEv = plEvs.find(e=>e.tipo==='cambio_entra');
+        if(!entraEv) return; // didn't play
+        minuteIn = parseMin(entraEv.minuto);
+        minuteOut = 9000;
+      } else return;
+
+      const minutesPlayed = minuteOut===9000 ? (9000-minuteIn) : (minuteOut-minuteIn);
+      // Normalize: full game = 9000-0 = 9000, treat as 90
+      const minutosEfectivos = minuteOut===9000 ? 90 - (minuteIn===0?0:minuteIn/100) : (minuteOut-minuteIn)/100;
+
+      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0, minutos:0};
+
+      // Goals conceded BY this keeper's team while he was on
+      const golesContra = (golesConcedidosMap[pl.partido_id]?.[equipo] || []);
+      const golesEnSuTurno = golesContra.filter(m => m*100>=minuteIn && m*100<=(minuteOut===9000?9099:minuteOut));
+
+      const tuvoValla = golesEnSuTurno.length===0;
+      const minJugados = minuteOut===9000 ? (90 - minuteIn/100) : (minuteOut-minuteIn)/100;
+
+      // Count partido:
+      // - If conceded goals: always count as PJ (regardless of minutes)
+      // - If clean sheet: only count if played 60+ minutes
+      if(!tuvoValla || minJugados>=60){
+        vallasPorArquero[jId].pj++;
+        vallasPorArquero[jId].minutos += Math.round(minJugados);
+        if(tuvoValla) vallasPorArquero[jId].vallas++;
+      }
+    });
+
+    // Build arbitro per partido from fixture table query
+    // We already have fixtureData with arbitro field - build a map partido→arbitro
+    // Also build from PARTIDO_META as fallback
+    const arbitroPorPartido = {}; // "zona_fecha_local_visit" → arbitro name
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          const key = `${z}_${f}_${m.local}_${m.visitante}`;
+          const meta = PARTIDO_META[key]||{};
+          const arb = meta.arbitro || "";
+          if(arb) arbitroPorPartido[key] = arb;
+        });
+      }
+    });
+    // Also use fixtureData directly (already loaded) - it has arbitro field
+    // Fetch arbitros directly from fixture table
+    const {data:fixtureArbitros} = await sb.from('fixture')
+      .select('zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
+      .not('arbitro','is',null).neq('arbitro','');
+    (fixtureArbitros||[]).forEach(p=>{
+      const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
+      arbitroPorPartido[key]=p.arbitro;
+    });
+
+    // Build arbiStats from partido results
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          const key=`${z}_${f}_${m.local}_${m.visitante}`;
+          const arb=arbitroPorPartido[key]||"";
+          if(!arb) return;
+          if(!arbiStats[arb]) arbiStats[arb]={pj:0,vl:0,emp:0,vv:0,aml:0,amv:0,rl:0,rv:0,penl:0,penv:0};
+          const a=arbiStats[arb];
+          a.pj++;
+          if(m.gl>m.gv) a.vl++;
+          else if(m.gl<m.gv) a.vv++;
+          else a.emp++;
+          m._arbitro=arb;
+        });
+      }
+    });
+
+    // Add tarjetas/penales to arbitros using arbitroPorPartido map
+    (eventos||[]).forEach(ev=>{
+      if(!['amarilla','doble_amarilla','roja','gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId2 = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidosById[partidoId2];
+      if(!partido || partido.goles_local===null) return;
+      const arbKey = `${partido.zona}_${partido.fecha}_${partido.equipo_local_nombre}_${partido.equipo_visitante_nombre}`;
+      const arbNombre = arbitroPorPartido[arbKey] || "";
+      if(!arbNombre || !arbiStats[arbNombre]) return;
+      const a = arbiStats[arbNombre];
+      const esLocal = pl.equipos?.nombre === partido.equipo_local_nombre;
+      if(ev.tipo==='amarilla'||ev.tipo==='doble_amarilla'){ if(esLocal) a.aml++; else a.amv++; }
+      if(ev.tipo==='roja'||ev.tipo==='doble_amarilla'){ if(esLocal) a.rl++; else a.rv++; }
+      if(['gol_penal','penal_atajado','penal_desviado'].includes(ev.tipo)){ if(esLocal) a.penl++; else a.penv++; }
+    });
+
+    // ── RENDER FUNCTIONS ──
+    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;max-width:180px;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div><div style="font-size:10px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${equipo||''}</div></div></div>`;
+    const tblHead = (...cols) => `<table class="tabla-stats"><thead><tr>${cols.map(([w,t,l,al])=>`<th style="${w?`width:${w};`:''}${al?`text-align:${al};`:''}" ${t?`title="${t}"`:''} >${l}</th>`).join('')}</tr></thead><tbody>`;
+
+    // GOLEADORES
+    const goleadores = Object.values(jugStats).filter(j=>j.goles>0).sort((a,b)=>b.goles-a.goles).slice(0,10);
+    document.getElementById('tbl-goleadores').innerHTML = goleadores.length ? tblHead(
+      ['28px','Posición','#'],['','Jugador','Jugador'],['40px','Goles','⚽']
+    ) + goleadores.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // ASISTENTES
+    const asistentes = Object.values(jugStats).filter(j=>j.asist>0).sort((a,b)=>b.asist-a.asist).slice(0,10);
+    document.getElementById('tbl-asistentes').innerHTML = asistentes.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Asistencias','👟']
+    ) + asistentes.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.asist}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // TIRO LIBRE
+    const tirLibreRows = Object.values(tirLibreMap).sort((a,b)=>b.goles-a.goles);
+    document.getElementById('tbl-tiro-libre').innerHTML = tirLibreRows.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Goles','🎯']
+    ) + tirLibreRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // AMARILLAS
+    const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,10);
+    document.getElementById('tbl-amarillas').innerHTML = amonestados.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Amarillas','🟨']
+    ) + amonestados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.amarillas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // ROJAS
+    const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,10);
+    document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','Rojas','🟥']
+    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // VALLAS INVICTAS
+    const vallas = Object.values(vallasPorArquero)
+      .sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
+    document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
+      ['28px','','#'],['','Arquero','Arquero'],['40px','PJ','PJ'],['55px','Minutos','⏱'],['50px','Vallas','🧤']
+    ) + vallas.map((v,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // TABLA GENERAL
+    const generalRows = Object.entries(equipoStats).map(([n,s])=>({n,...s,dif:s.gf-s.gc}))
+      .sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    const renderGeneralTable = (rows) => tblHead(
+      ['28px','','#'],['','Equipo','Equipo'],['32px','PJ','PJ'],['32px','G','G'],['32px','E','E'],['32px','P','P'],['32px','GF','GF'],['32px','GC','GC'],['38px','+/-','+/-'],['38px','Pts','Pts']
+    ) + rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+    }).join('') + '</tbody></table>';
+
+    // Zona table with H2H columns
+    const renderZonaTable = (rows, _zc2={color:'#888'}, zonaNombre='') => {
+      // Compute H2H same as calcTabla
+      const ptGroups={};
+      rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
+      const h2hData={};
+      Object.entries(ptGroups).forEach(([pts,teams])=>{
+        if(teams.length<2) return;
+        // find matches between these teams in FIXTURE
+        const h2h={};
+        teams.forEach(t=>h2h[t]={pts:0,dif:0,gf:0,gc:0,gfv:0,g:0,e:0,p:0});
+        ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+          (FIXTURE[z]?.[String(f)]||[]).forEach(m=>{
+            if(!teams.includes(m.local)||!teams.includes(m.visitante)||m.gl===null) return;
+            h2h[m.local].gf+=m.gl; h2h[m.local].gc+=m.gv; h2h[m.local].dif+=m.gl-m.gv;
+            h2h[m.visitante].gf+=m.gv; h2h[m.visitante].gc+=m.gl; h2h[m.visitante].dif+=m.gv-m.gl; h2h[m.visitante].gfv+=m.gv;
+            if(m.gl>m.gv){h2h[m.local].pts+=3;h2h[m.local].g++; h2h[m.visitante].p++;}
+            else if(m.gl<m.gv){h2h[m.visitante].pts+=3;h2h[m.visitante].g++; h2h[m.local].p++;}
+            else{h2h[m.local].pts++;h2h[m.visitante].pts++;h2h[m.local].e++;h2h[m.visitante].e++;}
+          });
+        }});
+        // Collect matches between these teams from FIXTURE
+    const h2hMatches2 = [];
+    ZONAS.forEach(zz=>{ for(let ff=1;ff<=18;ff++){
+      (FIXTURE[zz]?.[String(ff)]||[]).forEach(m=>{
+        if(teams.includes(m.local)&&teams.includes(m.visitante)&&m.gl!==null) h2hMatches2.push(m);
+      });
+    }});
+        teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
+      });
+      const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
+      return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
+        + `<tr>
+          <td style="width:24px;"></td>
+          <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
+          <td colspan="8"></td>
+          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
+        </tr>`
+        + `<tr>`
+        + `<th style="width:24px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
+        + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
+        + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
+        + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
+        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GC desempate">GCD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `</tr></thead><tbody>`
+        + rows.map((r,i)=>{
+        const dif=r.gf-r.gc;
+        const h=h2hData[r.n];
+        const hasH2H = !!h;
+        return `<tr>
+          <td><span class="pos">${i+1}</span></td>
+          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
+          <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
+          <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+          <td><strong class="pts">${r.pts}</strong></td>
+          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''};border-left:2px solid ${_zc2.color}30;"
+            ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}>
+            ${hasH2H?h.pts:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gf:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gc:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gfv:'—'}</td>
+        </tr>`;
+      }).join('') + `</tbody></table>`;
+    };
+    document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
+
+    // LOCAL
+    const renderLocalVisitTable = (rows) => tblHead(
+      ['24px','','#'],['','Equipo','Equipo'],['32px','PJ','PJ'],['32px','G','G'],['32px','E','E'],['32px','P','P'],['32px','GF','GF'],['32px','GC','GC'],['36px','GD','+/-'],['36px','Pts','Pts']
+    ) + rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+    }).join('') + '</tbody></table>';
+
+    const localRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.local,dif:s.local.gf-s.local.gc}))
+      .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    document.getElementById('tbl-local-stats').innerHTML = renderLocalVisitTable(localRows);
+
+    const visitRows = Object.entries(equipoStats).map(([n,s])=>({n,...s.visit,dif:s.visit.gf-s.visit.gc}))
+      .filter(r=>r.pj>0).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
+    document.getElementById('tbl-visitante-stats').innerHTML = renderLocalVisitTable(visitRows);
+
+    // 1T/2T standings from goal minutes (<=45 = 1T, >=46 = 2T)
+    const half1 = {}, half2 = {};
+    const initHalf = (eq, t) => { if(!t[eq]) t[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; };
+
+    // First init all played teams
+    ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        if(m.gl===null) return;
+        initHalf(m.local,half1); initHalf(m.visitante,half1);
+        initHalf(m.local,half2); initHalf(m.visitante,half2);
+        half1[m.local].pj++; half1[m.visitante].pj++;
+        half2[m.local].pj++; half2[m.visitante].pj++;
+      });
+    }});
+
+    // Count goals per half per team from eventos
+    const golesHT = {}; // "partido_id|equipo" -> {h1, h2}
+    eventos.forEach(ev=>{
+      if(!['gol','gol_penal','gol_tiro_libre','gol_contra'].includes(ev.tipo)) return;
+      const pl = ev.planillas;
+      if(!pl) return;
+      const partidoId = planillaPartido[ev.planilla_id] || pl.partido_id;
+      const partido = partidosById[partidoId];
+      if(!partido || partido.goles_local===null) return;
+      const min = parseInt(String(ev.minuto||'').split('+')[0])||0;
+      let targetEquipo = pl.equipos?.nombre;
+      if(ev.tipo==='gol_contra'){
+        targetEquipo = targetEquipo===partido.equipo_local_nombre
+          ? partido.equipo_visitante_nombre : partido.equipo_local_nombre;
+      }
+      if(!targetEquipo) return;
+      const key = `${partidoId}|${targetEquipo}`;
+      if(!golesHT[key]) golesHT[key]={h1:0,h2:0};
+      if(min<=45) golesHT[key].h1++; else golesHT[key].h2++;
+    });
+
+    // Build standings per half
+    ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        if(m.gl===null) return;
+        // Find partido_id for this fixture match
+        const pid = Object.keys(partidosById).find(id=>{
+          const p=partidosById[id];
+          return p.equipo_local_nombre===m.local && p.equipo_visitante_nombre===m.visitante;
+        });
+        if(!pid) return;
+        const gl1 = (golesHT[`${pid}|${m.local}`]||{}).h1||0;
+        const gv1 = (golesHT[`${pid}|${m.visitante}`]||{}).h1||0;
+        const gl2 = (golesHT[`${pid}|${m.local}`]||{}).h2||0;
+        const gv2 = (golesHT[`${pid}|${m.visitante}`]||{}).h2||0;
+        // 1T
+        half1[m.local].gf+=gl1; half1[m.local].gc+=gv1;
+        half1[m.visitante].gf+=gv1; half1[m.visitante].gc+=gl1;
+        if(gl1>gv1){half1[m.local].g++;half1[m.local].pts+=3;half1[m.visitante].p++;}
+        else if(gl1<gv1){half1[m.visitante].g++;half1[m.visitante].pts+=3;half1[m.local].p++;}
+        else{half1[m.local].e++;half1[m.visitante].e++;half1[m.local].pts++;half1[m.visitante].pts++;}
+        // 2T
+        half2[m.local].gf+=gl2; half2[m.local].gc+=gv2;
+        half2[m.visitante].gf+=gv2; half2[m.visitante].gc+=gl2;
+        if(gl2>gv2){half2[m.local].g++;half2[m.local].pts+=3;half2[m.visitante].p++;}
+        else if(gl2<gv2){half2[m.visitante].g++;half2[m.visitante].pts+=3;half2[m.local].p++;}
+        else{half2[m.local].e++;half2[m.visitante].e++;half2[m.local].pts++;half2[m.visitante].pts++;}
+      });
+    }});
+    const renderHalfTable = (halfData) => {
+      const rows = Object.entries(halfData).map(([n,d])=>({n,...d,dif:d.gf-d.gc})).sort((a,b)=>b.pts-a.pts||(b.dif-a.dif)||b.gf-a.gf);
+      if(!rows.length) return '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos de entretiempos cargados aún.</div>';
+      return tblHead(['24px','','#'],['','Equipo','Equipo'],['28px','PJ','PJ'],['24px','G','G'],['24px','E','E'],['24px','P','P'],['28px','GF','GF'],['28px','GC','GC'],['28px','+/-','+/-'],['32px','Pts','Pts'])+
+      rows.map((r,i)=>{
+        const d=r.dif;
+        return `<tr><td><span class="pos">${i+1}</span></td><td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td><td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td><td style="color:${d>0?'#4caf50':d<0?'#e57373':'var(--muted)'}">${d>0?'+':''}${d}</td><td><strong class="pts">${r.pts}</strong></td></tr>`;
+      }).join('')+'</tbody></table>';
+    };
+    document.getElementById('tbl-1t').innerHTML = renderHalfTable(half1);
+    document.getElementById('tbl-2t').innerHTML = renderHalfTable(half2);
+
+    // POSICIONES AMPLIADAS POR ZONA
+    const posAmpDiv = document.getElementById('tbl-posiciones-ampliadas');
+    posAmpDiv.innerHTML = ZONAS.map(z=>{
+      const zc=zonaConfig(z);
+      const rows=calcTabla(z).map(r=>({...r,dif:r.gf-r.gc}));
+      return `<div>
+      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}</div></div>`;
+    }).join('');
+
+    // ÁRBITROS
+    const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
+        const cW = '36px';
+    const colH = `background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:${cW};min-width:${cW};max-width:${cW};`;
+    const colD = `text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
+    const arbiTableHtml = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:180px;">
+        ${Array(10).fill(`<col style="width:${cW};">`).join('')}
+      </colgroup>
+      <thead><tr>
+        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Árbitro</th>
+        ${['PJ','GL','Emp','GV','🟨L','🟨V','🟥L','🟥V','PL','PV'].map(h=>`<th style="${colH}">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
+        <td style="font-size:13px;text-align:left;padding:.4rem .6rem;width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nombre}">${nombre}</td>
+        <td style="${colD}">${a.pj}</td><td style="${colD}">${a.vl}</td>
+        <td style="${colD}">${a.emp}</td><td style="${colD}">${a.vv}</td>
+        <td style="${colD}">${a.aml}</td><td style="${colD}">${a.amv}</td>
+        <td style="${colD}">${a.rl}</td><td style="${colD}">${a.rv}</td>
+        <td style="${colD}">${a.penl}</td><td style="${colD}">${a.penv}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+    document.getElementById('tbl-arbitros').innerHTML = arbiRows.length
+      ? arbiTableHtml
+      : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';;
+
+    // PENALES EJECUTANTES
+    const penEjec = {};
+    (penalesDB||[]).forEach(p=>{
+      const jug = jugsById[p.ejecutante_id] || jugsById[String(p.ejecutante_id)];
+      const nombre = jug?.nombre_display||jug?.nombre||(p.ejecutante_id?'ID:'+p.ejecutante_id:'?');
+      const equipo = jug?.equipos?.nombre || p.equipo_favor || '';
+      if(!penEjec[nombre]) penEjec[nombre]={nombre,ejecutados:0,goles:0,equipo};
+      penEjec[nombre].ejecutados++;
+      if(p.resultado==='gol') penEjec[nombre].goles++;
+    });
+    const penEjecRows = Object.values(penEjec).sort((a,b)=>{
+      const pctA = a.ejecutados ? a.goles/a.ejecutados : 0;
+      const pctB = b.ejecutados ? b.goles/b.ejecutados : 0;
+      if(Math.abs(pctB-pctA) > 0.001) return pctB-pctA;
+      return b.ejecutados-a.ejecutados; // more attempts = more reliable
+    });
+    // Banner resumen penales - calculated after penArq is built below
+    
+    document.getElementById('tbl-pen-ejecutantes').innerHTML = penEjecRows.length ? tblHead(
+      ['180px','Jugador','Jugador'],['44px','Pat.','Pateados'],['44px','Conv.','Convertidos'],['44px','%','Efectividad']
+    ) + penEjecRows.map(j=>{
+      const pct = j.ejecutados ? Math.round(j.goles/j.ejecutados*100)+'%' : '—';
+      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo)}</td><td style="text-align:center;">${j.ejecutados}</td><td style="text-align:center;">${j.goles}</td><td style="text-align:center;">${pct}</td></tr>`;
+    }).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // PENALES ARQUEROS
+    const penArq = {};
+    (penalesDB||[]).forEach(p=>{
+      if(!p.arquero_id) return;
+      const arqJug = jugsById[p.arquero_id] || jugsById[String(p.arquero_id)];
+      const nombre = arqJug?.nombre_display||arqJug?.nombre||(p.arquero_id?'ID:'+p.arquero_id:'?');
+      const equipoArq = arqJug?.equipos?.nombre || p.equipo_contra || '';
+      if(!penArq[nombre]) penArq[nombre]={nombre,equipo:equipoArq,recibidos:0,atajados:0};
+      penArq[nombre].recibidos++;
+      if(p.resultado==='atajado') penArq[nombre].atajados++;
+    });
+    const penArqRows = Object.values(penArq).sort((a,b)=>{
+      const pctA = a.recibidos ? a.atajados/a.recibidos : 0;
+      const pctB = b.recibidos ? b.atajados/b.recibidos : 0;
+      if(pctB !== pctA) return pctB - pctA;
+      // Same pct: if both 0%, ascending by recibidos (0/1 is better than 0/3)
+      if(pctA === 0) return a.recibidos - b.recibidos;
+      // Otherwise: descending by recibidos (more is more impressive)
+      return b.recibidos - a.recibidos;
+    });
+
+    // Banner resumen penales (after both penEjecRows and penArqRows are ready)
+    const totalPen = penEjecRows.reduce((s,j)=>s+j.ejecutados,0);
+    const totalGol = penEjecRows.reduce((s,j)=>s+j.goles,0);
+    const totalAtaj = penArqRows.reduce((s,j)=>s+j.atajados,0);
+    if(totalPen>0){
+      const pct=Math.round(totalGol/totalPen*100);
+      const bc="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;";
+      const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">'
+        +'<div style="text-align:center;"><div style="'+bc+'color:var(--accent);">'+totalPen+'</div><div style="font-size:11px;color:var(--muted);">Pateados</div></div>'
+        +'<div style="text-align:center;"><div style="'+bc+'color:#4caf50;">'+totalGol+'</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>'
+        +'<div style="text-align:center;"><div style="'+bc+'color:#e57373;">'+(totalPen-totalGol)+'</div><div style="font-size:11px;color:var(--muted);">No convertidos</div></div>'
+        +'<div style="text-align:center;"><div style="'+bc+'color:#5daadd;">'+totalAtaj+'</div><div style="font-size:11px;color:var(--muted);">Atajados</div></div>'
+        +'<div style="text-align:center;"><div style="'+bc+'">'+pct+'%</div><div style="font-size:11px;color:var(--muted);">Efectividad</div></div>'
+        +'</div>';
+      document.getElementById('stats-penales').insertAdjacentHTML('afterbegin', bannerHtml);
+    }
+
+    // Penales a favor / en contra por equipo
+    const penFavor = {}, penContra = {};
+    (penalesDB||[]).forEach(p=>{
+      if(p.equipo_favor){ if(!penFavor[p.equipo_favor]) penFavor[p.equipo_favor]=0; penFavor[p.equipo_favor]++; }
+      if(p.equipo_contra){ if(!penContra[p.equipo_contra]) penContra[p.equipo_contra]=0; penContra[p.equipo_contra]++; }
+    });
+    const penFavorRows = Object.entries(penFavor).sort((a,b)=>b[1]-a[1]);
+    const penContraRows = Object.entries(penContra).sort((a,b)=>b[1]-a[1]);
+
+    const tblEquiposPen = (rows, label) => rows.length ? `<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>
+        <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">${label}</th>
+        <th style="width:40px;padding:.4rem .3rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">PEN</th>
+      </tr></thead><tbody>
+      ${rows.map(([eq,n],i)=>`<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:.35rem .5rem;font-size:13px;text-align:left;"><div class="tr-eq">${escudoHTML(eq,'me')}<span>${eq}</span></div></td>
+        <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
+      </tr>`).join('')}
+      </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>';
+
+    // Arbitros que cobraron penales
+    const penArbiStats = {};
+    (penalesDB||[]).forEach(p=>{
+      const arbKey2 = p.partido_id ? 
+        Object.entries(arbitroPorPartido).find(([k,v])=>{ 
+          const px = partidosById[p.partido_id]; 
+          return px && k===`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+        })?.[1] : null;
+      if(arbKey2){ if(!penArbiStats[arbKey2]) penArbiStats[arbKey2]=0; penArbiStats[arbKey2]++; }
+    });
+    const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
+
+    const penEquiposEl = document.getElementById('stats-penales');
+    if(penEquiposEl){
+      penEquiposEl.insertAdjacentHTML('beforeend', `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem;">
+          <div><p class="sec">🟢 Penales a favor</p><div class="tabla-mini">${tblEquiposPen(penFavorRows,'Equipo')}</div></div>
+          <div><p class="sec">🔴 Penales en contra</p><div class="tabla-mini">${tblEquiposPen(penContraRows,'Equipo')}</div></div>
+        </div>
+        <div style="margin-top:1rem;max-width:400px;">
+          <p class="sec">🧑‍⚖️ Árbitros que cobraron penales</p>
+          <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+              <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
+              <th style="width:55px;padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
+              <th style="padding:.4rem 1rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);">A favor</th>
+              <th style="padding:.4rem 1rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);">En contra</th>
+            </tr></thead><tbody>
+            ${penArbiRows.map(([arb,n])=>{
+              const pensByArb = (penalesDB||[]).filter(p=>{
+                const px=p.partido_id?partidosById[p.partido_id]:null;
+                if(!px) return false;
+                const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+                return arbitroPorPartido[k]===arb;
+              });
+              const teamsFavor=[...new Set(pensByArb.map(p=>p.equipo_favor).filter(Boolean))];
+              const teamsContra=[...new Set(pensByArb.map(p=>p.equipo_contra).filter(Boolean))];
+              const escFavor=teamsFavor.map(eq=>escudoHTML(eq,'me')).join('');
+              const escContra=teamsContra.map(eq=>escudoHTML(eq,'me')).join('');
+              return `<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
+                <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:nowrap;align-items:center;">${escFavor}</div></td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:nowrap;align-items:center;">${escContra}</div></td>
+              </tr>`;
+            }).join('')}
+            </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
+          </div>
+        </div>
+      `);
+    }
+    document.getElementById('tbl-pen-arqueros').innerHTML = penArqRows.length ? tblHead(
+      ['180px','Arquero','Arquero'],['44px','Rec.','Recibidos'],['44px','Ataj.','Atajados'],['44px','%','Efectividad']
+    ) + penArqRows.map(j=>{
+      const pct = j.recibidos ? Math.round(j.atajados/j.recibidos*100)+'%' : '—';
+      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo||'')}</td><td style="text-align:center;">${j.recibidos}</td><td style="text-align:center;">${j.atajados}</td><td style="text-align:center;">${pct}</td></tr>`;
+    }).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    STATS_LOADED = true;
+    document.getElementById('stats-loading').style.display='none';
+    document.getElementById('stats-content').style.display='';
+  } catch(e){
+    document.getElementById('stats-loading').innerHTML = `<div style="color:#e57373;">Error cargando estadísticas: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+// ── INIT ──
+function renderSegundaFase(){
+  const el = document.getElementById('cont-2dafase');
+  if(!el) return;
+
+  // Get sorted tables for each zona
+  const tabA = calcTabla("Zona A");
+  const tabB = calcTabla("Zona B");
+  const tabC = calcTabla("Zona C");
+  const tabD = calcTabla("Zona D");
+
+  // Quintos: 5th of B, C, D
+  const quintos = [
+    tabB[4] ? {...tabB[4], zona:"Zona B"} : null,
+    tabC[4] ? {...tabC[4], zona:"Zona C"} : null,
+    tabD[4] ? {...tabD[4], zona:"Zona D"} : null,
+  ].filter(Boolean);
+
+  // Sort quintos: pts desc, dif desc, gf desc, gf_visit desc (gf_visit not tracked, use gf as fallback)
+  quintos.sort((a,b)=>
+    (b.pts-a.pts) ||
+    ((b.gf-b.gc)-(a.gf-a.gc)) ||
+    (b.gf-a.gf)
+  );
+
+  // Check if top quinto is tied (same pts, dif, gf)
+  const topQ = quintos[0];
+  const tied = quintos.filter(q=>q && q.pts===topQ.pts && (q.gf-q.gc)===(topQ.gf-topQ.gc) && q.gf===topQ.gf);
+  const topQTied = tied.length > 1;
+
+  const bestQuintoZona = topQ?.zona;
+
+  // Nonagonal A: top5 ZonaA + top4 ZonaB
+  const nonA = [...tabA.slice(0,5), ...tabB.slice(0,4)];
+
+  // Nonagonal B: top4 ZonaC + top4 ZonaD + best quinto
+  const nonB = [...tabC.slice(0,4), ...tabD.slice(0,4)];
+  if(topQ) nonB.push({...topQ, _topQuinto: true, _tied: topQTied});
+
+  // Remaining quintos (not best)
+  const restQuintos = quintos.slice(1);
+
+  // Revalida A: 6-10 ZonaA (idx 5-9) + 6-9 ZonaB (idx 5-8) = 9 base
+  const revA = [...tabA.slice(5,10), ...tabB.slice(5,9)];
+  // Revalida B: 6-9 ZonaC (idx 5-8) + 6-9 ZonaD (idx 5-8) = 8 base
+  const revB = [...tabC.slice(5,9), ...tabD.slice(5,9)];
+
+  // Distribute remaining quintos
+  if(bestQuintoZona !== "Zona B"){
+    // best quinto is C or D → quinto de B goes to RevA, other remaining goes to RevB
+    const quintoB = restQuintos.find(q=>q.zona==="Zona B");
+    const quintoOther = restQuintos.find(q=>q.zona!=="Zona B");
+    if(quintoB) revA.push({...quintoB, _quinto:true});
+    if(quintoOther) revB.push({...quintoOther, _quinto:true});
+  } else {
+    // best quinto is B → both remaining (C and D) go to RevB
+    restQuintos.forEach(q=>revB.push({...q, _quinto:true}));
+  }
+
+  const renderLista = (equipos, color) => `<div class="lista-2dafase" style="width:200px;min-width:200px;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
+    equipos.map((r,i)=>{
+    const isQuinto = r._quinto || r._topQuinto;
+    const isTied = r._tied;
+    const posColor = isTied ? '#3b82f6' : '#aaa';
+    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.35rem .6rem;border-bottom:1px solid var(--border);background:${i%2===0?'var(--surface)':'var(--surface2)'};">
+      <span style="font-size:11px;font-weight:700;color:${posColor};width:16px;text-align:center;flex-shrink:0;">${i+1}</span>
+      ${escudoHTML(r.n,'me')}
+      <span style="font-size:13px;${isQuinto?'color:#f5e99a;':'color:#e8e8e8;'}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">  (5°)</span>':''}</span>
+      ${isTied ? '&nbsp;<span style="font-size:11px;color:#3b82f6;flex-shrink:0;" title="Empate — sorteo">⚖️</span>' : ''}
+    </div>`;
+  }).join('') + `</div>`;
+
+    const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
+
+  // Quintos mini table
+  const quintosOrdenados = [...quintos].sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf);
+  const quintosTable = (() => {
+  const rows = quintosOrdenados.map((q,i)=>{
+    const dif=q.gf-q.gc;
+    const isTiedTop = topQTied && i < tied.length;
+    const posClass = isTiedTop ? 'pos' : (i===0 ? 'pos clasif' : 'pos noclasif');
+    return `<tr>
+      <td><span class="${posClass}">${i+1}</span></td>
+      <td><div class="tr-eq">${escudoHTML(q.n,'me')}<span style="font-size:13px">${q.n}</span></div></td>
+      <td style="font-size:11px;color:var(--muted)">${q.zona.replace('Zona ','')}</td>
+      <td><strong class="pts">${q.pts}</strong></td>
+      <td>${q.pj}</td><td>${q.g}</td><td>${q.e}</td><td>${q.p}</td>
+      <td>${q.gf}</td><td>${q.gc}</td>
+      <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+    </tr>`;
+  }).join('');
+  return `<div style="margin-bottom:2.5rem;">
+    <p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin:.5rem 0 .4rem;">Tabla de quintos</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th>Zona</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+})();
+
+
+  el.innerHTML = `
+    <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">2DA FASE: PARCIAL</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div style="margin-bottom:1.25rem;">
+      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
+      ${renderLista(nonA,'#cc7733')}
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
+      ${renderLista(nonB,'#3366cc')}
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
+      ${renderLista(revA,'#888')}
+    </div>
+    <div>
+      <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
+      ${renderLista(revB,'#888')}
+    </div>`;
+}
+
+
+function renderZonasMini(){
+  var zmap={"Zona A":"tablas-zona-a","Zona B":"tablas-zona-b","Zona C":"tablas-zona-c","Zona D":"tablas-zona-d"};
+  var cl={"Zona A":5,"Zona B":4,"Zona C":4,"Zona D":4};
+  var qs=[];
+  ZONAS.forEach(function(z){
+    var el=document.getElementById(zmap[z]);
+    if(!el) return;
+    var zr=calcTabla(z);
+    var zc=zonaConfig(z);
+    var h='<p style="font-size:16px;font-weight:700;text-transform:uppercase;color:'+zc.color+';margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">'+z+'</p>';
+    h+='<div class="tabla-mini"><table><thead><tr>';
+    h+='<th style="width:24px">#</th><th style="text-align:left">Equipo</th>';
+    h+='<th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>';
+    h+='</tr></thead><tbody>';
+    zr.forEach(function(r,i){
+      var p=i+1,d=r.gf-r.gc,pc="noclasif";
+      if(p<=cl[z]) pc="clasif";
+      else if(p===5&&z!=="Zona A"){pc="quinto";qs.push({n:r.n,pts:r.pts,pj:r.pj,g:r.g,e:r.e,p:r.p,gf:r.gf,gc:r.gc,zona:z});}
+      h+='<tr><td><span class="pos '+pc+'">'+p+'</span></td>';
+      h+='<td><div class="tr-eq">'+escudoHTML(r.n,'me')+'<span style="font-size:13px">'+r.n+'</span></div></td>';
+      h+='<td><strong class="pts">'+r.pts+'</strong></td>';
+      h+='<td>'+r.pj+'</td><td>'+r.g+'</td><td>'+r.e+'</td><td>'+r.p+'</td>';
+      h+='<td>'+r.gf+'</td><td>'+r.gc+'</td>';
+      h+='<td style="color:'+(d>0?'#4caf50':d<0?'#e57373':'var(--muted)')+'">'+( d>0?'+':'')+d+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+    el.innerHTML=h;
+  });
+  var qel=document.getElementById('cont-quintos');
+  if(qel&&qs.length){
+    qs.sort(function(a,b){return b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf;});
+    var qh='<p style="font-size:13px;font-weight:700;text-transform:uppercase;color:#aaa;margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">Tabla de quintos</p>';
+    qh+='<div class="tabla-mini"><table><thead><tr>';
+    qh+='<th style="width:24px">#</th><th style="text-align:left">Equipo</th><th>Zona</th>';
+    qh+='<th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>';
+    qh+='</tr></thead><tbody>';
+    qs.forEach(function(r,i){
+      var d=r.gf-r.gc;
+      qh+='<tr><td><span class="pos '+(i===0?'clasif':'noclasif')+'">'+(i+1)+'</span></td>';
+      qh+='<td><div class="tr-eq">'+escudoHTML(r.n,'me')+'<span style="font-size:13px">'+r.n+'</span></div></td>';
+      qh+='<td style="font-size:11px;color:var(--muted)">'+r.zona.replace('Zona ','')+'</td>';
+      qh+='<td><strong class="pts">'+r.pts+'</strong></td>';
+      qh+='<td>'+r.pj+'</td><td>'+r.g+'</td><td>'+r.e+'</td><td>'+r.p+'</td>';
+      qh+='<td>'+r.gf+'</td><td>'+r.gc+'</td>';
+      qh+='<td style="color:'+(d>0?'#4caf50':d<0?'#e57373':'var(--muted)')+'">'+( d>0?'+':'')+d+'</td>';
+      qh+='</tr>';
+    });
+    qh+='</tbody></table></div>';
+    qel.innerHTML=qh;
+  }
+}
+
+async function renderGoleadoresResumen(){
+  var el=document.getElementById('cont-goleadores');
+  if(!el) return;
+  try{
+    var res=await sb.from('eventos').select('tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))').in('tipo',['gol','gol_penal','gol_tiro_libre']);
+    var m={};
+    (res.data||[]).forEach(function(ev){
+      var j=ev.planillas&&ev.planillas.jugadores;
+      var eq=ev.planillas&&ev.planillas.equipos&&ev.planillas.equipos.nombre||'';
+      if(!j) return;
+      var n=j.nombre_display||j.nombre||'?';
+      if(!m[n]) m[n]={nombre:n,equipo:eq,goles:0};
+      m[n].goles++;
+    });
+    var top=Object.values(m).sort(function(a,b){return b.goles-a.goles;}).slice(0,10);
+    if(!top.length) return;
+    var h='<p style="font-size:13px;font-weight:700;text-transform:uppercase;color:#aaa;margin:0 0 .28rem;font-family:Barlow Condensed,sans-serif;letter-spacing:1px;">Goleadores</p>';
+    h+='<div class="tabla-mini"><table><thead><tr>';
+    h+='<th style="width:20px">#</th><th style="text-align:left;width:80%">Jugador</th><th style="width:30px">Goles</th>';
+    h+='</tr></thead><tbody>';
+    top.forEach(function(j,i){
+      h+='<tr><td><span class="pos">'+(i+1)+'</span></td>';
+      h+='<td><div class="tr-eq">'+escudoHTML(j.equipo,'me')+'<span style="font-size:13px">'+j.nombre+'</span></div></td>';
+      h+='<td><strong class="pts">'+j.goles+'</strong></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    el.innerHTML=h;
+  }catch(e){console.error('goleadores:',e);}
+}
+
+async function init(){
+  await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
+  await diagnosticoIntegridad();
+  renderForo();
+  const f = fechaInteligente();
+  fechaActual = f;
+  renderPartidos(f);
+  renderTablas();
+  renderZonasMini();
+  renderSegundaFase();
+  await renderGoleadoresResumen();
+  // Start live score polling
+  iniciarPollingEnVivo();
+}
+init();
+
+// ── LIVE SCORE POLLING ──
+let _liveInterval = null;
+
+async function iniciarPollingEnVivo(){
+  activarPolling();
+}
+
+function activarPolling(){
+  if(_liveInterval) return;
+  _liveInterval = setInterval(async ()=>{
+    try {
+      await cargarPartidosDesdeDB();
+      renderPartidos(fechaActual);
+      renderTablas();
+      renderSegundaFase();
+    } catch(e){}
+  }, 60000);
+}
+
+function detenerPolling(){
+  if(_liveInterval){ clearInterval(_liveInterval); _liveInterval=null; }
+}
+
+</script>
+<!-- FICHA MODAL -->
+<div id="ficha-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:780px;margin:auto;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;">FICHA DEL PARTIDO</span>
+      <button onclick="document.getElementById('ficha-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="ficha-cont" style="padding:1rem;max-height:85vh;overflow-y:auto;"></div>
+  </div>
+</div>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ascenso Federal — Portal Oficial</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0e0e0e;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--win:#1e5c35;--loss:#5c1e1e;--draw:#3a3a3a;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+
+.hdr{background:#111;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:62px;position:sticky;top:0;z-index:10;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;color:var(--accent);}
+.logo span{color:#fff;}
+.nav{display:flex;gap:0;margin-left:auto;align-items:center;}
+.ni{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;letter-spacing:.5px;padding:0 1.1rem;height:62px;display:flex;align-items:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;text-transform:uppercase;}
+.ni:hover{color:var(--text);}
+.ni.active{color:var(--accent);border-bottom-color:var(--accent);}
+.user-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:.5rem;transition:all .15s;flex-shrink:0;}
+.user-btn:hover{border-color:var(--accent);}
+.user-btn svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;}
+.user-btn:hover svg{stroke:var(--accent);}
+/* login modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;width:340px;max-width:90vw;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:1.25rem;}
+.modal input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .85rem;color:var(--text);font-size:14px;margin-bottom:.75rem;outline:none;transition:border-color .15s;}
+.modal input:focus{border-color:var(--accent);}
+.modal-btn{width:100%;background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.5px;border:none;border-radius:6px;padding:.65rem;cursor:pointer;margin-top:.25rem;}
+.modal-btn:hover{opacity:.9;}
+.modal-close{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;margin-top:-4px;}
+.modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
+
+.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}
+.page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
+
+/* inicio: two columns */
+.inicio-grid{display:grid;grid-template-columns:1.6fr 1.2fr 1fr;gap:4rem;align-items:start;}
+
+.sec{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin-bottom:.6rem;}
+
+/* fecha nav */
+.sec-2dafase{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin:.65rem 0 .5rem;}
+.fecha-hdr{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.6rem;box-sizing:border-box;}
+.fnav{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:15px;transition:all .15s;flex-shrink:0;user-select:none;}
+.fnav:hover{color:var(--accent);border-color:var(--accent);}
+.fnav.dis{opacity:.2;cursor:default;pointer-events:none;}
+.fi{flex:1;text-align:center;}
+.fnum{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
+.fsub{font-size:13px;color:#e0e0e0;margin-top:2px;font-weight:500;}
+.badge-j{background:#1a1a1a;color:#555;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.badge-p{background:#2a2510;color:var(--accent);font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.badge-ec{background:#0a1f0a;color:#5dba7d;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+
+/* partidos */
+.zona-lbl{font-size:11px;color:#3a3a3a;text-transform:uppercase;letter-spacing:1px;margin:.7rem 0 .3rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+.dia-lbl{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:.5px;color:var(--accent);margin:.9rem 0 .35rem;}
+.dia-week{color:var(--accent);}
+.dia-date{color:#f0f0f0;}
+.partido-wrap{margin-bottom:.85rem;}
+.partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem;transition:border-color .15s;}
+.partido:hover{border-color:rgba(255,255,255,0.14);}
+.partido.topo-dia{border-left:3px solid var(--accent);}
+.eq{display:flex;align-items:center;gap:.4rem;}
+.eq.vis{flex-direction:row-reverse;}
+.esc{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.esc img{width:100%;height:100%;object-fit:contain;}
+.eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;}
+.eq.vis .eqn{text-align:right;}
+.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:0 6px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;margin-right:.22rem;}
+.res{text-align:center;min-width:64px;}
+.score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
+.score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
+.vs{font-size:11px;color:#444;letter-spacing:1px;font-weight:600;}
+.goleadores{font-size:12px;color:var(--muted);padding:.2rem .9rem .4rem;display:flex;justify-content:space-between;}
+.gol-local{text-align:left;flex:1;}
+.gol-visit{text-align:right;flex:1;}
+.gol-min{color:var(--accent);font-size:11px;}
+.stream-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:#1a0a0a;border:1px solid #5a1a1a;border-radius:6px;text-decoration:none;flex-shrink:0;transition:border-color .15s;}
+.stream-btn:hover{border-color:#e8453a;}
+.ficha-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-decoration:none;flex-shrink:0;cursor:pointer;font-size:16px;transition:border-color .15s;}
+.ficha-btn:hover{border-color:rgba(255,255,255,.3);}
+
+/* tablas */
+.tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:.7rem;}
+.tabla-mini table,.tabla-stats{width:100%;border-collapse:collapse;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa;font-size:11px;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa!important;font-size:11px;padding:.35rem .45rem;}
+.tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
+.tabla-mini thead th:nth-child(2){text-align:left;}
+.tabla-mini tbody tr{border-bottom:1px solid var(--border);}
+.tabla-mini tbody tr:last-child{border-bottom:none;}
+.tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
+.tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tabla-mini tbody td:nth-child(2){text-align:left;}
+.pos{font-size:14px;font-weight:700;color:#bbb;}
+.pos.clasif{color:#4caf50;}
+.pos.quinto{color:#e8c44a;}
+.pos.noclasif{color:#c0504d;}
+.pts{font-weight:700;font-size:14px;}
+.tr-eq{display:flex;align-items:center;gap:.4rem;}
+.me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.me img{width:100%;height:100%;object-fit:contain;}
+.tabla-quintos-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:.9rem 0 .3rem;border-top:1px solid var(--border);padding-top:.75rem;}
+
+/* zona tabs */
+.ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
+.ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
+.ztab:hover{opacity:.85;}
+.ztab.active{background:#fff;color:#111;border-color:#fff;font-weight:800;border-radius:8px;}
+
+/* placeholders */
+.placeholder{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4rem 2rem;text-align:center;color:var(--muted);}
+.ph-icon{font-size:40px;margin-bottom:.85rem;}
+.ph-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;color:#444;margin-bottom:.4rem;}
+.ph-sub{font-size:13px;}
+
+/* mini goleadores bajo partido */
+.mini-gol-min{color:var(--accent);font-weight:600;}
+.mini-gol-nombre{color:#f0f0f0;}
+.partido-wrap{margin-bottom:.85rem;}
+
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+@keyframes glowLive{0%,100%{box-shadow:0 0 6px rgba(46,160,67,0.3),inset 0 0 6px rgba(46,160,67,0.05);}50%{box-shadow:0 0 18px rgba(46,160,67,0.6),inset 0 0 12px rgba(46,160,67,0.1);}}
+@keyframes breathe{0%,100%{opacity:1;}50%{opacity:.6;}}
+.partido-live{animation:glowLive 2.5s ease-in-out infinite;border-color:rgba(46,160,67,0.6) !important;}
+.score-live{color:var(--accent) !important;}
+.minuto-live{color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;animation:breathe 2s ease-in-out infinite;}
+.live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
+  .inicio-grid > div:last-child{grid-column:1 / -1;}
+  .inicio-grid > div[style*="grid-column"]{grid-column:1 / -1!important;}
+}
+@media(max-width:700px){
+  /* Header */
+  .hdr{padding:0 .5rem;gap:.2rem;height:auto;min-height:52px;flex-wrap:wrap;justify-content:space-between;box-sizing:border-box;width:100%;}
+  .logo{font-size:15px;}
+  .nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.1rem;width:100%;order:3;padding:.2rem 0;}
+  .ni{font-size:11px;padding:0 .4rem;height:32px;letter-spacing:0;}
+  .user-btn{width:26px;height:26px;margin-left:.2rem;}
+  /* Pages */
+  html,body{overflow-x:hidden;max-width:100%;}
+  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;overflow-x:hidden;}
+  /* Inicio grid */
+  .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
+  .inicio-grid > div[style*="grid-column"]{grid-column:1!important;}
+  #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
+  /* Mobile order for zones */
+  #col-izq,#col-der{display:contents;}
+  #tablas-zona-a{order:1;}
+  #tablas-zona-b{order:2;margin-top:.75rem!important;}
+  #tablas-zona-c{order:3;margin-top:.75rem!important;}
+  #tablas-zona-d{order:4;margin-top:.75rem!important;}
+  #cont-quintos{order:5;margin-top:.75rem!important;}
+  #cont-2dafase{order:6;margin-top:.75rem!important;}
+  #cont-goleadores{order:7;margin-top:.75rem!important;}
+  /* Tables */
+  .tabla-mini{overflow-x:auto;width:100%;box-sizing:border-box;}
+  .tabla-mini table{width:100%;border-collapse:collapse;}
+  .tabla-mini tbody td{padding:.2rem .12rem;font-size:10px;line-height:1.2;}
+  .tabla-mini thead th{font-size:8px;padding:.18rem .12rem;white-space:nowrap;}
+  .tabla-mini .pts{font-size:11px;}
+  .tabla-mini .pos{font-size:10px;width:14px;min-width:14px;}
   .tr-eq{gap:.15rem;min-width:0;max-width:90px;}
   .tr-eq span{font-size:10px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;}
   .me{width:13px!important;height:13px!important;flex-shrink:0;}
