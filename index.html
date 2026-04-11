@@ -34,7 +34,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;margin-top:-4px;}
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
-.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}
+.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}html,body{overflow-x:hidden;width:100%;}
 .page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
 
 /* inicio: two columns */
@@ -162,6 +162,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #stats-penales > div[style*="background"]{padding:.4rem .6rem!important;gap:.75rem!important;}
   #stats-penales > div[style*="background"] > div > div:first-child{font-size:20px!important;}
   #stats-penales > div[style*="background"] > div > div:last-child{font-size:10px!important;}
+  /* Full width on mobile */
+  .hdr{width:100%;box-sizing:border-box;}
+  .page{padding:.75rem .5rem!important;box-sizing:border-box;width:100%;}
+  /* Tables fit screen */
+  .tabla-mini{overflow-x:auto;}
+  .tabla-mini table{min-width:unset;width:100%;}
+  .tabla-mini thead th{font-size:8px!important;padding:.2rem .15rem!important;}
+  .tabla-mini tbody td{font-size:10px!important;padding:.25rem .15rem!important;}
+  .tr-eq span{font-size:11px!important;}
+  /* Stats grids - all 1 col */
+  #stats-jugadores > div[style*="grid"],
+  #stats-generales > div[style*="grid"],
+  #stats-grupos > div[style*="grid"],
+  #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
+  /* Posiciones ampliadas 1 col */
+  #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
+  /* Subtabs smaller */
+  #stats-equipos .ztab{font-size:10px;padding:3px 8px;}
   .fecha-hdr{padding:.6rem .75rem;}
   .fnum{font-size:17px;}
   .fsub{font-size:11px;}
