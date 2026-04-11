@@ -145,6 +145,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .inicio-grid > div[style*="grid-column"]{grid-column:1!important;}
   .inicio-grid > div[style*="grid-column"] > div{grid-template-columns:1fr!important;gap:1rem!important;}
+  #tablas-inner-grid{grid-template-columns:1fr!important;gap:1rem!important;}
+  #tablas-zona-a{order:1;}
+  #tablas-zona-b{order:2;margin-top:0!important;}
+  #tablas-zona-c{order:3;margin-top:1rem!important;}
+  #tablas-zona-d{order:4;margin-top:1rem!important;}
+  #cont-quintos{order:5;margin-top:1rem!important;}
+  #cont-2dafase{order:6;margin-top:1rem!important;}
+  #cont-goleadores{order:7;margin-top:1rem!important;}
+  #tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#cont-quintos,#cont-2dafase,#cont-goleadores{grid-column:1!important;}
   .fecha-hdr{padding:.6rem .75rem;}
   .fnum{font-size:17px;}
   .fsub{font-size:11px;}
@@ -253,18 +262,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div id="partidos-cont"></div>
     </div>
     <div style="grid-column:2/4;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
-        <div>
-          <div id="tablas-zona-a"></div>
-          <div id="tablas-zona-c" style="margin-top:2rem;"></div>
-          <div id="cont-quintos" style="margin-top:1.5rem;"></div>
-          <div id="cont-goleadores" style="margin-top:1.5rem;"></div>
-        </div>
-        <div>
-          <div id="tablas-zona-b"></div>
-          <div id="tablas-zona-d" style="margin-top:calc(2rem + 37px);"></div>
-          <div id="cont-2dafase" style="margin-top:1.5rem;"></div>
-        </div>
+      <div id="tablas-inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
+          <div id="tablas-zona-a" style="grid-column:1;"></div>
+          <div id="tablas-zona-b" style="grid-column:2;"></div>
+          <div id="tablas-zona-c" style="grid-column:1;margin-top:2rem;"></div>
+          <div id="tablas-zona-d" style="grid-column:2;margin-top:calc(2rem + 37px);"></div>
+          <div id="cont-quintos" style="grid-column:1;margin-top:1.5rem;"></div>
+          <div id="cont-2dafase" style="grid-column:2;margin-top:1.5rem;"></div>
+          <div id="cont-goleadores" style="grid-column:1;margin-top:1.5rem;"></div>
       </div>
       <div id="tablas-cont" style="display:none;"></div>
     </div>
