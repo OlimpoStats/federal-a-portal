@@ -34,7 +34,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;margin-top:-4px;}
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
-.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}html,body{overflow-x:hidden;width:100%;}
+.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}
 .page.active{display:block;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
 
 /* inicio: two columns */
@@ -135,77 +135,66 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid > div[style*="grid-column"]{grid-column:1 / -1!important;}
 }
 @media(max-width:700px){
-  .hdr{padding:0 .75rem;gap:.4rem;height:54px;}
-  .logo{font-size:17px;}
-  .ni{font-size:12px;padding:0 .5rem;height:54px;letter-spacing:0;}
-  .user-btn{width:28px;height:28px;margin-left:.2rem;}
-  .nav{overflow-x:visible;flex-wrap:wrap;justify-content:center;}
-  .nav::-webkit-scrollbar{display:none;}
-  .page{padding:1rem .65rem;}
+  /* Header */
+  .hdr{padding:0 .5rem;gap:.2rem;height:auto;min-height:52px;flex-wrap:wrap;justify-content:space-between;box-sizing:border-box;width:100%;}
+  .logo{font-size:15px;}
+  .nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.1rem;width:100%;order:3;padding:.2rem 0;}
+  .ni{font-size:11px;padding:0 .4rem;height:32px;letter-spacing:0;}
+  .user-btn{width:26px;height:26px;margin-left:.2rem;}
+  /* Pages */
+  html,body{overflow-x:hidden;max-width:100%;}
+  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;overflow-x:hidden;}
+  /* Inicio grid */
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .inicio-grid > div[style*="grid-column"]{grid-column:1!important;}
-  .inicio-grid > div[style*="grid-column"] > div{grid-template-columns:1fr!important;gap:1rem!important;}
-  #tablas-inner-grid{grid-template-columns:1fr!important;gap:1rem!important;}
+  #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
+  /* Mobile order for zones */
+  #col-izq,#col-der{display:contents;}
   #tablas-zona-a{order:1;}
-  #tablas-zona-b{order:2;margin-top:0!important;}
-  #tablas-zona-c{order:3;margin-top:1rem!important;}
-  #tablas-zona-d{order:4;margin-top:1rem!important;}
-  #cont-quintos{order:5;margin-top:1rem!important;}
-  #cont-2dafase{order:6;margin-top:1rem!important;}
-  #cont-goleadores{order:7;margin-top:1rem!important;}
-  #tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#cont-quintos,#cont-2dafase,#cont-goleadores{grid-column:1!important;}
-  /* Stats grids collapse to 1 col */
-  #stats-jugadores > div[style*="grid"],
-  #subtab-cont-generales > div[style*="grid"],
-  #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
-  /* Penales banner compact */
-  #stats-penales > div[style*="background"]{padding:.4rem .6rem!important;gap:.75rem!important;}
-  #stats-penales > div[style*="background"] > div > div:first-child{font-size:20px!important;}
-  #stats-penales > div[style*="background"] > div > div:last-child{font-size:10px!important;}
-  /* Full width on mobile */
-  .hdr{width:100%;box-sizing:border-box;}
-  .page{padding:.75rem .5rem!important;box-sizing:border-box;width:100%;}
-  /* Tables fit screen */
-  .tabla-mini{overflow-x:auto;}
-  .tabla-mini table{min-width:unset;width:100%;}
-  .tabla-mini thead th{font-size:8px!important;padding:.2rem .15rem!important;}
-  .tabla-mini tbody td{font-size:10px!important;padding:.25rem .15rem!important;}
-  .tr-eq span{font-size:11px!important;}
-  .tr-eq{gap:.2rem!important;}
-  .me{width:16px!important;height:16px!important;}
-  .tabla-mini thead th[title="Equipo"],
-  .tabla-mini thead th:nth-child(2){min-width:70px;max-width:90px;}
-  .tabla-mini tbody td:nth-child(2){max-width:90px;min-width:70px;}
-  /* Stats grids - all 1 col */
+  #tablas-zona-b{order:2;margin-top:.75rem!important;}
+  #tablas-zona-c{order:3;margin-top:.75rem!important;}
+  #tablas-zona-d{order:4;margin-top:.75rem!important;}
+  #cont-quintos{order:5;margin-top:.75rem!important;}
+  #cont-2dafase{order:6;margin-top:.75rem!important;}
+  #cont-goleadores{order:7;margin-top:.75rem!important;}
+  /* Tables */
+  .tabla-mini{overflow-x:hidden;width:100%;box-sizing:border-box;}
+  .tabla-mini table{width:100%;table-layout:fixed;}
+  .tabla-mini tbody td{padding:.25rem .15rem;font-size:10px;line-height:1.2;}
+  .tabla-mini thead th{font-size:8px;padding:.2rem .15rem;white-space:nowrap;overflow:hidden;}
+  .tabla-mini .pts{font-size:11px;}
+  .tabla-mini .pos{font-size:10px;width:16px;}
+  .tr-eq{gap:.2rem;}
+  .tr-eq span{font-size:11px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .me{width:14px!important;height:14px!important;}
+  /* Stats - all 1 col */
   #stats-jugadores > div[style*="grid"],
   #subtab-cont-generales > div[style*="grid"],
   #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
-  /* Posiciones ampliadas 1 col */
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
-  /* Subtabs smaller */
-  #stats-equipos .ztab{font-size:10px;padding:3px 8px;}
-  .fecha-hdr{padding:.6rem .75rem;}
-  .fnum{font-size:17px;}
-  .fsub{font-size:11px;}
-  .fnav{width:26px;height:26px;font-size:13px;}
-  .partido{padding:.5rem .65rem;gap:.2rem;}
-  .eqn{font-size:13px;}
-  .score{font-size:19px;letter-spacing:1px;}
-  .esc{width:22px;height:22px;}
-  .ficha-btn,.stream-btn{width:26px;height:26px;font-size:13px;}
-  .res{min-width:50px;}
-  .tabla-mini tbody td{padding:.35rem .2rem;font-size:11px;line-height:1.2;}
-  .tabla-mini thead th{font-size:9px;padding:.3rem .2rem;white-space:nowrap;}
-  .tabla-mini .pts{font-size:12px;}
-  .tabla-mini .pos{font-size:11px;}
+  /* Penales banner */
+  #stats-penales > div[style*="background"]{padding:.3rem .5rem!important;gap:.5rem!important;}
+  /* Listas nonagonal */
+  .lista-2dafase{width:100%!important;}
+  /* Fixture */
+  .fecha-hdr{padding:.5rem .6rem;}
+  .fnum{font-size:16px;}
+  .fsub{font-size:10px;}
+  .fnav{width:24px;height:24px;font-size:12px;}
+  .partido{padding:.4rem .5rem;gap:.2rem;}
+  .eqn{font-size:12px;}
+  .score{font-size:18px;letter-spacing:1px;}
+  .esc{width:20px;height:20px;}
+  .ficha-btn,.stream-btn{width:24px;height:24px;font-size:12px;}
+  .res{min-width:46px;}
   .ztabs{gap:.2rem;}
-  .ztab{font-size:10px;padding:3px 9px;}
-  #ficha-modal{padding:.4rem;}
-  #ficha-cont{padding:.65rem;max-height:92vh;}
-  .planillas-grid{grid-template-columns:1fr !important;}
-  #fecha-picker-grid{width:180px !important;}
-  .mini-goles{font-size:10px;padding:.2rem .65rem .35rem;}
+  .ztab{font-size:10px;padding:3px 8px;}
+  #ficha-modal{padding:.3rem;}
+  #ficha-cont{padding:.5rem;max-height:92vh;}
+  .planillas-grid{grid-template-columns:1fr!important;}
+  #fecha-picker-grid{width:160px!important;}
+  .mini-goles{font-size:10px;padding:.2rem .5rem .3rem;}
   #page-foro{height:calc(100vh - 54px)!important;}
 }
 @media(max-width:400px){
@@ -293,14 +282,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div id="partidos-cont"></div>
     </div>
     <div style="grid-column:2/4;">
-      <div id="tablas-inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
-          <div id="tablas-zona-a" style="grid-column:1;"></div>
-          <div id="tablas-zona-b" style="grid-column:2;"></div>
-          <div id="tablas-zona-c" style="grid-column:1;margin-top:2rem;"></div>
-          <div id="tablas-zona-d" style="grid-column:2;margin-top:calc(2rem + 37px);"></div>
-          <div id="cont-quintos" style="grid-column:1;margin-top:1.5rem;"></div>
-          <div id="cont-2dafase" style="grid-column:2;margin-top:1.5rem;"></div>
-          <div id="cont-goleadores" style="grid-column:1;margin-top:1.5rem;"></div>
+      <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;">
+        <div id="col-izq">
+          <div id="tablas-zona-a"></div>
+          <div id="tablas-zona-c" style="margin-top:2rem;"></div>
+          <div id="cont-quintos" style="margin-top:1.5rem;"></div>
+          <div id="cont-goleadores" style="margin-top:1.5rem;"></div>
+        </div>
+        <div id="col-der">
+          <div id="tablas-zona-b"></div>
+          <div id="tablas-zona-d" style="margin-top:calc(2rem + 37px);"></div>
+          <div id="cont-2dafase" style="margin-top:1.5rem;"></div>
+        </div>
       </div>
       <div id="tablas-cont" style="display:none;"></div>
     </div>
@@ -1390,15 +1383,13 @@ async function verFicha(key, tienePlanilla){
             </div>
           </div>
           <!-- Fila goles: mismo grid -->
-          ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;">
+          ${(golesLocal.length||golesVisit.length)?`<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;align-items:start;">
             <div style="text-align:right;padding-right:12px;">
-              <div style="display:inline-flex;flex-direction:column;align-items:flex-start;">
+              <div style="display:inline-flex;flex-direction:column;align-items:flex-end;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
                   const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
                   return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
-                    <span style="width:36px;flex-shrink:0;"></span>
-                    <span style="width:6px;flex-shrink:0;"></span>
                     <span style="font-size:13px;">${g.icon}</span>
                     <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
                     <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
@@ -1407,7 +1398,7 @@ async function verFicha(key, tienePlanilla){
                 }).join("")}
               </div>
             </div>
-            <div style="visibility:hidden;padding:0 8px;"><span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:700;line-height:1;white-space:nowrap;">${partido.goles_local??0} — ${partido.goles_visitante??0}</span></div>
+            <div style="width:0;overflow:hidden;"></div>
             <div style="text-align:left;padding-left:12px;">
               <div style="display:inline-block;text-align:left;">
                 ${golesVisit.map(g=>{
@@ -2421,7 +2412,7 @@ async function cargarEstadisticas(){
     const totalAtaj = penArqRows.reduce((s,j)=>s+j.atajados,0);
     if(totalPen>0){
       const pct=Math.round(totalGol/totalPen*100);
-      const bc="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:700;";
+      const bc="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;";
       const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">'
         +'<div style="text-align:center;"><div style="'+bc+'color:var(--accent);">'+totalPen+'</div><div style="font-size:11px;color:var(--muted);">Pateados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#4caf50;">'+totalGol+'</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>'
@@ -2578,7 +2569,7 @@ function renderSegundaFase(){
     restQuintos.forEach(q=>revB.push({...q, _quinto:true}));
   }
 
-  const renderLista = (equipos, color) => `<div style="width:100%;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
+  const renderLista = (equipos, color) => `<div class="lista-2dafase" style="width:200px;min-width:200px;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
     equipos.map((r,i)=>{
     const isQuinto = r._quinto || r._topQuinto;
     const isTied = r._tied;
