@@ -158,21 +158,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #cont-2dafase{order:6;margin-top:.75rem!important;}
   #cont-goleadores{order:7;margin-top:.75rem!important;}
   /* Tables */
-  .tabla-mini{overflow-x:hidden;width:100%;box-sizing:border-box;}
-  .tabla-mini table{width:100%;table-layout:fixed;}
-  .tabla-mini tbody td{padding:.25rem .15rem;font-size:10px;line-height:1.2;}
-  .tabla-mini thead th{font-size:8px;padding:.2rem .15rem;white-space:nowrap;overflow:hidden;}
+  .tabla-mini{overflow-x:auto;width:100%;box-sizing:border-box;}
+  .tabla-mini table{width:100%;border-collapse:collapse;}
+  .tabla-mini tbody td{padding:.2rem .12rem;font-size:10px;line-height:1.2;}
+  .tabla-mini thead th{font-size:8px;padding:.18rem .12rem;white-space:nowrap;}
   .tabla-mini .pts{font-size:11px;}
-  .tabla-mini .pos{font-size:10px;width:16px;}
-  .tr-eq{gap:.2rem;}
-  .tr-eq span{font-size:11px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .me{width:14px!important;height:14px!important;}
+  .tabla-mini .pos{font-size:10px;width:14px;min-width:14px;}
+  .tr-eq{gap:.15rem;min-width:0;max-width:90px;}
+  .tr-eq span{font-size:10px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;}
+  .me{width:13px!important;height:13px!important;flex-shrink:0;}
   /* Stats - all 1 col */
   #stats-jugadores > div[style*="grid"],
   #subtab-cont-generales > div[style*="grid"],
   #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
+  .tabla-mini tbody tr:empty{display:none;}
+  .tabla-mini{border-radius:7px;}
   /* Penales banner */
   #stats-penales > div[style*="background"]{padding:.3rem .5rem!important;gap:.5rem!important;}
   /* Listas nonagonal */
