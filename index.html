@@ -154,6 +154,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #cont-2dafase{order:6;margin-top:1rem!important;}
   #cont-goleadores{order:7;margin-top:1rem!important;}
   #tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#cont-quintos,#cont-2dafase,#cont-goleadores{grid-column:1!important;}
+  /* Stats grids collapse to 1 col */
+  #stats-jugadores > div[style*="grid"],
+  #stats-generales > div[style*="grid"],
+  #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
+  /* Penales banner compact */
+  #stats-penales > div[style*="background"]{padding:.4rem .6rem!important;gap:.75rem!important;}
+  #stats-penales > div[style*="background"] > div > div:first-child{font-size:20px!important;}
+  #stats-penales > div[style*="background"] > div > div:last-child{font-size:10px!important;}
   .fecha-hdr{padding:.6rem .75rem;}
   .fnum{font-size:17px;}
   .fsub{font-size:11px;}
@@ -2390,7 +2398,7 @@ async function cargarEstadisticas(){
     const totalAtaj = penArqRows.reduce((s,j)=>s+j.atajados,0);
     if(totalPen>0){
       const pct=Math.round(totalGol/totalPen*100);
-      const bc="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;";
+      const bc="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:700;";
       const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">'
         +'<div style="text-align:center;"><div style="'+bc+'color:var(--accent);">'+totalPen+'</div><div style="font-size:11px;color:var(--muted);">Pateados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#4caf50;">'+totalGol+'</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>'
