@@ -132,6 +132,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(max-width:900px){
   .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
   .inicio-grid > div:last-child{grid-column:1 / -1;}
+  .inicio-grid > div[style*="grid-column"]{grid-column:1 / -1!important;}
 }
 @media(max-width:700px){
   .hdr{padding:0 .75rem;gap:.4rem;height:54px;}
@@ -142,6 +143,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .nav::-webkit-scrollbar{display:none;}
   .page{padding:1rem .65rem;}
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
+  .inicio-grid > div[style*="grid-column"]{grid-column:1!important;}
+  .inicio-grid > div[style*="grid-column"] > div{grid-template-columns:1fr!important;gap:1rem!important;}
   .fecha-hdr{padding:.6rem .75rem;}
   .fnum{font-size:17px;}
   .fsub{font-size:11px;}
@@ -163,6 +166,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .planillas-grid{grid-template-columns:1fr !important;}
   #fecha-picker-grid{width:180px !important;}
   .mini-goles{font-size:10px;padding:.2rem .65rem .35rem;}
+  #page-foro{height:calc(100vh - 54px)!important;}
 }
 @media(max-width:400px){
   .ni{font-size:11px;padding:0 .35rem;}
@@ -952,8 +956,8 @@ function renderPartidos(f){
 
     goleadoresHTML = hayGoles ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
       <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
-        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
-        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+        <span style="text-align:left;word-break:break-word;align-self:center;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
+        <span style="text-align:right;word-break:break-word;align-self:center;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
       </div>
       <div style="width:32px;flex-shrink:0;"></div>
     </div>` : "";
