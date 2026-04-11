@@ -139,7 +139,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .logo{font-size:17px;}
   .ni{font-size:12px;padding:0 .5rem;height:54px;letter-spacing:0;}
   .user-btn{width:28px;height:28px;margin-left:.2rem;}
-  .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
+  .nav{overflow-x:visible;flex-wrap:wrap;justify-content:center;}
   .nav::-webkit-scrollbar{display:none;}
   .page{padding:1rem .65rem;}
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
@@ -156,7 +156,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#cont-quintos,#cont-2dafase,#cont-goleadores{grid-column:1!important;}
   /* Stats grids collapse to 1 col */
   #stats-jugadores > div[style*="grid"],
-  #stats-generales > div[style*="grid"],
+  #subtab-cont-generales > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   /* Penales banner compact */
   #stats-penales > div[style*="background"]{padding:.4rem .6rem!important;gap:.75rem!important;}
@@ -171,10 +171,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .tabla-mini thead th{font-size:8px!important;padding:.2rem .15rem!important;}
   .tabla-mini tbody td{font-size:10px!important;padding:.25rem .15rem!important;}
   .tr-eq span{font-size:11px!important;}
+  .tr-eq{gap:.2rem!important;}
+  .me{width:16px!important;height:16px!important;}
+  .tabla-mini thead th[title="Equipo"],
+  .tabla-mini thead th:nth-child(2){min-width:70px;max-width:90px;}
+  .tabla-mini tbody td:nth-child(2){max-width:90px;min-width:70px;}
   /* Stats grids - all 1 col */
   #stats-jugadores > div[style*="grid"],
-  #stats-generales > div[style*="grid"],
-  #stats-grupos > div[style*="grid"],
+  #subtab-cont-generales > div[style*="grid"],
+  #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   /* Posiciones ampliadas 1 col */
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
@@ -2573,7 +2578,7 @@ function renderSegundaFase(){
     restQuintos.forEach(q=>revB.push({...q, _quinto:true}));
   }
 
-  const renderLista = (equipos, color) => `<div style="width:200px;min-width:200px;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
+  const renderLista = (equipos, color) => `<div style="width:100%;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
     equipos.map((r,i)=>{
     const isQuinto = r._quinto || r._topQuinto;
     const isTied = r._tied;
