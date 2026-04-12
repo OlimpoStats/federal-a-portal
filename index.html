@@ -172,6 +172,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table{width:100%;border-collapse:collapse;table-layout:fixed;}
   #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,#cont-quintos thead th,#cont-goleadores-resumen thead th{font-size:8px;padding:.18rem .1rem;white-space:nowrap;}
+  #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),#tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),#cont-quintos thead th:nth-child(2){width:150px;}
   #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
   #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2){white-space:nowrap;}
   #tablas-zona-a .tr-eq,#tablas-zona-b .tr-eq,#tablas-zona-c .tr-eq,#tablas-zona-d .tr-eq,#cont-quintos .tr-eq{gap:.1rem;}
@@ -1608,7 +1609,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
      zh+=`<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
-       <th style="width:18px">#</th><th style="width:150px;text-align:left;">Equipo</th>
+       <th style="width:18px">#</th><th style="text-align:left;">Equipo</th>
        <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
        <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
