@@ -132,11 +132,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(min-width:701px){
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:183px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:215px;}
+  #cont-quintos thead th:nth-child(2){width:215px;}
 }
 @media(min-width:701px){
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:183px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:215px;}
+  #cont-quintos thead th:nth-child(2){width:215px;}
 }
 @media(max-width:900px){
   .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
@@ -1638,7 +1640,7 @@ function renderTablas(){
     quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     qEl.innerHTML=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin:1.5rem 0 .28rem;">Tabla de quintos</p>
     <div class="tabla-mini"><table><thead><tr>
-      <th style="width:24px">#</th><th style="text-align:left">Equipo</th><th>Zona</th>
+      <th style="width:18px">#</th><th style="width:150px;text-align:left">Equipo</th><th>Zona</th>
       <th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>
     </tr></thead><tbody>
     ${quintosRows.map((r,i)=>{
