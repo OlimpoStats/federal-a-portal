@@ -1597,7 +1597,7 @@ function renderTablas(){
     const clasif=clasificados[z];
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
-    zh+=`<div class="tabla-mini"><table><thead><tr>
+    zh+=`<div class="tabla-mini" style="overflow-x:auto;"><table style="width:100%;min-width:max-content;"><thead><tr>
       <th style="width:16px">#</th><th style="text-align:left;max-width:100px;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
@@ -2714,26 +2714,24 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
       <div>
-        <div style="margin-bottom:1rem;">
-          <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
-          ${renderLista(nonA,'#2ea043')}
-        </div>
-        <div>
-          <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
-          ${renderLista(revA,'#e07040')}
-        </div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
+        ${renderLista(nonA,'#2ea043')}
       </div>
       <div>
-        <div style="margin-bottom:1rem;">
-          <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
-          ${renderLista(nonB,'#2ea043')}
-        </div>
-        <div>
-          <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
-          ${renderLista(revB,'#e07040')}
-        </div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
+        ${renderLista(nonB,'#2ea043')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
+        ${renderLista(revA,'#e07040')}
+      </div>
+      <div>
+        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
+        ${renderLista(revB,'#e07040')}
       </div>
     </div>`;
 }
