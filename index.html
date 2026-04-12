@@ -155,7 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-d{order:4;}
   #col-izq{order:5;}
   #col-der{order:6;}
-  #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr!important;}
+  #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr 1fr!important;gap:.5rem!important;}
   /* Tables - scroll horizontally like estadisticas */
   .tabla-mini{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
   .tabla-mini table{width:auto;min-width:100%;border-collapse:collapse;}
@@ -164,7 +164,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .tabla-mini .pts{font-size:11px;}
   .tabla-mini .pos{font-size:10px;}
   .tr-eq{gap:.15rem;}
-  .tr-eq span{font-size:10px!important;}
+  .tr-eq span{font-size:10px!important;white-space:nowrap;}
   .me{width:13px!important;height:13px!important;}
   /* Stats grids 1 col */
   #stats-jugadores > div[style*="grid"],
@@ -1569,7 +1569,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       html+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td style="max-width:100px;overflow:hidden;"><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;display:inline-block;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
         <td>${r.g}</td>
@@ -1598,7 +1598,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
     zh+=`<div class="tabla-mini" style="overflow-x:auto;"><table style="width:100%;min-width:max-content;"><thead><tr>
-      <th style="width:16px">#</th><th style="text-align:left;max-width:100px;">Equipo</th>
+      <th style="width:24px">#</th><th style="text-align:left;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
@@ -1610,7 +1610,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       zh+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td style="max-width:100px;overflow:hidden;"><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;display:inline-block;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
         <td>${r.gf}</td><td>${r.gc}</td>
