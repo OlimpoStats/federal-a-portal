@@ -155,7 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-d{order:4;}
   #col-izq{order:5;}
   #col-der{order:6;}
-  #cont-2dafase > div > div{grid-template-columns:1fr!important;}
+  #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr!important;}
   /* Tables - scroll horizontally like estadisticas */
   .tabla-mini{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
   .tabla-mini table{width:auto;min-width:100%;border-collapse:collapse;}
@@ -1474,6 +1474,8 @@ function hideEvTip(){
 }
 
 
+function h2hEnter(e){ const m=e.currentTarget.dataset.matches; if(m) showH2HTooltip(e,m,false); }
+function h2hTouch(e){ const m=e.currentTarget.dataset.matches; if(m) showH2HTooltip(e,m,true); }
 function showH2HTooltip(event, matchesEncoded, isTouch=false){
   hideH2HTooltip();
   const matches = JSON.parse(decodeURIComponent(matchesEncoded));
@@ -1567,7 +1569,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       html+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td style="max-width:100px;overflow:hidden;"><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;display:inline-block;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
         <td>${r.g}</td>
@@ -1576,9 +1578,9 @@ function renderTablas(){
         <td>${r.gf}</td>
         <td>${r.gc}</td>
         <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
-        <td style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'};${r.h2hMatches?'cursor:pointer;':''}position:relative;"
-          ${r.h2hMatches?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}',true)" `:''}
-        >${r.h2h}</td>
+         <td class="h2h-cell" style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'};${r.h2hMatches?'cursor:pointer;':''}" data-matches="${r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):''}"
+           onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)">
+           ${r.h2h}</td>
       </tr>`;
       // Guardar quinto de B/C/D
       if(pos===5 && z!=="Zona A") quintosRows.push({...r, zona:z});
@@ -1596,7 +1598,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
     zh+=`<div class="tabla-mini"><table><thead><tr>
-      <th style="width:24px">#</th><th style="text-align:left">Equipo</th>
+      <th style="width:16px">#</th><th style="text-align:left;max-width:100px;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
@@ -1608,14 +1610,14 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       zh+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td style="max-width:100px;overflow:hidden;"><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;display:inline-block;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
         <td>${r.gf}</td><td>${r.gc}</td>
         <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
-        <td style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;"
-          ${r.h2hMatches?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}')\" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(r.h2hMatches))}',true)" `:''}
-        >${r.h2h}</td>
+         <td class="h2h-cell" style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;" data-matches="${r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):''}"
+           onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)">
+           ${r.h2h}</td>
       </tr>`;
     });
     zh+=`</tbody></table></div>`;
@@ -1645,7 +1647,7 @@ function renderTablas(){
     </tbody></table></div>`;
   }
 
-  document.getElementById("tablas-cont").innerHTML=html;
+  const _tc=document.getElementById("tablas-cont"); if(_tc) _tc.innerHTML=html;
 
 }
 
@@ -2712,21 +2714,27 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">2DA FASE: PARCIAL</p>
-    <div style="margin-bottom:1.25rem;">
-      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
-      ${renderLista(nonA,'#2ea043')}
-    </div>
-    <div style="margin-bottom:1.25rem;">
-      <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
-      ${renderLista(revA,'#e07040')}
-    </div>
-    <div style="margin-bottom:1.25rem;">
-      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
-      ${renderLista(nonB,'#2ea043')}
-    </div>
-    <div style="margin-bottom:1.25rem;">
-      <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
-      ${renderLista(revB,'#e07040')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div style="margin-bottom:1rem;">
+          <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
+          ${renderLista(nonA,'#2ea043')}
+        </div>
+        <div>
+          <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
+          ${renderLista(revA,'#e07040')}
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:1rem;">
+          <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
+          ${renderLista(nonB,'#2ea043')}
+        </div>
+        <div>
+          <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
+          ${renderLista(revB,'#e07040')}
+        </div>
+      </div>
     </div>`;
 }
 async function init(){
