@@ -85,7 +85,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ficha-btn:hover{border-color:rgba(255,255,255,.3);}
 
 /* tablas */
-.tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:.7rem;}
+.tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow-x:auto;margin-bottom:.7rem;}
 .tabla-mini table,.tabla-stats{width:100%;border-collapse:collapse;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa;font-size:11px;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa!important;font-size:11px;padding:.35rem .45rem;}
 .tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
 .tabla-mini thead th:nth-child(2){text-align:left;}
@@ -1597,7 +1597,7 @@ function renderTablas(){
     const clasif=clasificados[z];
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
-    zh+=`<div class="tabla-mini" style="overflow-x:auto;"><table style="width:100%;min-width:max-content;"><thead><tr>
+    zh+=`<div class="tabla-mini"><table style="width:100%;"><thead><tr>
       <th style="width:24px">#</th><th style="text-align:left;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
