@@ -149,14 +149,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
   /* Zone ordering on mobile */
   #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
-  #col-izq,#col-der{display:contents;}
   #tablas-zona-a{order:1;}
-  #tablas-zona-b{order:2;margin-top:0!important;}
-  #tablas-zona-c{order:3;margin-top:.75rem!important;}
-  #tablas-zona-d{order:4;margin-top:.75rem!important;}
-  #cont-quintos{order:5;margin-top:.75rem!important;}
-  #cont-2dafase,#cont-2dafase > div > div{order:6;margin-top:.75rem!important;grid-template-columns:1fr!important;}
-  #cont-goleadores-resumen,#cont-goleadores{order:7;margin-top:.75rem!important;}
+  #tablas-zona-b{order:2;}
+  #tablas-zona-c{order:3;}
+  #tablas-zona-d{order:4;}
+  #col-izq{order:5;}
+  #col-der{order:6;}
+  #cont-2dafase > div > div{grid-template-columns:1fr!important;}
   /* Tables - scroll horizontally like estadisticas */
   .tabla-mini{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
   .tabla-mini table{width:auto;min-width:100%;border-collapse:collapse;}
@@ -280,18 +279,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div id="partidos-cont"></div>
     </div>
     <div>
-      <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
-        <!-- Col izq: A, C, quintos, goleadores -->
-        <div id="col-izq">
-          <div id="tablas-zona-a"></div>
-          <div id="tablas-zona-c" style="margin-top:2rem;"></div>
+      <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <!-- Row 1: A and B -->
+        <div id="tablas-zona-a" style="align-self:start;"></div>
+        <div id="tablas-zona-b" style="align-self:start;"></div>
+        <!-- Row 2: C and D -->
+        <div id="tablas-zona-c" style="align-self:start;"></div>
+        <div id="tablas-zona-d" style="align-self:start;"></div>
+        <!-- Row 3: quintos and 2dafase -->
+        <div id="col-izq" style="align-self:start;">
           <div id="cont-quintos"></div>
-          <div id="cont-goleadores-resumen"></div>
+          <div id="cont-goleadores-resumen" style="margin-top:1rem;"></div>
         </div>
-        <!-- Col der: B, D, nonagonales, revalidas -->
-        <div id="col-der">
-          <div id="tablas-zona-b"></div>
-          <div id="tablas-zona-d" style="margin-top:2.5rem;"></div>
+        <div id="col-der" style="align-self:start;">
           <div id="cont-2dafase"></div>
         </div>
       </div>
