@@ -156,17 +156,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #col-izq{order:5;}
   #col-der{order:6;}
   #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr 1fr!important;gap:.5rem!important;}
-  /* Tables - compact to fit screen */
+  /* Tables - fixed numeric cols, equipo takes rest */
   .tabla-mini{overflow-x:hidden;}
-  .tabla-mini table{width:100%;border-collapse:collapse;}
-  .tabla-mini thead th{font-size:7px;padding:.15rem .1rem;white-space:nowrap;}
-  .tabla-mini thead th:nth-child(2){font-size:7px;}
-  .tabla-mini tbody td{font-size:9px;padding:.2rem .1rem;white-space:nowrap;}
-  .tabla-mini tbody td:nth-child(2){max-width:85px;overflow:hidden;text-overflow:ellipsis;}
+  .tabla-mini table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .tabla-mini thead th{font-size:8px;padding:.15rem .08rem;white-space:nowrap;overflow:hidden;}
+  .tabla-mini thead th:nth-child(1){width:18px;}
+  .tabla-mini thead th:nth-child(2){width:auto;text-align:left;}
+  .tabla-mini thead th:nth-child(n+3){width:26px;}
+  .tabla-mini tbody td{font-size:9px;padding:.2rem .08rem;overflow:hidden;}
+  .tabla-mini tbody td:nth-child(2){text-align:left;}
   .tabla-mini .pts{font-size:10px;}
-  .tabla-mini .pos{font-size:9px;min-width:12px;width:12px;}
-  .tr-eq{gap:.1rem;max-width:85px;overflow:hidden;}
-  .tr-eq span{font-size:9px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65px;}
+  .tabla-mini .pos{font-size:9px;}
+  .tr-eq{gap:.1rem;width:100%;overflow:hidden;}
+  .tr-eq span{font-size:9px!important;white-space:nowrap;overflow:hidden;text-overflow:clip;}
   .me{width:11px!important;height:11px!important;flex-shrink:0;}
   /* Stats grids 1 col */
   #stats-jugadores > div[style*="grid"],
