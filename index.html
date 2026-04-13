@@ -132,12 +132,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(min-width:701px){
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:260px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
   #cont-quintos thead th:nth-child(2){width:260px;}
 }
 @media(min-width:701px){
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:260px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
   #cont-quintos thead th:nth-child(2){width:260px;}
 }
 @media(max-width:900px){
@@ -206,9 +206,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont strong{font-size:10px;}
   #ficha-cont .planillas-grid{gap:.3rem!important;}
   /* Asistencia en nueva línea */
-  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:14px!important;}
-  /* Árbitro principal junto con estadio/hora - jueces en línea separada */
-  #ficha-cont div[style*="margin-top:.25rem"]{display:flex;flex-wrap:wrap;gap:.2rem;}
+  #ficha-cont span[style*="font-style:italic"]{display:block!important;width:100%!important;padding-left:14px!important;margin-top:1px;}
+  #ficha-cont div[style*="align-items:center;gap:4px"]{flex-wrap:wrap!important;align-items:flex-start!important;}
+  /* Árbitro principal en línea con estadio/hora */
+  #ficha-cont div[style*="margin-top:1.1rem"]{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;}
+  #ficha-cont div[style*="margin-top:.25rem"]{margin-top:0!important;}
+  #ficha-cont .arbi-main{display:inline;}
+  #ficha-cont .arbi-jueces{display:block;padding-left:1.2rem;}
   /* Ficha mobile - all content smaller */
   #ficha-cont{font-size:10px!important;}
   #ficha-cont div,#ficha-cont span,#ficha-cont strong,#ficha-cont td,#ficha-cont th{font-size:10px!important;}
@@ -1462,7 +1466,7 @@ async function verFicha(key, tienePlanilla){
         <div style="margin-top:1.1rem;">
           ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
         </div>
-        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;"><span class="arbi-main">🧑‍⚖️ <strong>${partido.arbitro}</strong></span><span class="arbi-jueces">${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</span></div>`:""}
       </div>
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
