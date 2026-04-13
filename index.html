@@ -205,6 +205,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-col-local,#ficha-col-visit{font-size:10px;}
   #ficha-cont strong{font-size:10px;}
   #ficha-cont .planillas-grid{gap:.3rem!important;}
+  /* Asistencia en nueva línea */
+  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:14px!important;}
+  /* Árbitro principal junto con estadio/hora - jueces en línea separada */
+  #ficha-cont div[style*="margin-top:.25rem"]{display:flex;flex-wrap:wrap;gap:.2rem;}
   /* Ficha mobile - all content smaller */
   #ficha-cont{font-size:10px!important;}
   #ficha-cont div,#ficha-cont span,#ficha-cont strong,#ficha-cont td,#ficha-cont th{font-size:10px!important;}
@@ -222,6 +226,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   /* Planilla jugadores */
   #ficha-col-local,#ficha-col-visit{font-size:10px!important;overflow-x:hidden;}
   .planillas-grid{gap:.25rem!important;}
+  /* Asistencia en nueva línea en mobile */
+  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:14px;}
+  /* Árbitro en misma línea que estadio/hora, jueces en segunda línea */
+  #ficha-cont div[style*="margin-top:.25rem"] strong ~ span{display:block;}
   #ficha-cont{padding:.4rem .3rem;overflow-x:hidden;}
   .planillas-grid{grid-template-columns:1fr 1fr!important;gap:.4rem!important;}
   #fecha-picker-grid{width:160px!important;}
@@ -1421,7 +1429,7 @@ async function verFicha(key, tienePlanilla){
               <div style="display:inline-flex;flex-direction:column;align-items:flex-start;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?`<br><span style="color:#999;font-size:11px;font-style:italic;padding-left:16px;">(${fmtAsist(g.asist)})</span>`:"";
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
                   return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
                     <span style="width:36px;flex-shrink:0;"></span>
                     <span style="width:6px;flex-shrink:0;"></span>
@@ -1438,7 +1446,7 @@ async function verFicha(key, tienePlanilla){
               <div style="display:inline-block;text-align:left;">
                 ${golesVisit.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?`<br><span style="color:#999;font-size:11px;font-style:italic;padding-left:16px;">(${fmtAsist(g.asist)})</span>`:"";
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
                   return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
                     <span style="font-size:13px;">${g.icon}</span>
                     <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
@@ -1452,8 +1460,9 @@ async function verFicha(key, tienePlanilla){
         </div>
 
         <div style="margin-top:1.1rem;">
-          ${(estadioLine||diaHoraStr||partido.arbitro)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}${partido.arbitro?`${(estadioLine||diaHoraStr)?" &nbsp; ":""}🧑‍⚖️ <strong>${partido.arbitro}</strong>`:""}${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</span>`:""}
+          ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
         </div>
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
       </div>
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
