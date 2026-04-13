@@ -8,50 +8,44 @@ export default async function handler(req, res) {
   try {
     const { image, prompt } = req.body;
  
-    // Hacemos la petición a la API de Groq (que imita el formato de OpenAI)
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}` // Usa tu nueva variable
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct", // Modelo gratuito de visión en Groq
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/png;base64,${image}`
-                }
-              }
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: "image/png", data: image } },
+              { text: prompt }
             ]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 8192,
+            responseMimeType: "application/json"
           }
-        ],
-        response_format: { type: "json_object" }, 
-        temperature: 0.1
-      })
-    });
+        })
+      }
+    );
  
     const data = await response.json();
  
     if (!response.ok) {
-      return res.status(500).json({ error: data.error?.message || "Error de la API" });
+      return res.status(500).json({ error: data.error?.message || "Error de Gemini" });
     }
  
-    const text = data.choices?.[0]?.message?.content || "{}";
-    const finishReason = data.choices?.[0]?.finish_reason || "";
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const finishReason = data.candidates?.[0]?.finishReason || "";
  
+    // Si se cortó por tokens, devolver igual con advertencia
     res.status(200).json({
       content: [{ type: "text", text: text }],
       finishReason
     });
  
   } catch (err) {
-    console.error("Error al procesar la petición:", err);
     res.status(500).json({ error: err.message });
   }
 }
+ 
