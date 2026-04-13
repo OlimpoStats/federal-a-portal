@@ -199,8 +199,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .ztabs{gap:.2rem;}
   .ztab{font-size:10px;padding:3px 8px;}
   #ficha-modal{padding:.3rem;}
-  #ficha-cont{padding:.5rem;max-height:92vh;}
-  .planillas-grid{grid-template-columns:1fr!important;}
+  #ficha-col-local,#ficha-col-visit{font-size:11px;}
+  #ficha-col-local .ficha-cambios-sec,#ficha-col-visit .ficha-cambios-sec,
+  #ficha-col-local .ficha-tarjetas-sec,#ficha-col-visit .ficha-tarjetas-sec{font-size:10px;}
+  #ficha-cont{padding:.3rem .2rem;max-height:92vh;}
+  .planillas-grid{grid-template-columns:1fr 1fr!important;gap:.4rem!important;}
   #fecha-picker-grid{width:160px!important;}
   .mini-goles{font-size:9px;padding:.15rem .4rem .2rem;}
   #page-foro{height:calc(100vh - 52px)!important;}
