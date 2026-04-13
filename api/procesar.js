@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}` // Usa tu nueva variable
       },
       body: JSON.stringify({
-        model: "llama-3.2-90b-vision-preview", // Modelo gratuito de visión en Groq
+        model: "meta-llama/llama-4-scout-17b-16e-instruct", // Modelo gratuito de visión en Groq
         messages: [
           {
             role: "user",
