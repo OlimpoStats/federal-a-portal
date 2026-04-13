@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
 .tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tabla-mini tbody td:nth-child(2){text-align:left;}
-.pos{font-size:14px;font-weight:700;color:#bbb;display:inline-block;min-width:18px;text-align:center;}
+.pos{font-size:14px;font-weight:700;color:#bbb;}
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
 .pos.noclasif{color:#c0504d;}
@@ -212,8 +212,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont strong{font-size:10px;}
   #ficha-cont .planillas-grid{gap:.3rem!important;}
   /* Asistencia en nueva línea */
-  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:18px!important;font-size:9px!important;margin-top:-1px;}
-  #ficha-cont div[style*="white-space:nowrap"]{flex-wrap:wrap!important;white-space:normal!important;}
+  #ficha-cont div[style*="white-space:nowrap"][style*="gap:4px"]{white-space:normal!important;}
+  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:18px!important;font-size:9px!important;}
   /* Árbitro principal junto a estadio/hora */
   #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.3rem;}
   #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"] .arbi-p{display:none!important;}
@@ -2317,7 +2317,7 @@ async function cargarEstadisticas(){
           <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
         </tr>`
         + `<tr>`
-        + `<th style="width:30px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
+        + `<th style="width:24px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
         + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
         + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
         + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
