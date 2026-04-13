@@ -209,11 +209,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont div[style*="white-space:nowrap"][style*="align-items:center"]{flex-wrap:wrap!important;}
   #ficha-cont span[style*="font-style:italic"]{flex-basis:100%;padding-left:14px!important;font-size:9px!important;}
   /* Árbitro principal junto a estadio/hora */
-  #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;}
-  #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"]{display:none;}
+  #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.3rem;}
+  #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"] .arbi-p{display:none!important;}
   #ficha-cont .ficha-info-line .arbi-inline{display:inline;}
   /* Jueces en línea separada */
-  #ficha-cont .arbi-j{display:block;padding-left:1.2rem;font-size:9px;}
+  #ficha-cont .arbi-j{display:block;padding-left:0;font-size:9px;margin-top:.1rem;}
 
   /* Ficha mobile - all content smaller */
   #ficha-cont{font-size:10px!important;}
