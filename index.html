@@ -85,8 +85,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ficha-btn:hover{border-color:rgba(255,255,255,.3);}
 
 /* tablas */
-.tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow-x:auto;margin-bottom:.7rem;}
-.tabla-mini table,.tabla-stats{width:100%;border-collapse:collapse;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa;font-size:11px;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa!important;font-size:11px;padding:.35rem .45rem;}
+.tabla-mini{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow-x:auto;margin-bottom:.7rem;}.arbi-inline{display:none;}
+.tabla-mini table,.tabla-stats{width:100%;border-collapse:collapse;}.arbi-inline{display:none;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa;font-size:11px;}.tabla-mini thead tr,.tabla-stats thead tr{background:var(--surface2);}.tabla-mini thead th,.tabla-stats thead th{color:#aaa!important;font-size:11px;padding:.35rem .45rem;}
 .tabla-mini thead th{background:var(--surface2);padding:.45rem .45rem;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;}
 .tabla-mini thead th:nth-child(2){text-align:left;}
 .tabla-mini tbody tr{border-bottom:1px solid var(--border);}
@@ -207,6 +207,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont .planillas-grid{gap:.3rem!important;}
   /* Asistencia en nueva línea */
   #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:14px!important;line-height:1.2;margin-top:0;}
+  /* Árbitro principal junto a estadio/hora */
+  #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;}
+  #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"]{display:none;}
+  #ficha-cont .ficha-info-line .arbi-inline{display:inline;}
+  /* Jueces en línea separada */
+  #ficha-cont .arbi-j{display:block;padding-left:1.2rem;font-size:9px;}
 
   /* Ficha mobile - all content smaller */
   #ficha-cont{font-size:10px!important;}
@@ -1458,10 +1464,10 @@ async function verFicha(key, tienePlanilla){
           </div>`:""}
         </div>
 
-        <div style="margin-top:1.1rem;">
-          ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>`:""}
+        <div class="ficha-info-line" style="margin-top:1.1rem;">
+          ${(estadioLine||diaHoraStr)?`<span style="font-size:13px;color:#ccc;">${estadioLine?`🏟️ <strong>${estadioLine}</strong>`:""}${estadioLine&&diaHoraStr?" &nbsp; ":""}${diaHoraStr?`📅 ${diaHoraStr}`:""}</span>${partido.arbitro?`&nbsp;&nbsp;🧑‍⚖️ <strong class="arbi-inline">${partido.arbitro}</strong>`:""}`:""}
         </div>
-        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;">🧑‍⚖️ <strong>${partido.arbitro}</strong>${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</div>`:""}
+        ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;"><span class="arbi-p">🧑‍⚖️ <strong>${partido.arbitro}</strong></span>${partido.juez1||partido.juez2||partido.cuarto_arbitro?`<span class="arbi-j">${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</span>`:""}</div>`:""}
       </div>
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
