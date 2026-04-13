@@ -132,12 +132,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(min-width:701px){
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:260px;}
   #cont-quintos thead th:nth-child(2){width:260px;}
 }
 @media(min-width:701px){
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:260px;}
   #cont-quintos thead th:nth-child(2){width:260px;}
 }
 @media(max-width:900px){
@@ -198,11 +198,27 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .res{min-width:46px;}
   .ztabs{gap:.2rem;}
   .ztab{font-size:10px;padding:3px 8px;}
-  #ficha-modal{padding:.3rem;}
-  #ficha-col-local,#ficha-col-visit{font-size:11px;}
-  #ficha-col-local .ficha-cambios-sec,#ficha-col-visit .ficha-cambios-sec,
-  #ficha-col-local .ficha-tarjetas-sec,#ficha-col-visit .ficha-tarjetas-sec{font-size:10px;}
-  #ficha-cont{padding:.3rem .2rem;max-height:92vh;}
+  #ficha-modal{padding:0!important;align-items:stretch!important;overflow:hidden!important;}
+  #ficha-modal > div{border-radius:0!important;max-width:100%!important;width:100%!important;height:100%;display:flex;flex-direction:column;overflow:hidden;}
+  #ficha-modal > div > div:first-child{flex-shrink:0;position:sticky;top:0;z-index:10;}
+  #ficha-cont{flex:1;overflow-y:auto;overflow-x:hidden;padding:.4rem .3rem!important;max-height:none!important;}
+  #ficha-col-local,#ficha-col-visit{font-size:10px;}
+  #ficha-cont strong{font-size:10px;}
+  #ficha-cont .planillas-grid{gap:.3rem!important;}
+  /* Banner mobile: stack vertically */
+  #ficha-cont > div:first-child > div[style*="grid-template-columns:1fr auto 1fr"]{
+    grid-template-columns:1fr!important;
+    text-align:center!important;
+  }
+  #ficha-cont > div:first-child > div[style*="grid-template-columns:1fr auto 1fr"] > div{
+    text-align:center!important;
+    padding:0!important;
+    justify-content:center!important;
+  }
+  #ficha-cont > div:first-child span[style*="font-size:28px"]{font-size:18px!important;}
+  #ficha-cont > div:first-child span[style*="font-size:40px"]{font-size:28px!important;}
+  #ficha-cont > div:first-child .esc-ficha{width:32px!important;height:32px!important;}
+  #ficha-cont{padding:.4rem .3rem;overflow-x:hidden;}
   .planillas-grid{grid-template-columns:1fr 1fr!important;gap:.4rem!important;}
   #fecha-picker-grid{width:160px!important;}
   .mini-goles{font-size:9px;padding:.15rem .4rem .2rem;}
