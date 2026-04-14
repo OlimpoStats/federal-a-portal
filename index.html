@@ -2612,7 +2612,7 @@ async function cargarEstadisticas(){
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
               const pensByArb = (penalesDB||[]).filter(p=>{
-                const px=p.partido_id?partidosById[p.partido_id]:null;
+                const px=p.partido_id?partidosById[p.partido_id]:(p.fixture_id?fixtureToPartido[p.fixture_id]:null);
                 if(!px) return false;
                 const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
                 const arbK = arbitroPorPartido[k] || (PARTIDO_META[k]||{}).arbitro || null;
