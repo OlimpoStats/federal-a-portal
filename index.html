@@ -2334,8 +2334,8 @@ async function cargarEstadisticas(){
         const h=h2hData[r.n];
         const hasH2H = !!h;
         return `<tr>
-          <td><span class="pos">${i+1}</span></td>
-          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
+          <td><span class="pos" style="font-size:${_mob?'6px':'14px'}">${i+1}</span></td>
+          <td><div class="tr-eq" style="gap:${_mob?'2px':'4px'}">${escudoHTML(r.n,_mob?'me':'me')}<span style="font-size:${_mob?'7px':'12px'};">${r.n}</span></div></td>
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
