@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -651,6 +651,16 @@ async function cargarFixture(){
   } catch(e){ console.error("Error cargando fixture:", e); }
 }
 
+async function parchearPenalesSinPartido(){
+  // Backfill partido_id for any penales with partido_id=null
+  const {data:pen} = await sb.from("penales").select("id,fixture_id").is("partido_id",null).not("fixture_id","is",null);
+  if(!pen?.length) return;
+  for(const p of pen){
+    const {data:pa} = await sb.from("partidos").select("id").eq("fixture_id",p.fixture_id).maybeSingle();
+    if(pa?.id) await sb.from("penales").update({partido_id:pa.id}).eq("id",p.id);
+  }
+  if(pen.length) console.log(`[Admin] Parcheados ${pen.length} penales sin partido_id`);
+}
 async function cargarEquiposInfo(){
   try {
     const {data} = await sb.from("equipos")
@@ -869,7 +879,7 @@ async function erGuardarInline(){
       equipo_local_nombre: p.local, equipo_visitante_nombre: p.visitante,
       goles_local: gl, goles_visitante: gv, jugado: true, fixture_id: fixtureId,
     });
-    await cargarFixture();
+    await cargarFixture().then(()=>parchearPenalesSinPartido());
     actualizarPartidos();
     showFlash(`✓ ${p.local} ${gl}—${gv} ${p.visitante}`, "ok");
   } catch(e){ alert("Error: "+e.message); }
@@ -1767,6 +1777,13 @@ async function guardarPenal(){
   });
 
   if(error){ alert("Error al guardar penal: "+error.message); return; }
+  // Auto-backfill: if partidoId was null, try to patch after save
+  if(!partidoId && fixtureId){
+    const {data:pMatch} = await sb.from("partidos").select("id").eq("fixture_id", fixtureId).maybeSingle();
+    if(pMatch?.id){
+      await sb.from("penales").update({partido_id: pMatch.id}).eq("fixture_id", fixtureId).is("partido_id", null);
+    }
+  }
 
   // If penal was saved (atajado), persist event to DB for arquero
   if(resultado === "atajado" && arqueroDBId){
@@ -2988,5 +3005,3 @@ Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(
 </script>
 </body>
 </html>
-
-
