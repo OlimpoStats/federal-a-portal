@@ -427,10 +427,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div class="tabla-mini" id="tbl-arbitros"></div>
     </div>
     <div id="stats-penales" style="display:none;">
+      <div id="pen-banner-cont"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div><p class="sec">⚽ Ejecutantes</p><div class="tabla-mini" id="tbl-pen-ejecutantes"></div></div>
         <div><p class="sec">🧤 Arqueros</p><div class="tabla-mini" id="tbl-pen-arqueros"></div></div>
       </div>
+      <div id="pen-equipos-cont"></div>
     </div>
   </div>
 </div>
@@ -2547,8 +2549,7 @@ async function cargarEstadisticas(){
         +'<div style="text-align:center;"><div style="'+bc+'">'+pct+'%</div><div style="font-size:11px;color:var(--muted);">Efectividad</div></div>'
         +'</div>';
       const _penEl = document.getElementById('stats-penales');
-      _penEl.innerHTML = '';
-      _penEl.insertAdjacentHTML('afterbegin', bannerHtml);
+      const _penBanner = document.getElementById('pen-banner-cont'); if(_penBanner) _penBanner.innerHTML = bannerHtml;
     }
 
     // Penales a favor / en contra por equipo
@@ -2583,8 +2584,9 @@ async function cargarEstadisticas(){
     const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
 
     const penEquiposEl = document.getElementById('stats-penales');
-    if(penEquiposEl){
-      penEquiposEl.insertAdjacentHTML('beforeend', `
+    const penEquiposContEl = document.getElementById('pen-equipos-cont');
+    if(penEquiposContEl){
+      penEquiposContEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem;">
           <div><p class="sec">🟢 Penales a favor</p><div class="tabla-mini">${tblEquiposPen(penFavorRows,'Equipo')}</div></div>
           <div><p class="sec">🔴 Penales en contra</p><div class="tabla-mini">${tblEquiposPen(penContraRows,'Equipo')}</div></div>
@@ -2619,7 +2621,7 @@ async function cargarEstadisticas(){
             </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
           </div>
         </div>
-      `);
+      `;
     }
     document.getElementById('tbl-pen-arqueros').innerHTML = penArqRows.length ? tblHead(
       ['180px','Arquero','Arquero'],['44px','Rec.','Recibidos'],['44px','Ataj.','Atajados'],['44px','%','Efectividad']
