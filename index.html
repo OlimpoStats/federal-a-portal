@@ -213,6 +213,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont .planillas-grid{gap:.3rem!important;}
   /* Asistencia en nueva línea */
   #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:18px!important;font-size:9px!important;}
+  .gol-local{text-align:left!important;}
+  .gol-local div[style*="font-style:italic"]{text-align:left!important;}
+  /* Local goles - asist alineado a la izquierda */
+  .gol-local div[style*="font-style:italic"]{text-align:left!important;direction:ltr;}
+  .gol-local{text-align:left!important;}
   /* Árbitro principal junto a estadio/hora */
   #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.3rem;}
   #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"] .arbi-p{display:none!important;}
@@ -2310,7 +2315,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:8px;table-layout:fixed;"><thead>`
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
         + `<tr>
           <td style="width:24px;"></td>
           <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
@@ -2318,11 +2323,11 @@ async function cargarEstadisticas(){
           <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
         </tr>`
         + `<tr>`
-        + `<th style="width:14px;">#</th><th style="text-align:left;">Equipo</th>`
-        + `<th title="PJ">PJ</th><th title="G">G</th><th title="E">E</th><th title="P">P</th>`
-        + `<th title="GF">GF</th><th title="GC">GC</th>`
-        + `<th title="+/-">+/-</th><th title="Pts">Pts</th>`
-        + `<th style="${h2hBg}" title="H2H">H2H</th><th style="${h2hBg}" title="G desempate">GD</th><th style="${h2hBg}" title="E desempate">ED</th><th style="${h2hBg}" title="P desempate">PD</th><th style="${h2hBg}" title="GF desempate">GFD</th><th style="${h2hBg}" title="GC desempate">GCD</th><th style="${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `<th style="width:24px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
+        + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
+        + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
+        + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
+        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GC desempate">GCD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
         + `</tr></thead><tbody>`
         + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
