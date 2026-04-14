@@ -183,12 +183,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
-  /* Tablas ampliadas mobile */
-  #tbl-posiciones-ampliadas .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #tbl-posiciones-ampliadas .tabla-stats{font-size:9px;border-collapse:collapse;}
-  #tbl-posiciones-ampliadas .tabla-stats th,
-  #tbl-posiciones-ampliadas .tabla-stats td{padding:.15rem .2rem;white-space:nowrap;font-size:9px;}
-  #tbl-posiciones-ampliadas .tabla-stats td:nth-child(2){white-space:nowrap;}
   /* Penales banner compact */
   #stats-penales > div[style*="background"]{padding:.3rem .5rem!important;gap:.5rem!important;}
   /* Fixture */
@@ -212,12 +206,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-cont strong{font-size:10px;}
   #ficha-cont .planillas-grid{gap:.3rem!important;}
   /* Asistencia en nueva línea */
-  #ficha-cont span[style*="font-style:italic"]{display:block!important;padding-left:18px!important;font-size:9px!important;}
-  .gol-local{text-align:left!important;}
-  .gol-local div[style*="font-style:italic"]{text-align:left!important;}
-  /* Local goles - asist alineado a la izquierda */
-  .gol-local div[style*="font-style:italic"]{text-align:left!important;direction:ltr;}
-  .gol-local{text-align:left!important;}
+  #ficha-cont div[style*="white-space:nowrap"][style*="align-items:center"]{flex-wrap:wrap!important;}
+  #ficha-cont span[style*="font-style:italic"]{flex-basis:100%;padding-left:14px!important;font-size:9px!important;}
   /* Árbitro principal junto a estadio/hora */
   #ficha-cont .ficha-info-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.3rem;}
   #ficha-cont .ficha-info-line ~ div[style*="margin-top:.25rem"] .arbi-p{display:none!important;}
@@ -1330,13 +1320,11 @@ async function verFicha(key, tienePlanilla){
       if(!goles.length) return "";
       return goles.map(g=>{
         const min = String(g.minuto||"");
-        return `<div style="display:flex;flex-direction:column;padding:1px 0;">
-          <div style="display:flex;align-items:center;gap:4px;white-space:nowrap;">
-            <span style="font-size:14px;line-height:1;flex-shrink:0;">${g.icon}</span>
-            <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-            <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-          </div>
-          ${g.asist?`<div style="color:#999;font-size:11px;font-style:italic;margin-left:20px;text-align:left;">(${g.asist})</div>`:""}
+        return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+          <span style="font-size:14px;line-height:1;flex-shrink:0;">${g.icon}</span>
+          <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+          <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
+          ${g.asist?`<span style="color:#999;font-size:11px;font-style:italic;margin-left:2px;">(${g.asist})</span>`:""}
         </div>`;
       }).join("");
     };
@@ -1658,7 +1646,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
      zh+=`<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
-       <th style="width:26px">#</th><th style="text-align:left;">Equipo</th>
+       <th style="width:18px">#</th><th style="text-align:left;">Equipo</th>
        <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
        <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
@@ -2315,7 +2303,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
+      return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
         + `<tr>
           <td style="width:24px;"></td>
           <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
@@ -2334,8 +2322,8 @@ async function cargarEstadisticas(){
         const h=h2hData[r.n];
         const hasH2H = !!h;
         return `<tr>
-          <td><span class="pos" style="font-size:${_mob?'6px':'14px'}">${i+1}</span></td>
-          <td><div class="tr-eq" style="gap:${_mob?'2px':'4px'}">${escudoHTML(r.n,_mob?'me':'me')}<span style="font-size:${_mob?'7px':'12px'};">${r.n}</span></div></td>
+          <td><span class="pos">${i+1}</span></td>
+          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
