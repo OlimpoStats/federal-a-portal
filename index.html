@@ -190,7 +190,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tbl-posiciones-ampliadas .tabla-stats td{padding:.15rem .2rem;white-space:nowrap;font-size:9px;}
   #tbl-posiciones-ampliadas .tabla-stats td:nth-child(2){white-space:nowrap;}
   /* Penales banner compact */
-  #stats-penales > div[style*="background"]{padding:.3rem .5rem!important;gap:.5rem!important;}
+  #stats-penales > div[style*="background"]{padding:.3rem .4rem!important;gap:.3rem!important;}
+  #pen-banner-cont > div{gap:.3rem!important;padding:.4rem .3rem!important;}
+  #pen-banner-cont > div > div{font-size:9px!important;}
+  #pen-banner-cont > div > div > div:first-child{font-size:16px!important;}
   /* Fixture */
   .fecha-hdr{padding:.5rem .6rem;}
   .fnum{font-size:16px;}
@@ -2541,7 +2544,7 @@ async function cargarEstadisticas(){
     if(totalPen>0){
       const pct=Math.round(totalGol/totalPen*100);
       const bc="font-family:Barlow Condensed,sans-serif;font-size:28px;font-weight:700;";
-      const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">'
+      const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:nowrap;justify-content:space-around;">'
         +'<div style="text-align:center;"><div style="'+bc+'color:var(--accent);">'+totalPen+'</div><div style="font-size:11px;color:var(--muted);">Pateados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#4caf50;">'+totalGol+'</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#e57373;">'+(totalPen-totalGol)+'</div><div style="font-size:11px;color:var(--muted);">No convertidos</div></div>'
@@ -2577,9 +2580,16 @@ async function cargarEstadisticas(){
     (penalesDB||[]).forEach(p=>{
       const px = p.partido_id ? partidosById[p.partido_id] : null;
       if(!px) return;
+      // Use exact same key format as arbiStats
       const k = `${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
-      const arb = arbitroPorPartido[k] || (PARTIDO_META[k]||{}).arbitro || null;
+      const arb = arbitroPorPartido[k] || null;
       if(arb){ if(!penArbiStats[arb]) penArbiStats[arb]=0; penArbiStats[arb]++; }
+    });
+    // Fallback: also count from arbiStats penl+penv fields
+    Object.entries(arbiStats).forEach(([arb,a])=>{
+      const total = (a.penl||0)+(a.penv||0);
+      if(total>0 && !penArbiStats[arb]) penArbiStats[arb]=total;
+      else if(total>0 && penArbiStats[arb]<total) penArbiStats[arb]=total;
     });
     const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
 
