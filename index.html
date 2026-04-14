@@ -1331,7 +1331,7 @@ async function verFicha(key, tienePlanilla){
             <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
             <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
           </div>
-          ${g.asist?`<div style="color:#999;font-size:11px;font-style:italic;padding-left:22px;">(${g.asist})</div>`:""}
+          ${g.asist?`<div style="color:#999;font-size:11px;font-style:italic;padding-left:22px;text-align:left;">(${g.asist})</div>`:""}
         </div>`;
       }).join("");
     };
@@ -1442,15 +1442,13 @@ async function verFicha(key, tienePlanilla){
               <div style="display:inline-flex;flex-direction:column;align-items:flex-start;">
                 ${golesLocal.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?`<div style="color:#999;font-size:11px;font-style:italic;padding-left:20px;margin-top:1px;">(${fmtAsist(g.asist)})</div>`:"";
-                  return `<div style="display:flex;flex-direction:column;padding:1px 0;">
-                    <div style="display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                      <span style="width:36px;flex-shrink:0;"></span>
-                      <span style="width:6px;flex-shrink:0;"></span>
-                      <span style="font-size:13px;">${g.icon}</span>
-                      <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                      <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                    </div>
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="width:36px;flex-shrink:0;"></span>
+                    <span style="width:6px;flex-shrink:0;"></span>
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
                     ${asist}
                   </div>`;
                 }).join("")}
@@ -1461,13 +1459,11 @@ async function verFicha(key, tienePlanilla){
               <div style="display:inline-block;text-align:left;">
                 ${golesVisit.map(g=>{
                   const min=String(g.minuto||"");
-                  const asist=g.asist?`<div style="color:#999;font-size:11px;font-style:italic;padding-left:20px;margin-top:1px;">(${fmtAsist(g.asist)})</div>`:"";
-                  return `<div style="display:flex;flex-direction:column;padding:1px 0;">
-                    <div style="display:flex;align-items:center;gap:4px;white-space:nowrap;">
-                      <span style="font-size:13px;">${g.icon}</span>
-                      <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
-                      <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
-                    </div>
+                  const asist=g.asist?` <span style="color:#999;font-size:12px;font-style:italic;">(${fmtAsist(g.asist)})</span>`:"";
+                  return `<div style="display:flex;align-items:center;gap:4px;padding:1px 0;white-space:nowrap;">
+                    <span style="font-size:13px;">${g.icon}</span>
+                    <strong style="color:#f0f0f0;font-size:12px;">${g.nombre}</strong>
+                    <span style="color:var(--accent);font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;">${min}'</span>
                     ${asist}
                   </div>`;
                 }).join("")}
@@ -2314,7 +2310,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
         + `<tr>
           <td style="width:24px;"></td>
           <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
