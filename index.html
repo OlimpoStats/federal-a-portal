@@ -2290,6 +2290,16 @@ async function cargarEstadisticas(){
     // Zona table with H2H columns
     const renderZonaTable = (rows, _zc2={color:'#888'}, zonaNombre='') => {
       const _m = window.innerWidth <= 700;
+      const _fs = _m ? '6px' : '11px';
+      const _w1 = _m ? '10px' : '24px';
+      const _w2 = _m ? '55px' : '120px';
+      const _wS = _m ? '18px' : '28px';
+      const _wM = _m ? '20px' : '32px';
+      const _wH = _m ? '18px' : '30px';
+      const _wHc = _m ? '16px' : '26px';
+      const _fzN = _m ? '9px' : '15px';
+      const _pad = _m ? '1px 2px' : '2px 6px';
+      const _fzH = _m ? '5px' : '11px';
       // Compute H2H same as calcTabla
       const ptGroups={};
       rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
@@ -2319,19 +2329,19 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:11px;"><thead>`
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_fs};table-layout:fixed;"><thead>`
         + `<tr>
-          <td style="width:24px;"></td>
-          <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
+          <td style="width:${_w1};"></td>
+          <td style="width:${_w2};font-family:'Barlow Condensed',sans-serif;font-size:${_fzN};font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
           <td colspan="8"></td>
-          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
+          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:${_pad};font-size:${_fzH};font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
         </tr>`
         + `<tr>`
-        + `<th style="width:24px;">#</th><th style="width:120px;text-align:left;">Equipo</th>`
-        + `<th style="width:28px;" title="PJ">PJ</th><th style="width:28px;" title="G">G</th><th style="width:28px;" title="E">E</th><th style="width:28px;" title="P">P</th>`
-        + `<th style="width:28px;" title="GF">GF</th><th style="width:28px;" title="GC">GC</th>`
-        + `<th style="width:32px;" title="+/-">+/-</th><th style="width:32px;" title="Pts">Pts</th>`
-        + `<th style="width:30px;${h2hBg}" title="H2H">H2H</th><th style="width:26px;${h2hBg}" title="G desempate">GD</th><th style="width:26px;${h2hBg}" title="E desempate">ED</th><th style="width:26px;${h2hBg}" title="P desempate">PD</th><th style="width:28px;${h2hBg}" title="GF desempate">GFD</th><th style="width:28px;${h2hBg}" title="GC desempate">GCD</th><th style="width:28px;${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `<th style="width:${_w1};">#</th><th style="width:${_w2};text-align:left;">Equipo</th>`
+        + `<th style="width:${_wS};" title="PJ">PJ</th><th style="width:${_wS};" title="G">G</th><th style="width:${_wS};" title="E">E</th><th style="width:${_wS};" title="P">P</th>`
+        + `<th style="width:${_wS};" title="GF">GF</th><th style="width:${_wS};" title="GC">GC</th>`
+        + `<th style="width:${_wM};" title="+/-">+/-</th><th style="width:${_wM};" title="Pts">Pts</th>`
+        + `<th style="width:${_wH};${h2hBg}" title="H2H">H2H</th><th style="width:${_wHc};${h2hBg}" title="G desempate">GD</th><th style="width:${_wHc};${h2hBg}" title="E desempate">ED</th><th style="width:${_wHc};${h2hBg}" title="P desempate">PD</th><th style="width:${_wHc};${h2hBg}" title="GF desempate">GFD</th><th style="width:${_wHc};${h2hBg}" title="GC desempate">GCD</th><th style="width:${_wHc};${h2hBg}" title="GF visitante desempate">GFV</th>`
         + `</tr></thead><tbody>`
         + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
