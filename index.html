@@ -183,25 +183,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
-  .zona-amp-table{table-layout:fixed!important;}
-  #tbl-posiciones-ampliadas .tabla-mini{background:transparent!important;border:none!important;}
-  .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.18rem .02rem!important;white-space:nowrap;overflow:hidden;}
-  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
-  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
-  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
-  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
-  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
-  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
-
-  .zona-amp-table .pos{font-size:6px!important;}
-  .zona-amp-table .me{width:8px!important;height:8px!important;}
-  .zona-amp-table .tr-eq{gap:1px!important;}
-  .zona-amp-table .tr-eq span,.zona-amp-table strong,.zona-amp-table .pts{font-size:6px!important;}
-
-
-
-
-
+  /* Tablas ampliadas mobile */
+  #tbl-posiciones-ampliadas .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #tbl-posiciones-ampliadas .tabla-stats{font-size:9px;border-collapse:collapse;}
+  #tbl-posiciones-ampliadas .tabla-stats th,
+  #tbl-posiciones-ampliadas .tabla-stats td{padding:.15rem .2rem;white-space:nowrap;font-size:9px;}
+  #tbl-posiciones-ampliadas .tabla-stats td:nth-child(2){white-space:nowrap;}
   /* Penales banner compact */
   #stats-penales > div[style*="background"]{padding:.3rem .4rem!important;gap:.3rem!important;}
   #pen-banner-cont > div{gap:.3rem!important;padding:.4rem .3rem!important;}
@@ -2309,16 +2296,6 @@ async function cargarEstadisticas(){
     // Zona table with H2H columns
     const renderZonaTable = (rows, _zc2={color:'#888'}, zonaNombre='') => {
       const _m = window.innerWidth <= 700;
-      const _fs = _m ? '8px' : '11px';
-      const _w1 = _m ? '8px' : '24px';
-      const _w2 = _m ? '80px' : '120px';
-      const _wS = _m ? '8px' : '28px';
-      const _wM = _m ? '10px' : '32px';
-      const _wH = _m ? '9px' : '30px';
-      const _wHc = _m ? '8px' : '26px';
-      const _fzN = _m ? '8px' : '15px';
-      const _pad = _m ? '1px 2px' : '2px 6px';
-      const _fzH = _m ? '5px' : '11px';
       // Compute H2H same as calcTabla
       const ptGroups={};
       rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
@@ -2348,19 +2325,21 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_fs};table-layout:fixed;"><thead>`
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_m?'8px':'11px'};table-layout:fixed;">` +
+      (_m ? `<colgroup><col style="width:8px"><col style="width:80px">${Array(8).fill('<col style="width:8px">').join('')}<col style="width:10px"><col style="width:10px">${Array(7).fill('<col style="width:8px">').join('')}</colgroup>` : '') +
+      `<thead>`
         + `<tr>
-          <td style="width:${_w1};"></td>
-          <td style="width:${_w2};font-family:'Barlow Condensed',sans-serif;font-size:${_fzN};font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
+          <td style="width:24px;"></td>
+          <td style="width:120px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
           <td colspan="8"></td>
-          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:${_pad};font-size:${_fzH};font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
+          <th colspan="7" style="border-left:3px solid ${_zc2.color}60;border-top:1px solid ${_zc2.color}40;border-right:1px solid ${_zc2.color}40;border-radius:4px 4px 0 0;padding:2px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#aaa;text-align:center;text-transform:uppercase;">DESEMPATE POR DUELOS DIRECTOS</th>
         </tr>`
         + `<tr>`
-        + `<th style="width:${_w1};">#</th><th style="width:${_w2};text-align:left;">Equipo</th>`
-        + `<th style="width:${_wS};" title="PJ">PJ</th><th style="width:${_wS};" title="G">G</th><th style="width:${_wS};" title="E">E</th><th style="width:${_wS};" title="P">P</th>`
-        + `<th style="width:${_wS};" title="GF">GF</th><th style="width:${_wS};" title="GC">GC</th>`
-        + `<th style="width:${_wM};" title="+/-">+/-</th><th style="width:${_wM};" title="Pts">Pts</th>`
-        + `<th style="width:${_wH};${h2hBg}" title="H2H">H2H</th><th style="width:${_wHc};${h2hBg}" title="G desempate">GD</th><th style="width:${_wHc};${h2hBg}" title="E desempate">ED</th><th style="width:${_wHc};${h2hBg}" title="P desempate">PD</th><th style="width:${_wHc};${h2hBg}" title="GF desempate">GFD</th><th style="width:${_wHc};${h2hBg}" title="GC desempate">GCD</th><th style="width:${_wHc};${h2hBg}" title="GF visitante desempate">GFV</th>`
+        + `<th style="width:${_m?'8px':'24px'};">#</th><th style="width:${_m?'80px':'120px'};text-align:left;">Equipo</th>`
+        + `<th style="width:${_m?'8px':'28px'};" title="PJ">PJ</th><th style="width:${_m?'8px':'28px'};" title="G">G</th><th style="width:${_m?'8px':'28px'};" title="E">E</th><th style="width:${_m?'8px':'28px'};" title="P">P</th>`
+        + `<th style="width:${_m?'8px':'28px'};" title="GF">GF</th><th style="width:${_m?'8px':'28px'};" title="GC">GC</th>`
+        + `<th style="width:${_m?'10px':'32px'};" title="+/-">+/-</th><th style="width:${_m?'10px':'32px'};" title="Pts">Pts</th>`
+        + `<th style="width:${_m?'9px':'30px'};${h2hBg}" title="H2H">H2H</th><th style="width:${_m?'8px':'26px'};${h2hBg}" title="G desempate">GD</th><th style="width:${_m?'8px':'26px'};${h2hBg}" title="E desempate">ED</th><th style="width:${_m?'8px':'26px'};${h2hBg}" title="P desempate">PD</th><th style="width:${_m?'8px':'28px'};${h2hBg}" title="GF desempate">GFD</th><th style="width:${_m?'8px':'28px'};${h2hBg}" title="GC desempate">GCD</th><th style="width:${_m?'8px':'28px'};${h2hBg}" title="GF visitante desempate">GFV</th>`
         + `</tr></thead><tbody>`
         + rows.map((r,i)=>{
         const dif=r.gf-r.gc;
@@ -2368,23 +2347,24 @@ async function cargarEstadisticas(){
         const hasH2H = !!h;
         return `<tr>
           <td><span class="pos">${i+1}</span></td>
-          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:${_m?'7px':'12px'};">${r.n}</span></div></td>
+          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:${_m?'8px':'12px'};">${r.n}</span></div></td>
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
-          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''}border-left:2px solid ${_zc2.color}30;"
-            ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}
-            >${hasH2H?h.pts:'—'}</td>
+          <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''};border-left:2px solid ${_zc2.color}30;"
+            ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}>
+            ${hasH2H?h.pts:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gf:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gc:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gfv:'—'}</td>
-          </tr>`;
+        </tr>`;
       }).join('') + `</tbody></table>`;
     };
     document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
+
     // LOCAL
     const renderLocalVisitTable = (rows) => tblHead(
       ['24px','','#'],['','Equipo','Equipo'],['32px','PJ','PJ'],['32px','G','G'],['32px','E','E'],['32px','P','P'],['32px','GF','GF'],['32px','GC','GC'],['36px','GD','+/-'],['36px','Pts','Pts']
@@ -2608,7 +2588,12 @@ async function cargarEstadisticas(){
       const arb = arbitroPorPartido[k] || null;
       if(arb){ if(!penArbiStats[arb]) penArbiStats[arb]=0; penArbiStats[arb]++; }
     });
-
+    // Fallback: also count from arbiStats penl+penv fields
+    Object.entries(arbiStats).forEach(([arb,a])=>{
+      const total = (a.penl||0)+(a.penv||0);
+      if(total>0 && !penArbiStats[arb]) penArbiStats[arb]=total;
+      else if(total>0 && penArbiStats[arb]<total) penArbiStats[arb]=total;
+    });
     const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
 
     const penEquiposEl = document.getElementById('stats-penales');
@@ -2630,22 +2615,16 @@ async function cargarEstadisticas(){
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
               const pensByArb = (penalesDB||[]).filter(p=>{
-                const px=p.partido_id?partidosById[p.partido_id]:(p.fixture_id?fixtureToPartido[p.fixture_id]:null);
+                const px=p.partido_id?partidosById[p.partido_id]:null;
                 if(!px) return false;
                 const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
                 const arbK = arbitroPorPartido[k] || (PARTIDO_META[k]||{}).arbitro || null;
                 return arbK===arb;
               });
-              // Count penales per team
-              const countFavor={}, countContra={};
-              pensByArb.forEach(p=>{
-                if(p.equipo_favor) countFavor[p.equipo_favor]=(countFavor[p.equipo_favor]||0)+1;
-                if(p.equipo_contra) countContra[p.equipo_contra]=(countContra[p.equipo_contra]||0)+1;
-              });
               const teamsFavor=[...new Set(pensByArb.map(p=>p.equipo_favor).filter(Boolean))];
               const teamsContra=[...new Set(pensByArb.map(p=>p.equipo_contra).filter(Boolean))];
-              const escFavor=teamsFavor.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countFavor[eq]>1?`<span style="position:absolute;top:-2px;right:0px;font-size:11px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countFavor[eq]}</span>`:''}</div>`).join('');
-              const escContra=teamsContra.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countContra[eq]>1?`<span style="position:absolute;top:-2px;right:0px;font-size:11px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countContra[eq]}</span>`:''}</div>`).join('');
+              const escFavor=teamsFavor.map(eq=>escudoHTML(eq,'me')).join('');
+              const escContra=teamsContra.map(eq=>escudoHTML(eq,'me')).join('');
               return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
