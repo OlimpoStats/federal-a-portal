@@ -2344,7 +2344,7 @@ async function cargarEstadisticas(){
         const hasH2H = !!h;
         return `<tr>
           <td><span class="pos">${i+1}</span></td>
-          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
+          <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:${_m?'7px':'12px'};">${r.n}</span></div></td>
           <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td><td>${r.gf}</td><td>${r.gc}</td>
           <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
           <td><strong class="pts">${r.pts}</strong></td>
