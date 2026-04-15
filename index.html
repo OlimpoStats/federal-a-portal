@@ -2621,8 +2621,8 @@ async function cargarEstadisticas(){
               });
               const teamsFavor=[...new Set(pensByArb.map(p=>p.equipo_favor).filter(Boolean))];
               const teamsContra=[...new Set(pensByArb.map(p=>p.equipo_contra).filter(Boolean))];
-              const escFavor=teamsFavor.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countFavor[eq]>1?`<span style="position:absolute;top:-2px;right:-3px;font-size:9px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countFavor[eq]}</span>`:''}</div>`).join('');
-              const escContra=teamsContra.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countContra[eq]>1?`<span style="position:absolute;top:-2px;right:-3px;font-size:9px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countContra[eq]}</span>`:''}</div>`).join('');
+              const escFavor=teamsFavor.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countFavor[eq]>1?`<span style="position:absolute;top:-2px;right:0px;font-size:11px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countFavor[eq]}</span>`:''}</div>`).join('');
+              const escContra=teamsContra.map(eq=>`<div style="position:relative;display:inline-block;">${escudoHTML(eq,'me')}${countContra[eq]>1?`<span style="position:absolute;top:-2px;right:0px;font-size:11px;font-weight:700;color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;line-height:1;">${countContra[eq]}</span>`:''}</div>`).join('');
               return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
