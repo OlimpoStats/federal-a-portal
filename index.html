@@ -184,8 +184,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas .tabla-mini{overflow:hidden;}
-  .zona-amp-table{width:100%!important;}
-  .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.18rem .05rem!important;white-space:nowrap;}
+  .zona-amp-table{width:100%!important;table-layout:fixed!important;}
+  .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.18rem .02rem!important;white-space:nowrap;overflow:hidden;}
+  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:10px!important;}
+  .zona-amp-table th:nth-child(n+3):nth-child(-n+10),.zona-amp-table td:nth-child(n+3):nth-child(-n+10){width:16px!important;}
+  .zona-amp-table th:nth-child(n+11),.zona-amp-table td:nth-child(n+11){width:14px!important;}
   .zona-amp-table .pos{font-size:6px!important;}
   .zona-amp-table .me{width:8px!important;height:8px!important;}
   .zona-amp-table .tr-eq{gap:1px!important;}
