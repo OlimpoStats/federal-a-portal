@@ -2371,7 +2371,6 @@ async function cargarEstadisticas(){
           <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''}border-left:2px solid ${_zc2.color}30;"
             ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}
             >${hasH2H?h.pts:'—'}</td>
-            >${hasH2H?h.pts:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
