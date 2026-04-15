@@ -184,10 +184,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
   .zona-amp-table{table-layout:fixed!important;}
-  #tbl-posiciones-ampliadas .tabla-mini{background:transparent!important;border:none!important;border-radius:0!important;}
-  #tbl-posiciones-ampliadas .tabla-mini{background:transparent!important;border:none!important;border-radius:0!important;}
   #tbl-posiciones-ampliadas .tabla-mini{background:transparent!important;border:none!important;}
   .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.18rem .02rem!important;white-space:nowrap;overflow:hidden;}
+  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
+  .zona-amp-table th:nth-child(2),.zona-amp-table td:nth-child(2){width:80px!important;max-width:80px!important;}
+  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
+  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
+  .zona-amp-table th:nth-child(2),.zona-amp-table td:nth-child(2){width:80px!important;max-width:80px!important;}
+  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
+  .zona-amp-table th:nth-child(1),.zona-amp-table td:nth-child(1){width:8px!important;max-width:8px!important;}
+  .zona-amp-table th:nth-child(2),.zona-amp-table td:nth-child(2){width:80px!important;max-width:80px!important;}
+  .zona-amp-table th:nth-child(n+3),.zona-amp-table td:nth-child(n+3){width:8px!important;max-width:8px!important;}
 
   .zona-amp-table .pos{font-size:6px!important;}
   .zona-amp-table .me{width:8px!important;height:8px!important;}
@@ -2344,7 +2351,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:${_m?'auto':'100%'};border-collapse:collapse;font-size:${_fs};table-layout:fixed;"><thead>`
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_fs};table-layout:fixed;"><thead>`
         + `<tr>
           <td style="width:${_w1};"></td>
           <td style="width:${_w2};font-family:'Barlow Condensed',sans-serif;font-size:${_fzN};font-weight:700;color:${_zc2.color};letter-spacing:1px;text-transform:uppercase;">&nbsp;&nbsp;&nbsp;${zonaNombre}</td>
