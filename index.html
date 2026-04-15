@@ -2295,6 +2295,7 @@ async function cargarEstadisticas(){
 
     // Zona table with H2H columns
     const renderZonaTable = (rows, _zc2={color:'#888'}, zonaNombre='') => {
+      const _m = window.innerWidth <= 700;
       // Compute H2H same as calcTabla
       const ptGroups={};
       rows.forEach(r=>{ if(!ptGroups[r.pts]) ptGroups[r.pts]=[]; ptGroups[r.pts].push(r.n); });
