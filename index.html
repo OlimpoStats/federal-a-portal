@@ -187,12 +187,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.1rem .05rem!important;}
   .zona-amp-table .pos{font-size:6px!important;}
   .zona-amp-table .me{width:8px!important;height:8px!important;}
+  .zona-amp-table .tr-eq{gap:2px!important;}
   .zona-amp-table .tr-eq span{font-size:6px!important;}
   .zona-amp-table .pts,.zona-amp-table strong{font-size:6px!important;}
   .zona-amp-table{font-size:6px!important;}
   .zona-amp-table th,.zona-amp-table td{font-size:6px!important;padding:.1rem .05rem!important;}
   .zona-amp-table .pos{font-size:6px!important;min-width:0!important;width:auto!important;}
   .zona-amp-table .me{width:8px!important;height:8px!important;}
+  .zona-amp-table .tr-eq{gap:2px!important;}
   .zona-amp-table .tr-eq span{font-size:6px!important;}
   .zona-amp-table .pts{font-size:6px!important;}
   .zona-amp-table strong{font-size:6px!important;}
@@ -2369,16 +2371,17 @@ async function cargarEstadisticas(){
           <td style="color:${hasH2H?'var(--accent)':'var(--muted)'};font-size:11px;font-weight:${hasH2H?'700':'400'};${hasH2H?'cursor:pointer;':''}border-left:2px solid ${_zc2.color}30;"
             ${hasH2H?`onmouseenter="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}')" onmouseleave="hideH2HTooltip()" ontouchstart="showH2HTooltip(event,'${encodeURIComponent(JSON.stringify(h?._matches||[]))}',true)"`:''}
             >${hasH2H?h.pts:'—'}</td>
+            >${hasH2H?h.pts:'—'}</td>
+          <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.g:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.e:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.p:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gf:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gc:'—'}</td>
           <td style="color:${hasH2H?'#ccc':'var(--muted)'};font-size:11px;">${hasH2H?h.gfv:'—'}</td>
-        </tr>`;
+          </tr>`;
       }).join('') + `</tbody></table>`;
     };
     document.getElementById('tbl-general').innerHTML = renderGeneralTable(generalRows);
-
     // LOCAL
     const renderLocalVisitTable = (rows) => tblHead(
       ['24px','','#'],['','Equipo','Equipo'],['32px','PJ','PJ'],['32px','G','G'],['32px','E','E'],['32px','P','P'],['32px','GF','GF'],['32px','GC','GC'],['36px','GD','+/-'],['36px','Pts','Pts']
