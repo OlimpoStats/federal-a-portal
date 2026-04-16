@@ -718,8 +718,8 @@ async function loginConEmail(){
 }
 
 async function registrarUsuario(){
-  const email = document.getElementById("inp-email").value;
-  const pass = document.getElementById("inp-pass").value;
+  const email = document.getElementById("reg-email").value;
+  const pass = document.getElementById("reg-pass").value;
   if(!email||!pass){ alert("Completá email y contraseña"); return; }
   const {error} = await sb.auth.signUp({email, password: pass});
   if(error) alert(error.message);
