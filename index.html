@@ -130,15 +130,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
 /* ── MOBILE ── */
 @media(min-width:701px){
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:400px;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
-  #cont-quintos thead th:nth-child(2){width:260px;}
-}
-@media(min-width:701px){
-  #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
-  #cont-quintos thead th:nth-child(2){width:260px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:130px;}
+  #cont-quintos thead th:nth-child(2){width:160px;}
 }
 @media(max-width:900px){
   .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
@@ -2939,8 +2934,9 @@ async function init(){
 
   // Cargar datos principales (crítico) y escudos en paralelo
   // cargarEscudos no bloquea el render si falla
+  const _escPromise = cargarEscudos().catch(()=>{});
   try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
-  cargarEscudos().catch(()=>{});   // escudos en background, no bloqueante
+  await _escPromise;
 
   try { await diagnosticoIntegridad(); } catch(e){}
   try {
