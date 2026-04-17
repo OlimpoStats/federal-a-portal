@@ -2937,19 +2937,23 @@ function renderSegundaFase(){
     </div>`;
 }
 async function init(){
+  try { await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]); }
+  catch(e){ console.error("[init] carga datos:", e); }
+  try { await diagnosticoIntegridad(); } catch(e){}
+  try { renderForo(); } catch(e){ console.error("[init] renderForo:", e); }
   try {
-  await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]);
-  await diagnosticoIntegridad();
-  renderForo();
-  const f = fechaInteligente();
-  fechaActual = f;
-  renderPartidos(f);
-  renderTablas();
-  renderSegundaFase();
-  renderGoleadoresResumen();
-  // Start live score polling
-  iniciarPollingEnVivo();
-  } catch(e){ console.error("[init] Error:", e); }
+    const f = fechaInteligente();
+    fechaActual = f;
+    renderPartidos(f);
+    renderTablas();
+    renderSegundaFase();
+    renderGoleadoresResumen();
+  } catch(e){
+    console.error("[init] render:", e);
+    const pg = document.querySelector(".page");
+    if(pg){ pg.style.display="block"; pg.innerHTML=`<div style="padding:2rem;color:#e57373;font-family:monospace;font-size:13px;">Error al cargar: ${e.message}</div>`; }
+  }
+  try { iniciarPollingEnVivo(); } catch(e){}
 }
 init();
 
