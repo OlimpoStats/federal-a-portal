@@ -2936,11 +2936,21 @@ function renderSegundaFase(){
       </div>
     </div>`;
 }
+const _loadingHTML = '<div style="padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.5px;">Cargando datos...</div>';
 async function init(){
-  try { await Promise.all([cargarPartidosDesdeDB(), cargarEscudos()]); }
-  catch(e){ console.error("[init] carga datos:", e); }
+  // Mostrar estado de carga mientras Supabase responde
+  ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = _loadingHTML;
+  });
+
+  // Cargar datos principales (crítico) y escudos en paralelo
+  // cargarEscudos no bloquea el render si falla
+  try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
+  cargarEscudos().catch(()=>{});   // escudos en background, no bloqueante
+
   try { await diagnosticoIntegridad(); } catch(e){}
-  try { renderForo(); } catch(e){ console.error("[init] renderForo:", e); }
+  try { renderForo(); } catch(e){}
   try {
     const f = fechaInteligente();
     fechaActual = f;
@@ -2948,11 +2958,7 @@ async function init(){
     renderTablas();
     renderSegundaFase();
     renderGoleadoresResumen();
-  } catch(e){
-    console.error("[init] render:", e);
-    const pg = document.querySelector(".page");
-    if(pg){ pg.style.display="block"; pg.innerHTML=`<div style="padding:2rem;color:#e57373;font-family:monospace;font-size:13px;">Error al cargar: ${e.message}</div>`; }
-  }
+  } catch(e){ console.error("[init] render:", e); }
   try { iniciarPollingEnVivo(); } catch(e){}
 }
 init();
