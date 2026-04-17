@@ -2437,8 +2437,7 @@ async function cargarEstadisticas(){
         teams.forEach(t=>{ h2hData[t]=h2h[t]; h2hData[t]._matches=h2hMatches2; });
       });
       const h2hBg = `background:${_zc2.color}15;border:1px solid ${_zc2.color}33;`;
-      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_m?'8px':'11px'};table-layout:${_m?'auto':'fixed'};">` +
-      (!_m ? `<colgroup><col style="width:8px"><col style="width:90px">${Array(8).fill('<col style="width:8px">').join('')}<col style="width:10px"><col style="width:10px">${Array(7).fill('<col style="width:8px">').join('')}</colgroup>` : '') +
+      return `<table class="zona-amp-table" style="width:100%;border-collapse:collapse;font-size:${_m?'8px':'11px'};table-layout:fixed;">` +
       `<thead>`
         + `<tr>
           <td style="width:24px;"></td>
