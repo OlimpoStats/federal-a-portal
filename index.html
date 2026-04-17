@@ -301,8 +301,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     </div>
     <div id="panel-registro" style="display:none;">
       <div class="modal-title">Crear cuenta</div>
-      <input type="email" placeholder="Correo electrónico" id="reg-email">
-      <input type="password" placeholder="Contraseña" id="reg-pass">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:.7rem;">Los campos con 🔒 son privados y no serán visibles públicamente.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <input type="text" placeholder="Nombre 🔒" id="reg-nombre" autocomplete="given-name">
+        <input type="text" placeholder="Apellido 🔒" id="reg-apellido" autocomplete="family-name">
+      </div>
+      <input type="email" placeholder="Email 🔒" id="reg-email" autocomplete="email">
+      <input type="password" placeholder="Contraseña 🔒" id="reg-pass" autocomplete="new-password">
+      <input type="text" placeholder="Nombre de usuario (público)" id="reg-username" maxlength="20" autocomplete="off">
+      <select id="reg-equipo" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;outline:none;margin-bottom:.5rem;">
+        <option value="">Tu equipo de fútbol...</option>
+      </select>
       <button class="modal-btn" onclick="registrarUsuario()">Registrarme</button>
       <div class="modal-sub">¿Ya tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('login')">Iniciá sesión</span></div>
     </div>
@@ -631,18 +640,53 @@ async function cargarPartidosDesdeDB(){
 }
 
 // Carga escudos desde Supabase
+let EQUIPOS_LIST = [];
 async function cargarEscudos(){
   try {
-    const {data} = await sb.from("equipos").select("nombre, escudo_url");
+    const {data} = await sb.from("equipos").select("id, nombre, escudo_url").order("nombre");
     if(!data) return;
+    EQUIPOS_LIST = data.map(eq => ({id: eq.id, nombre: eq.nombre}));
     data.forEach(eq => { if(eq.escudo_url) ESCUDOS[eq.nombre] = eq.escudo_url; });
   } catch(e){}
 }
 
+function poblarSelectEquipos(){
+  const sel = document.getElementById("reg-equipo");
+  if(!sel || sel.options.length > 1) return;
+  EQUIPOS_LIST.forEach(eq => {
+    const opt = document.createElement("option");
+    opt.value = eq.id;
+    opt.textContent = eq.nombre;
+    sel.appendChild(opt);
+  });
+  const otro = document.createElement("option");
+  otro.value = "otro";
+  otro.textContent = "Otro";
+  sel.appendChild(otro);
+}
+
 // Auth — manejo de sesión
 let usuarioActual = null;
-sb.auth.onAuthStateChange((event, session) => {
+sb.auth.onAuthStateChange(async (event, session) => {
   usuarioActual = session?.user || null;
+  if(event === 'SIGNED_IN' && usuarioActual){
+    const {data: perfil} = await sb.from("perfiles").select("id").eq("id", usuarioActual.id).maybeSingle();
+    if(!perfil){
+      const meta = usuarioActual.user_metadata || {};
+      await sb.from("perfiles").insert({
+        id: usuarioActual.id,
+        nombre: meta.nombre || '',
+        apellido: meta.apellido || '',
+        username: meta.username || 'usuario_' + usuarioActual.id.slice(0,6),
+        equipo_id: meta.equipo_id || null,
+        rango: 'Simpatizante',
+        rol: 'usuario',
+        puntos: 0
+      });
+    }
+    PERFIL_USUARIO = null;
+  }
+  if(event === 'SIGNED_OUT') PERFIL_USUARIO = null;
   actualizarIconoUsuario();
   if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
 });
@@ -654,6 +698,7 @@ function mostrarPanel(panel){
     const el=document.getElementById('panel-'+p);
     if(el) el.style.display=p===panel?'':'none';
   });
+  if(panel==='registro') poblarSelectEquipos();
 }
 
 function abrirModal(){
@@ -718,12 +763,23 @@ async function loginConEmail(){
 }
 
 async function registrarUsuario(){
-  const email = document.getElementById("reg-email").value;
-  const pass = document.getElementById("reg-pass").value;
-  if(!email||!pass){ alert("Completá email y contraseña"); return; }
-  const {error} = await sb.auth.signUp({email, password: pass});
-  if(error) alert(error.message);
-  else alert("¡Registrado! Revisá tu mail para confirmar la cuenta.");
+  const nombre   = document.getElementById("reg-nombre").value.trim();
+  const apellido = document.getElementById("reg-apellido").value.trim();
+  const email    = document.getElementById("reg-email").value.trim();
+  const pass     = document.getElementById("reg-pass").value;
+  const username = document.getElementById("reg-username").value.trim();
+  const equipoVal= document.getElementById("reg-equipo").value;
+  if(!nombre||!apellido||!email||!pass||!username){ alert("Completá todos los campos."); return; }
+  if(username.length < 3){ alert("El nombre de usuario debe tener al menos 3 caracteres."); return; }
+  if(pass.length < 8){ alert("La contraseña debe tener al menos 8 caracteres."); return; }
+  const equipo_id = (equipoVal && equipoVal !== "otro") ? equipoVal : null;
+  const {error} = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { nombre, apellido, username, equipo_id } }
+  });
+  if(error){ alert(error.message); return; }
+  alert("¡Registrado! Revisá tu mail para confirmar la cuenta.");
+  mostrarPanel('login');
 }
 
 async function cerrarSesion(){
@@ -745,26 +801,64 @@ async function cargarMensajesForo(pagina=0){
       .order("created_at", {ascending: false})
       .range(from, from + FORO_POR_PAGINA - 1);
     if(!data){ renderForoMsgs([], 0, 0); return; }
+    const ids = data.map(m => m.id);
+    let voteCounts = {}, misVotos = {};
+    if(ids.length > 0){
+      const {data: vd} = await sb.from("votos").select("mensaje_id, valor").in("mensaje_id", ids);
+      vd?.forEach(v => {
+        if(!voteCounts[v.mensaje_id]) voteCounts[v.mensaje_id] = {pos:0, neg:0};
+        if(v.valor > 0) voteCounts[v.mensaje_id].pos++; else voteCounts[v.mensaje_id].neg++;
+      });
+      if(usuarioActual){
+        const {data: mv} = await sb.from("votos").select("mensaje_id, valor").eq("usuario_id", usuarioActual.id).in("mensaje_id", ids);
+        mv?.forEach(v => misVotos[v.mensaje_id] = v.valor);
+      }
+    }
     const msgs = data.map(m => ({
       id: m.id,
       user: m.perfiles?.username || "Anónimo",
-      rango: m.perfiles?.rango || "",
+      rango: m.perfiles?.rango || "Simpatizante",
       equipo: m.perfiles?.equipos?.nombre || "",
       tiempo: tiempoRelativo(m.created_at),
       texto: m.contenido,
-      usuario_id: m.usuario_id
+      usuario_id: m.usuario_id,
+      votos: voteCounts[m.id] || {pos:0, neg:0},
+      miVoto: misVotos[m.id] || 0
     }));
     renderForoMsgs(msgs, pagina, count||0);
   } catch(e){ console.error(e); renderForoMsgs([], 0, 0); }
 }
 
+let ULTIMO_MENSAJE_TS = null;
 async function publicarMensaje(){
   if(!usuarioActual){ toggleModal(); return; }
-  const txt = document.getElementById("foro-input").value.trim();
+  const txt = document.getElementById("foro-input")?.value.trim();
   if(!txt) return;
   if(txt.length > 100){ alert("El mensaje no puede superar los 100 caracteres."); return; }
+  if(PERFIL_USUARIO?.rol !== 'dueno' && ULTIMO_MENSAJE_TS){
+    const espera = 60 - Math.floor((Date.now() - ULTIMO_MENSAJE_TS) / 1000);
+    if(espera > 0){ alert(`Esperá ${espera} segundo${espera!==1?'s':''} antes de enviar otro mensaje.`); return; }
+  }
   const {error} = await sb.from("mensajes").insert({foro_id: 1, usuario_id: usuarioActual.id, contenido: txt});
-  if(!error){ document.getElementById("foro-input").value=""; cargarMensajesForo(); }
+  if(!error){
+    ULTIMO_MENSAJE_TS = Date.now();
+    document.getElementById("foro-input").value = "";
+    const chars = document.getElementById("foro-chars");
+    if(chars) chars.textContent = "0/100";
+    cargarMensajesForo();
+  }
+}
+
+async function votarMensaje(mensajeId, valor){
+  if(!usuarioActual){ toggleModal(); return; }
+  const {data: ex} = await sb.from("votos").select("id, valor").eq("mensaje_id", mensajeId).eq("usuario_id", usuarioActual.id).maybeSingle();
+  if(ex){
+    if(ex.valor === valor) await sb.from("votos").delete().eq("id", ex.id);
+    else await sb.from("votos").update({valor}).eq("id", ex.id);
+  } else {
+    await sb.from("votos").insert({mensaje_id: mensajeId, usuario_id: usuarioActual.id, valor});
+  }
+  cargarMensajesForo(FORO_PAGINA);
 }
 
 function tiempoRelativo(ts){
@@ -1842,7 +1936,11 @@ function renderForoMsgs(msgs, pagina=0, total=0){
     document.getElementById("foro-msgs").innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">Sin mensajes aún.</div>';
     return;
   }
-  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>`
+  const svgThumb = (dir, active, color) => `<svg width="13" height="13" viewBox="0 0 24 24" fill="${active?color:'none'}" stroke="${active?color:'#555'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${dir==='up'?'<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>':'<path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>'}</svg>`;
+  document.getElementById("foro-msgs").innerHTML = msgs.map(m=>{
+    const upActive = m.miVoto === 1, downActive = m.miVoto === -1;
+    const net = m.votos.pos - m.votos.neg;
+    return `
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;">
       <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
         ${escudoHTML(m.equipo,'esc')}
@@ -1850,8 +1948,16 @@ function renderForoMsgs(msgs, pagina=0, total=0){
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
       </div>
-      <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
-    </div>`).join("");
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3rem;padding:.25rem .75rem .35rem;">
+          <button onclick="votarMensaje(${m.id},1)" title="Me gusta" style="display:inline-flex;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;color:${upActive?'#4caf50':'#555'};font-size:11px;">${svgThumb('up',upActive,'#4caf50')}</button>
+          <span style="font-size:11px;color:${net>0?'#4caf50':net<0?'#e57373':'#555'};min-width:14px;text-align:center;">${net>0?'+':''}${net}</span>
+          <button onclick="votarMensaje(${m.id},-1)" title="No me gusta" style="display:inline-flex;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;color:${downActive?'#e57373':'#555'};font-size:11px;">${svgThumb('down',downActive,'#e57373')}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
   // Pagination nav
   const totalPags = Math.ceil(total / FORO_POR_PAGINA);
   if(totalPags > 1){
