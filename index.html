@@ -667,26 +667,10 @@ function poblarSelectEquipos(){
 
 // Auth — manejo de sesión
 let usuarioActual = null;
-sb.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
   usuarioActual = session?.user || null;
-  if(event === 'SIGNED_IN' && usuarioActual){
-    const {data: perfil} = await sb.from("perfiles").select("id").eq("id", usuarioActual.id).maybeSingle();
-    if(!perfil){
-      const meta = usuarioActual.user_metadata || {};
-      await sb.from("perfiles").insert({
-        id: usuarioActual.id,
-        nombre: meta.nombre || '',
-        apellido: meta.apellido || '',
-        username: meta.username || 'usuario_' + usuarioActual.id.slice(0,6),
-        equipo_id: meta.equipo_id || null,
-        rango: 'Simpatizante',
-        rol: 'usuario',
-        puntos: 0
-      });
-    }
-    PERFIL_USUARIO = null;
-  }
   if(event === 'SIGNED_OUT') PERFIL_USUARIO = null;
+  if(event === 'SIGNED_IN' || event === 'SIGNED_OUT') PERFIL_USUARIO = null;
   actualizarIconoUsuario();
   if(document.getElementById("page-foro").classList.contains("active")) cargarMensajesForo();
 });
@@ -715,6 +699,16 @@ async function actualizarIconoUsuario(){
     btn.title="Mi cuenta";
     if(!PERFIL_USUARIO){
       const {data}=await sb.from("perfiles").select("username,nombre,apellido,rango,equipos(nombre)").eq("id",usuarioActual.id).maybeSingle();
+      if(!data && usuarioActual.user_metadata?.username){
+        const meta = usuarioActual.user_metadata;
+        await sb.from("perfiles").insert({
+          id: usuarioActual.id, nombre: meta.nombre||'', apellido: meta.apellido||'',
+          username: meta.username, equipo_id: meta.equipo_id||null,
+          rango: 'Simpatizante', rol: 'usuario', puntos: 0
+        }).select("username,nombre,apellido,rango,equipos(nombre)").maybeSingle()
+          .then(r=>{ PERFIL_USUARIO = r.data; });
+        return;
+      }
       PERFIL_USUARIO=data;
     }
     const eq=PERFIL_USUARIO?.equipos?.nombre||"";
@@ -2950,7 +2944,6 @@ async function init(){
   cargarEscudos().catch(()=>{});   // escudos en background, no bloqueante
 
   try { await diagnosticoIntegridad(); } catch(e){}
-  try { renderForo(); } catch(e){}
   try {
     const f = fechaInteligente();
     fechaActual = f;
