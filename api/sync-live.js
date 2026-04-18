@@ -180,8 +180,10 @@ module.exports = async (req, res) => {
         });
 
         if (implicitFinished) {
-          const ok = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: eventData });
-          results.push({ id: fx.id, implicitFinished: true, updated: ok });
+          const patch = { estado: 'jugado', minuto_actual: eventData };
+          if (score) { patch.goles_local = score.local; patch.goles_visitante = score.visitante; }
+          const ok = await sbPatch(fx.id, patch);
+          results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: ok });
           continue;
         }
 
