@@ -31,31 +31,59 @@ function parseScore(html) {
   return null;
 }
 
+function getNextData(html) {
+  const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch(e) { return null; }
+}
+
 function parseMinuto(html) {
   const m = html.match(/MFStatusLiveTimeText[^>]*>([^<]+)<\/span>/);
   if (m) {
     const t = m[1].trim();
-    return t.includes(':') ? t.split(':')[0] + "'" : t;
+    // If the text is a digit-based minute, return it. If it's FT/TC/PT skip it.
+    if (/^\d/.test(t)) return t.includes(':') ? t.split(':')[0] + "'" : t;
+    if (/^(HT|ET)$/i.test(t)) return 'ET';
   }
-  if (/HT|Half time/.test(html)) return 'ET';
+  if (/\bHT\b|\bHalf.?time\b/i.test(html)) return 'ET';
   return null;
 }
 
 function isFinished(html) {
+  // Primary: __NEXT_DATA__ general status (most reliable)
+  const nd = getNextData(html);
+  if (nd) {
+    const general = nd?.props?.pageProps?.content?.general;
+    if (general?.finished === true) return true;
+    if (typeof general?.status === 'string') {
+      const s = general.status.toUpperCase();
+      if (s === 'FT' || s === 'FINISHED' || s === 'FULLTIME') return true;
+    }
+  }
+  // Fallback: HTML text patterns near the score
   const scoreIdx = html.indexOf('MFHeaderStatusScore');
   const ctx = scoreIdx > 0
     ? html.substring(Math.max(0, scoreIdx - 1000), scoreIdx + 1000)
     : html.substring(0, 3000);
-  return />\s*FT\s*</.test(ctx) || ctx.includes('"finished":true');
+  return />\s*(?:FT|TC|PT)\s*</.test(ctx) || ctx.includes('"finished":true');
 }
 
 function isLive(html) {
   if (isFinished(html)) return false;
-  const scoreIdx = html.indexOf('MFHeaderStatusScore');
-  const ctx = scoreIdx > 0
-    ? html.substring(Math.max(0, scoreIdx - 1000), scoreIdx + 1000)
-    : html.substring(0, 3000);
-  return /MFStatusLiveTimeText/.test(html) || /HT|Half time/.test(ctx);
+  // Only consider live if there's an actual digit minute OR explicit HT marker.
+  // Checking for MFStatusLiveTimeText class alone is unreliable (FotMob keeps
+  // the element in DOM even after FT, just changing its text content).
+  const hasDigitMinute = /MFStatusLiveTimeText[^>]*>\s*\d+['′\u2019]/.test(html);
+  if (hasDigitMinute) return true;
+  const hasHT = /MFStatusLiveTimeText[^>]*>\s*(?:HT|ET)\s*</.test(html);
+  if (hasHT) return true;
+  // Secondary: __NEXT_DATA__ explicit live flag
+  const nd = getNextData(html);
+  if (nd) {
+    const general = nd?.props?.pageProps?.content?.general;
+    if (general?.started === true && general?.finished === false) return true;
+  }
+  return false;
 }
 
 function parseFotmobEventos(html) {
