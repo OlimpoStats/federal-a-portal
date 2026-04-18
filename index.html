@@ -1693,7 +1693,7 @@ function liveScoreBadge(equipo){
   const myG = esLocal?liveM.gl:liveM.gv;
   const thG = esLocal?liveM.gv:liveM.gl;
   const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
-  return `<span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
+  return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
 }
 
 function renderTablas(){
@@ -1768,11 +1768,10 @@ function renderTablas(){
       let posClass="noclasif";
       if(pos<=clasif) posClass="clasif";
       else if(pos===5&&z!=="Zona A") posClass="quinto";
-      const _live = liveScoreBadge(r.n);
       zh+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
-        <td>${_live || `<strong class="pts">${r.pts}</strong>`}</td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
         <td>${r.gf}</td><td>${r.gc}</td>
         <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
@@ -2939,7 +2938,7 @@ async function init(){
   try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
   await _escPromise;
 
-  diagnosticoIntegridad().catch(()={}); // background, no bloquea render
+  try { await diagnosticoIntegridad(); } catch(e){}
   // Re-render con datos completos de Supabase
   try {
     const f = fechaInteligente();
