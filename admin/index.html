@@ -247,7 +247,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               </div>
             </div>
 
-            <div style="text-align:right;margin-top:.5rem;display:flex;gap:.5rem;justify-content:flex-end;" id="btn-sel-siguiente-wrap" style="display:none;">
+            <div style="text-align:right;margin-top:.5rem;display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;" id="btn-sel-siguiente-wrap" style="display:none;">
+              <span id="borrador-indicator" style="display:none;color:#f0b429;font-size:.82rem;align-self:center;">📝 Hay un borrador sin publicar.</span>
+              <button class="btn btn-secondary" id="btn-continuar-borrador" onclick="cargarBorrador()" style="display:none;">📂 Continuar borrador</button>
               <button class="btn btn-secondary" onclick="irPaso2Manual()">✏️ Cargar manual</button>
               <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar planilla →</button>
             </div>
@@ -848,16 +850,23 @@ function actualizarEstadoPlanillaSeleccion(){
 
   box.style.display = "";
   const nextWrap = document.getElementById("btn-sel-siguiente-wrap");
+  const borradoreIndicator = document.getElementById("borrador-indicator");
+  const btnContinuarBorrador = document.getElementById("btn-continuar-borrador");
+  const hasBorrador = !!localStorage.getItem(borradorKey({fixtureId: p?.id, zona: sel.zona, fecha: sel.fecha, local: p?.local}));
   if(tienePlanilla){
     txt.textContent = "✅ Planilla cargada.";
     txt.style.color = "#5dba7d";
     actions.style.display = "flex";
     if(nextWrap) nextWrap.style.display = "none";
+    if(borradoreIndicator) borradoreIndicator.style.display = "none";
+    if(btnContinuarBorrador) btnContinuarBorrador.style.display = "none";
   } else {
     txt.textContent = "Sin planilla. Podés cargarla con IA o editar manualmente.";
     txt.style.color = "var(--muted)";
     actions.style.display = "none";
     if(nextWrap) nextWrap.style.display = "";
+    if(borradoreIndicator) borradoreIndicator.style.display = hasBorrador ? "" : "none";
+    if(btnContinuarBorrador) btnContinuarBorrador.style.display = hasBorrador ? "" : "none";
   }
 
   // Show inline result editor
@@ -2246,8 +2255,70 @@ async function cargarPlanillasExistentes(){
 }
 
 // ── CONFIRMAR ──
-async function guardarBorrador(){
-  await confirmarCarga(false);
+function borradorKey(pa){
+  return `borrador_${pa?.fixtureId || (pa?.zona+'_'+pa?.fecha+'_'+pa?.local)}`;
+}
+
+function guardarBorrador(){
+  if(!partidoActual){ showFlash("No hay partido seleccionado.", "err"); return; }
+  const draft = {
+    ts: Date.now(),
+    partidoActual: {...partidoActual},
+    planillaLocal: JSON.parse(JSON.stringify(planillaLocal)),
+    planillaVisit: JSON.parse(JSON.stringify(planillaVisit)),
+    form: {
+      glLocal: document.getElementById("score-local")?.value || "0",
+      glVisit: document.getElementById("score-visit")?.value || "0",
+      estadio: document.getElementById("partido-estadio")?.value || "",
+      arbitro: document.getElementById("partido-arbitro")?.value || "",
+      juez1: document.getElementById("partido-juez1")?.value || "",
+      juez2: document.getElementById("partido-juez2")?.value || "",
+      cuarto: document.getElementById("partido-cuarto")?.value || "",
+      dia: document.getElementById("partido-dia")?.value || "",
+      hora: document.getElementById("partido-hora")?.value || "",
+      dtLocal: document.getElementById("partido-dt-local")?.value || "",
+      dtVisit: document.getElementById("partido-dt-visit")?.value || "",
+    }
+  };
+  try {
+    localStorage.setItem(borradorKey(partidoActual), JSON.stringify(draft));
+    showFlash(`💾 Borrador guardado — ${partidoActual.local} vs ${partidoActual.visit}. No es visible al público.`, "ok");
+    actualizarEstadoPlanillaSeleccion();
+  } catch(e){ showFlash("Error al guardar borrador: " + e.message, "err"); }
+}
+
+function cargarBorrador(){
+  const sel = obtenerPartidoSeleccionado();
+  if(!sel) return;
+  const key = borradorKey({fixtureId: sel.p.id, zona: sel.zona, fecha: sel.fecha, local: sel.p.local});
+  const raw = localStorage.getItem(key);
+  if(!raw){ alert("No se encontró el borrador."); return; }
+  let draft;
+  try { draft = JSON.parse(raw); } catch(e){ alert("Borrador corrupto."); return; }
+  cargarDatosPartidoSeleccionadoEnUI(sel);
+  partidoActual = draft.partidoActual;
+  planillaLocal = draft.planillaLocal;
+  planillaVisit = draft.planillaVisit;
+  document.getElementById("paso1").style.display = "none";
+  document.getElementById("paso2").style.display = "none";
+  document.getElementById("paso3").style.display = "";
+  document.getElementById("steps-bar").style.display = "";
+  setStep(3);
+  const f = draft.form;
+  document.getElementById("score-local").value = f.glLocal;
+  document.getElementById("score-visit").value = f.glVisit;
+  document.getElementById("partido-estadio").value = f.estadio;
+  document.getElementById("partido-arbitro").value = f.arbitro;
+  document.getElementById("partido-juez1").value = f.juez1;
+  document.getElementById("partido-juez2").value = f.juez2;
+  document.getElementById("partido-cuarto").value = f.cuarto;
+  document.getElementById("partido-dia").value = f.dia;
+  document.getElementById("partido-hora").value = f.hora;
+  document.getElementById("partido-dt-local").value = f.dtLocal;
+  document.getElementById("partido-dt-visit").value = f.dtVisit;
+  renderPlanilla("tabla-local", planillaLocal.jugadores || []);
+  renderPlanilla("tabla-visit", planillaVisit.jugadores || []);
+  showFlash("📂 Borrador cargado. Completá y publicá cuando estés listo.", "ok");
 }
 
 async function confirmarCarga(publicar=true){
@@ -2319,6 +2390,7 @@ async function confirmarCarga(publicar=true){
       : `Borrador guardado para ${partidoActual.local} vs ${partidoActual.visit}. Podés seguir editando.`;
     setStep(4);
     if(fixtureId) FIXTURE_CON_PLANILLA.add(String(fixtureId));
+    localStorage.removeItem(borradorKey(partidoActual));
     await cargarFixture();
     actualizarEstadoPlanillaSeleccion();
 
