@@ -33,15 +33,23 @@ module.exports = async (req, res) => {
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
     const hasNextData = !!nextDataMatch;
     let nextDataKeys = null;
-    let eventsPreview = null;
+    let eventsData = null;
+    let eventsKeys = null;
     if (nextDataMatch) {
       try {
         const nd = JSON.parse(nextDataMatch[1]);
         nextDataKeys = JSON.stringify(Object.keys(nd?.props?.pageProps || {})).substring(0, 500);
-        // Try to find events
-        const str = nextDataMatch[1];
-        const evIdx = str.indexOf('"events"');
-        if (evIdx !== -1) eventsPreview = str.substring(evIdx, evIdx + 1000);
+        // Navigate to events
+        const events = nd?.props?.pageProps?.content?.matchFacts?.events;
+        if (events) {
+          eventsKeys = Object.keys(events);
+          eventsData = JSON.stringify(events, null, 2).substring(0, 5000);
+        } else {
+          // Try to find events anywhere in the tree
+          const str = nextDataMatch[1];
+          const evIdx = str.indexOf('"homeTeamGoals"');
+          if (evIdx !== -1) eventsData = str.substring(Math.max(0, evIdx - 20), evIdx + 3000);
+        }
       } catch(e) { nextDataKeys = 'parse error: ' + e.message; }
     }
 
@@ -79,7 +87,8 @@ module.exports = async (req, res) => {
       htmlLength: html.length,
       hasNextData,
       nextDataKeys,
-      eventsPreview,
+      eventsKeys,
+      eventsData,
       scoreFound: scoreIdx !== -1,
       headerArea: headerArea ? headerArea.substring(0, 3000) : null,
       playerLinks,
