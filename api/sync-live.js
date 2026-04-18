@@ -59,7 +59,7 @@ function isLive(html) {
 }
 
 function parseFotmobEventos(html) {
-  const result = { golesLocal: [], golesVisit: [], rojasLocal: 0, rojasVisit: 0 };
+  const result = { golesLocal: [], golesVisit: [], rojasLocal: 0, rojasVisit: 0, rojasLocalNames: [], rojasVisitNames: [] };
 
   const ndMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
   if (!ndMatch) return result;
@@ -74,16 +74,18 @@ function parseFotmobEventos(html) {
     if (ev.type === 'Goal' && ev.player?.name) {
       const overload = ev.overloadTime ? `+${ev.overloadTime}` : '';
       const min = `${ev.time}${overload}'`;
-      const nombre = ev.player.name;
-      const entry = { nombre, min };
+      const entry = { nombre: ev.player.name, min };
       if (ev.assistStr) entry.asistencia = ev.assistStr;
       if (ev.ownGoal) entry.enPropia = true;
       if (ev.isHome) result.golesLocal.push(entry);
       else result.golesVisit.push(entry);
     }
     if (ev.type === 'Card' && ev.card === 'Red' && ev.player?.name) {
-      if (ev.isHome) result.rojasLocal++;
-      else result.rojasVisit++;
+      const overload = ev.overloadTime ? `+${ev.overloadTime}` : '';
+      const min = `${ev.time}${overload}'`;
+      const entry = { n: ev.player.name, t: min };
+      if (ev.isHome) { result.rojasLocal++; result.rojasLocalNames.push(entry); }
+      else { result.rojasVisit++; result.rojasVisitNames.push(entry); }
     }
   }
 
@@ -133,25 +135,31 @@ module.exports = async (req, res) => {
           continue;
         }
 
+        const score = parseScore(html);
+        if (!score && !implicitFinished) { results.push({ id: fx.id, error: 'no score', live, finished }); continue; }
+
+        const eventos = parseFotmobEventos(html);
+        const { rojasLocal, rojasVisit } = eventos;
+        const minuto = live ? parseMinuto(html) : null;
+
+        const eventData = JSON.stringify({
+          m: implicitFinished ? null : minuto,
+          rl: rojasLocal, rv: rojasVisit,
+          gl: eventos.golesLocal.map(g => ({n: g.nombre, t: g.min})),
+          gv: eventos.golesVisit.map(g => ({n: g.nombre, t: g.min})),
+          rln: eventos.rojasLocalNames,
+          rvn: eventos.rojasVisitNames
+        });
+
         if (implicitFinished) {
-          const ok = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: null });
+          const ok = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: eventData });
           results.push({ id: fx.id, implicitFinished: true, updated: ok });
           continue;
         }
 
-        const score = parseScore(html);
-        if (!score) { results.push({ id: fx.id, error: 'no score', live, finished }); continue; }
-
-        const minuto = parseMinuto(html);
-        const eventos = parseFotmobEventos(html);
-        const { rojasLocal, rojasVisit } = eventos;
-
-        // Encode as "19'|1|0" = minuto|rojas_local|rojas_visitante
-        const minutoEncoded = minuto ? `${minuto}|${rojasLocal}|${rojasVisit}` : null;
-
         const upd = { goles_local: score.local, goles_visitante: score.visitante };
-        if (finished) { upd.estado = 'jugado'; upd.minuto_actual = null; }
-        else { upd.estado = 'en_curso'; upd.minuto_actual = minutoEncoded; }
+        if (finished) { upd.estado = 'jugado'; upd.minuto_actual = eventData; }
+        else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
 
         const ok = await sbPatch(fx.id, upd);
         results.push({
