@@ -459,10 +459,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <div><label>Horario</label><input type="text" id="hs-hora" placeholder="ej: 15:30" maxlength="8"></div>
           </div>
           <div class="form-row two">
-            <div class="autocomplete-wrap"><label>Árbitro principal</label><input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-arbitro"></div></div>
-            <div class="autocomplete-wrap"><label>Juez de línea 1</label><input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez1"></div></div>
-            <div class="autocomplete-wrap"><label>Juez de línea 2</label><input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez2"></div></div>
-            <div class="autocomplete-wrap"><label>Cuarto árbitro</label><input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-cuarto"></div></div>
+            <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('hs-arbitro')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label><input type="text" id="hs-arbitro" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-arbitro')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-arbitro"></div></div>
+            <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 1 <span onclick="abrirCrearArbitroRapido('hs-juez1')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label><input type="text" id="hs-juez1" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez1')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez1"></div></div>
+            <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Juez de línea 2 <span onclick="abrirCrearArbitroRapido('hs-juez2')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label><input type="text" id="hs-juez2" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-juez2')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-juez2"></div></div>
+            <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Cuarto árbitro <span onclick="abrirCrearArbitroRapido('hs-cuarto')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label><input type="text" id="hs-cuarto" placeholder="Nombre y apellido" oninput="acInput(this,'arbitros','hs-cuarto')" autocomplete="off"><div class="autocomplete-list" id="ac-hs-cuarto"></div></div>
           </div>
           <div><label>Link de transmisión</label><input type="text" id="hs-stream" placeholder="https://youtube.com/live/..."></div>
           <div style="text-align:right;margin-top:.5rem;"><button class="btn btn-primary btn-sm" onclick="hsGuardar()">Guardar</button></div>
@@ -2495,20 +2495,19 @@ function hsActualizar(){
         </div>
         <div><label>Stream</label><input type="text" id="hs-stream-${i}" value="${p.stream_url||""}" placeholder="https://..." oninput="marcarModificado(${i})"></div>
         <div><label>FotMob (en vivo)</label><input type="text" id="hs-fotmob-${i}" value="${p.fotmob_url||""}" placeholder="https://www.fotmob.com/..." oninput="marcarModificado(${i})"></div>
-        <div><label>Sofascore (en vivo)</label><input type="text" id="hs-sofascore-${i}" value="${p.sofascore_url||""}" placeholder="https://www.sofascore.com/..." oninput="marcarModificado(${i})"></div>
         <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Árbitro principal <span onclick="abrirCrearArbitroRapido('hs-arb-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-arb-${i}" value="${arb}" placeholder="Árbitro" oninput="acInput(this,'arbitros','hs-arb-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-arb-${i}"></div>
         </div>
-        <div class="autocomplete-wrap"><label>Juez 1</label>
+        <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Juez 1 <span onclick="abrirCrearArbitroRapido('hs-j1-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-j1-${i}" value="${j1}" placeholder="Juez 1" oninput="acInput(this,'arbitros','hs-j1-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-j1-${i}"></div>
         </div>
-        <div class="autocomplete-wrap"><label>Juez 2</label>
+        <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Juez 2 <span onclick="abrirCrearArbitroRapido('hs-j2-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-j2-${i}" value="${j2}" placeholder="Juez 2" oninput="acInput(this,'arbitros','hs-j2-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-j2-${i}"></div>
         </div>
-        <div class="autocomplete-wrap"><label>Cuarto árbitro</label>
+        <div class="autocomplete-wrap"><label style="display:flex;align-items:center;justify-content:space-between;">Cuarto árbitro <span onclick="abrirCrearArbitroRapido('hs-c4-${i}')" style="font-size:10px;color:var(--accent);cursor:pointer;font-weight:600;">+ Nuevo</span></label>
           <input type="text" id="hs-c4-${i}" value="${c4}" placeholder="Cuarto árbitro" oninput="acInput(this,'arbitros','hs-c4-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-c4-${i}"></div>
         </div>
@@ -2539,7 +2538,7 @@ async function hsGuardarTodo(){
     const estadio = document.getElementById(`hs-estadio-${i}`)?.value||null;
     const stream = document.getElementById(`hs-stream-${i}`)?.value||null;
     const fotmob = document.getElementById(`hs-fotmob-${i}`)?.value.trim()||null;
-    const sofascore = document.getElementById(`hs-sofascore-${i}`)?.value.trim()||null;
+    const sofascore = null;
     const arbitro = document.getElementById(`hs-arb-${i}`)?.value||null;
     const juez1 = document.getElementById(`hs-j1-${i}`)?.value||null;
     const juez2 = document.getElementById(`hs-j2-${i}`)?.value||null;
