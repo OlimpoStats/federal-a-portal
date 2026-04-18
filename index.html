@@ -1146,7 +1146,12 @@ function renderPartidos(f){
   let html="";
   let diaActual = null;
   rows.forEach(({zona, m, meta}) => {
-    const esEnVivo = m.estado === "en_curso";
+    const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
+    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
+    const _ld = parseLiveData(m.minuto_actual);
+    const _min = _ld.min;
+    // Only treat as live if estado is en_curso AND there's a real minute counter (prevents stuck green bg when sync stored m:null)
+    const esEnVivo = m.estado === "en_curso" && _min !== null;
     const esFuturo = m.gl === null && !esEnVivo;
     const liveClass = esEnVivo ? " partido-live" : "";
     const dKey = diaKey(meta.dia);
@@ -1157,11 +1162,6 @@ function renderPartidos(f){
         ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
-
-    const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
-    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
-    const _ld = parseLiveData(m.minuto_actual);
-    const _min = _ld.min;
     const _rl = _ld.rl;
     const _rv = _ld.rv;
     const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
