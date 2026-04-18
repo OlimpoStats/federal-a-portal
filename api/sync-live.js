@@ -15,11 +15,13 @@ async function sbPatch(id, data) {
     method: 'PATCH',
     headers: {
       'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
     },
     body: JSON.stringify(data)
   });
-  return r.ok;
+  if (!r.ok) return { ok: false, status: r.status };
+  const rows = await r.json().catch(() => []);
+  return { ok: Array.isArray(rows) && rows.length > 0, rows: rows.length };
 }
 
 function parseScore(html) {
@@ -182,8 +184,8 @@ module.exports = async (req, res) => {
         if (implicitFinished) {
           const patch = { estado: 'jugado', minuto_actual: eventData };
           if (score) { patch.goles_local = score.local; patch.goles_visitante = score.visitante; }
-          const ok = await sbPatch(fx.id, patch);
-          results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: ok });
+          const res = await sbPatch(fx.id, patch);
+          results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: res.ok, rows: res.rows });
           continue;
         }
 
@@ -191,9 +193,9 @@ module.exports = async (req, res) => {
         if (finished) { upd.estado = 'jugado'; upd.minuto_actual = eventData; }
         else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
 
-        const ok = await sbPatch(fx.id, upd);
+        const res = await sbPatch(fx.id, upd);
         results.push({
-          id: fx.id, updated: ok,
+          id: fx.id, updated: res.ok, rows: res.rows,
           score: `${score.local}-${score.visitante}`,
           minuto, rojasLocal, rojasVisit,
           golesLocal: eventos.golesLocal.length,
