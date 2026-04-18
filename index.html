@@ -93,7 +93,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tabla-mini tbody tr:last-child{border-bottom:none;}
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
 .tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tabla-mini tbody td:nth-child(2){text-align:left;}
+.tabla-mini tbody td:nth-child(2){text-align:left;overflow:visible;max-width:none;}
 .pos{font-size:14px;font-weight:700;color:#bbb;}
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
@@ -130,9 +130,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
 /* ── MOBILE ── */
 @media(min-width:701px){
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:400px;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:520px;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:130px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:220px;}
   #cont-quintos thead th:nth-child(2){width:160px;}
 }
 @media(max-width:900px){
@@ -179,7 +179,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
   /* Tablas ampliadas mobile */
-  .zona-amp-table{table-layout:auto!important;}
+  .zona-amp-table{table-layout:auto!important;min-width:560px;}
   .zona-amp-table td:nth-child(n+3){font-size:10px!important;padding:.2rem .15rem!important;}
   .zona-amp-table th:nth-child(n+3){font-size:10px!important;padding:.2rem .1rem!important;border-right:1px solid rgba(255,255,255,0.12)!important;}
   .zona-amp-table th:nth-child(n+3):last-child{border-right:none!important;}
@@ -258,6 +258,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #fecha-picker-grid{width:160px!important;}
   .mini-goles{font-size:9px;padding:.15rem .4rem .2rem;}
   #page-foro{height:calc(100vh - 52px)!important;}
+  /* Árbitros table mobile compact */
+  #tbl-arbitros table{font-size:11px!important;}
+  #tbl-arbitros thead th{font-size:9px!important;padding:.25rem .1rem!important;}
+  #tbl-arbitros thead th:first-child{font-size:11px!important;padding:.25rem .4rem!important;}
+  #tbl-arbitros tbody td{font-size:11px!important;padding:.25rem .1rem!important;}
+  #tbl-arbitros tbody td:first-child{font-size:11px!important;padding:.25rem .4rem!important;}
 }
 @media(max-width:400px){
   .ni{font-size:11px;padding:0 .35rem;}
@@ -1709,7 +1715,7 @@ function renderTablas(){
     html+=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:1.5rem 0 .28rem;">${z}</p>`;
     html+=`<div class="tabla-mini"><table>
       <thead><tr>
-        <th style="width:24px">#</th>
+        <th style="width:30px">#</th>
         <th style="text-align:left">Equipo</th>
         <th title="Puntos">Pts</th>
         <th title="Partidos jugados">PJ</th>
@@ -1758,7 +1764,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
      zh+=`<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
-       <th style="width:26px">#</th><th style="text-align:left;">Equipo</th>
+       <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
        <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
        <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
@@ -2884,7 +2890,7 @@ function renderSegundaFase(){
     <p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin:.5rem 0 .4rem;">Tabla de quintos</p>
     <div class="tabla-mini"><table>
       <thead><tr>
-        <th style="width:24px">#</th>
+        <th style="width:30px">#</th>
         <th style="text-align:left;min-width:150px;">Equipo</th>
         <th>Zona</th>
         <th title="Puntos">Pts</th>
