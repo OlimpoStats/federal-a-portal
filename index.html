@@ -306,12 +306,20 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-act-btn:hover:not(.plt-dis){background:rgba(255,255,255,.1);}
 .plt-act-btn.plt-dis{opacity:.25;cursor:default;pointer-events:none;}
 .plt-pos-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#777;padding:.35rem 0 .25rem;border-bottom:1px solid rgba(255,255,255,.07);margin:.9rem 0 .35rem;}
-.plt-player-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.5rem;padding:.48rem .4rem;border-radius:6px;transition:background .12s;}
-.plt-player-row:hover{background:rgba(255,255,255,.05);}
-.plt-player-name{font-size:13px;font-weight:500;}
-.plt-player-sub{font-size:10.5px;color:#777;margin-top:1px;line-height:1.3;}
-.plt-player-meta{display:flex;gap:.35rem;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
-.plt-meta-chip{font-size:10.5px;color:#aaa;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px;white-space:nowrap;}
+.plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
+.plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+.plt-table thead th{padding:.45rem .55rem;border-bottom:2px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;color:var(--muted);font-weight:700;font-size:11px;user-select:none;transition:color .15s;position:relative;}
+.plt-table thead th:first-child{text-align:left;min-width:140px;}
+.plt-table thead th:hover{color:#ddd;}
+.plt-table thead th.plt-sorted{color:#fff;}
+.plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
+.plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center;vertical-align:middle;}
+.plt-table tbody td:first-child{text-align:left;}
+.plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
+.plt-table .plt-stat-hi{font-weight:700;color:#e8e8e8;}
+.plt-table .plt-stat-0{color:#444;}
+.plt-table .plt-gol-hi{color:#ffd54f;font-weight:700;}
+.plt-table .plt-ast-hi{color:#80cbc4;font-weight:700;}
 @media(max-width:700px){
   .plt-grid{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:.45rem;}
   .plt-card{padding:.7rem .35rem .5rem;}
@@ -320,8 +328,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .plt-detail-name{font-size:1.2rem;}
   .plt-match-row{grid-template-columns:28px 1fr auto auto auto;gap:.35rem;padding:.45rem .4rem;}
   .plt-rival-name{font-size:11.5px;}
-  .plt-player-row{grid-template-columns:1fr;}
-  .plt-player-meta{justify-content:flex-start;margin-top:.2rem;}
+  .plt-table{font-size:11px;}
+  .plt-table thead th{padding:.35rem .3rem;font-size:10px;}
+  .plt-table tbody td{padding:.28rem .3rem;}
+  .plt-table thead th:first-child{min-width:110px;}
 }
 </style>
 </head>
@@ -3219,47 +3229,143 @@ const PLT_POS_CATS = [
   { label:'Delanteros',     keys:['delantero','extremo','punta','ariete'] },
 ];
 
+const _PLT_ICONS = {
+  pj:  `<svg viewBox="0 0 20 14" width="17" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x=".65" y=".65" width="18.7" height="12.7" rx="1.3"/><line x1="10" y1=".65" x2="10" y2="13.35"/><circle cx="10" cy="7" r="2.6"/><rect x=".65" y="3.5" width="2.6" height="7"/><rect x="16.75" y="3.5" width="2.6" height="7"/></svg>`,
+  tit: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 4.5L5 2h2l1 1.5L9 2h2l3 2.5-2 2-1-1v7H5V5.5l-1 1z"/></svg>`,
+  bnc: `<svg viewBox="0 0 16 14" width="15" height="13" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="5" width="14" height="2.2" rx=".8"/><line x1="3.5" y1="7.2" x2="3.5" y2="12"/><line x1="12.5" y1="7.2" x2="12.5" y2="12"/><circle cx="8" cy="2.5" r="1.8"/></svg>`,
+  gol: `⚽`,
+  ast: `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 13c0-4 3-6 6-5.5M13 5l-2-3-2 1.5"/><path d="M9 7.5l4-2.5" stroke-linecap="round"/><path d="M11 3l2 2" stroke-linecap="round"/></svg>`,
+  ent: `<svg viewBox="0 0 14 14" width="13" height="13"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" fill="none" stroke="#66bb6a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  sal: `<svg viewBox="0 0 14 14" width="13" height="13"><path d="M7 3v8M3.5 7.5L7 11l3.5-3.5" fill="none" stroke="#ef5350" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  min: `⏱️`,
+};
+const _PLT_COLS = [
+  {key:'nombre',   label:'Jugador',          stat:false, defaultDir:'asc'},
+  {key:'posicion', label:'Pos.',             stat:false, defaultDir:'asc'},
+  {key:'fecha_nacimiento', label:'Nac.',     stat:false, defaultDir:'asc'},
+  {key:'altura_m', label:'Alt.',             stat:false, defaultDir:'desc'},
+  {key:'peso_kg',  label:'Kg',               stat:false, defaultDir:'desc'},
+  {key:'pierna_habil', label:'Pie',          stat:false, defaultDir:'asc'},
+  {key:'pj',  label:_PLT_ICONS.pj,  title:'Partidos jugados', stat:true, defaultDir:'desc'},
+  {key:'tit', label:_PLT_ICONS.tit, title:'Titular',          stat:true, defaultDir:'desc'},
+  {key:'bnc', label:_PLT_ICONS.bnc, title:'Banco sin ingresar',stat:true,defaultDir:'desc'},
+  {key:'gol', label:_PLT_ICONS.gol, title:'Goles',            stat:true, defaultDir:'desc'},
+  {key:'ast', label:_PLT_ICONS.ast, title:'Asistencias',       stat:true, defaultDir:'desc'},
+  {key:'ent', label:_PLT_ICONS.ent, title:'Ingresos',          stat:true, defaultDir:'desc'},
+  {key:'sal', label:_PLT_ICONS.sal, title:'Salidas',           stat:true, defaultDir:'desc'},
+  {key:'min', label:_PLT_ICONS.min, title:'Minutos',           stat:true, defaultDir:'desc'},
+];
+let _pltSort = {col:'nombre', dir:'asc'};
+let _pltData  = null;
+
+function pltSort(col){
+  const c = _PLT_COLS.find(x=>x.key===col);
+  if(_pltSort.col === col){
+    _pltSort.dir = _pltSort.dir==='asc' ? 'desc' : 'asc';
+  } else {
+    _pltSort.col = col;
+    _pltSort.dir = c?.defaultDir || 'asc';
+  }
+  if(_pltData) _renderPlantelTable(document.getElementById('plt-squad-cont'), _pltData.jugadores, _pltData.stats);
+}
+
+function _renderPlantelTable(cont, jugadores, stats){
+  const STAT_KEYS = ['pj','tit','bnc','gol','ast','ent','sal','min'];
+  const sorted = [...jugadores].sort((a,b)=>{
+    const k = _pltSort.col;
+    const isStat = STAT_KEYS.includes(k);
+    let va = isStat ? (stats[a.id]?.[k]??0) : (a[k]??'');
+    let vb = isStat ? (stats[b.id]?.[k]??0) : (b[k]??'');
+    if(typeof va==='string') va=va.toLowerCase();
+    if(typeof vb==='string') vb=vb.toLowerCase();
+    if(va<vb) return _pltSort.dir==='asc'?-1:1;
+    if(va>vb) return _pltSort.dir==='asc'?1:-1;
+    return 0;
+  });
+  const thead = _PLT_COLS.map(c=>{
+    const isSorted = _pltSort.col===c.key;
+    const arrow = isSorted ? `<span class="plt-sort-arrow">${_pltSort.dir==='asc'?'▲':'▼'}</span>` : '';
+    const titleAttr = c.title ? ` title="${c.title}"` : '';
+    return `<th class="${isSorted?'plt-sorted':''}"${titleAttr} onclick="pltSort('${c.key}')">${c.label}${arrow}</th>`;
+  }).join('');
+  const tbody = sorted.map(j=>{
+    const s = stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
+    const name = j.nombre_display||j.nombre||'—';
+    const pos  = j.posicion||'—';
+    const nac  = j.fecha_nacimiento||'—';
+    const alt  = j.altura_m ? parseFloat(j.altura_m).toFixed(2).replace('.',',') : '—';
+    const peso = j.peso_kg||'—';
+    const pie  = j.pierna_habil||'—';
+    const sv = (v,cls='')=> v>0 ? `<span class="plt-stat-hi ${cls}">${v}</span>` : `<span class="plt-stat-0">0</span>`;
+    return `<tr>
+      <td style="font-size:13px;font-weight:500">${name}</td>
+      <td>${pos}</td>
+      <td style="font-size:11px;color:#888">${nac}</td>
+      <td>${alt}</td>
+      <td>${peso}</td>
+      <td>${pie}</td>
+      <td>${sv(s.pj)}</td>
+      <td>${sv(s.tit)}</td>
+      <td>${sv(s.bnc)}</td>
+      <td>${sv(s.gol,'plt-gol-hi')}</td>
+      <td>${sv(s.ast,'plt-ast-hi')}</td>
+      <td>${sv(s.ent)}</td>
+      <td>${sv(s.sal)}</td>
+      <td>${sv(s.min)}</td>
+    </tr>`;
+  }).join('');
+  cont.innerHTML = `<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel (${jugadores.length})</div>
+    <div class="plt-table-wrap"><table class="plt-table">
+      <thead><tr>${thead}</tr></thead>
+      <tbody>${tbody}</tbody>
+    </table></div>`;
+}
+
 async function cargarPlantelClub(equipoId){
   const cont = document.getElementById('plt-squad-cont');
+  cont.innerHTML = '<div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando plantel…</div>';
   try {
-    const {data,error} = await sb.from('jugadores')
-      .select('id,nombre,nombre_display,nombre_completo,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil')
-      .eq('equipo_id', equipoId).order('posicion');
-    if(error || !data?.length){
-      cont.innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin jugadores registrados.</div>';
+    const [{data:jugadores,error:jErr},{data:planillas}] = await Promise.all([
+      sb.from('jugadores').select('id,id_federal,nombre,nombre_display,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil').eq('equipo_id',equipoId).order('nombre'),
+      sb.from('planillas').select('jugador_id,titular,eventos(tipo,minuto)').eq('equipo_id',equipoId)
+    ]);
+    if(jErr||!jugadores?.length){
+      cont.innerHTML='<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin jugadores registrados.</div>';
       return;
     }
-    const groups = {};
-    const assigned = new Set();
-    PLT_POS_CATS.forEach(cat => {
-      const players = data.filter(j => !assigned.has(j.id) && cat.keys.some(k => (j.posicion||'').toLowerCase().includes(k)));
-      if(players.length){ groups[cat.label] = players; players.forEach(p => assigned.add(p.id)); }
-    });
-    const otros = data.filter(j => !assigned.has(j.id));
-    if(otros.length) groups['Otros'] = otros;
-
-    let html = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div>';
-    Object.entries(groups).forEach(([cat, players]) => {
-      html += `<div class="plt-pos-header">${cat}</div>`;
-      players.forEach(j => {
-        const displayName = j.nombre_completo || j.nombre_display || j.nombre;
-        const chips = [];
-        if(j.altura_m) chips.push(`${parseFloat(j.altura_m).toFixed(2).replace('.',',')}m`);
-        if(j.peso_kg) chips.push(`${j.peso_kg} kg`);
-        if(j.pierna_habil) chips.push(j.pierna_habil);
-        const sub = [j.posicion, j.fecha_nacimiento, j.lugar_nacimiento].filter(Boolean).join(' · ');
-        html += `<div class="plt-player-row">
-          <div>
-            <div class="plt-player-name">${displayName}</div>
-            ${sub ? `<div class="plt-player-sub">${sub}</div>` : ''}
-          </div>
-          ${chips.length ? `<div class="plt-player-meta">${chips.map(c=>`<span class="plt-meta-chip">${c}</span>`).join('')}</div>` : ''}
-        </div>`;
+    const stats={};
+    jugadores.forEach(j=>{stats[j.id]={pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};});
+    (planillas||[]).forEach(pl=>{
+      const s=stats[pl.jugador_id]; if(!s) return;
+      const evs=pl.eventos||[];
+      const entraEv=evs.find(e=>e.tipo==='cambio_entra');
+      const saleEv =evs.find(e=>e.tipo==='cambio_sale');
+      if(pl.titular){
+        s.tit++;
+        s.pj++;
+        const saleMin=saleEv?parseInt(saleEv.minuto)||90:90;
+        s.min+=saleMin;
+        if(saleEv) s.sal++;
+      } else if(entraEv){
+        s.ent++;
+        s.pj++;
+        const entraMin=parseInt(entraEv.minuto)||0;
+        const saleMin=saleEv?parseInt(saleEv.minuto)||90:90;
+        s.min+=Math.max(0,saleMin-entraMin);
+        if(saleEv) s.sal++;
+      } else {
+        s.bnc++;
+      }
+      evs.forEach(e=>{
+        if(e.tipo==='gol'||e.tipo==='gol_penal'||e.tipo==='gol_tiro_libre') s.gol++;
+        if(e.tipo==='asistencia') s.ast++;
       });
     });
-    cont.innerHTML = html;
+    _pltData={jugadores,stats};
+    _pltSort={col:'nombre',dir:'asc'};
+    _renderPlantelTable(cont,jugadores,stats);
   } catch(e){
-    cont.innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
+    cont.innerHTML='<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
   }
 }
 
