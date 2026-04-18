@@ -3228,16 +3228,15 @@ async function importarPlantelExcel(){
         const pesoKg = pesoRaw ? parseInt(pesoRaw.replace(/\D/g,''), 10) || null : null;
 
         batch.push({
-          id: idComet,
+          id_federal: idComet,
           equipo_id: equipoId,
-          nombre_completo: apellidoNombre,
+          nombre: apellidoNombre,
           posicion,
           fecha_nacimiento: fechaNac,
           lugar_nacimiento: lugarNac,
           altura_m: alturaM,
           peso_kg: pesoKg,
           pierna_habil: pie,
-          nombre: apellidoNombre,
         });
       }
 
@@ -3251,7 +3250,7 @@ async function importarPlantelExcel(){
       let sheetOk = 0, sheetErr = 0;
       for(let i=0; i<batch.length; i+=CHUNK){
         const chunk = batch.slice(i, i+CHUNK);
-        const {error: uErr} = await sb.from('jugadores').upsert(chunk, { onConflict:'id', ignoreDuplicates:false });
+        const {error: uErr} = await sb.from('jugadores').upsert(chunk, { onConflict:'id_federal', ignoreDuplicates:false });
         if(uErr){ sheetErr += chunk.length; log(`  ✗ Error en chunk ${i/CHUNK+1}: ${uErr.message}`, '#ef9a9a'); }
         else sheetOk += chunk.length;
       }
