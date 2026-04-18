@@ -130,10 +130,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
 /* ── MOBILE ── */
 @media(min-width:701px){
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:430px;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:400px;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:145px;}
-  #cont-quintos thead th:nth-child(2){width:170px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:130px;}
+  #cont-quintos thead th:nth-child(2){width:160px;}
 }
 @media(max-width:900px){
   .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
@@ -179,7 +179,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
   /* Tablas ampliadas mobile */
-  .zona-amp-table{table-layout:auto!important;min-width:560px;}
+  .zona-amp-table{table-layout:auto!important;}
   .zona-amp-table td:nth-child(n+3){font-size:10px!important;padding:.2rem .15rem!important;}
   .zona-amp-table th:nth-child(n+3){font-size:10px!important;padding:.2rem .1rem!important;border-right:1px solid rgba(255,255,255,0.12)!important;}
   .zona-amp-table th:nth-child(n+3):last-child{border-right:none!important;}
@@ -1729,7 +1729,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       html+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
         <td>${r.g}</td>
@@ -1758,7 +1758,7 @@ function renderTablas(){
     const zc=zonaConfig(z);
     let zh=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${zc.color};margin:0 0 .28rem;">${z}</p>`;
      zh+=`<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
-       <th style="width:32px">#</th><th style="text-align:left;">Equipo</th>
+       <th style="width:26px">#</th><th style="text-align:left;">Equipo</th>
        <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
        <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
       <th title="GC">GC</th><th title="+/-">+/-</th><th title="H2H">H2H</th>
@@ -1770,7 +1770,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       zh+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
         <td>${r.gf}</td><td>${r.gc}</td>
@@ -2926,20 +2926,19 @@ function renderSegundaFase(){
 }
 const _loadingHTML = '<div style="padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.5px;">Cargando datos...</div>';
 async function init(){
-  // Render inmediato desde fixture local embebido — sin esperar Supabase
-  try {
-    const f0 = fechaInteligente();
-    fechaActual = f0;
-    renderPartidos(f0); renderTablas(); renderSegundaFase();
-  } catch(e){}
+  // Mostrar estado de carga mientras Supabase responde
+  ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = _loadingHTML;
+  });
 
-  // Cargar datos de DB en paralelo (scores, escudos, metas de partidos)
+  // Cargar datos principales (crítico) y escudos en paralelo
+  // cargarEscudos no bloquea el render si falla
   const _escPromise = cargarEscudos().catch(()=>{});
   try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
   await _escPromise;
 
   try { await diagnosticoIntegridad(); } catch(e){}
-  // Re-render con datos completos de Supabase
   try {
     const f = fechaInteligente();
     fechaActual = f;
