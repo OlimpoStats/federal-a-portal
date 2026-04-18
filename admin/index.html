@@ -718,7 +718,7 @@ function poblarSelectoresZona(){
 
 function ultimaFechaConPendientes(zona) {
   const fechas = Object.keys(FIXTURE[zona] || {}).map(Number).sort((a,b)=>a-b);
-  for (let i = fechas.length - 1; i >= 0; i--) {
+  for (let i = 0; i < fechas.length; i++) {
     const f = String(fechas[i]);
     if ((FIXTURE[zona][f]||[]).some(p => p.goles_local === null)) return f;
   }
@@ -940,10 +940,10 @@ async function irPaso2Manual(){
   planillaLocal={jugadores:[]};
   planillaVisit={jugadores:[]};
   document.getElementById("paso1").style.display="none";
-  document.getElementById("paso2").style.display="";
-  document.getElementById("paso3").style.display="none";
+  document.getElementById("paso2").style.display="none";
+  document.getElementById("paso3").style.display="";
   document.getElementById("steps-bar").style.display="";
-  setStep(2);
+  setStep(3);
   const tl=document.getElementById("tabla-local");
   const tv=document.getElementById("tabla-visit");
   if(tl) tl.innerHTML='<p style="color:var(--muted);font-size:13px;">Cargando nómina...</p>';
