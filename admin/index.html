@@ -3060,73 +3060,99 @@ function buscarJugadores(){
 }
 
 function mostrarDuplicados(){
-  // Group by normalised nombre_display + equipo_id
   const groups = {};
   JUGADORES_CACHE.forEach(j => {
     const key = ((j.nombre_display||j.nombre||"").toLowerCase().trim()) + "||" + (j.equipo_id||"");
     if(!groups[key]) groups[key] = [];
     groups[key].push(j);
   });
-  const dups = Object.values(groups).filter(g => g.length > 1).flat();
-  if(!dups.length){
-    alert("✓ No se encontraron jugadores duplicados.");
-    return;
-  }
-  // Sort so duplicates appear together
-  dups.sort((a,b) => {
-    const ka = ((a.nombre_display||a.nombre||"") + (a.equipo_id||"")).toLowerCase();
-    const kb = ((b.nombre_display||b.nombre||"") + (b.equipo_id||"")).toLowerCase();
-    return ka.localeCompare(kb);
-  });
-  renderJugadores(dups, groups);
+  const dupGroups = Object.values(groups).filter(g => g.length > 1);
+  if(!dupGroups.length){ alert("✓ No se encontraron jugadores duplicados."); return; }
+  renderDuplicados(dupGroups);
   document.getElementById("jug-buscar").value = "";
 }
 
-function renderJugadores(jugadores, dupGroups){
+function renderDuplicados(dupGroups){
+  const lista = document.getElementById("jug-lista");
+  if(!lista) return;
+  const total = dupGroups.reduce((s,g)=>s+g.length,0);
+  let html = `<div style="background:#3a2700;border:1px solid #f0b429;border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:12px;color:#f0b429;">
+    ⚠️ ${dupGroups.length} grupo(s) de duplicados — ${total} registros en total.<br>
+    <span style="color:#ccc;">Tocá <strong>"Conservar este"</strong> en el registro que querés mantener. El otro se fusiona en él (sus planillas se reasignan) y se elimina.</span>
+  </div>`;
+  dupGroups.forEach(group => {
+    // Sort: prefer the one with nombre in APELLIDO format (has comma or all-caps)
+    group.sort((a,b) => {
+      const aScore = (a.nombre&&a.nombre.includes(','))?1:0;
+      const bScore = (b.nombre&&b.nombre.includes(','))?1:0;
+      return bScore - aScore;
+    });
+    html += `<div style="border:1px solid rgba(240,180,41,.35);border-radius:8px;overflow:hidden;margin-bottom:.75rem;">
+      <div style="background:#2a2a2a;padding:.35rem .65rem;font-size:10px;font-weight:700;color:#f0b429;letter-spacing:1px;">DUPLICADOS — ${group[0].equipos?.nombre||"sin club"}</div>`;
+    group.forEach((j, idx) => {
+      const othersInGroup = group.filter(x=>x.id!==j.id);
+      const deleteIds = JSON.stringify(othersInGroup.map(x=>x.id));
+      const bg = idx===0?"#1d1d1d":"#252010";
+      const badge = idx===0
+        ? `<span style="font-size:9px;background:#2e7d32;color:#a5d6a7;padding:1px 5px;border-radius:3px;font-weight:700;">RECOMENDADO</span>`
+        : '';
+      html += `<div style="display:grid;grid-template-columns:80px 1fr 1fr auto;border-top:1px solid rgba(255,255,255,.06);background:${bg};align-items:center;">
+        <div style="padding:.5rem .65rem;font-family:monospace;font-size:11px;color:#888;">${j.id_federal||"—"}</div>
+        <div style="padding:.5rem .65rem;">
+          <div style="font-size:13px;color:#f0f0f0;font-weight:500;">${j.nombre_display||j.nombre||"—"} ${badge}</div>
+          ${j.nombre&&j.nombre_display&&j.nombre!==j.nombre_display?`<div style="font-size:10px;color:#666;">${j.nombre}</div>`:""}
+        </div>
+        <div style="padding:.5rem .65rem;font-size:12px;color:#bbb;">${j.equipos?.nombre||"—"}</div>
+        <div style="padding:.5rem .65rem;display:flex;gap:.3rem;">
+          <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="abrirEditJugador(${j.id})">✏️</button>
+          <button class="btn btn-primary btn-sm" style="font-size:11px;white-space:nowrap;" onclick="fusionarJugador(${j.id},${deleteIds})">✓ Conservar este</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  lista.innerHTML = html;
+}
+
+function renderJugadores(jugadores){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
   if(!jugadores.length){ lista.innerHTML = '<div style="color:var(--muted);padding:1rem;">Sin resultados.</div>'; return; }
-  // Build set of IDs that are duplicates
-  const dupIds = new Set();
-  if(dupGroups){
-    Object.values(dupGroups).filter(g=>g.length>1).forEach(g=>g.forEach(j=>dupIds.add(j.id)));
-  }
-  const header = dupGroups
-    ? `<div style="background:#3a2700;border:1px solid #f0b429;border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:12px;color:#f0b429;">⚠️ Mostrando ${jugadores.length} registros con posibles duplicados. Eliminá el que no tenga planillas o el que no tenga common name.</div>`
-    : '';
-  lista.innerHTML = header + `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+  lista.innerHTML = `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
     <div style="display:grid;grid-template-columns:80px 1fr 1fr 80px;background:#2a2a2a;">
       <div style="padding:.45rem .65rem;font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">ID</div>
       <div style="padding:.45rem .65rem;font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">NOMBRE A MOSTRAR</div>
       <div style="padding:.45rem .65rem;font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">CLUB</div>
       <div style="padding:.45rem .65rem;"></div>
     </div>
-    ${jugadores.map((j,idx)=>{
-      const isDup = dupIds.has(j.id);
-      const bg = isDup ? "#2a1a00" : (idx%2===0?"#1a1a1a":"#202020");
-      const border = isDup ? "1px solid rgba(240,180,41,.25)" : "1px solid var(--border)";
-      return `<div style="display:grid;grid-template-columns:80px 1fr 1fr 80px;border-top:${border};background:${bg};">
-        <div style="padding:.45rem .65rem;font-family:monospace;font-size:11px;color:#999;align-self:center;">${isDup?'⚠️ ':''}${j.id_federal||"—"}</div>
+    ${jugadores.map((j,idx)=>`
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 80px;border-top:1px solid var(--border);background:${idx%2===0?"#1a1a1a":"#202020"};">
+        <div style="padding:.45rem .65rem;font-family:monospace;font-size:11px;color:#999;align-self:center;">${j.id_federal||"—"}</div>
         <div style="padding:.45rem .65rem;align-self:center;">
           <div style="font-size:13px;color:#f0f0f0;font-weight:500;">${j.nombre_display||j.nombre||"—"}</div>
           ${j.nombre_display&&j.nombre_display!==j.nombre?`<div style="font-size:10px;color:#666;">${j.nombre||""}</div>`:""}
         </div>
         <div style="padding:.45rem .65rem;font-size:12px;color:#bbb;align-self:center;">${j.equipos?.nombre||"—"}</div>
-        <div style="padding:.45rem .65rem;align-self:center;display:flex;gap:.3rem;">
+        <div style="padding:.45rem .65rem;align-self:center;">
           <button class="btn btn-secondary btn-sm" onclick="abrirEditJugador(${j.id})" style="font-size:12px;">✏️</button>
-          ${isDup?`<button class="btn btn-danger btn-sm" onclick="eliminarJugadorDirecto(${j.id})" style="font-size:12px;" title="Eliminar este duplicado">🗑️</button>`:''}
         </div>
-      </div>`;
-    }).join("")}
+      </div>`).join("")}
   </div>`;
 }
 
-async function eliminarJugadorDirecto(id){
-  const j = JUGADORES_CACHE.find(x=>x.id===id);
-  if(!j) return;
-  if(!confirm(`¿Eliminar "${j.nombre_display||j.nombre}" (ID: ${j.id_federal})?\nEsto es irreversible. Las planillas vinculadas quedarán sin jugador.`)) return;
-  const {error} = await sb.from("jugadores").delete().eq("id", id);
-  if(error){ alert("Error: "+error.message); return; }
+async function fusionarJugador(keepId, deleteIds){
+  if(!Array.isArray(deleteIds)) deleteIds = [deleteIds];
+  const keep = JUGADORES_CACHE.find(x=>x.id===keepId);
+  const dels = deleteIds.map(id=>JUGADORES_CACHE.find(x=>x.id===id)).filter(Boolean);
+  if(!keep||!dels.length) return;
+  const delNames = dels.map(d=>`• ${d.nombre_display||d.nombre} (ID ${d.id_federal})`).join('\n');
+  if(!confirm(`Fusión:\n✓ CONSERVAR: ${keep.nombre_display||keep.nombre} (ID ${keep.id_federal})\n\nELIMINAR y reasignar sus planillas:\n${delNames}\n\n¿Confirmar?`)) return;
+  for(const del of dels){
+    const {error:pErr} = await sb.from("planillas").update({jugador_id: keepId}).eq("jugador_id", del.id);
+    if(pErr){ alert("Error reasignando planillas: "+pErr.message); return; }
+    const {error:dErr} = await sb.from("jugadores").delete().eq("id", del.id);
+    if(dErr){ alert("Error eliminando duplicado: "+dErr.message); return; }
+  }
   await cargarJugadores();
   mostrarDuplicados();
 }
