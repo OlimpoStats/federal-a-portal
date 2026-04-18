@@ -271,6 +271,57 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .eqn{font-size:12px;}
   .score{font-size:16px;}
 }
+/* ── PLANTELES ──────────────────────────────────────────── */
+.plt-zone-sep{height:1px;background:rgba(255,255,255,.07);margin:1.4rem 0 1.2rem;}
+.plt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:.65rem;margin-bottom:.25rem;}
+.plt-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:.9rem .5rem .7rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;cursor:pointer;transition:transform .18s,background .18s,box-shadow .18s,border-color .18s;}
+.plt-card:hover{background:rgba(255,255,255,.1);transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.35);border-color:rgba(255,255,255,.18);}
+.plt-card img{width:52px;height:52px;object-fit:contain;}
+.plt-noesc{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:20px;color:#666;}
+.plt-cn{font-size:10.5px;text-align:center;color:#ccc;line-height:1.3;}
+#plt-club-detail{animation:pltSlide .22s ease;}
+@keyframes pltSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.plt-back-btn{display:inline-flex;align-items:center;gap:.35rem;background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;padding:.3rem 0;margin-bottom:1.2rem;transition:color .15s;}
+.plt-back-btn:hover{color:#fff;}
+.plt-detail-header{display:flex;align-items:center;gap:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:1.5rem;}
+.plt-detail-escudo{width:68px;height:68px;object-fit:contain;flex-shrink:0;}
+.plt-detail-name{font-family:'Barlow Condensed',sans-serif;font-size:1.55rem;font-weight:700;letter-spacing:.5px;line-height:1.15;}
+.plt-zona-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:.3rem;}
+.plt-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#777;margin:.2rem 0 .7rem;}
+.plt-matches-list{display:flex;flex-direction:column;gap:.22rem;margin-bottom:2rem;}
+.plt-match-row{display:grid;grid-template-columns:34px 1fr auto auto auto;align-items:center;gap:.55rem;padding:.52rem .65rem;border-radius:8px;background:rgba(255,255,255,.03);transition:background .15s;}
+.plt-match-row:hover{background:rgba(255,255,255,.07);}
+.plt-fecha-lbl{font-size:10px;color:#777;font-weight:600;text-align:center;}
+.plt-rival-cell{display:flex;align-items:center;gap:.4rem;min-width:0;}
+.plt-rival-cell img{width:20px;height:20px;object-fit:contain;flex-shrink:0;}
+.plt-rival-name{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.plt-lv-badge{font-size:9px;color:#888;background:rgba(255,255,255,.08);padding:2px 5px;border-radius:3px;flex-shrink:0;font-weight:600;}
+.plt-res-badge{font-size:12px;font-weight:700;padding:3px 8px;border-radius:5px;min-width:40px;text-align:center;flex-shrink:0;}
+.plt-res-badge.G{background:rgba(77,175,74,.22);color:#7ecb7e;}
+.plt-res-badge.E{background:rgba(255,193,7,.16);color:#ffd54f;}
+.plt-res-badge.P{background:rgba(229,57,53,.18);color:#ef9a9a;}
+.plt-action-btns{display:flex;gap:.25rem;flex-shrink:0;}
+.plt-act-btn{width:27px;height:27px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-size:14px;transition:background .15s;border:none;background:none;text-decoration:none;}
+.plt-act-btn:hover:not(.plt-dis){background:rgba(255,255,255,.1);}
+.plt-act-btn.plt-dis{opacity:.25;cursor:default;pointer-events:none;}
+.plt-pos-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#777;padding:.35rem 0 .25rem;border-bottom:1px solid rgba(255,255,255,.07);margin:.9rem 0 .35rem;}
+.plt-player-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.5rem;padding:.48rem .4rem;border-radius:6px;transition:background .12s;}
+.plt-player-row:hover{background:rgba(255,255,255,.05);}
+.plt-player-name{font-size:13px;font-weight:500;}
+.plt-player-sub{font-size:10.5px;color:#777;margin-top:1px;line-height:1.3;}
+.plt-player-meta{display:flex;gap:.35rem;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+.plt-meta-chip{font-size:10.5px;color:#aaa;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px;white-space:nowrap;}
+@media(max-width:700px){
+  .plt-grid{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:.45rem;}
+  .plt-card{padding:.7rem .35rem .5rem;}
+  .plt-card img{width:40px;height:40px;}
+  .plt-cn{font-size:10px;}
+  .plt-detail-name{font-size:1.2rem;}
+  .plt-match-row{grid-template-columns:28px 1fr auto auto auto;gap:.35rem;padding:.45rem .4rem;}
+  .plt-rival-name{font-size:11.5px;}
+  .plt-player-row{grid-template-columns:1fr;}
+  .plt-player-meta{justify-content:flex-start;margin-top:.2rem;}
+}
 </style>
 </head>
 <body>
@@ -393,10 +444,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div id="foro-input-area" style="border-top:2px solid #1a1a1a;padding:.5rem 1rem;background:var(--surface);flex-shrink:0;max-width:1450px;margin-left:158px;"></div>
 </div>
 <div class="page" id="page-planteles">
-  <div class="placeholder">
-    <div class="ph-icon">👥</div>
-    <div class="ph-title">Planteles</div>
-    <div class="ph-sub">Próximamente: perfiles de jugadores, cuerpo técnico y árbitros por club</div>
+  <div id="plt-landing">
+    <div id="plt-grid-cont"></div>
+  </div>
+  <div id="plt-club-detail" style="display:none;">
+    <button class="plt-back-btn" onclick="voltarPlanteles()">← Volver a planteles</button>
+    <div id="plt-detail-header-cont"></div>
+    <div id="plt-matches-cont"></div>
+    <div id="plt-squad-cont"></div>
   </div>
 </div>
 
@@ -1916,6 +1971,7 @@ function goPage(id,el){
   el.classList.add("active");
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas"){cargarEstadisticas();}
+  if(id==="planteles"){cargarPlanteles();}
   if(id==="foro"){
     page.style.display="flex";
     page.style.height="calc(100vh - 52px)";
@@ -3011,6 +3067,192 @@ function activarPolling(){
 
 function detenerPolling(){
   if(_liveInterval){ clearInterval(_liveInterval); _liveInterval=null; }
+}
+
+// ── PLANTELES ────────────────────────────────────────────────────────────────
+
+let _pltCargado = false;
+
+function cargarPlanteles(){
+  if(_pltCargado) return;
+  _pltCargado = true;
+  renderClubGrid();
+}
+
+function renderClubGrid(){
+  const cont = document.getElementById('plt-grid-cont');
+  if(!cont) return;
+  let html = '';
+  ZONAS.forEach((zona, zi) => {
+    const seen = new Set();
+    const teams = [];
+    for(let f=1; f<=18; f++){
+      (FIXTURE[zona][String(f)]||[]).forEach(m => {
+        if(!seen.has(m.local)){ seen.add(m.local); teams.push(m.local); }
+        if(!seen.has(m.visitante)){ seen.add(m.visitante); teams.push(m.visitante); }
+      });
+    }
+    if(zi > 0) html += '<div class="plt-zone-sep"></div>';
+    html += '<div class="plt-grid">';
+    teams.forEach(nombre => {
+      const esc = ESCUDOS[nombre];
+      const safe = nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<div class="plt-card" onclick="abrirClub('${safe}')">
+        ${esc ? `<img src="${esc}" onerror="this.style.display='none'" alt="">` : '<div class="plt-noesc">⚽</div>'}
+        <span class="plt-cn">${nombre}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  cont.innerHTML = html;
+}
+
+function _zonaDeClub(nombre){
+  for(const zona of ZONAS){
+    for(let f=1; f<=18; f++){
+      if((FIXTURE[zona][String(f)]||[]).some(m => m.local===nombre||m.visitante===nombre)) return zona;
+    }
+  }
+  return null;
+}
+
+async function abrirClub(nombre){
+  document.getElementById('plt-landing').style.display = 'none';
+  const det = document.getElementById('plt-club-detail');
+  det.style.display = '';
+
+  const zona = _zonaDeClub(nombre);
+  const zc = zona ? zonaConfig(zona) : { color:'#888', text:'#fff' };
+  const esc = ESCUDOS[nombre];
+
+  document.getElementById('plt-detail-header-cont').innerHTML = `
+    <div class="plt-detail-header">
+      ${esc ? `<img class="plt-detail-escudo" src="${esc}" onerror="this.style.display='none'" alt="">` : '<div class="plt-detail-escudo plt-noesc">⚽</div>'}
+      <div>
+        <div class="plt-detail-name">${nombre}</div>
+        ${zona ? `<span class="plt-zona-pill" style="background:${zc.color};color:${zc.text};">${zona}</span>` : ''}
+      </div>
+    </div>`;
+
+  renderPartidosClub(nombre);
+
+  document.getElementById('plt-squad-cont').innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando...</div>';
+  const eq = EQUIPOS_LIST.find(e => e.nombre === nombre);
+  if(eq) await cargarPlantelClub(eq.id);
+  else document.getElementById('plt-squad-cont').innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin plantel registrado.</div>';
+
+  window.scrollTo(0, 0);
+}
+
+function voltarPlanteles(){
+  document.getElementById('plt-club-detail').style.display = 'none';
+  document.getElementById('plt-landing').style.display = '';
+  window.scrollTo(0, 0);
+}
+
+function renderPartidosClub(nombre){
+  const cont = document.getElementById('plt-matches-cont');
+  const jugados = [];
+  ZONAS.forEach(zona => {
+    for(let f=1; f<=18; f++){
+      (FIXTURE[zona][String(f)]||[]).forEach(m => {
+        if((m.local===nombre||m.visitante===nombre) && m.gl!==null){
+          const esLocal = m.local===nombre;
+          jugados.push({
+            zona, fecha: f, esLocal,
+            rival: esLocal ? m.visitante : m.local,
+            gf: esLocal ? m.gl : m.gv,
+            gc: esLocal ? m.gv : m.gl,
+            fichaKey: `${zona}_${f}_${m.local}_${m.visitante}`
+          });
+        }
+      });
+    }
+  });
+  jugados.sort((a,b) => a.fecha - b.fecha);
+
+  if(!jugados.length){
+    cont.innerHTML = '<div class="plt-sec-title">Partidos</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin partidos jugados aún.</div>';
+    return;
+  }
+
+  let html = `<div class="plt-sec-title">Partidos jugados (${jugados.length})</div><div class="plt-matches-list">`;
+  jugados.forEach(p => {
+    const res = p.gf > p.gc ? 'G' : p.gf === p.gc ? 'E' : 'P';
+    const rivalEsc = ESCUDOS[p.rival];
+    const tienePlanilla = !!PLANILLA_CARGADA[p.fichaKey];
+    const stream = (PARTIDO_META[p.fichaKey]||{}).stream;
+    const safeKey = p.fichaKey.replace(/'/g,"\\'");
+    const fichaBtn = tienePlanilla
+      ? `<div class="plt-act-btn" title="Ver planilla" onclick="verFicha('${safeKey}',true)">📄</div>`
+      : `<div class="plt-act-btn plt-dis" title="Planilla no disponible">📄</div>`;
+    const videoBtn = stream
+      ? `<a class="plt-act-btn" href="${stream}" target="_blank" title="Ver video">🎬</a>`
+      : `<div class="plt-act-btn plt-dis" title="Video no disponible">🎬</div>`;
+    html += `<div class="plt-match-row">
+      <span class="plt-fecha-lbl">F.${p.fecha}</span>
+      <div class="plt-rival-cell">
+        ${rivalEsc ? `<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">` : ''}
+        <span class="plt-rival-name">${p.rival}</span>
+      </div>
+      <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+      <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
+      <div class="plt-action-btns">${fichaBtn}${videoBtn}</div>
+    </div>`;
+  });
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+const PLT_POS_CATS = [
+  { label:'Arqueros',       keys:['arquero'] },
+  { label:'Defensores',     keys:['marcador','lateral','defens'] },
+  { label:'Mediocampistas', keys:['volante','enganche','medioc'] },
+  { label:'Delanteros',     keys:['delantero','extremo','punta','ariete'] },
+];
+
+async function cargarPlantelClub(equipoId){
+  const cont = document.getElementById('plt-squad-cont');
+  try {
+    const {data,error} = await sb.from('jugadores')
+      .select('id,nombre,nombre_display,nombre_completo,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil')
+      .eq('equipo_id', equipoId).order('posicion');
+    if(error || !data?.length){
+      cont.innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin jugadores registrados.</div>';
+      return;
+    }
+    const groups = {};
+    const assigned = new Set();
+    PLT_POS_CATS.forEach(cat => {
+      const players = data.filter(j => !assigned.has(j.id) && cat.keys.some(k => (j.posicion||'').toLowerCase().includes(k)));
+      if(players.length){ groups[cat.label] = players; players.forEach(p => assigned.add(p.id)); }
+    });
+    const otros = data.filter(j => !assigned.has(j.id));
+    if(otros.length) groups['Otros'] = otros;
+
+    let html = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div>';
+    Object.entries(groups).forEach(([cat, players]) => {
+      html += `<div class="plt-pos-header">${cat}</div>`;
+      players.forEach(j => {
+        const displayName = j.nombre_completo || j.nombre_display || j.nombre;
+        const chips = [];
+        if(j.altura_m) chips.push(`${parseFloat(j.altura_m).toFixed(2).replace('.',',')}m`);
+        if(j.peso_kg) chips.push(`${j.peso_kg} kg`);
+        if(j.pierna_habil) chips.push(j.pierna_habil);
+        const sub = [j.posicion, j.fecha_nacimiento, j.lugar_nacimiento].filter(Boolean).join(' · ');
+        html += `<div class="plt-player-row">
+          <div>
+            <div class="plt-player-name">${displayName}</div>
+            ${sub ? `<div class="plt-player-sub">${sub}</div>` : ''}
+          </div>
+          ${chips.length ? `<div class="plt-player-meta">${chips.map(c=>`<span class="plt-meta-chip">${c}</span>`).join('')}</div>` : ''}
+        </div>`;
+      });
+    });
+    cont.innerHTML = html;
+  } catch(e){
+    cont.innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
+  }
 }
 
 </script>

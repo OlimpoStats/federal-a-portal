@@ -6,6 +6,7 @@
 <title>Federal A — Panel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0a0a0a;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--green:#2a7a4a;--red:#7a2a2a;--blue:#1a3a6a;}
@@ -184,6 +185,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-item" onclick="goPanel('abm-estadios')"><span class="sb-icon">🏟️</span>Estadios</div>
     <div class="sb-item" onclick="goPanel('abm-tecnicos')"><span class="sb-icon">👔</span>Directores Técnicos</div>
     <div class="sb-item" onclick="goPanel('abm-equipos')"><span class="sb-icon">🔗</span>Equipos / Vínculos</div>
+    <div class="sb-item" onclick="goPanel('import-plantel')"><span class="sb-icon">📥</span>Importar Planteles</div>
     <div class="sb-section">Foro</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
   </div>
@@ -570,6 +572,25 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     </div>
 
     <!-- ===================== FORO ADMIN ===================== -->
+    <!-- ===================== IMPORTAR PLANTELES ===================== -->
+    <div class="panel" id="panel-import-plantel">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.4rem;">Importar Planteles desde Excel</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná el archivo .xlsx con una hoja por equipo (nombre de hoja = nombre exacto del equipo en la DB). Columnas esperadas desde fila 9: Posición · Apellido y Nombre · Fecha de N. · Lugar de Nac. · Altura · Peso · Pie · ID COMET.</p>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <input type="file" id="plantel-xlsx-input" accept=".xlsx,.xls" style="flex:1;min-width:200px;">
+          <button class="btn btn-primary" onclick="importarPlantelExcel()">📥 Importar</button>
+        </div>
+        <div id="plantel-import-progress" style="display:none;margin-bottom:.75rem;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:.4rem;" id="plantel-import-status">Procesando...</div>
+          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+            <div id="plantel-import-bar" style="height:100%;background:#5dba7d;border-radius:3px;width:0%;transition:width .3s;"></div>
+          </div>
+        </div>
+        <div id="plantel-import-log" style="font-size:12px;color:var(--muted);max-height:320px;overflow-y:auto;font-family:monospace;line-height:1.6;"></div>
+      </div></div>
+    </div>
+
     <div class="panel" id="panel-foro-admin">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
       <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Próximamente: lista de mensajes del foro con opción de eliminar o bloquear usuarios.</div></div>
@@ -3132,6 +3153,121 @@ Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(
   actualizarPartidos();
   actualizarEstadoPlanillaSeleccion();
 });
+
+// ── IMPORTAR PLANTELES ────────────────────────────────────────────────────────
+
+async function importarPlantelExcel(){
+  const fileInput = document.getElementById('plantel-xlsx-input');
+  const logEl = document.getElementById('plantel-import-log');
+  const progEl = document.getElementById('plantel-import-progress');
+  const statusEl = document.getElementById('plantel-import-status');
+  const barEl = document.getElementById('plantel-import-bar');
+
+  if(!fileInput.files[0]){ alert('Seleccioná un archivo .xlsx primero.'); return; }
+
+  logEl.innerHTML = '';
+  progEl.style.display = '';
+  barEl.style.width = '0%';
+
+  const log = (msg, color='') => {
+    logEl.innerHTML += `<div style="${color?'color:'+color:''}">▸ ${msg}</div>`;
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  try {
+    // 1. Read file
+    const buf = await fileInput.files[0].arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array', raw:false, cellDates:false });
+    log(`Archivo leído: ${wb.SheetNames.length} hojas.`);
+
+    // 2. Load all equipos
+    statusEl.textContent = 'Cargando equipos...';
+    const {data: equipos, error: eqErr} = await sb.from('equipos').select('id,nombre');
+    if(eqErr) throw eqErr;
+    const eqMap = new Map(equipos.map(e => [e.nombre, e.id]));
+    log(`Equipos cargados: ${equipos.length}`);
+
+    const sheets = wb.SheetNames;
+    let totalUpserted = 0, totalSkipped = 0, totalErrors = 0;
+
+    for(let si=0; si<sheets.length; si++){
+      const sheetName = sheets[si];
+      const equipoId = eqMap.get(sheetName);
+      barEl.style.width = `${Math.round((si/sheets.length)*100)}%`;
+      statusEl.textContent = `Procesando hoja ${si+1}/${sheets.length}: ${sheetName}`;
+
+      if(!equipoId){
+        log(`⚠ Hoja "${sheetName}" — no se encontró equipo con ese nombre. Saltando.`, '#f0b429');
+        totalSkipped++;
+        continue;
+      }
+
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:'A', raw:false, defval:'' });
+
+      const batch = [];
+      for(const row of rows){
+        const idComet = parseInt(String(row['H']||'').trim(), 10);
+        const apellidoNombre = String(row['B']||'').trim();
+        if(!idComet || isNaN(idComet) || !apellidoNombre) continue;
+        // Skip section headers (B is ALL CAPS with no mixed case)
+        if(apellidoNombre === apellidoNombre.toUpperCase() && !/,/.test(apellidoNombre)) continue;
+
+        const posicion = String(row['A']||'').trim() || null;
+        const fechaNac = String(row['C']||'').trim() || null;
+        const lugarNac = String(row['D']||'').trim() || null;
+        const alturaRaw = String(row['E']||'').trim();
+        const pesoRaw = String(row['F']||'').trim();
+        const pie = String(row['G']||'').trim() || null;
+
+        const alturaM = alturaRaw ? parseFloat(alturaRaw.replace(',','.')) || null : null;
+        const pesoKg = pesoRaw ? parseInt(pesoRaw.replace(/\D/g,''), 10) || null : null;
+
+        batch.push({
+          id: idComet,
+          equipo_id: equipoId,
+          nombre_completo: apellidoNombre,
+          posicion,
+          fecha_nacimiento: fechaNac,
+          lugar_nacimiento: lugarNac,
+          altura_m: alturaM,
+          peso_kg: pesoKg,
+          pierna_habil: pie,
+          nombre: apellidoNombre,
+        });
+      }
+
+      if(!batch.length){
+        log(`• ${sheetName} — sin filas de datos.`, '#aaa');
+        continue;
+      }
+
+      // Upsert in chunks of 50
+      const CHUNK = 50;
+      let sheetOk = 0, sheetErr = 0;
+      for(let i=0; i<batch.length; i+=CHUNK){
+        const chunk = batch.slice(i, i+CHUNK);
+        const {error: uErr} = await sb.from('jugadores').upsert(chunk, { onConflict:'id', ignoreDuplicates:false });
+        if(uErr){ sheetErr += chunk.length; log(`  ✗ Error en chunk ${i/CHUNK+1}: ${uErr.message}`, '#ef9a9a'); }
+        else sheetOk += chunk.length;
+      }
+      log(`✓ ${sheetName} — ${sheetOk} jugadores${sheetErr?` (${sheetErr} errores)`:''}`, sheetErr?'#f0b429':'#7ecb7e');
+      totalUpserted += sheetOk;
+      totalErrors += sheetErr;
+    }
+
+    barEl.style.width = '100%';
+    statusEl.textContent = 'Importación completada.';
+    log(`─────────────────────────────────────────`, '#555');
+    log(`Total: ${totalUpserted} jugadores importados, ${totalSkipped} hojas sin equipo, ${totalErrors} errores.`,
+        totalErrors ? '#f0b429' : '#7ecb7e');
+
+  } catch(e){
+    log(`✗ Error fatal: ${e.message}`, '#ef9a9a');
+    statusEl.textContent = 'Error.';
+    console.error(e);
+  }
+}
 </script>
 </body>
 </html>
