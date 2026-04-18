@@ -3290,7 +3290,7 @@ function _renderPlantelTable(cont, jugadores, stats){
   }).join('');
   const tbody = sorted.map(j=>{
     const s = stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
-    const name = j.nombre_display||j.nombre||'—';
+    const name = j.nombre||j.nombre_display||'—';
     const pos  = j.posicion||'—';
     const nac  = j.fecha_nacimiento||'—';
     const alt  = j.altura_m ? parseFloat(j.altura_m).toFixed(2).replace('.',',') : '—';
