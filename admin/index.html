@@ -3245,11 +3245,14 @@ async function importarPlantelExcel(){
         continue;
       }
 
+      // Deduplicate by id_federal (keep last occurrence)
+      const deduped = [...new Map(batch.map(r => [r.id_federal, r])).values()];
+
       // Upsert in chunks of 50
       const CHUNK = 50;
       let sheetOk = 0, sheetErr = 0;
-      for(let i=0; i<batch.length; i+=CHUNK){
-        const chunk = batch.slice(i, i+CHUNK);
+      for(let i=0; i<deduped.length; i+=CHUNK){
+        const chunk = deduped.slice(i, i+CHUNK);
         const {error: uErr} = await sb.from('jugadores').upsert(chunk, { onConflict:'id_federal', ignoreDuplicates:false });
         if(uErr){ sheetErr += chunk.length; log(`  ✗ Error en chunk ${i/CHUNK+1}: ${uErr.message}`, '#ef9a9a'); }
         else sheetOk += chunk.length;
