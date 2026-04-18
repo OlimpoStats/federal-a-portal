@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) 1fr;gap:3rem;align-items:start;}
 
-.sec{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin-bottom:.6rem;}
+.sec{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin-bottom:.6rem;}
 
 /* fecha nav */
 .sec-2dafase{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin:.65rem 0 .5rem;}
@@ -411,7 +411,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
         <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
       </div>
-      <span style="font-size:11px;color:var(--muted);font-style:italic;">* Solo se cuentan los partidos con ficha cargada</span>
+      <span style="font-size:11px;color:#999;font-style:italic;">* Solo se cuentan los partidos con ficha cargada</span>
     </div>
     <div id="stats-jugadores">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
@@ -419,8 +419,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div><p class="sec">👟 Asistentes</p><div class="tabla-mini" id="tbl-asistentes"></div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-        <div><p class="sec">🟨 Amonestaciones <span style="font-size:10px;color:var(--muted);font-weight:400;">(incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
-        <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:var(--muted);font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
+        <div><p class="sec">🟨 Amonestaciones <span style="font-size:10px;color:#999;font-weight:400;">(incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
+        <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
         <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
