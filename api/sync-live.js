@@ -5,7 +5,12 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 async function sbGet(params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?${params}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
   });
   return r.json();
 }

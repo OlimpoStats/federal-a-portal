@@ -913,7 +913,7 @@ async function erGuardarInline(){
   try {
     const fixtureId = p.id;
     if(fixtureId){
-      await sb.from("fixture").update({goles_local:gl, goles_visitante:gv}).eq("id", fixtureId);
+      await sb.from("fixture").update({goles_local:gl, goles_visitante:gv, estado:'jugado'}).eq("id", fixtureId);
     }
     await upsertPartido({
       zona: sel.zona, fecha: parseInt(sel.fecha),
@@ -2369,6 +2369,7 @@ async function confirmarCarga(publicar=true){
         estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
         dt_local: _dtLocal, dt_visitante: _dtVisit,
         dia, hora,
+        ...(publicar ? { estado: 'jugado' } : {}),
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
@@ -2486,6 +2487,7 @@ async function erGuardar(){
       const {error:fxErr} = await sb.from("fixture").update({
         goles_local: gl,
         goles_visitante: gv,
+        estado: 'jugado',
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
