@@ -939,7 +939,7 @@ function calcTabla(zona){
   for(let f=1;f<=18;f++){
     (FIXTURE[zona][String(f)]||[]).forEach(m=>{
       [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
-      if(m.gl===null || m.estado==='en_curso')return;
+      if(m.gl===null)return;
       partidos.push(m);
       eq[m.local].pj++;eq[m.visitante].pj++;
       eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
@@ -2227,7 +2227,7 @@ async function cargarEstadisticas(){
     ZONAS.forEach(z=>{
       for(let f=1;f<=18;f++){
         (FIXTURE[z][String(f)]||[]).forEach(m=>{
-          if(m.gl===null || m.estado==='en_curso') return;
+          if(m.gl===null) return;
           [m.local, m.visitante].forEach(eq=>{
             if(!equipoStats[eq]) equipoStats[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,zona:z,
               local:{pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0},
@@ -2595,7 +2595,7 @@ async function cargarEstadisticas(){
     // First init all played teams
     ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
       (FIXTURE[z][String(f)]||[]).forEach(m=>{
-        if(m.gl===null || m.estado==='en_curso') return;
+        if(m.gl===null) return;
         initHalf(m.local,half1); initHalf(m.visitante,half1);
         initHalf(m.local,half2); initHalf(m.visitante,half2);
         half1[m.local].pj++; half1[m.visitante].pj++;
@@ -2627,7 +2627,7 @@ async function cargarEstadisticas(){
     // Build standings per half
     ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
       (FIXTURE[z][String(f)]||[]).forEach(m=>{
-        if(m.gl===null || m.estado==='en_curso') return;
+        if(m.gl===null) return;
         // Find partido_id for this fixture match
         const pid = Object.keys(partidosById).find(id=>{
           const p=partidosById[id];
