@@ -209,6 +209,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .score{font-size:18px;letter-spacing:1px;}
   .esc{width:20px;height:20px;}
   .ficha-btn,.stream-btn{width:23px;height:23px;font-size:12px;}
+  .partido-infobar-txt{font-size:10px!important;}
   .res{min-width:46px;}
   .ztabs{gap:.2rem;}
   .ztab{font-size:10px;padding:3px 8px;}
@@ -309,15 +310,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
 .plt-table thead th{padding:.45rem .55rem;border-bottom:2px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;color:var(--muted);font-weight:700;font-size:11px;user-select:none;transition:color .15s;position:relative;}
-.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:#181818;}
+.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:var(--bg);}
 .plt-table thead th:hover{color:#ddd;}
 .plt-table thead th.plt-sorted{color:#fff;}
 .plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
 .plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center;vertical-align:middle;}
-.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:#1a1a1a;}
-.plt-table tbody tr:nth-child(even) td:first-child{background:#1f1f1f;}
+.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--bg);}
 .plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
-.plt-table tbody tr:hover td:first-child{background:#242424;}
+.plt-table tbody tr:hover td:first-child{background:#181818;}
+.plt-table td.plt-nac-col{color:#aaa;}
+.plt-table td.plt-ori-col{color:#888;font-size:11px;}
 .plt-table .plt-stat-hi{font-weight:700;color:#e8e8e8;}
 .plt-table .plt-stat-0{color:#444;}
 .plt-table .plt-gol-hi{color:#ffd54f;font-weight:700;}
@@ -594,9 +596,11 @@ async function cargarPartidosDesdeDB(){
           match.gl = p.goles_local;
           match.gv = p.goles_visitante;
         }
-        if(p.estado) match.estado = p.estado;
+        // Never let en_curso overwrite a jugado state (prevents duplicate rows from flipping back)
+        if(p.estado && !(match.estado === 'jugado' && p.estado === 'en_curso')) match.estado = p.estado;
         if(p.fotmob_url) match.fotmob_url = p.fotmob_url;
-        if(p.minuto_actual) match.minuto_actual = p.minuto_actual;
+        // Never restore a live minuto if match is already jugado
+        if(p.minuto_actual && match.estado !== 'jugado') match.minuto_actual = p.minuto_actual;
         if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
           PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
@@ -1223,7 +1227,7 @@ function renderPartidos(f){
       if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
     }
     const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
-      <div style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
+      <div class="partido-infobar-txt" style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
         ${infoItems.join(' &nbsp;')}
       </div>
       <div style="width:56px;flex-shrink:0;"></div>
@@ -1273,8 +1277,8 @@ function renderPartidos(f){
           <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${showRedIcons&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
         </div>
         <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
-          ${streamBtn}
           ${fichaBtn}
+          ${streamBtn}
         </div>
       </div>
       ${goleadoresHTML}
@@ -3102,29 +3106,27 @@ function cargarPlanteles(){
 function renderClubGrid(){
   const cont = document.getElementById('plt-grid-cont');
   if(!cont) return;
-  let html = '';
-  ZONAS.forEach((zona, zi) => {
-    const seen = new Set();
-    const teams = [];
+  const seen = new Set();
+  const teams = [];
+  ZONAS.forEach(zona => {
     for(let f=1; f<=18; f++){
       (FIXTURE[zona][String(f)]||[]).forEach(m => {
         if(!seen.has(m.local)){ seen.add(m.local); teams.push(m.local); }
         if(!seen.has(m.visitante)){ seen.add(m.visitante); teams.push(m.visitante); }
       });
     }
-    teams.sort((a,b) => a.localeCompare(b,'es'));
-    if(zi > 0) html += '<div class="plt-zone-sep"></div>';
-    html += '<div class="plt-grid">';
-    teams.forEach(nombre => {
-      const esc = ESCUDOS[nombre];
-      const safe = nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += `<div class="plt-card" onclick="abrirClub('${safe}')">
-        ${esc ? `<img src="${esc}" onerror="this.style.display='none'" alt="">` : '<div class="plt-noesc">⚽</div>'}
-        <span class="plt-cn">${nombre}</span>
-      </div>`;
-    });
-    html += '</div>';
   });
+  teams.sort((a,b) => a.localeCompare(b,'es'));
+  let html = '<div class="plt-grid">';
+  teams.forEach(nombre => {
+    const esc = ESCUDOS[nombre];
+    const safe = nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html += `<div class="plt-card" onclick="abrirClub('${safe}')">
+      ${esc ? `<img src="${esc}" onerror="this.style.display='none'" alt="">` : '<div class="plt-noesc">⚽</div>'}
+      <span class="plt-cn">${nombre}</span>
+    </div>`;
+  });
+  html += '</div>';
   cont.innerHTML = html;
 }
 
@@ -3158,8 +3160,9 @@ async function abrirClub(nombre){
   renderPartidosClub(nombre);
 
   document.getElementById('plt-squad-cont').innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando...</div>';
+  _pltData = null; // reset so color is set fresh
   const eq = EQUIPOS_LIST.find(e => e.nombre === nombre);
-  if(eq) await cargarPlantelClub(eq.id);
+  if(eq) await cargarPlantelClub(eq.id, zc.color);
   else document.getElementById('plt-squad-cont').innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin plantel registrado.</div>';
 
   window.scrollTo(0, 0);
@@ -3173,55 +3176,77 @@ function voltarPlanteles(){
 
 function renderPartidosClub(nombre){
   const cont = document.getElementById('plt-matches-cont');
-  const jugados = [];
+  const jugados = [], proximos = [];
   ZONAS.forEach(zona => {
     for(let f=1; f<=18; f++){
       (FIXTURE[zona][String(f)]||[]).forEach(m => {
-        if((m.local===nombre||m.visitante===nombre) && m.gl!==null){
-          const esLocal = m.local===nombre;
-          jugados.push({
-            zona, fecha: f, esLocal,
-            rival: esLocal ? m.visitante : m.local,
-            gf: esLocal ? m.gl : m.gv,
-            gc: esLocal ? m.gv : m.gl,
-            fichaKey: `${zona}_${f}_${m.local}_${m.visitante}`
-          });
+        if(m.local!==nombre && m.visitante!==nombre) return;
+        const esLocal = m.local===nombre;
+        const rival = esLocal ? m.visitante : m.local;
+        const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
+        const meta = PARTIDO_META[fichaKey]||{};
+        if(m.gl!==null){
+          jugados.push({ zona, fecha:f, esLocal, rival, gf:esLocal?m.gl:m.gv, gc:esLocal?m.gv:m.gl, fichaKey, meta });
+        } else {
+          proximos.push({ zona, fecha:f, esLocal, rival, fichaKey, meta });
         }
       });
     }
   });
-  jugados.sort((a,b) => a.fecha - b.fecha);
+  jugados.sort((a,b)=>a.fecha-b.fecha);
+  proximos.sort((a,b)=>a.fecha-b.fecha);
 
-  if(!jugados.length){
-    cont.innerHTML = '<div class="plt-sec-title">Partidos</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin partidos jugados aún.</div>';
-    return;
+  let html = '';
+
+  if(jugados.length){
+    html += `<div class="plt-sec-title">Partidos jugados (${jugados.length})</div><div class="plt-matches-list">`;
+    jugados.forEach(p => {
+      const res = p.gf>p.gc?'G':p.gf===p.gc?'E':'P';
+      const rivalEsc = ESCUDOS[p.rival];
+      const tienePlanilla = !!PLANILLA_CARGADA[p.fichaKey];
+      const safeKey = p.fichaKey.replace(/'/g,"\\'");
+      const fichaBtn = tienePlanilla
+        ? `<div class="plt-act-btn" title="Ver planilla" onclick="verFicha('${safeKey}',true)">📄</div>`
+        : `<div class="plt-act-btn plt-dis" title="Planilla no disponible">📄</div>`;
+      const videoBtn = p.meta.stream
+        ? `<a class="plt-act-btn" href="${p.meta.stream}" target="_blank" title="Ver video">🎬</a>`
+        : `<div class="plt-act-btn plt-dis" title="Video no disponible">🎬</div>`;
+      html += `<div class="plt-match-row">
+        <span class="plt-fecha-lbl">F.${p.fecha}</span>
+        <div class="plt-rival-cell">
+          ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
+          <span class="plt-rival-name">${p.rival}</span>
+        </div>
+        <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+        <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
+        <div class="plt-action-btns">${fichaBtn}${videoBtn}</div>
+      </div>`;
+    });
+    html += '</div>';
   }
 
-  let html = `<div class="plt-sec-title">Partidos jugados (${jugados.length})</div><div class="plt-matches-list">`;
-  jugados.forEach(p => {
-    const res = p.gf > p.gc ? 'G' : p.gf === p.gc ? 'E' : 'P';
-    const rivalEsc = ESCUDOS[p.rival];
-    const tienePlanilla = !!PLANILLA_CARGADA[p.fichaKey];
-    const stream = (PARTIDO_META[p.fichaKey]||{}).stream;
-    const safeKey = p.fichaKey.replace(/'/g,"\\'");
-    const fichaBtn = tienePlanilla
-      ? `<div class="plt-act-btn" title="Ver planilla" onclick="verFicha('${safeKey}',true)">📄</div>`
-      : `<div class="plt-act-btn plt-dis" title="Planilla no disponible">📄</div>`;
-    const videoBtn = stream
-      ? `<a class="plt-act-btn" href="${stream}" target="_blank" title="Ver video">🎬</a>`
-      : `<div class="plt-act-btn plt-dis" title="Video no disponible">🎬</div>`;
-    html += `<div class="plt-match-row">
-      <span class="plt-fecha-lbl">F.${p.fecha}</span>
-      <div class="plt-rival-cell">
-        ${rivalEsc ? `<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">` : ''}
-        <span class="plt-rival-name">${p.rival}</span>
-      </div>
-      <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
-      <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
-      <div class="plt-action-btns">${fichaBtn}${videoBtn}</div>
-    </div>`;
-  });
-  html += '</div>';
+  if(proximos.length){
+    html += `<div class="plt-sec-title" style="margin-top:1.25rem;">Próximos partidos (${proximos.length})</div><div class="plt-matches-list">`;
+    proximos.forEach(p => {
+      const rivalEsc = ESCUDOS[p.rival];
+      const dia = p.meta.dia||'';
+      const hora = p.meta.hora||'';
+      const fechaStr = [dia,hora].filter(Boolean).join(' ');
+      html += `<div class="plt-match-row">
+        <span class="plt-fecha-lbl">F.${p.fecha}</span>
+        <div class="plt-rival-cell">
+          ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
+          <span class="plt-rival-name">${p.rival}</span>
+        </div>
+        <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+        <span style="font-size:11px;color:#777;">${fechaStr||'—'}</span>
+        <div></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  if(!html) html = '<div class="plt-sec-title">Partidos</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Sin partidos registrados.</div>';
   cont.innerHTML = html;
 }
 
@@ -3245,8 +3270,8 @@ const _PLT_ICONS = {
 const _PLT_COLS = [
   {key:'nombre',            label:'Jugador',           stat:false, defaultDir:'asc'},
   {key:'posicion',          label:'Pos.',              stat:false, defaultDir:'asc'},
-  {key:'fecha_nacimiento',  label:'Nac.',              stat:false, defaultDir:'asc'},
-  {key:'lugar_nacimiento',  label:'Origen',            stat:false, defaultDir:'asc'},
+  {key:'fecha_nacimiento',  label:'Fecha Nac.',         stat:false, defaultDir:'asc'},
+  {key:'lugar_nacimiento',  label:'Lugar de Nac.',     stat:false, defaultDir:'asc'},
   {key:'altura_m',          label:'Alt.',              stat:false, defaultDir:'desc'},
   {key:'peso_kg',           label:'Kg',                stat:false, defaultDir:'desc'},
   {key:'pierna_habil',      label:'Pie',               stat:false, defaultDir:'asc'},
@@ -3294,26 +3319,39 @@ function pltSort(col){
     _pltSort.col=col;
     _pltSort.dir=c?.defaultDir||'asc';
   }
-  if(_pltData){ _renderPlantelTable(document.getElementById('plt-squad-cont'),_pltData.jugadores,_pltData.stats); window.scrollTo(0,sy); }
+  if(_pltData){ _renderPlantelTable(document.getElementById('plt-squad-cont'),_pltData.jugadores,_pltData.stats,_pltData.clubColor); window.scrollTo(0,sy); }
 }
 
-function _renderPlantelTable(cont, jugadores, stats){
+function _fnToISO(fn){ // DD.MM.YYYY → YYYY-MM-DD for proper sort
+  if(!fn) return '0000-00-00';
+  const p=fn.replace(/\//g,'.').split('.');
+  return p.length===3 ? `${p[2]}-${p[1]}-${p[0]}` : '0000-00-00';
+}
+
+function _renderPlantelTable(cont, jugadores, stats, clubColor){
   const STAT_KEYS=['pj','tit','bnc','gol','ast','ent','sal','min'];
   const sorted=[...jugadores].sort((a,b)=>{
     const k=_pltSort.col; const isStat=STAT_KEYS.includes(k);
-    let va=isStat?(stats[a.id]?.[k]??0):(a[k]??'');
-    let vb=isStat?(stats[b.id]?.[k]??0):(b[k]??'');
+    let va,vb;
+    if(k==='fecha_nacimiento'){
+      va=_fnToISO(a.fecha_nacimiento); vb=_fnToISO(b.fecha_nacimiento);
+    } else {
+      va=isStat?(stats[a.id]?.[k]??0):(a[k]??'');
+      vb=isStat?(stats[b.id]?.[k]??0):(b[k]??'');
+    }
     if(typeof va==='string') va=va.toLowerCase();
     if(typeof vb==='string') vb=vb.toLowerCase();
     if(va<vb) return _pltSort.dir==='asc'?-1:1;
     if(va>vb) return _pltSort.dir==='asc'?1:-1;
     return 0;
   });
+  const rowColor = clubColor ? clubColor+'22' : 'rgba(255,255,255,.05)';
+  const hdrColor = clubColor ? clubColor : 'rgba(255,255,255,.12)';
   const thead=_PLT_COLS.map(c=>{
     const isSorted=_pltSort.col===c.key;
     const arrow=isSorted?`<span class="plt-sort-arrow">${_pltSort.dir==='asc'?'▲':'▼'}</span>`:'';
     const ta=c.title?` title="${c.title}"`:'';;
-    return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')">${c.label}${arrow}</th>`;
+    return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')" style="border-bottom-color:${hdrColor}">${c.label}${arrow}</th>`;
   }).join('');
   const tbody=sorted.map(j=>{
     const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
@@ -3321,25 +3359,25 @@ function _renderPlantelTable(cont, jugadores, stats){
     const cumple=_pltIsCumple(j.fecha_nacimiento);
     const cumpleHtml=cumple?` <span class="plt-cumple" title="¡Hoy está cumpliendo años!">🎂</span>`:'';
     const edad=_pltEdad(j.fecha_nacimiento);
-    const nacFmt=j.fecha_nacimiento?`${_pltFmtFecha(j.fecha_nacimiento)}${edad?` <span style="color:#666;font-size:10px;">(${edad})</span>`:''}`: '—';
+    const nacFmt=j.fecha_nacimiento?`${_pltFmtFecha(j.fecha_nacimiento)}${edad?` <span style="color:#555;font-size:10px;">(${edad})</span>`:''}`: '—';
     const alt=j.altura_m?parseFloat(j.altura_m).toFixed(2).replace('.',','):'—';
     const sv=(v,cls='')=>v>0?`<span class="plt-stat-hi ${cls}">${v}</span>`:`<span class="plt-stat-0">0</span>`;
-    return `<tr>
-      <td style="font-size:13px;font-weight:500">${name}${cumpleHtml}</td>
-      <td>${j.posicion||'—'}</td>
-      <td style="font-size:11px;color:#aaa">${nacFmt}</td>
-      <td style="font-size:11px;color:#888">${j.lugar_nacimiento||'—'}</td>
-      <td>${alt}</td>
-      <td>${j.peso_kg||'—'}</td>
-      <td>${j.pierna_habil||'—'}</td>
-      <td>${sv(s.pj)}</td>
-      <td>${sv(s.tit)}</td>
-      <td>${sv(s.bnc)}</td>
-      <td>${sv(s.gol,'plt-gol-hi')}</td>
-      <td>${sv(s.ast,'plt-ast-hi')}</td>
-      <td>${sv(s.ent)}</td>
-      <td>${sv(s.sal)}</td>
-      <td>${sv(s.min)}</td>
+    return `<tr style="border-bottom:1px solid ${rowColor}">
+      <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor}">${name}${cumpleHtml}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
+      <td class="plt-nac-col" style="font-size:11px;border-bottom:1px solid ${rowColor}">${nacFmt}</td>
+      <td class="plt-ori-col" style="border-bottom:1px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${alt}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.peso_kg||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.pierna_habil||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.pj)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.tit)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.bnc)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ent)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.sal)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.min)}</td>
     </tr>`;
   }).join('');
   cont.innerHTML=`<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel (${jugadores.length}) — <span style="font-weight:400;color:#666;font-size:11px;text-transform:none;letter-spacing:0;">Datos proporcionados por @FMENASCENSO</span></div>
@@ -3349,7 +3387,7 @@ function _renderPlantelTable(cont, jugadores, stats){
     </table></div>`;
 }
 
-async function cargarPlantelClub(equipoId){
+async function cargarPlantelClub(equipoId, clubColor){
   const cont = document.getElementById('plt-squad-cont');
   cont.innerHTML = '<div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando plantel…</div>';
   try {
@@ -3389,9 +3427,9 @@ async function cargarPlantelClub(equipoId){
         if(e.tipo==='asistencia') s.ast++;
       });
     });
-    _pltData={jugadores,stats};
+    _pltData={jugadores,stats,clubColor:clubColor||null};
     _pltSort={col:'nombre',dir:'asc'};
-    _renderPlantelTable(cont,jugadores,stats);
+    _renderPlantelTable(cont,jugadores,stats,_pltData.clubColor);
   } catch(e){
     cont.innerHTML='<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
   }
