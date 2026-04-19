@@ -127,6 +127,22 @@ function parseFotmobEventos(html) {
   return result;
 }
 
+async function sbPatchByUrl(fotmobUrl, data) {
+  const baseUrl = fotmobUrl.split('#')[0];
+  const encoded = encodeURIComponent(baseUrl);
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?fotmob_url=like.${encoded}*`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) return { ok: false, status: r.status };
+  const rows = await r.json().catch(() => []);
+  return { ok: true, rows: Array.isArray(rows) ? rows.length : 0 };
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -135,7 +151,7 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Missing env vars' });
 
   try {
-    const fixtures = await sbGet('fotmob_url=not.is.null&fotmob_url=neq.&estado=neq.jugado&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual');
+    const fixtures = await sbGet('fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual');
     if (!Array.isArray(fixtures)) return res.status(500).json({ error: 'DB error' });
     if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures' });
 
@@ -189,14 +205,18 @@ module.exports = async (req, res) => {
         if (implicitFinished) {
           const patch = { estado: 'jugado', minuto_actual: eventData };
           if (score) { patch.goles_local = score.local; patch.goles_visitante = score.visitante; }
-          const res = await sbPatch(fx.id, patch);
+          // Patch ALL rows with this fotmob_url to jugado (fixes duplicate-row false-live)
+          const res = await sbPatchByUrl(fx.fotmob_url, patch);
           results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: res.ok, rows: res.rows });
           continue;
         }
 
         const upd = { goles_local: score.local, goles_visitante: score.visitante };
-        if (finished) { upd.estado = 'jugado'; upd.minuto_actual = eventData; }
-        else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
+        if (finished) {
+          upd.estado = 'jugado'; upd.minuto_actual = eventData;
+          // Patch ALL rows with this fotmob_url to jugado (fixes duplicate-row false-live)
+          await sbPatchByUrl(fx.fotmob_url, upd);
+        } else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
 
         const res = await sbPatch(fx.id, upd);
         results.push({
