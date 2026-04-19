@@ -1798,7 +1798,14 @@ function hideH2HTooltip(){
 
 function liveScoreBadge(equipo){
   const allMatches = Object.values(FIXTURE).flatMap(z=>Object.values(z).flatMap(f=>f));
-  const liveM = allMatches.find(m=>m.estado==="en_curso"&&(m.local===equipo||m.visitante===equipo));
+  const liveM = allMatches.find(m=>{
+    if(m.estado!=="en_curso"||m.gl===null) return false;
+    if(m.local!==equipo&&m.visitante!==equipo) return false;
+    // Same check as esEnVivo: require a real minute in minuto_actual
+    const _ld = parseLiveData(m.minuto_actual);
+    const _min = _ld && _ld.m ? _ld.m : null;
+    return _min !== null;
+  });
   if(!liveM||liveM.gl===null) return "";
   const esLocal = liveM.local===equipo;
   const myG = esLocal?liveM.gl:liveM.gv;
