@@ -127,22 +127,6 @@ function parseFotmobEventos(html) {
   return result;
 }
 
-async function sbPatchByUrl(fotmobUrl, data) {
-  const baseUrl = fotmobUrl.split('#')[0];
-  const encoded = encodeURIComponent(baseUrl);
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?fotmob_url=like.${encoded}*`, {
-    method: 'PATCH',
-    headers: {
-      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json', 'Prefer': 'return=representation'
-    },
-    body: JSON.stringify(data)
-  });
-  if (!r.ok) return { ok: false, status: r.status };
-  const rows = await r.json().catch(() => []);
-  return { ok: true, rows: Array.isArray(rows) ? rows.length : 0 };
-}
-
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -160,17 +144,8 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
-      // If a sibling row with the same fotmob_url is already jugado, this is a duplicate — fix it immediately
-      const fxBase = fx.fotmob_url.split('#')[0];
-      const hasSiblingJugado = fixtures.some(f => f.id !== fx.id && f.estado === 'jugado' && f.fotmob_url && f.fotmob_url.split('#')[0] === fxBase);
-      if (hasSiblingJugado) {
-        const r = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: null });
-        results.push({ id: fx.id, skip: 'duplicate-fixed', updated: r.ok });
-        continue;
-      }
-
       try {
-        const baseUrl = fxBase;
+        const baseUrl = fx.fotmob_url.split('#')[0];
         const url = baseUrl + '?_=' + Date.now();
 
         const resp = await fetch(url, {
@@ -214,18 +189,14 @@ module.exports = async (req, res) => {
         if (implicitFinished) {
           const patch = { estado: 'jugado', minuto_actual: eventData };
           if (score) { patch.goles_local = score.local; patch.goles_visitante = score.visitante; }
-          // Patch ALL rows with this fotmob_url to jugado (fixes duplicate-row false-live)
-          const res = await sbPatchByUrl(fx.fotmob_url, patch);
+          const res = await sbPatch(fx.id, patch);
           results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: res.ok, rows: res.rows });
           continue;
         }
 
         const upd = { goles_local: score.local, goles_visitante: score.visitante };
-        if (finished) {
-          upd.estado = 'jugado'; upd.minuto_actual = eventData;
-          // Patch ALL rows with this fotmob_url to jugado (fixes duplicate-row false-live)
-          await sbPatchByUrl(fx.fotmob_url, upd);
-        } else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
+        if (finished) { upd.estado = 'jugado'; upd.minuto_actual = eventData; }
+        else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
 
         const res = await sbPatch(fx.id, upd);
         results.push({
