@@ -160,8 +160,17 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
+      // If a sibling row with the same fotmob_url is already jugado, this is a duplicate — fix it immediately
+      const fxBase = fx.fotmob_url.split('#')[0];
+      const hasSiblingJugado = fixtures.some(f => f.id !== fx.id && f.estado === 'jugado' && f.fotmob_url && f.fotmob_url.split('#')[0] === fxBase);
+      if (hasSiblingJugado) {
+        const r = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: null });
+        results.push({ id: fx.id, skip: 'duplicate-fixed', updated: r.ok });
+        continue;
+      }
+
       try {
-        const baseUrl = fx.fotmob_url.split('#')[0];
+        const baseUrl = fxBase;
         const url = baseUrl + '?_=' + Date.now();
 
         const resp = await fetch(url, {
