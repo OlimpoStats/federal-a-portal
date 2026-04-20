@@ -925,11 +925,25 @@ async function actualizarIconoUsuario(){
       }
       PERFIL_USUARIO=data;
     }
-    const eq=PERFIL_USUARIO?.equipos?.nombre||"";
-    const escUrl=ESCUDOS[eq]||"";
-    btn.innerHTML=escUrl
-      ? `<div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><img src="${escUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.3;border-radius:50%;"><svg viewBox="0 0 24 24" style="position:relative;width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>`
-      : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    const isDueno = PERFIL_USUARIO?.rol === 'dueno';
+    const btnMob = document.getElementById("user-btn-mob");
+    if(isDueno){
+      const { data: apd } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
+      const apUrl = apd?.publicUrl || '';
+      const avatarHtml = apUrl
+        ? `<img src="${apUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+        : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+      btn.innerHTML = avatarHtml;
+      if(btnMob) btnMob.innerHTML = avatarHtml;
+    } else {
+      const eq=PERFIL_USUARIO?.equipos?.nombre||"";
+      const escUrl=ESCUDOS[eq]||"";
+      const regularHtml = escUrl
+        ? `<div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><img src="${escUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.3;border-radius:50%;"><svg viewBox="0 0 24 24" style="position:relative;width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>`
+        : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+      btn.innerHTML = regularHtml;
+      if(btnMob) btnMob.innerHTML = regularHtml;
+    }
     const pi=document.getElementById("perfil-info");
     if(pi&&PERFIL_USUARIO){
       pi.innerHTML=`<div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
