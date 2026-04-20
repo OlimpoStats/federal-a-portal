@@ -27,9 +27,14 @@ export default async function handler(req, res) {
       `${SUPABASE_URL}/rest/v1/perfiles?id=eq.${userId}&select=rol&limit=1`,
       { headers: { "apikey": SUPABASE_SERVICE_KEY, "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}` } }
     );
-    const perfiles = await profileRes.json().catch(()=>[]);
+    const perfilesRaw = await profileRes.text();
+    let perfiles = [];
+    try { perfiles = JSON.parse(perfilesRaw); } catch(e){}
     if (!Array.isArray(perfiles) || perfiles[0]?.rol !== "dueno")
-      return res.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({
+        error: "Forbidden",
+        _d: { uid: userId?.slice(0,8), http: profileRes.status, isArr: Array.isArray(perfiles), len: Array.isArray(perfiles)?perfiles.length:0, rol: Array.isArray(perfiles)?perfiles[0]?.rol:perfilesRaw.slice(0,120) }
+      });
   } catch(e) {
     return res.status(401).json({ error: "Auth check failed" });
   }
