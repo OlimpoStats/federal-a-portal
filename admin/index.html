@@ -494,8 +494,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
           <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1;min-width:200px;" oninput="buscarJugadores()">
-          <select id="jug-filtro-faltante" style="min-width:180px;" onchange="buscarJugadores()">
+          <select id="jug-filtro-faltante" style="min-width:200px;" onchange="buscarJugadores()">
             <option value="">— Filtrar por dato faltante —</option>
+            <option value="__mismo_nombre">Sin common name (igual al completo)</option>
             <option value="posicion">Posición</option>
             <option value="fecha_nacimiento">Fecha de nacimiento</option>
             <option value="lugar_nacimiento">Lugar de nacimiento</option>
@@ -3170,7 +3171,8 @@ function buscarJugadores(){
     (j.nombre||"").toLowerCase().includes(q) ||
     String(j.id_federal||"").includes(q)
   );
-  if(faltante) list = list.filter(j => !j[faltante]);
+  if(faltante === '__mismo_nombre') list = list.filter(j => j.nombre && j.nombre_display && j.nombre_display === j.nombre);
+  else if(faltante) list = list.filter(j => !j[faltante]);
   renderJugadores(list);
 }
 
