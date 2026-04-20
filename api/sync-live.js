@@ -29,6 +29,21 @@ async function sbPatch(id, data) {
   return { ok: Array.isArray(rows) && rows.length > 0, rows: rows.length };
 }
 
+async function sbCloseStale(today) {
+  // Bulk-close all en_curso fixtures from before today in one UPDATE
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?estado=eq.en_curso&dia=lt.${today}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({ estado: 'jugado' })
+  });
+  if (!r.ok) return { ok: false, status: r.status };
+  const rows = await r.json().catch(() => []);
+  return { ok: true, closed: Array.isArray(rows) ? rows.length : 0 };
+}
+
 function parseScore(html) {
   const m = html.match(/MFHeaderStatusScore[^>]*>([^<]+)<\/span>/);
   if (m) {
@@ -140,21 +155,18 @@ module.exports = async (req, res) => {
 
   try {
     const today = new Date().toISOString().slice(0, 10);
+
+    // Close any en_curso fixtures from previous days in one bulk UPDATE
+    const staleResult = await sbCloseStale(today);
+
     const fixtures = await sbGet(`fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual,dia&or=(dia.eq.${today},estado.eq.en_curso)`);
     if (!Array.isArray(fixtures)) return res.status(500).json({ error: 'DB error' });
-    if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures today', today });
+    if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures today', today, stale: staleResult });
 
     const results = [];
 
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
-
-      // Stale en_curso from a previous day — close without fetching FotMob
-      if (fx.estado === 'en_curso' && fx.dia && fx.dia < today) {
-        const r = await sbPatch(fx.id, { estado: 'jugado' });
-        results.push({ id: fx.id, skip: 'stale-closed', updated: r.ok });
-        continue;
-      }
 
       try {
         const baseUrl = fx.fotmob_url.split('#')[0];
