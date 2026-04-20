@@ -494,24 +494,58 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-body" style="display:flex;gap:.75rem;flex-wrap:wrap;">
           <input type="text" id="jug-buscar" placeholder="Buscar por nombre, common name o ID federal..." style="flex:1;min-width:200px;" oninput="buscarJugadores()">
+          <select id="jug-filtro-faltante" style="min-width:180px;" onchange="buscarJugadores()">
+            <option value="">— Filtrar por dato faltante —</option>
+            <option value="posicion">Posición</option>
+            <option value="fecha_nacimiento">Fecha de nacimiento</option>
+            <option value="lugar_nacimiento">Lugar de nacimiento</option>
+            <option value="altura_m">Altura</option>
+            <option value="peso_kg">Peso</option>
+            <option value="pierna_habil">Pierna hábil</option>
+          </select>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
           <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
         </div>
       </div>
       <div id="jug-lista" style="font-size:13px;color:var(--muted);">Cargando jugadores...</div>
-      <div id="jug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:420px;max-width:95vw;">
+      <div id="jug-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;overflow-y:auto;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:460px;max-width:95vw;margin:auto;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Editar jugador</div>
           <input type="hidden" id="jug-edit-id">
           <div style="display:grid;gap:.65rem;">
             <div><label>ID Federal</label><input type="text" id="jug-edit-idfederal" placeholder="Ej: 3177974"></div>
-            <div><label>Nombre (planilla)</label><input type="text" id="jug-edit-nombre" placeholder="Como viene en la planilla"></div>
-            <div><label>Common name (a mostrar en portal)</label><input type="text" id="jug-edit-display" placeholder="Ej: Tomas Lopez"></div>
+            <div><label>Nombre completo</label><input type="text" id="jug-edit-nombre" placeholder="Como viene en la planilla oficial"></div>
+            <div><label>Common name - fichas</label><input type="text" id="jug-edit-display" placeholder="Ej: Tomas Lopez"></div>
             <div><label>Club actual</label>
               <select id="jug-edit-equipo">
                 <option value="">— Sin club —</option>
                 ${ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("")}
               </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;">
+              <div><label>Posición</label>
+                <select id="jug-edit-posicion">
+                  <option value="">—</option>
+                  <option value="Arquero">Arquero</option>
+                  <option value="Defensor">Defensor</option>
+                  <option value="Mediocampista">Mediocampista</option>
+                  <option value="Delantero">Delantero</option>
+                </select>
+              </div>
+              <div><label>Pierna hábil</label>
+                <select id="jug-edit-pierna">
+                  <option value="">—</option>
+                  <option value="Derecha">Derecha</option>
+                  <option value="Izquierda">Izquierda</option>
+                  <option value="Ambas">Ambas</option>
+                </select>
+              </div>
+            </div>
+            <div><label>Fecha de nacimiento</label><input type="date" id="jug-edit-fnac"></div>
+            <div><label>Lugar de nacimiento</label><input type="text" id="jug-edit-lugar" placeholder="Ej: Córdoba, Argentina"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem;">
+              <div><label>Altura (m)</label><input type="number" id="jug-edit-altura" placeholder="1.78" step="0.01" min="1.4" max="2.2"></div>
+              <div><label>Peso (kg)</label><input type="number" id="jug-edit-peso" placeholder="75" step="1" min="40" max="120"></div>
             </div>
           </div>
           <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
@@ -3085,7 +3119,7 @@ async function cargarJugadores(){
   lista.innerHTML = '<div style="color:var(--muted);padding:1rem;">Cargando...</div>';
   try {
     const [{data:jData, error:jErr}, {data:eqData}] = await Promise.all([
-      sb.from("jugadores").select("id, id_federal, nombre, nombre_display, equipo_id, equipos(id,nombre)").order("nombre_display").limit(1000),
+      sb.from("jugadores").select("id, id_federal, nombre, nombre_display, equipo_id, posicion, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, pierna_habil, equipos(id,nombre)").order("nombre_display").limit(1000),
       sb.from("equipos").select("id, nombre"),
     ]);
     if(jErr) throw jErr;
@@ -3100,12 +3134,15 @@ async function cargarJugadores(){
 
 function buscarJugadores(){
   const q = (document.getElementById("jug-buscar")?.value||"").toLowerCase().trim();
-  if(!q){ renderJugadores(JUGADORES_CACHE); return; }
-  renderJugadores(JUGADORES_CACHE.filter(j =>
+  const faltante = document.getElementById("jug-filtro-faltante")?.value||"";
+  let list = JUGADORES_CACHE;
+  if(q) list = list.filter(j =>
     (j.nombre_display||"").toLowerCase().includes(q) ||
     (j.nombre||"").toLowerCase().includes(q) ||
     String(j.id_federal||"").includes(q)
-  ));
+  );
+  if(faltante) list = list.filter(j => !j[faltante]);
+  renderJugadores(list);
 }
 
 function mostrarDuplicados(){
@@ -3211,10 +3248,15 @@ function abrirCrearJugador(){
   document.getElementById("jug-edit-idfederal").value = "";
   document.getElementById("jug-edit-nombre").value = "";
   document.getElementById("jug-edit-display").value = "";
+  document.getElementById("jug-edit-posicion").value = "";
+  document.getElementById("jug-edit-pierna").value = "";
+  document.getElementById("jug-edit-fnac").value = "";
+  document.getElementById("jug-edit-lugar").value = "";
+  document.getElementById("jug-edit-altura").value = "";
+  document.getElementById("jug-edit-peso").value = "";
   const sel = document.getElementById("jug-edit-equipo");
   sel.innerHTML = '<option value="">— Sin club —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
-  // Change modal title
   document.querySelector("#jug-modal div div:first-child").textContent = "Nuevo jugador";
   document.getElementById("jug-modal").style.display = "flex";
 }
@@ -3226,6 +3268,12 @@ function abrirEditJugador(id){
   document.getElementById("jug-edit-idfederal").value = j.id_federal || "";
   document.getElementById("jug-edit-nombre").value = j.nombre || "";
   document.getElementById("jug-edit-display").value = j.nombre_display || "";
+  document.getElementById("jug-edit-posicion").value = j.posicion || "";
+  document.getElementById("jug-edit-pierna").value = j.pierna_habil || "";
+  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento || "";
+  document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento || "";
+  document.getElementById("jug-edit-altura").value = j.altura_m || "";
+  document.getElementById("jug-edit-peso").value = j.peso_kg || "";
   const sel = document.getElementById("jug-edit-equipo");
   sel.innerHTML = '<option value="">— Sin club —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}" ${j.equipos?.nombre===t?"selected":""}>${t}</option>`).join("");
@@ -3244,19 +3292,21 @@ async function guardarJugador(){
   const nombre_display = document.getElementById("jug-edit-display").value.trim() || nombre;
   const equipoNombre = document.getElementById("jug-edit-equipo").value;
   const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : null;
+  const posicion = document.getElementById("jug-edit-posicion").value || null;
+  const pierna_habil = document.getElementById("jug-edit-pierna").value || null;
+  const fecha_nacimiento = document.getElementById("jug-edit-fnac").value || null;
+  const lugar_nacimiento = document.getElementById("jug-edit-lugar").value.trim() || null;
+  const altura_m = document.getElementById("jug-edit-altura").value ? parseFloat(document.getElementById("jug-edit-altura").value) : null;
+  const peso_kg = document.getElementById("jug-edit-peso").value ? parseInt(document.getElementById("jug-edit-peso").value) : null;
+
+  const fields = { id_federal, nombre, nombre_display, equipo_id, posicion, pierna_habil, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg };
 
   let error;
   if(id){
-    // Update existing
-    ({error} = await sb.from("jugadores").update({
-      id_federal, nombre, nombre_display, equipo_id
-    }).eq("id", id));
+    ({error} = await sb.from("jugadores").update(fields).eq("id", id));
   } else {
-    // Create new
     if(!id_federal){ alert("El ID federal es obligatorio."); return; }
-    ({error} = await sb.from("jugadores").insert({
-      id_federal, nombre, nombre_display, equipo_id
-    }));
+    ({error} = await sb.from("jugadores").insert(fields));
   }
 
   if(error){ alert("Error: " + error.message); return; }

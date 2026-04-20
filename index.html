@@ -1416,10 +1416,15 @@ async function verFicha(key, tienePlanilla){
       };
 
       const renderJug = (pl, esTitular) => {
-        const evs = (evByPlanilla[pl.id] || []).sort((a,b)=>{
-          const n = s => { const p=String(s||"").split("+"); return parseInt(p[0]||0)*100+(parseInt(p[1]||0)); };
-          return n(a.minuto)-n(b.minuto);
-        });
+        const evs = [...(evByPlanilla[pl.id] || [])];
+        // Infer missing cambio_sale: if this player's jersey number appears as "extra" in any other player's cambio_entra, they exited
+        const myNum = String(pl.numero_camiseta||"");
+        if(myNum && !evs.some(e=>e.tipo==="cambio_sale")){
+          const entradaSup = todosJugadores.flatMap(s=>(evByPlanilla[s.id]||[]))
+            .find(e=>e.tipo==="cambio_entra" && String(e.extra||"").trim()===myNum);
+          if(entradaSup) evs.push({tipo:"cambio_sale", minuto:entradaSup.minuto});
+        }
+        evs.sort((a,b)=>{ const n=s=>{const p=String(s||"").split("+");return parseInt(p[0]||0)*100+(parseInt(p[1]||0));};return n(a.minuto)-n(b.minuto); });
         const nombre = pl.jugadores?.nombre_display || pl.jugadores?.nombre || "—";
         const esCapitan = pl.es_capitan;
         const chips = evs.map(renderChip).filter(Boolean);
@@ -1612,9 +1617,10 @@ async function verFicha(key, tienePlanilla){
             const ejEv = rivalPlan.flatMap(p2=>(evByPlanilla[p2.id]||[]).map(e=>({...e,_n:p2.jugadores?.nombre_display||p2.jugadores?.nombre||""}))).find(e=>e.tipo==='penal_atajado' && String(e.minuto)===min && e.extra!=='arquero');
             ejNombre = ejEv?._n || "";
           }
-          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${arquero.nombre}</strong> <span style="color:var(--muted);">le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`);
+          const arqNombre = arquero.nombre || "Arquero";
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>🧤</span><span><strong>${arqNombre}</strong> <span>le atajó un penal${ejNombre?" a <strong>"+ejNombre+"</strong>":""}</span></span></div>`);
         } else if(desviado){
-          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${desviado.nombre}</strong> <span style="color:var(--muted);">falló un penal</span></span></div>`);
+          rows.push(`<div style="font-size:13px;padding:.25rem 0;display:flex;align-items:center;gap:.5rem;"><span ${st}>${min}'</span><span>❌</span><span><strong>${desviado.nombre}</strong> <span>falló un penal</span></span></div>`);
         }
       });
 
