@@ -168,6 +168,13 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
+      // Hard close: if match date is before today, never trust FotMob — force jugado
+      if (fx.dia && fx.dia < today) {
+        const r = await sbPatch(fx.id, { estado: 'jugado' });
+        results.push({ id: fx.id, forceClosed: true, dia: fx.dia, updated: r.ok, rows: r.rows });
+        continue;
+      }
+
       try {
         const baseUrl = fx.fotmob_url.split('#')[0];
         const url = baseUrl + '?_=' + Date.now();
