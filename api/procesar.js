@@ -13,13 +13,21 @@ export default async function handler(req, res) {
   const userJwt = authHeader.replace("Bearer ", "").trim();
   if (!userJwt) return res.status(401).json({ error: "Unauthorized" });
   try {
-    const userRes = await fetch(`${SUPABASE_URL}/rest/v1/perfiles?select=rol&limit=1`, {
-      headers: {
-        "apikey": SUPABASE_SERVICE_KEY,
-        "Authorization": `Bearer ${userJwt}`,
-      }
+    // Step 1: validate JWT and get user ID via Supabase Auth
+    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { "apikey": SUPABASE_SERVICE_KEY, "Authorization": `Bearer ${userJwt}` }
     });
-    const perfiles = await userRes.json().catch(()=>[]);
+    if (!authRes.ok) return res.status(401).json({ error: "Invalid session" });
+    const authData = await authRes.json();
+    const userId = authData?.id;
+    if (!userId) return res.status(401).json({ error: "Invalid session" });
+
+    // Step 2: check rol=dueno using service key (bypasses RLS)
+    const profileRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/perfiles?id=eq.${userId}&select=rol&limit=1`,
+      { headers: { "apikey": SUPABASE_SERVICE_KEY, "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}` } }
+    );
+    const perfiles = await profileRes.json().catch(()=>[]);
     if (!Array.isArray(perfiles) || perfiles[0]?.rol !== "dueno")
       return res.status(403).json({ error: "Forbidden" });
   } catch(e) {
