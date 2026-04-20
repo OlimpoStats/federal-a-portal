@@ -3205,10 +3205,11 @@ async function abrirClub(nombre){
     <div class="plt-detail-header">
       ${esc ? `<img class="plt-detail-escudo" src="${esc}" onerror="this.style.display='none'" alt="">` : '<div class="plt-detail-escudo plt-noesc">⚽</div>'}
       <div>
-        <div class="plt-detail-name" style="color:${teamColor};">${nombre}</div>
+        <div class="plt-detail-name">${nombre}</div>
         ${zona ? `<span class="plt-zona-pill" style="background:${zc.color};color:${zc.text};">${zona}</span>` : ''}
       </div>
-    </div>`;
+    </div>`
+    .replace('class="plt-detail-header"', `class="plt-detail-header" style="border-bottom-color:${teamColor}40;"`);
 
   renderPartidosClub(nombre);
 
