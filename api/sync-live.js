@@ -168,9 +168,16 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
-      // Hard close: if match date is before today, never trust FotMob — force jugado
+      // Hard close: if match date is before today, force jugado
+      // Set m:null in minuto_actual so the DB trigger recognises it as finished
       if (fx.dia && fx.dia < today) {
-        const r = await sbPatch(fx.id, { estado: 'jugado' });
+        let closedMinutoActual = fx.minuto_actual;
+        try {
+          const parsed = JSON.parse(fx.minuto_actual || '{}');
+          parsed.m = null;
+          closedMinutoActual = JSON.stringify(parsed);
+        } catch(e) { closedMinutoActual = '{"m":null}'; }
+        const r = await sbPatch(fx.id, { estado: 'jugado', minuto_actual: closedMinutoActual });
         results.push({ id: fx.id, forceClosed: true, dia: fx.dia, updated: r.ok, rows: r.rows });
         continue;
       }
