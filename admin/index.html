@@ -201,8 +201,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-item" onclick="goPanel('abm-equipos')"><span class="sb-icon">🔗</span>Equipos / Vínculos</div>
     <div class="sb-item" onclick="goPanel('actualizacion-jugadores')"><span class="sb-icon">🔄</span>Actualizar Jugadores</div>
     <div class="sb-item" onclick="goPanel('import-plantel')"><span class="sb-icon">📥</span>Importar Planteles</div>
-    <div class="sb-section">Foro</div>
+    <div class="sb-section">Comunidad</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
+    <div class="sb-item" onclick="goPanel('sugerencias')"><span class="sb-icon">✉️</span>Sugerencias</div>
   </div>
 
   <!-- CONTENT -->
@@ -662,6 +663,17 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       </div></div>
     </div>
 
+    <div class="panel" id="panel-sugerencias">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Sugerencias y contacto</h2>
+      <div class="card">
+        <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Mensajes recibidos</span>
+          <button class="btn btn-secondary btn-sm" onclick="cargarSugerencias()">↺ Actualizar</button>
+        </div>
+        <div class="card-body" id="sugerencias-cont" style="padding:0;">Cargando...</div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-foro-admin">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
       <div class="card"><div class="card-body" id="foro-admin-cont" style="color:var(--muted);font-size:13px;">Cargando reportes...</div></div>
@@ -912,6 +924,40 @@ function goPanel(id){
   if(id==="abm-equipos") renderEquiposVinculos();
   if(id==="jugadores") cargarJugadores();
   if(id==="foro-admin") cargarReportesForo();
+  if(id==="sugerencias") cargarSugerencias();
+}
+
+async function cargarSugerencias(){
+  const cont = document.getElementById("sugerencias-cont");
+  cont.innerHTML = '<div style="padding:1rem;color:#666;font-size:13px;">Cargando...</div>';
+  const {data, error} = await sb.from("sugerencias")
+    .select("id, created_at, contenido, contacto, username_display, leido")
+    .order("created_at", {ascending: false})
+    .limit(100);
+  if(error || !data){ cont.innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${error?.message||'sin datos'}</div>`; return; }
+  if(!data.length){ cont.innerHTML = '<div style="padding:1rem;color:#666;font-size:13px;">Sin mensajes aún.</div>'; return; }
+  const escH = s => String(s||"").replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  cont.innerHTML = data.map(s => `
+    <div style="padding:.8rem 1rem;border-bottom:1px solid rgba(255,255,255,.05);${!s.leido?'border-left:3px solid var(--accent);':''}" id="sug-${s.id}">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.35rem;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;color:${s.leido?'#555':'var(--accent)'};">${escH(s.username_display||'Anónimo')}</span>
+        <span style="font-size:10px;color:#444;">${new Date(s.created_at).toLocaleString('es-AR')}</span>
+        ${s.contacto?`<span style="font-size:11px;color:#888;background:rgba(255,255,255,.05);padding:1px 7px;border-radius:8px;">📬 ${escH(s.contacto)}</span>`:''}
+        ${!s.leido?`<button onclick="marcarLeido(${s.id})" style="margin-left:auto;font-size:10px;background:none;border:1px solid #333;color:#666;border-radius:4px;padding:2px 8px;cursor:pointer;">Marcar leído</button>`:''}
+      </div>
+      <div style="font-size:13px;color:${s.leido?'#555':'#ddd'};line-height:1.5;white-space:pre-wrap;word-break:break-word;">${escH(s.contenido)}</div>
+    </div>`).join('');
+}
+
+async function marcarLeido(id){
+  await sb.from("sugerencias").update({leido: true}).eq("id", id);
+  const el = document.getElementById("sug-"+id);
+  if(el){
+    el.style.borderLeft="";
+    el.querySelectorAll("button").forEach(b=>b.remove());
+    el.querySelectorAll("span[style*='var(--accent)']").forEach(s=>s.style.color="#555");
+    el.querySelectorAll("div[style*='#ddd']").forEach(d=>d.style.color="#555");
+  }
 }
 
 async function cargarReportesForo(){

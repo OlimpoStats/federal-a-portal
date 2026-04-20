@@ -34,9 +34,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;margin-top:-4px;}
 .modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-top:.85rem;}
 
-.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}
-.page.active{display:block;animation:pageEnter .2s ease;}.page.active#page-foro{display:flex!important;}#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
-@keyframes pageEnter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* inicio: two columns */
 .inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) 1fr;gap:3rem;align-items:start;}
@@ -129,6 +126,47 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .score-live{color:var(--accent) !important;}
 .minuto-live{color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;animation:breathe 2s ease-in-out infinite;}
 .live-badge{display:inline-flex;align-items:center;gap:3px;color:#2ea043;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;}
+
+/* ── HAMBURGER + DRAWER ── */
+.hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:36px;height:36px;cursor:pointer;padding:4px;border-radius:6px;transition:background .15s;flex-shrink:0;}
+.hamburger:hover{background:rgba(255,255,255,.06);}
+.hamburger span{display:block;height:2px;background:var(--muted);border-radius:2px;transition:all .25s;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);background:var(--accent);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);background:var(--accent);}
+
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;opacity:0;transition:opacity .25s;}
+.drawer-overlay.open{display:block;opacity:1;}
+.drawer{position:fixed;top:0;right:0;height:100%;width:270px;background:#111;border-left:1px solid rgba(255,255,255,.08);z-index:95;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding-top:60px;}
+.drawer.open{transform:translateX(0);}
+.drawer-section{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#333;padding:.5rem 1.25rem .2rem;}
+.drawer-item{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:.75rem 1.25rem;cursor:pointer;color:var(--muted);border-left:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:.6rem;}
+.drawer-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.drawer-item.active{color:var(--accent);border-left-color:var(--accent);}
+.drawer-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:4px;}
+
+/* ── PAGE TRANSITIONS ── */
+.page{display:none;max-width:1600px;margin:0 auto;padding:1.5rem 1.5rem;}
+.page.active{display:block;}
+.page.active#page-foro{display:flex!important;}
+#page-foro{max-width:100%!important;margin:0!important;padding:0!important;}
+@keyframes pageEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pageExit{from{opacity:1}to{opacity:0}}
+.page-entering{animation:pageEnter .22s cubic-bezier(.4,0,.2,1) forwards;}
+
+/* ── PRÓXIMAMENTE ── */
+.pronto-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:1rem;text-align:center;}
+.pronto-icon{font-size:52px;opacity:.6;}
+.pronto-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:1px;}
+.pronto-sub{font-size:14px;color:var(--muted);max-width:320px;line-height:1.6;}
+
+/* ── CONTACTO MODAL ── */
+.contacto-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;width:420px;max-width:94vw;}
+.contacto-modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.65rem .85rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:110px;outline:none;transition:border-color .15s;margin-bottom:.75rem;}
+.contacto-modal textarea:focus{border-color:var(--accent);}
+.contacto-modal input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .85rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;margin-bottom:.75rem;}
+.contacto-modal input:focus{border-color:var(--accent);}
+
 /* ── MOBILE ── */
 @media(min-width:701px){
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:520px;}
@@ -141,13 +179,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid > div:last-child{grid-column:1 / -1;}
 }
 @media(max-width:700px){
-  /* Header - single line no wrap */
-  .hdr{padding:0 .4rem;gap:.2rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;overflow:hidden;}
-  .logo{font-size:14px;white-space:nowrap;flex-shrink:0;}
-  .nav{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;flex:1;}
-  .nav::-webkit-scrollbar{display:none;}
-  .ni{font-size:10px;padding:0 .3rem;height:52px;letter-spacing:0;white-space:nowrap;}
-  .user-btn{width:26px;height:26px;margin-left:.2rem;flex-shrink:0;}
+  /* Header */
+  .hdr{padding:0 .75rem;gap:.5rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;}
+  .logo{font-size:15px;white-space:nowrap;flex-shrink:0;}
+  .nav{display:none;}
+  .hamburger{display:flex;}
+  .user-btn{display:none;}
+  #user-btn-mob{display:flex!important;width:28px;height:28px;}
   /* Pages */
   html,body{overflow-x:hidden;}
   .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;}
@@ -343,7 +381,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <body>
 
 <div class="hdr">
-  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
+  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni.active'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
   <div class="nav">
     <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
@@ -351,10 +389,41 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
     <div class="ni" onclick="goPage('foro',this)">Foro</div>
+    <div class="ni" onclick="goPage('prode',this)">Prode</div>
+    <div class="ni" onclick="goPage('calculadora',this)">Calculadora</div>
+    <div class="ni" onclick="abrirContacto()">Contacto</div>
     <div class="user-btn" id="user-btn" onclick="abrirModal()" title="Iniciar sesión">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </div>
   </div>
+  <!-- Hamburger (mobile only) -->
+  <div style="margin-left:auto;display:flex;align-items:center;gap:.35rem;">
+    <div class="user-btn" id="user-btn-mob" onclick="abrirModal()" title="Iniciar sesión" style="display:none;">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </div>
+    <div class="hamburger" id="hamburger" onclick="toggleDrawer()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  <div class="drawer-section">Torneo</div>
+  <div class="drawer-item active" id="di-inicio" onclick="goPageDrawer('inicio')">🏠 Inicio</div>
+  <div class="drawer-item" id="di-fixture" onclick="goPageDrawer('fixture')">📅 Fixture</div>
+  <div class="drawer-item" id="di-planteles" onclick="goPageDrawer('planteles')">🛡️ Equipos</div>
+  <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
+  <div class="drawer-section">Extra</div>
+  <div class="drawer-item" id="di-prode" onclick="goPageDrawer('prode')">🎯 Prode</div>
+  <div class="drawer-item" id="di-calculadora" onclick="goPageDrawer('calculadora')">🧮 Calculadora</div>
+  <div class="drawer-item" id="di-reglamento" onclick="goPageDrawer('reglamento')">📋 Reglamento</div>
+  <div class="drawer-section">Comunidad</div>
+  <div class="drawer-item" id="di-foro" onclick="goPageDrawer('foro')">💬 Foro</div>
+  <div class="drawer-item" onclick="abrirContacto();closeDrawer()">✉️ Contacto</div>
 </div>
 
 <!-- login modal -->
@@ -406,6 +475,43 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <button class="modal-btn" onclick="cambiarEmail()">Confirmar cambio</button>
       <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('perfil')">← Volver</span></div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL CONTACTO -->
+<div class="modal-overlay" id="contacto-overlay" onclick="closeContactoOutside(event)">
+  <div class="contacto-modal">
+    <button class="modal-close" onclick="cerrarContacto()">&#10005;</button>
+    <div class="modal-title">Contacto</div>
+    <div id="contacto-form">
+      <textarea id="contacto-texto" placeholder="Dejá acá tu reporte, comentario, sugerencia o aporte." maxlength="1000"></textarea>
+      <input type="text" id="contacto-medio" placeholder="Medio de contacto para respuesta (opcional)" maxlength="120">
+      <div id="contacto-err" style="font-size:12px;color:#e57373;display:none;margin-bottom:.5rem;"></div>
+      <button class="modal-btn" onclick="enviarSugerencia()">Enviar</button>
+    </div>
+    <div id="contacto-ok" style="display:none;text-align:center;padding:1rem 0;">
+      <div style="font-size:36px;margin-bottom:.75rem;">✅</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:.4rem;">¡Recibido!</div>
+      <div style="font-size:13px;color:var(--muted);">Gracias por tu mensaje. Lo revisaremos pronto.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODE -->
+<div class="page" id="page-prode">
+  <div class="pronto-wrap">
+    <div class="pronto-icon">🎯</div>
+    <div class="pronto-title">Prode — Próximamente</div>
+    <div class="pronto-sub">Participá prediciendo resultados y competí con otros hinchas. ¡Muy pronto disponible!</div>
+  </div>
+</div>
+
+<!-- CALCULADORA -->
+<div class="page" id="page-calculadora">
+  <div class="pronto-wrap">
+    <div class="pronto-icon">🧮</div>
+    <div class="pronto-title">Calculadora — Próximamente</div>
+    <div class="pronto-sub">Simulá resultados y explorá cómo quedarían las tablas y cruces. ¡Muy pronto disponible!</div>
   </div>
 </div>
 
@@ -2069,28 +2175,83 @@ function renderFxCont(){
   document.getElementById("fx-cont").innerHTML=html;
 }
 
-function goPage(id,el){
+function goPage(id, el){
   document.querySelectorAll(".page").forEach(p=>{
-    p.classList.remove("active");
-    if(p.id !== "page-foro") p.style.display='';
-    else p.style.display='none';
+    p.classList.remove("active","page-entering");
+    p.style.display = p.id === "page-foro" ? 'none' : '';
   });
   document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+  // Sync drawer items
+  document.querySelectorAll(".drawer-item[id]").forEach(d=>d.classList.remove("active"));
+  const di = document.getElementById("di-"+id);
+  if(di) di.classList.add("active");
+
   const page = document.getElementById("page-"+id);
-  page.style.animation = 'none';
-  page.offsetHeight; // force reflow so animation restarts
-  page.style.animation = '';
-  page.classList.add("active");
-  el.classList.add("active");
-  window.scrollTo(0, 0);
+  if(!page) return;
+  page.classList.add("active","page-entering");
+  if(el) el.classList.add("active");
+  window.scrollTo(0,0);
   if(id==="fixture"){renderFxTabs();renderFxCont();}
-  if(id==="estadisticas"){cargarEstadisticas();}
-  if(id==="planteles"){cargarPlanteles();}
+  if(id==="estadisticas") cargarEstadisticas();
+  if(id==="planteles") cargarPlanteles();
   if(id==="foro"){
     page.style.display="flex";
-    page.style.height="calc(100vh - 52px)";
+    const hdrH = window.innerWidth<=700?52:62;
+    page.style.height=`calc(100vh - ${hdrH}px)`;
     cargarMensajesForo();
   }
+}
+
+// Drawer helpers
+function toggleDrawer(){
+  const d=document.getElementById("drawer");
+  const o=document.getElementById("drawer-overlay");
+  const h=document.getElementById("hamburger");
+  const open=d.classList.toggle("open");
+  o.classList.toggle("open",open);
+  h.classList.toggle("open",open);
+  document.body.style.overflow=open?"hidden":"";
+}
+function closeDrawer(){
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawer-overlay").classList.remove("open");
+  document.getElementById("hamburger").classList.remove("open");
+  document.body.style.overflow="";
+}
+function goPageDrawer(id){
+  closeDrawer();
+  const ni = document.querySelector(`.ni[onclick*="'${id}'"]`);
+  goPage(id, ni || document.createElement('div'));
+}
+
+// Contacto modal
+function abrirContacto(){
+  document.getElementById("contacto-form").style.display="";
+  document.getElementById("contacto-ok").style.display="none";
+  document.getElementById("contacto-texto").value="";
+  document.getElementById("contacto-medio").value="";
+  document.getElementById("contacto-err").style.display="none";
+  document.getElementById("contacto-overlay").classList.add("open");
+}
+function cerrarContacto(){ document.getElementById("contacto-overlay").classList.remove("open"); }
+function closeContactoOutside(e){ if(e.target===document.getElementById("contacto-overlay")) cerrarContacto(); }
+
+async function enviarSugerencia(){
+  const texto = document.getElementById("contacto-texto").value.trim();
+  const medio = document.getElementById("contacto-medio").value.trim();
+  const err = document.getElementById("contacto-err");
+  err.style.display="none";
+  if(!texto){ err.textContent="Escribí tu mensaje antes de enviar."; err.style.display=""; return; }
+  const payload = {
+    contenido: texto,
+    contacto: medio || null,
+    usuario_id: usuarioActual?.id || null,
+    username_display: PERFIL_USUARIO?.username || (usuarioActual ? usuarioActual.email : "Anónimo")
+  };
+  const {error} = await sb.from("sugerencias").insert(payload);
+  if(error){ err.textContent="Error al enviar. Intentá de nuevo."; err.style.display=""; return; }
+  document.getElementById("contacto-form").style.display="none";
+  document.getElementById("contacto-ok").style.display="";
 }
 
 function showSubTab(tab, el){
