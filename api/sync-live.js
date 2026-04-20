@@ -58,9 +58,10 @@ function parseMinuto(html) {
 
 function isFinished(html) {
   // Primary: __NEXT_DATA__ general status (most reliable)
+  // FotMob has 'general' at pageProps.general (new) OR pageProps.content.general (old)
   const nd = getNextData(html);
   if (nd) {
-    const general = nd?.props?.pageProps?.content?.general;
+    const general = nd?.props?.pageProps?.general ?? nd?.props?.pageProps?.content?.general;
     if (general?.finished === true) return true;
     if (typeof general?.status === 'string') {
       const s = general.status.toUpperCase();
@@ -85,10 +86,13 @@ function isLive(html) {
   const hasHT = /MFStatusLiveTimeText[^>]*>\s*(?:HT|ET)\s*</.test(html);
   if (hasHT) return true;
   // Secondary: __NEXT_DATA__ explicit live flag
+  // FotMob has 'general' at pageProps.general (new) OR pageProps.content.general (old)
   const nd = getNextData(html);
   if (nd) {
-    const general = nd?.props?.pageProps?.content?.general;
+    const general = nd?.props?.pageProps?.general ?? nd?.props?.pageProps?.content?.general;
     if (general?.started === true && general?.finished === false) return true;
+    // Also check top-level ongoing flag
+    if (nd?.props?.pageProps?.ongoing === true) return true;
   }
   return false;
 }
