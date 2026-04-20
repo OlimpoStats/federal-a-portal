@@ -749,14 +749,23 @@ function ultimaFechaConPendientes(zona) {
   return fechas.length ? String(fechas[fechas.length-1]) : "1";
 }
 
+function ultimaFechaJugada(zona) {
+  const fechas = Object.keys(FIXTURE[zona] || {}).map(Number).sort((a,b)=>a-b);
+  let ultima = null;
+  for (const f of fechas) {
+    if ((FIXTURE[zona][String(f)]||[]).some(p => p.goles_local !== null)) ultima = f;
+  }
+  return ultima ? String(ultima) : (fechas.length ? String(fechas[0]) : "1");
+}
+
 function aplicarDefaultsFiltros(){
   const zonas = Object.keys(FIXTURE).sort();
   if(!zonas.length) return;
 
   const defaults = [
-    { z: "sel-zona", f: "sel-fecha", upd: actualizarPartidos, smart: true },
-    { z: "er-zona", f: "er-fecha", upd: erActualizar, smart: false },
-    { z: "hs-zona", f: "hs-fecha", upd: hsActualizar, smart: false },
+    { z: "sel-zona", f: "sel-fecha", upd: actualizarPartidos, fecha: z => ultimaFechaJugada(z) },
+    { z: "er-zona", f: "er-fecha", upd: erActualizar, fecha: () => "1" },
+    { z: "hs-zona", f: "hs-fecha", upd: hsActualizar, fecha: z => ultimaFechaConPendientes(z) },
   ];
 
   defaults.forEach(cfg => {
@@ -764,7 +773,7 @@ function aplicarDefaultsFiltros(){
     const fSel = document.getElementById(cfg.f);
     if(!zSel || !fSel) return;
     if(!zSel.value) zSel.value = zonas[0];
-    if(!fSel.value) fSel.value = cfg.smart ? ultimaFechaConPendientes(zSel.value) : "1";
+    if(!fSel.value) fSel.value = cfg.fecha(zSel.value);
     cfg.upd();
   });
 }
@@ -1521,7 +1530,7 @@ function renderPlanilla(containerId, jugadores){
     const trBg = j.titular ? "" : "background:rgba(255,255,255,0.015);";
     const cpBadge = j.es_capitan ? '<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px;margin-right:4px;vertical-align:middle;font-family:Barlow,sans-serif;font-weight:700;">CP</span>' : "";
     html+=`<tr style="${trBg}">
-      <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:center;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="width:68px;"><input type="text" inputmode="numeric" value="${j.id||""}" style="width:64px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--muted);padding:2px 3px;background:transparent;border:1px solid transparent;border-radius:3px;" title="ID Federal" onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onblur="this.style.borderColor='transparent';this.style.background='transparent'" onchange="actualizarJugadorPorId('${containerId}',${i},this.value)"></td>
       <td style="min-width:140px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
       <td style="width:24px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
@@ -2284,6 +2293,23 @@ async function leerPlanillaEquipo(partidoId, equipoId){
   });
 
   rows.sort((a,b)=>(Number(a.numero)||999)-(Number(b.numero)||999));
+
+  // Re-derive titular from jersey number (1-11 = titular, 12-20 = suplente)
+  rows.forEach(r => { const n=parseInt(r.numero); if(n>=1&&n<=20) r.titular=n<=11; });
+
+  // Infer missing cambio_sale: if suplente's number appears as "extra" in another cambio_entra, auto-add cambio_sale
+  rows.forEach(sup => {
+    const entradaEv = (sup.eventos||[]).find(e => e.tipo==="cambio_entra");
+    if(!entradaEv||!entradaEv.extra) return;
+    const jugSale = rows.find(j => String(j.numero)===String(entradaEv.extra).trim());
+    if(!jugSale) return;
+    if(!(jugSale.eventos||[]).some(e=>e.tipo==="cambio_sale")){
+      if(!jugSale.eventos) jugSale.eventos=[];
+      jugSale.eventos.push({tipo:"cambio_sale", minuto:entradaEv.minuto, extra:String(sup.numero)});
+      jugSale.eventos.sort((a,b)=>(a.minuto||0)-(b.minuto||0));
+    }
+  });
+
   return rows;
 }
 
