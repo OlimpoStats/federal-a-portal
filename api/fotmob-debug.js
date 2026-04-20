@@ -2,9 +2,13 @@
 // Usage: /api/fotmob-debug?url=https://www.fotmob.com/es/matches/...
 // Add &full=1 to get full HTML (warning: large)
 
+const DEBUG_TOKEN = process.env.DEBUG_TOKEN;
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  const { url, full } = req.query;
+  const { url, full, token } = req.query;
+  if (!DEBUG_TOKEN || token !== DEBUG_TOKEN)
+    return res.status(401).json({ error: 'Unauthorized' });
   if (!url) return res.status(400).json({ error: 'url param required' });
 
   try {

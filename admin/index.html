@@ -171,6 +171,20 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
   <div style="margin-left:auto;font-size:12px;color:var(--muted);">Panel de administración</div>
 </div>
 
+<!-- Pantalla de acceso denegado (oculta hasta verificar) -->
+<div id="acceso-bloqueado" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:1rem;">
+  <div style="font-size:48px;">🔒</div>
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:#e57373;">Acceso restringido</div>
+  <div style="font-size:13px;color:#666;text-align:center;max-width:320px;">Este panel es de uso exclusivo del administrador.<br>Iniciá sesión con tu cuenta de dueño.</div>
+  <div id="admin-login-wrap" style="display:flex;flex-direction:column;gap:.6rem;width:300px;margin-top:.5rem;">
+    <input type="email" id="adm-email" placeholder="Email" style="background:#1a1a1a;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:.55rem .8rem;color:#f0f0f0;font-size:14px;outline:none;">
+    <input type="password" id="adm-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')admLogin()" style="background:#1a1a1a;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:.55rem .8rem;color:#f0f0f0;font-size:14px;outline:none;">
+    <div id="adm-err" style="font-size:12px;color:#e57373;display:none;"></div>
+    <button onclick="admLogin()" style="background:#e8c44a;color:#111;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;border:none;border-radius:6px;padding:.6rem;cursor:pointer;">Ingresar</button>
+  </div>
+</div>
+
+<div id="layout-wrap" style="display:none;">
 <div class="layout">
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -650,17 +664,61 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 
     <div class="panel" id="panel-foro-admin">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Moderar foro</h2>
-      <div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;">Próximamente: lista de mensajes del foro con opción de eliminar o bloquear usuarios.</div></div>
+      <div class="card"><div class="card-body" id="foro-admin-cont" style="color:var(--muted);font-size:13px;">Cargando reportes...</div></div>
     </div>
 
   </div>
 </div>
+</div><!-- /layout-wrap -->
 
 <script>
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── ACCESO RESTRINGIDO ──
+// Ocultar todo hasta verificar rol
+document.getElementById("layout-wrap").style.display = "none";
+document.getElementById("acceso-bloqueado").style.display = "flex";
+
+async function admLogin(){
+  const email = document.getElementById("adm-email").value.trim();
+  const pass = document.getElementById("adm-pass").value;
+  const err = document.getElementById("adm-err");
+  err.style.display = "none";
+  if(!email||!pass){ err.textContent="Completá los campos."; err.style.display=""; return; }
+  const {error} = await sb.auth.signInWithPassword({email, password: pass});
+  if(error){ err.textContent="Credenciales incorrectas."; err.style.display=""; return; }
+  await verificarAcceso();
+}
+
+async function verificarAcceso(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ document.getElementById("acceso-bloqueado").style.display="flex"; return; }
+  const {data:perfil} = await sb.from("perfiles").select("rol").eq("id", session.user.id).maybeSingle();
+  if(perfil?.rol === "dueno"){
+    document.getElementById("acceso-bloqueado").style.display = "none";
+    document.getElementById("layout-wrap").style.display = "";
+    iniciarAdmin();
+  } else {
+    await sb.auth.signOut();
+    const err = document.getElementById("adm-err");
+    err.textContent = "No tenés permisos para acceder a este panel.";
+    err.style.display = "";
+  }
+}
+
+async function iniciarAdmin(){
+  cargarEscudosDesdeDB();
+  cargarABM();
+  await Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]);
+  actualizarPartidos();
+  actualizarEstadoPlanillaSeleccion();
+}
+
+// Verificar al cargar (por si ya hay sesión activa)
+verificarAcceso();
 
 // ── FIXTURE (cargado desde Supabase) ──
 let FIXTURE = {}; // zona -> fecha -> [{local, visitante, id, estado, ...}]
@@ -853,6 +911,38 @@ function goPanel(id){
   if(id==="abm-arbitros"||id==="abm-estadios"||id==="abm-tecnicos") cargarABM();
   if(id==="abm-equipos") renderEquiposVinculos();
   if(id==="jugadores") cargarJugadores();
+  if(id==="foro-admin") cargarReportesForo();
+}
+
+async function cargarReportesForo(){
+  const cont = document.getElementById("foro-admin-cont");
+  cont.innerHTML = '<span style="color:#666;">Cargando...</span>';
+  const {data, error} = await sb.from("reportes_foro")
+    .select("id, created_at, mensaje_id, mensajes(contenido, eliminado, perfiles(username))")
+    .order("created_at", {ascending: false})
+    .limit(50);
+  if(error || !data){ cont.innerHTML = `<span style="color:#e57373;">Error: ${error?.message||'sin datos'}</span>`; return; }
+  if(!data.length){ cont.innerHTML = '<span style="color:#666;">Sin reportes pendientes.</span>'; return; }
+  const escH = s => String(s||"").replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  cont.innerHTML = data.map(r => {
+    const msg = r.mensajes;
+    const eliminado = msg?.eliminado;
+    return `<div style="padding:.65rem .85rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.75rem;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;color:#555;margin-bottom:.2rem;">msg #${r.mensaje_id} · ${escH(msg?.perfiles?.username||'?')} · ${new Date(r.created_at).toLocaleString('es-AR')}</div>
+        <div style="font-size:13px;color:${eliminado?'#555':'#ccc'};word-break:break-word;">${eliminado?'<em>[eliminado]</em>':escH(msg?.contenido||'')}</div>
+      </div>
+      ${!eliminado?`<button onclick="eliminarMensajeForo(${r.mensaje_id},this)" style="background:#3a1010;color:#e57373;border:1px solid #5a2020;border-radius:5px;padding:.3rem .7rem;cursor:pointer;font-size:12px;flex-shrink:0;">Eliminar</button>`:'<span style="font-size:11px;color:#444;">Ya eliminado</span>'}
+    </div>`;
+  }).join('');
+}
+
+async function eliminarMensajeForo(mensajeId, btn){
+  if(!confirm("¿Eliminar este mensaje del foro?")) return;
+  btn.disabled = true;
+  const {error} = await sb.from("mensajes").update({eliminado: true}).eq("id", mensajeId);
+  if(error){ alert("Error: " + error.message); btn.disabled=false; return; }
+  cargarReportesForo();
 }
 
 // ── PASO 1 ──
@@ -1365,9 +1455,10 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown:
 }
 
 async function callClaude(prompt, imageB64){
+  const {data:{session}} = await sb.auth.getSession();
   const resp = await fetch("/api/procesar",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{"Content-Type":"application/json","Authorization": `Bearer ${session?.access_token||""}`},
     body:JSON.stringify({image: imageB64, prompt: prompt})
   });
   const data = await resp.json();
@@ -3374,13 +3465,7 @@ async function eliminarJugador(){
   cargarJugadores();
 }
 
-// ── INIT ──
-cargarEscudosDesdeDB();
-cargarABM();
-Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(()=>{
-  actualizarPartidos();
-  actualizarEstadoPlanillaSeleccion();
-});
+// Init movido a iniciarAdmin() — se llama solo si el rol es "dueno"
 
 // ── EXPORTAR JUGADORES ───────────────────────────────────────────────────────
 

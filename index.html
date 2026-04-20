@@ -366,6 +366,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <input type="email" placeholder="Correo electrónico" id="inp-email" onkeydown="if(event.key==='Enter')loginConEmail()">
       <input type="password" placeholder="Contraseña" id="inp-pass" onkeydown="if(event.key==='Enter')loginConEmail()">
       <button class="modal-btn" onclick="loginConEmail()">Ingresar</button>
+      <div class="modal-sub">¿Olvidaste tu contraseña? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('recuperar')">Recuperar</span></div>
       <div class="modal-sub">¿No tenés cuenta? <span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('registro')">Registrate</span></div>
     </div>
     <div id="panel-registro" style="display:none;">
@@ -388,6 +389,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div id="perfil-info" style="margin-bottom:1.25rem;"></div>
       <button class="modal-btn" onclick="mostrarPanel('cambiar-email')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">Cambiar email</button>
       <button class="modal-btn" onclick="cerrarSesion()" style="background:transparent;border:1px solid #e57373;color:#e57373;margin-top:.5rem;">Cerrar sesión</button>
+    </div>
+    <div id="panel-recuperar" style="display:none;">
+      <div class="modal-title" style="font-size:18px;">Recuperar contraseña</div>
+      <input type="email" placeholder="Tu correo electrónico" id="rec-email" autocomplete="email">
+      <div id="rec-msg" style="font-size:12px;display:none;margin-bottom:.5rem;"></div>
+      <button class="modal-btn" onclick="recuperarPassword()">Enviar link de recuperación</button>
+      <div class="modal-sub"><span style="color:var(--accent);cursor:pointer" onclick="mostrarPanel('login')">← Volver</span></div>
     </div>
     <div id="panel-cambiar-email" style="display:none;">
       <div class="modal-title" style="font-size:18px;">Cambiar email</div>
@@ -557,14 +565,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     </div>
   </div>
   <script>
-    // Try to show the PDF in iframe, fallback to download link
     (function(){
       const iframe = document.getElementById('reglamento-iframe');
       const fallback = document.getElementById('reglamento-fallback');
+      // iOS Safari never renders PDFs in iframes — show download button directly
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if(isIOS){ fallback.style.display='block'; return; }
       if(iframe){
         iframe.onload = function(){ iframe.style.display='block'; fallback.style.display='none'; };
         iframe.onerror = function(){ iframe.style.display='none'; fallback.style.display='block'; };
-        iframe.src = iframe.src; // trigger load
+        iframe.src = iframe.src;
       }
     })();
   </script>
@@ -756,11 +766,24 @@ sb.auth.onAuthStateChange((event, session) => {
 let PERFIL_USUARIO = null;
 
 function mostrarPanel(panel){
-  ['login','registro','perfil','cambiar-email'].forEach(p=>{
+  ['login','registro','perfil','cambiar-email','recuperar'].forEach(p=>{
     const el=document.getElementById('panel-'+p);
     if(el) el.style.display=p===panel?'':'none';
   });
   if(panel==='registro') poblarSelectEquipos();
+}
+
+async function recuperarPassword(){
+  const email = document.getElementById("rec-email").value.trim();
+  const msg = document.getElementById("rec-msg");
+  msg.style.display = "none";
+  if(!email){ msg.style.color="#e57373"; msg.textContent="Ingresá tu email."; msg.style.display=""; return; }
+  const {error} = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+  if(error){ msg.style.color="#e57373"; msg.textContent=error.message; }
+  else { msg.style.color="#4caf50"; msg.textContent="¡Revisá tu email! Te enviamos un link para restablecer tu contraseña."; }
+  msg.style.display="";
 }
 
 function abrirModal(){
@@ -931,6 +954,23 @@ async function votarMensaje(mensajeId, valor){
     await sb.from("votos").insert({mensaje_id: mensajeId, usuario_id: usuarioActual.id, valor});
   }
   cargarMensajesForo(FORO_PAGINA);
+}
+
+async function reportarMensaje(mensajeId, btn){
+  if(!confirm("¿Reportar este mensaje?")) return;
+  btn.disabled = true;
+  btn.style.opacity = ".15";
+  await sb.from("reportes_foro").insert({
+    mensaje_id: mensajeId,
+    usuario_id: usuarioActual?.id || null
+  }).then(({error})=>{
+    if(error) console.warn("Reporte fallido:", error.message);
+  });
+  btn.title = "Mensaje reportado";
+  const ok = document.createElement('span');
+  ok.textContent = "Reportado";
+  ok.style.cssText = "position:absolute;top:6px;right:6px;font-size:9px;color:#666;";
+  btn.replaceWith(ok);
 }
 
 function tiempoRelativo(ts){
@@ -2096,27 +2136,30 @@ function renderForoMsgs(msgs, pagina=0, total=0){
   const svgThumbUp = '<svg width="13" height="13" viewBox="0 0 24 24" fill="FILL" stroke="STROKE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/><\/svg>';
   const svgThumbDn = '<svg width="13" height="13" viewBox="0 0 24 24" fill="FILL" stroke="STROKE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/><\/svg>';
   const svgThumb = (up, active, color) => (up ? svgThumbUp : svgThumbDn).replace('FILL', active ? color : 'none').replace('STROKE', active ? color : '#555');
+  const escHtml = s => String(s||"").replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   document.getElementById("foro-msgs").innerHTML = msgs.map(m=>{
     const votos = m.votos || {pos:0, neg:0};
     const miVoto = m.miVoto || 0;
     const upActive = miVoto === 1, downActive = miVoto === -1;
     const net = votos.pos - votos.neg;
+    const svgAlert = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
     return `
-    <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;">
+    <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;position:relative;">
       <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
         ${escudoHTML(m.equipo,'esc')}
-        <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${m.user}</span>
-        <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${m.rango}</span>
-        <span style="font-size:9px;color:#666;text-align:center;">${m.tiempo}</span>
+        <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${escHtml(m.user)}</span>
+        <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${escHtml(m.rango)}</span>
+        <span style="font-size:9px;color:#666;text-align:center;">${escHtml(m.tiempo)}</span>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;">
-        <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${m.texto.replace(/</g,'&lt;')}</div>
+        <div style="flex:1;padding:.75rem 1.25rem;font-size:15px;color:#e8e8e8;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:flex;align-items:center;">${escHtml(m.texto)}</div>
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3rem;padding:.25rem .75rem .35rem;">
           <button onclick="votarMensaje(${m.id},1)" title="Me gusta" style="display:inline-flex;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;color:${upActive?'#4caf50':'#555'};font-size:11px;">${svgThumb(true,upActive,'#4caf50')}</button>
           <span style="font-size:11px;color:${net>0?'#4caf50':net<0?'#e57373':'#555'};min-width:14px;text-align:center;">${net>0?'+':''}${net}</span>
           <button onclick="votarMensaje(${m.id},-1)" title="No me gusta" style="display:inline-flex;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;color:${downActive?'#e57373':'#555'};font-size:11px;">${svgThumb(false,downActive,'#e57373')}</button>
         </div>
       </div>
+      <button onclick="reportarMensaje(${m.id},this)" title="Reportar mensaje" style="position:absolute;top:6px;right:6px;background:none;border:none;cursor:pointer;opacity:.35;padding:3px;line-height:1;transition:opacity .15s;" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='.35'">${svgAlert}</button>
     </div>`;
   }).join("");
   // Pagination nav
