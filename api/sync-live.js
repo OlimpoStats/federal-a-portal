@@ -139,9 +139,10 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Missing env vars' });
 
   try {
-    const fixtures = await sbGet('fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual');
+    const today = new Date().toISOString().slice(0, 10);
+    const fixtures = await sbGet(`fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual,dia&or=(dia.eq.${today},estado.eq.en_curso)`);
     if (!Array.isArray(fixtures)) return res.status(500).json({ error: 'DB error' });
-    if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures' });
+    if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures today', today });
 
     const results = [];
 
