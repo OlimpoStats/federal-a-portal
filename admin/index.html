@@ -2232,14 +2232,23 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
     const idFederal = String(j.id_federal || j.id || "");
     if(!idFederal) continue;
 
-    // Check if jugador already exists - if so, preserve nombre_display
-    const {data:jExist} = await sb.from("jugadores").select("id,nombre_display").eq("id_federal", idFederal).maybeSingle();
-    const {data:jDB} = await sb.from("jugadores").upsert({
-      id_federal: idFederal,
-      nombre: j.nombre,
-      nombre_display: jExist?.nombre_display || j.nombre,  // preserve existing nombre_display
-      equipo_id: equipoId,
-    }, { onConflict:"id_federal" }).select("id").single();
+    // If jugador already exists, NEVER touch nombre or nombre_display — only update equipo_id
+    const {data:jExist} = await sb.from("jugadores").select("id").eq("id_federal", idFederal).maybeSingle();
+    let jDB;
+    if(jExist){
+      // Player exists: just update equipo_id, preserve all profile data
+      const {data} = await sb.from("jugadores").update({ equipo_id: equipoId }).eq("id", jExist.id).select("id").single();
+      jDB = data;
+    } else {
+      // New player: create with planilla name as both nombre and nombre_display
+      const {data} = await sb.from("jugadores").insert({
+        id_federal: idFederal,
+        nombre: j.nombre,
+        nombre_display: j.nombre,
+        equipo_id: equipoId,
+      }).select("id").single();
+      jDB = data;
+    }
 
     if(!jDB) continue;
 
