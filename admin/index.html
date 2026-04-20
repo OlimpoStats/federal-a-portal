@@ -185,6 +185,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-item" onclick="goPanel('abm-estadios')"><span class="sb-icon">🏟️</span>Estadios</div>
     <div class="sb-item" onclick="goPanel('abm-tecnicos')"><span class="sb-icon">👔</span>Directores Técnicos</div>
     <div class="sb-item" onclick="goPanel('abm-equipos')"><span class="sb-icon">🔗</span>Equipos / Vínculos</div>
+    <div class="sb-item" onclick="goPanel('actualizacion-jugadores')"><span class="sb-icon">🔄</span>Actualizar Jugadores</div>
     <div class="sb-item" onclick="goPanel('import-plantel')"><span class="sb-icon">📥</span>Importar Planteles</div>
     <div class="sb-section">Foro</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
@@ -504,6 +505,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <option value="peso_kg">Peso</option>
             <option value="pierna_habil">Pierna hábil</option>
           </select>
+          <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
           <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
         </div>
@@ -608,6 +610,25 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     </div>
 
     <!-- ===================== FORO ADMIN ===================== -->
+    <!-- ===================== ACTUALIZACION JUGADORES ===================== -->
+    <div class="panel" id="panel-actualizacion-jugadores">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.4rem;">Actualizar datos de jugadores</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Subí un archivo llamado exactamente <strong>Actualizacion.xlsx</strong> (generado desde el panel de Jugadores). Solo se completan campos vacíos — los datos existentes no se modifican.</p>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <input type="file" id="act-xlsx-input" accept=".xlsx" style="flex:1;min-width:200px;">
+          <button class="btn btn-primary" onclick="importarActualizacion()">📥 Importar actualización</button>
+        </div>
+        <div id="act-import-progress" style="display:none;margin-bottom:.75rem;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:.4rem;" id="act-import-status">Procesando...</div>
+          <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;">
+            <div id="act-import-bar" style="height:100%;background:#5dba7d;border-radius:3px;width:0%;transition:width .3s;"></div>
+          </div>
+        </div>
+        <div id="act-import-log" style="font-size:12px;color:var(--muted);max-height:320px;overflow-y:auto;font-family:monospace;line-height:1.6;"></div>
+      </div></div>
+    </div>
+
     <!-- ===================== IMPORTAR PLANTELES ===================== -->
     <div class="panel" id="panel-import-plantel">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.4rem;">Importar Planteles desde Excel</h2>
@@ -3360,6 +3381,134 @@ Promise.all([cargarFixture(), cargarEquiposInfo(), cargarMapaPlanillas()]).then(
   actualizarPartidos();
   actualizarEstadoPlanillaSeleccion();
 });
+
+// ── EXPORTAR JUGADORES ───────────────────────────────────────────────────────
+
+function exportarJugadoresExcel(){
+  const lista = document.getElementById("jug-filtro-faltante");
+  const q = (document.getElementById("jug-buscar")?.value||"").toLowerCase().trim();
+  const faltante = lista?.value||"";
+  let rows = JUGADORES_CACHE;
+  if(q) rows = rows.filter(j =>
+    (j.nombre_display||"").toLowerCase().includes(q) ||
+    (j.nombre||"").toLowerCase().includes(q) ||
+    String(j.id_federal||"").includes(q)
+  );
+  if(faltante === '__mismo_nombre') rows = rows.filter(j => j.nombre && j.nombre_display && j.nombre_display === j.nombre);
+  else if(faltante) rows = rows.filter(j => !j[faltante]);
+
+  const data = [
+    ["ID Federal","Common Name","Nombre Completo","Club","Posición","Fecha Nacimiento","Lugar Nacimiento","Altura (m)","Peso (kg)","Pierna Hábil"]
+  ];
+  rows.forEach(j => data.push([
+    j.id_federal||"",
+    j.nombre_display||"",
+    j.nombre||"",
+    j.equipos?.nombre||"",
+    j.posicion||"",
+    j.fecha_nacimiento||"",
+    j.lugar_nacimiento||"",
+    j.altura_m!=null ? j.altura_m : "",
+    j.peso_kg!=null ? j.peso_kg : "",
+    j.pierna_habil||""
+  ]));
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  // Column widths
+  ws['!cols'] = [12,22,32,24,16,18,24,10,10,14].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Jugadores");
+  XLSX.writeFile(wb, "Actualizacion.xlsx");
+}
+
+// ── IMPORTAR ACTUALIZACION.XLSX ───────────────────────────────────────────────
+
+async function importarActualizacion(){
+  const fileInput = document.getElementById('act-xlsx-input');
+  const logEl = document.getElementById('act-import-log');
+  const progEl = document.getElementById('act-import-progress');
+  const statusEl = document.getElementById('act-import-status');
+  const barEl = document.getElementById('act-import-bar');
+
+  if(!fileInput.files[0]){ alert('Seleccioná el archivo Actualizacion.xlsx.'); return; }
+  if(fileInput.files[0].name !== 'Actualizacion.xlsx'){
+    alert('El archivo debe llamarse exactamente "Actualizacion.xlsx".');
+    return;
+  }
+
+  logEl.innerHTML = '';
+  progEl.style.display = '';
+  barEl.style.width = '0%';
+  const log = (msg, color='') => {
+    logEl.innerHTML += `<div style="${color?'color:'+color:''}">▸ ${msg}</div>`;
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  // Column index mapping (0-based): matches export header order
+  const COL = {
+    id_federal: 0, nombre_display: 1, nombre: 2, club: 3,
+    posicion: 4, fecha_nacimiento: 5, lugar_nacimiento: 6,
+    altura_m: 7, peso_kg: 8, pierna_habil: 9
+  };
+  // Fields we can fill (excluding id and club which are handled separately)
+  const FILLABLE = ['nombre_display','nombre','posicion','fecha_nacimiento','lugar_nacimiento','altura_m','peso_kg','pierna_habil'];
+
+  try {
+    const buf = await fileInput.files[0].arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array', raw:false, cellDates:false });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, defval:'' });
+
+    // Skip header row
+    const dataRows = rows.slice(1).filter(r => r[COL.id_federal]);
+    log(`Filas leídas: ${dataRows.length}`);
+
+    let updated = 0, skipped = 0, notFound = 0;
+    const total = dataRows.length;
+
+    for(let i=0; i<dataRows.length; i++){
+      barEl.style.width = `${Math.round(((i+1)/total)*100)}%`;
+      const row = dataRows[i];
+      const idFederal = String(row[COL.id_federal]).trim();
+      if(!idFederal) continue;
+
+      // Fetch current DB state for this player
+      const {data:jDB} = await sb.from('jugadores').select('id,nombre_display,nombre,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil').eq('id_federal', idFederal).maybeSingle();
+      if(!jDB){ notFound++; log(`  ⚠ ID ${idFederal} no encontrado en DB`, '#f0b429'); continue; }
+
+      // Build update object with only truly empty fields
+      const patch = {};
+      for(const field of FILLABLE){
+        const colIdx = COL[field];
+        const fileVal = String(row[colIdx]||"").trim();
+        if(!fileVal) continue; // nothing in file for this field
+        const dbVal = jDB[field];
+        if(dbVal === null || dbVal === undefined || dbVal === '') {
+          // Field is empty in DB → fill it
+          if(field === 'altura_m') patch[field] = parseFloat(fileVal.replace(',','.')) || null;
+          else if(field === 'peso_kg') patch[field] = parseInt(fileVal) || null;
+          else patch[field] = fileVal;
+        }
+      }
+
+      if(Object.keys(patch).length === 0){ skipped++; continue; }
+
+      const {error} = await sb.from('jugadores').update(patch).eq('id', jDB.id);
+      if(error){ log(`  ✗ Error actualizando ID ${idFederal}: ${error.message}`, '#ef9a9a'); }
+      else { updated++; }
+    }
+
+    barEl.style.width = '100%';
+    statusEl.textContent = 'Completado.';
+    log(`─────────────────────────────────────────`, '#555');
+    log(`✓ ${updated} jugadores actualizados, ${skipped} sin cambios, ${notFound} no encontrados.`,
+        notFound ? '#f0b429' : '#7ecb7e');
+    if(updated > 0) cargarJugadores();
+  } catch(e){
+    log(`✗ Error fatal: ${e.message}`, '#ef9a9a');
+    statusEl.textContent = 'Error.';
+  }
+}
 
 // ── IMPORTAR PLANTELES ────────────────────────────────────────────────────────
 
