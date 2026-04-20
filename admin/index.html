@@ -2240,11 +2240,11 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
       const {data} = await sb.from("jugadores").update({ equipo_id: equipoId }).eq("id", jExist.id).select("id").single();
       jDB = data;
     } else {
-      // New player: create with planilla name as both nombre and nombre_display
+      // New player: create with planilla name; generate common name by rule
       const {data} = await sb.from("jugadores").insert({
         id_federal: idFederal,
         nombre: j.nombre,
-        nombre_display: j.nombre,
+        nombre_display: generarCommonName(j.nombre),
         equipo_id: equipoId,
       }).select("id").single();
       jDB = data;
@@ -3122,6 +3122,26 @@ async function vincularEquipo(nombre, campo, valor){
 let JUGADORES_CACHE = [];
 let EQUIPOS_ID_MAP = {}; // nombre -> id
 
+function generarCommonName(nombreCompleto){
+  // Input: "APELLIDOS, Nombres" → Output: "Primer Nombre Apellido(s)"
+  if(!nombreCompleto) return nombreCompleto || "";
+  const commaIdx = nombreCompleto.indexOf(',');
+  if(commaIdx === -1) return nombreCompleto; // can't parse, return as-is
+  const apellidosPart = nombreCompleto.slice(0, commaIdx).trim();
+  const nombresPart = nombreCompleto.slice(commaIdx + 1).trim();
+  const primerNombre = nombresPart.split(/\s+/)[0] || "";
+  const apellidoWords = apellidosPart.split(/\s+/).filter(Boolean);
+  // Include words while ≤3 letters, stop after first word >3. Max 3 words.
+  const bloque = [];
+  for(const w of apellidoWords){
+    if(bloque.length >= 3) break;
+    bloque.push(w);
+    if(w.length > 3) break;
+  }
+  const cap = w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : "";
+  return `${cap(primerNombre)} ${bloque.map(cap).join(" ")}`.trim();
+}
+
 async function cargarJugadores(){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
@@ -3135,7 +3155,7 @@ async function cargarJugadores(){
     JUGADORES_CACHE = jData || [];
     EQUIPOS_ID_MAP = {};
     (eqData||[]).forEach(e => EQUIPOS_ID_MAP[e.nombre] = e.id);
-    renderJugadores(JUGADORES_CACHE);
+    buscarJugadores(); // respects active search + filter
   } catch(e){
     lista.innerHTML = `<div style="color:#e57373;">Error: ${e.message}</div>`;
   }
@@ -3429,14 +3449,24 @@ async function importarPlantelExcel(){
       // Deduplicate by id_federal (keep last occurrence)
       const deduped = [...new Map(batch.map(r => [r.id_federal, r])).values()];
 
-      // Upsert in chunks of 50
+      // Upsert profile fields WITHOUT nombre_display — preserves existing common names
+      // For new players (nombre_display will be null after upsert), generate it below
       const CHUNK = 50;
       let sheetOk = 0, sheetErr = 0;
       for(let i=0; i<deduped.length; i+=CHUNK){
         const chunk = deduped.slice(i, i+CHUNK);
+        // Don't include nombre_display → existing rows keep theirs; new rows get null
         const {error: uErr} = await sb.from('jugadores').upsert(chunk, { onConflict:'id_federal', ignoreDuplicates:false });
-        if(uErr){ sheetErr += chunk.length; log(`  ✗ Error en chunk ${i/CHUNK+1}: ${uErr.message}`, '#ef9a9a'); }
-        else sheetOk += chunk.length;
+        if(uErr){ sheetErr += chunk.length; log(`  ✗ Error en chunk ${i/CHUNK+1}: ${uErr.message}`, '#ef9a9a'); continue; }
+        sheetOk += chunk.length;
+
+        // Fix new players that have no nombre_display yet
+        const chunkIds = chunk.map(r => r.id_federal);
+        const {data: nullRows} = await sb.from('jugadores').select('id,id_federal').in('id_federal', chunkIds).is('nombre_display', null);
+        for(const row of (nullRows||[])){
+          const orig = chunk.find(r => r.id_federal === row.id_federal);
+          if(orig) await sb.from('jugadores').update({ nombre_display: generarCommonName(orig.nombre) }).eq('id', row.id);
+        }
       }
       log(`✓ ${sheetName} — ${sheetOk} jugadores${sheetErr?` (${sheetErr} errores)`:''}`, sheetErr?'#f0b429':'#7ecb7e');
       totalUpserted += sheetOk;
