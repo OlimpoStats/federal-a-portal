@@ -912,14 +912,14 @@ async function actualizarIconoUsuario(){
     btn.style.borderColor="var(--accent)";
     btn.title="Mi cuenta";
     if(!PERFIL_USUARIO){
-      const {data}=await sb.from("perfiles").select("username,nombre,apellido,rango,equipos(nombre)").eq("id",usuarioActual.id).maybeSingle();
+      const {data}=await sb.from("perfiles").select("username,nombre,apellido,rango,rol,equipos(nombre)").eq("id",usuarioActual.id).maybeSingle();
       if(!data && usuarioActual.user_metadata?.username){
         const meta = usuarioActual.user_metadata;
         await sb.from("perfiles").insert({
           id: usuarioActual.id, nombre: meta.nombre||'', apellido: meta.apellido||'',
           username: meta.username, equipo_id: meta.equipo_id||null,
           rango: 'Simpatizante', rol: 'usuario', puntos: 0
-        }).select("username,nombre,apellido,rango,equipos(nombre)").maybeSingle()
+        }).select("username,nombre,apellido,rango,rol,equipos(nombre)").maybeSingle()
           .then(r=>{ PERFIL_USUARIO = r.data; });
         return;
       }
@@ -946,7 +946,12 @@ async function actualizarIconoUsuario(){
     }
     const pi=document.getElementById("perfil-info");
     if(pi&&PERFIL_USUARIO){
-      pi.innerHTML=`<div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
+      let avatarHtmlPerfil = '';
+      if(PERFIL_USUARIO.rol==='dueno'){
+        const { data: apd2 } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
+        if(apd2?.publicUrl) avatarHtmlPerfil = `<img src="${apd2.publicUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;border:2px solid var(--accent);">`;
+      }
+      pi.innerHTML=`${avatarHtmlPerfil}<div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:.3rem;">${usuarioActual.email}</div>
         <div style="font-size:11px;color:var(--accent);margin-top:.25rem;">${PERFIL_USUARIO.rango||''}</div>`;
     }
@@ -1018,7 +1023,7 @@ async function cargarMensajesForo(pagina=0){
   try {
     const from = pagina * FORO_POR_PAGINA;
     const {data, count} = await sb.from("mensajes")
-      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, equipos(nombre))", {count:"exact"})
+      .select("id, contenido, created_at, usuario_id, perfiles(username, rango, rol, equipos(nombre))", {count:"exact"})
       .eq("eliminado", false)
       .order("created_at", {ascending: false})
       .range(from, from + FORO_POR_PAGINA - 1);
@@ -1036,10 +1041,13 @@ async function cargarMensajesForo(pagina=0){
         mv?.forEach(v => misVotos[v.mensaje_id] = v.valor);
       }
     }
+    const { data: apForo } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
+    const adminPhotoUrl = apForo?.publicUrl || '';
     const msgs = data.map(m => ({
       id: m.id,
       user: m.perfiles?.username || "Anónimo",
       rango: m.perfiles?.rango || "Simpatizante",
+      rol: m.perfiles?.rol || "",
       equipo: m.perfiles?.equipos?.nombre || "",
       tiempo: tiempoRelativo(m.created_at),
       texto: m.contenido,
@@ -2350,7 +2358,7 @@ function renderForoMsgs(msgs, pagina=0, total=0){
     return `
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;position:relative;">
       <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
-        ${escudoHTML(m.equipo,'esc')}
+        ${m.rol==='dueno'&&adminPhotoUrl ? `<img src="${adminPhotoUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">` : escudoHTML(m.equipo,'esc')}
         <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${escHtml(m.user)}</span>
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${escHtml(m.rango)}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${escHtml(m.tiempo)}</span>
