@@ -1014,7 +1014,7 @@ async function cerrarSesion(){
 // Foro desde Supabase
 let FORO_PAGINA = 0;
 const FORO_POR_PAGINA = 15;
-const ADMIN_PHOTO_URL = (() => { try { return sb.storage.from('Logo admin').getPublicUrl('adminphoto.png').data?.publicUrl || ''; } catch(e){ return ''; } })();
+const ADMIN_PHOTO_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/Logo%20admin/adminphoto.png";
 
 async function cargarMensajesForo(pagina=0){
   FORO_PAGINA = pagina;
