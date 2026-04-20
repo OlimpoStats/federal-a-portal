@@ -149,6 +149,13 @@ module.exports = async (req, res) => {
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
+      // Stale en_curso from a previous day — close without fetching FotMob
+      if (fx.estado === 'en_curso' && fx.dia && fx.dia < today) {
+        const r = await sbPatch(fx.id, { estado: 'jugado' });
+        results.push({ id: fx.id, skip: 'stale-closed', updated: r.ok });
+        continue;
+      }
+
       try {
         const baseUrl = fx.fotmob_url.split('#')[0];
         const url = baseUrl + '?_=' + Date.now();
