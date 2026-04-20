@@ -1390,20 +1390,20 @@ function normalizarPlanilla(planilla, equipo){
     }
   }
 
-  // Inferir cambio_sale: buscar titulares cuyo número aparece en extra de un cambio_entra
+  // Inferir cambio_sale: buscar cualquier jugador (titular o no) cuyo número aparece en extra de un cambio_entra
   const suplentes = normalizados.filter(j => !j.titular);
   suplentes.forEach(sup => {
     const entradaEv = (sup.eventos||[]).find(e => e.tipo === "cambio_entra");
     if(!entradaEv || !entradaEv.extra) return;
     const numSale = String(entradaEv.extra).trim();
-    const titular = normalizados.find(j => j.titular && String(j.numero) === numSale);
-    if(!titular) return;
+    const jugSale = normalizados.find(j => String(j.numero) === numSale);
+    if(!jugSale) return;
     // Verificar que no tenga ya un cambio_sale
-    const yaTieneSale = (titular.eventos||[]).some(e => e.tipo === "cambio_sale");
+    const yaTieneSale = (jugSale.eventos||[]).some(e => e.tipo === "cambio_sale");
     if(!yaTieneSale){
-      if(!titular.eventos) titular.eventos = [];
-      titular.eventos.push({tipo:"cambio_sale", minuto: entradaEv.minuto, extra: String(sup.numero)});
-      titular.eventos.sort((a,b) => (a.minuto||0)-(b.minuto||0));
+      if(!jugSale.eventos) jugSale.eventos = [];
+      jugSale.eventos.push({tipo:"cambio_sale", minuto: entradaEv.minuto, extra: String(sup.numero)});
+      jugSale.eventos.sort((a,b) => (a.minuto||0)-(b.minuto||0));
     }
   });
 
@@ -1489,6 +1489,19 @@ function editarEvento(containerId, jIdx, eIdx){
   abrirAgregarEvento(containerId, jIdx, ev);
 }
 
+function sortPlanillaPorNumero(containerId){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr) return;
+  arr.sort((a,b)=>{
+    const an=parseInt(a.numero)||999, bn=parseInt(b.numero)||999;
+    if(an!==bn) return an-bn;
+    return (a.nombre||"").localeCompare(b.nombre||"");
+  });
+  // Re-derive titular from number after sort
+  arr.forEach(j=>{ const n=parseInt(j.numero); if(n>=1&&n<=20) j.titular=n<=11; });
+  renderPlanilla(containerId, arr);
+}
+
 function renderPlanilla(containerId, jugadores){
   if(!jugadores||!jugadores.length){
     document.getElementById(containerId).innerHTML='<p style="color:var(--muted);font-size:13px;">No se encontraron jugadores.</p>';
@@ -1496,7 +1509,7 @@ function renderPlanilla(containerId, jugadores){
   }
   let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
     <thead><tr>
-      <th style="width:32px">#</th>
+      <th style="width:32px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
       <th style="width:62px">ID</th>
       <th style="width:150px">Nombre</th>
       <th style="width:24px">T</th>
@@ -2019,15 +2032,15 @@ function confirmarEvento(containerId, jIdx){
   if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
   arr[jIdx].eventos.push({tipo, minuto, extra});
 
-  // Auto-add cambio_sale to the player leaving when cambio_entra is added
+  // Auto-add cambio_sale to the player leaving when cambio_entra is added (any player, not just titulares)
   if(tipo==="cambio_entra" && extra){
     const numSale = String(extra).trim();
-    const titular = arr.find(j => j.titular && String(j.numero)===numSale);
-    if(titular){
-      if(!titular.eventos) titular.eventos=[];
-      const yaTiene = titular.eventos.some(e=>e.tipo==="cambio_sale");
+    const jugSale = arr.find(j => String(j.numero)===numSale);
+    if(jugSale){
+      if(!jugSale.eventos) jugSale.eventos=[];
+      const yaTiene = jugSale.eventos.some(e=>e.tipo==="cambio_sale");
       if(!yaTiene){
-        titular.eventos.push({tipo:"cambio_sale", minuto, extra:String(arr[jIdx].numero||"")});
+        jugSale.eventos.push({tipo:"cambio_sale", minuto, extra:String(arr[jIdx].numero||"")});
       }
     }
   }
@@ -2045,7 +2058,17 @@ function confirmarEvento(containerId, jIdx){
 
 function updateJugador(containerId, idx, field, value){
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
-  if(arr&&arr[idx]) arr[idx][field]=value;
+  if(!arr||!arr[idx]) return;
+  arr[idx][field]=value;
+  if(field==="numero"){
+    const n = parseInt(value);
+    if(n>=1 && n<=20) arr[idx].titular = n<=11;
+    arr.sort((a,b)=>{
+      const an=parseInt(a.numero)||999, bn=parseInt(b.numero)||999;
+      return an-bn;
+    });
+    renderPlanilla(containerId, arr);
+  }
 }
 
 async function actualizarJugadorPorId(containerId, idx, nuevoId){
