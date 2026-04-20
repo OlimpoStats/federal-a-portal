@@ -928,10 +928,8 @@ async function actualizarIconoUsuario(){
     const isDueno = PERFIL_USUARIO?.rol === 'dueno';
     const btnMob = document.getElementById("user-btn-mob");
     if(isDueno){
-      const { data: apd } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
-      const apUrl = apd?.publicUrl || '';
-      const avatarHtml = apUrl
-        ? `<img src="${apUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      const avatarHtml = ADMIN_PHOTO_URL
+        ? `<img src="${ADMIN_PHOTO_URL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
         : `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
       btn.innerHTML = avatarHtml;
       if(btnMob) btnMob.innerHTML = avatarHtml;
@@ -947,9 +945,8 @@ async function actualizarIconoUsuario(){
     const pi=document.getElementById("perfil-info");
     if(pi&&PERFIL_USUARIO){
       let avatarHtmlPerfil = '';
-      if(PERFIL_USUARIO.rol==='dueno'){
-        const { data: apd2 } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
-        if(apd2?.publicUrl) avatarHtmlPerfil = `<img src="${apd2.publicUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;border:2px solid var(--accent);">`;
+      if(PERFIL_USUARIO.rol==='dueno' && ADMIN_PHOTO_URL){
+        avatarHtmlPerfil = `<img src="${ADMIN_PHOTO_URL}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;border:2px solid var(--accent);">`;
       }
       pi.innerHTML=`${avatarHtmlPerfil}<div style="font-size:17px;font-weight:700;">${PERFIL_USUARIO.nombre||''} ${PERFIL_USUARIO.apellido||''}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:.3rem;">${usuarioActual.email}</div>
@@ -1017,6 +1014,7 @@ async function cerrarSesion(){
 // Foro desde Supabase
 let FORO_PAGINA = 0;
 const FORO_POR_PAGINA = 15;
+const ADMIN_PHOTO_URL = (() => { try { return sb.storage.from('Logo admin').getPublicUrl('adminphoto.png').data?.publicUrl || ''; } catch(e){ return ''; } })();
 
 async function cargarMensajesForo(pagina=0){
   FORO_PAGINA = pagina;
@@ -1041,8 +1039,6 @@ async function cargarMensajesForo(pagina=0){
         mv?.forEach(v => misVotos[v.mensaje_id] = v.valor);
       }
     }
-    const { data: apForo } = sb.storage.from('Logo admin').getPublicUrl('adminphoto.png');
-    const adminPhotoUrl = apForo?.publicUrl || '';
     const msgs = data.map(m => ({
       id: m.id,
       user: m.perfiles?.username || "Anónimo",
@@ -2358,7 +2354,7 @@ function renderForoMsgs(msgs, pagina=0, total=0){
     return `
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:90px;max-width:1600px;position:relative;">
       <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;padding:.65rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
-        ${m.rol==='dueno'&&adminPhotoUrl ? `<img src="${adminPhotoUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">` : escudoHTML(m.equipo,'esc')}
+        ${m.rol==='dueno'&&ADMIN_PHOTO_URL ? `<img src="${ADMIN_PHOTO_URL}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">` : escudoHTML(m.equipo,'esc')}
         <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${escHtml(m.user)}</span>
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${escHtml(m.rango)}</span>
         <span style="font-size:9px;color:#666;text-align:center;">${escHtml(m.tiempo)}</span>
