@@ -30,8 +30,8 @@ async function sbPatch(id, data) {
 }
 
 async function sbCloseStale(today) {
-  // Bulk-close all en_curso fixtures from before today in one UPDATE
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?estado=eq.en_curso&dia=lt.${today}`, {
+  // Bulk-close all en_curso fixtures from before today (or with no date set)
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?estado=eq.en_curso&or=(dia.lt.${today},dia.is.null)`, {
     method: 'PATCH',
     headers: {
       'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
