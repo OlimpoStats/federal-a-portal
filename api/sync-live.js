@@ -165,7 +165,7 @@ module.exports = async (req, res) => {
         const live = !finished && isLive(html);
         const implicitFinished = !live && !finished && fx.estado === 'en_curso';
 
-        if (!live && !implicitFinished) {
+        if (!live && !implicitFinished && !finished) {
           results.push({ id: fx.id, skip: 'not live' });
           continue;
         }
