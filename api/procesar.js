@@ -31,10 +31,7 @@ export default async function handler(req, res) {
     let perfiles = [];
     try { perfiles = JSON.parse(perfilesRaw); } catch(e){}
     if (!Array.isArray(perfiles) || perfiles[0]?.rol !== "dueno")
-      return res.status(403).json({
-        error: "Forbidden",
-        _d: { uid: userId?.slice(0,8), http: profileRes.status, isArr: Array.isArray(perfiles), len: Array.isArray(perfiles)?perfiles.length:0, rol: Array.isArray(perfiles)?perfiles[0]?.rol:perfilesRaw.slice(0,120) }
-      });
+      return res.status(403).json({ error: "Forbidden" });
   } catch(e) {
     return res.status(401).json({ error: "Auth check failed" });
   }
