@@ -3421,30 +3421,101 @@ function renderSegundaFase(){
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 
-const _loadingHTML = '<div style="padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.5px;">Cargando datos...</div>';
-async function init(){
-  // Mostrar estado de carga mientras Supabase responde
-  ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.innerHTML = _loadingHTML;
-  });
+// ── CACHÉ LOCAL (stale-while-revalidate) ──
+const _CACHE_KEY = 'fa_v3';
+const _CACHE_TTL = 10 * 60 * 1000; // 10 min
 
-  // Cargar datos principales (crítico) y escudos en paralelo
-  // cargarEscudos no bloquea el render si falla
-  const _escPromise = cargarEscudos().catch(()=>{});
-  try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
-  await _escPromise;
-
-  try { await diagnosticoIntegridad(); } catch(e){}
+function _guardarCache(){
   try {
-    const f = fechaInteligente();
-    fechaActual = f;
-    renderPartidos(f);
-    renderTablas();
-    renderSegundaFase();
-    renderGoleadoresResumen();
-  } catch(e){ console.error("[init] render:", e); }
+    const fichas = [];
+    Object.entries(FIXTURE).forEach(([z, fechas]) => {
+      Object.entries(fechas).forEach(([f, ms]) => {
+        ms.forEach(m => {
+          fichas.push({z, f:+f, l:m.local, v:m.visitante,
+            gl:m.gl??null, gv:m.gv??null,
+            estado:m.estado||null, minuto_actual:m.minuto_actual||null,
+            goleadores:m.goleadores||null, fotmob_url:m.fotmob_url||null});
+        });
+      });
+    });
+    localStorage.setItem(_CACHE_KEY, JSON.stringify({
+      ts: Date.now(), fichas,
+      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA
+    }));
+  } catch(e){}
+}
+
+function _leerCache(){
+  try {
+    const raw = localStorage.getItem(_CACHE_KEY);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    if(!d?.ts || Date.now() - d.ts > _CACHE_TTL) return null;
+    return d;
+  } catch(e){ return null; }
+}
+
+function _aplicarCache(d){
+  try {
+    (d.fichas||[]).forEach(({z,f,l,v,gl,gv,estado,minuto_actual,goleadores,fotmob_url}) => {
+      const ms = FIXTURE[z]?.[String(f)];
+      if(!ms) return;
+      const m = ms.find(x => x.local===l && x.visitante===v);
+      if(!m) return;
+      m.gl = gl; m.gv = gv;
+      if(estado) m.estado = estado;
+      if(minuto_actual) m.minuto_actual = minuto_actual;
+      if(goleadores) m.goleadores = goleadores;
+      if(fotmob_url) m.fotmob_url = fotmob_url;
+    });
+    Object.assign(PARTIDO_META, d.meta||{});
+    Object.assign(ESCUDOS, d.esc||{});
+    Object.assign(PLANILLA_CARGADA, d.pl||{});
+  } catch(e){}
+}
+
+const _loadingHTML = '<div style="padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.5px;">Cargando datos...</div>';
+
+async function _renderTodo(){
+  const f = fechaInteligente();
+  fechaActual = f;
+  renderPartidos(f);
+  renderTablas();
+  renderSegundaFase();
+  renderGoleadoresResumen();
+}
+
+async function _refrescarSilencioso(){
+  try {
+    const _escPromise = cargarEscudos().catch(()=>{});
+    await cargarPartidosDesdeDB();
+    await _escPromise;
+    try { await diagnosticoIntegridad(); } catch(e){}
+    try { await _renderTodo(); } catch(e){}
+    _guardarCache();
+  } catch(e){}
   try { iniciarPollingEnVivo(); } catch(e){}
+}
+
+async function init(){
+  const cached = _leerCache();
+  if(cached){
+    _aplicarCache(cached);
+    try { await _renderTodo(); } catch(e){}
+    _refrescarSilencioso();
+  } else {
+    ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = _loadingHTML;
+    });
+    const _escPromise = cargarEscudos().catch(()=>{});
+    try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
+    await _escPromise;
+    try { await diagnosticoIntegridad(); } catch(e){}
+    try { await _renderTodo(); } catch(e){ console.error("[init] render:", e); }
+    _guardarCache();
+    try { iniciarPollingEnVivo(); } catch(e){}
+  }
 }
 init();
 
@@ -3464,6 +3535,7 @@ function activarPolling(){
       renderTablas();
       renderSegundaFase();
       renderGoleadoresResumen();
+      _guardarCache();
     } catch(e){}
   }, 60000);
 }
