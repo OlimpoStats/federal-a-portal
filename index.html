@@ -2207,7 +2207,7 @@ function renderFxCont(){
       const hasBtns=fichaBtn||streamBtn;
       const partidoEl=`<div class="partido" style="flex:1;"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
       html+=hasBtns
-        ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;flex-direction:column;gap:.25rem;justify-content:center;">${fichaBtn}${streamBtn}</div></div>`
+        ? `<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">${fichaBtn}${streamBtn}</div></div>`
         : `<div style="margin-bottom:.5rem;">${partidoEl}</div>`;
     });
   }
@@ -3076,7 +3076,7 @@ async function cargarEstadisticas(){
       const bannerHtml='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:nowrap;justify-content:space-around;">'
         +'<div style="text-align:center;"><div style="'+bc+'color:var(--accent);">'+totalPen+'</div><div style="font-size:11px;color:var(--muted);">Pateados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#4caf50;">'+totalGol+'</div><div style="font-size:11px;color:var(--muted);">Convertidos</div></div>'
-        +'<div style="text-align:center;"><div style="'+bc+'color:#e57373;">'+(totalPen-totalGol)+'</div><div style="font-size:11px;color:var(--muted);">No convertidos</div></div>'
+        +'<div style="text-align:center;"><div style="'+bc+'color:#e57373;">'+(totalPen-totalGol-totalAtaj)+'</div><div style="font-size:11px;color:var(--muted);">Desviados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'color:#5daadd;">'+totalAtaj+'</div><div style="font-size:11px;color:var(--muted);">Atajados</div></div>'
         +'<div style="text-align:center;"><div style="'+bc+'">'+pct+'%</div><div style="font-size:11px;color:var(--muted);">Efectividad</div></div>'
         +'</div>';
@@ -3147,10 +3147,11 @@ async function cargarEstadisticas(){
                 const arbK = arbitroPorPartido[k] || (PARTIDO_META[k]||{}).arbitro || null;
                 return arbK===arb;
               });
-              const teamsFavor=[...new Set(pensByArb.map(p=>p.equipo_favor).filter(Boolean))];
-              const teamsContra=[...new Set(pensByArb.map(p=>p.equipo_contra).filter(Boolean))];
-              const escFavor=teamsFavor.map(eq=>escudoHTML(eq,'me')).join('');
-              const escContra=teamsContra.map(eq=>escudoHTML(eq,'me')).join('');
+              const cntFavor={}, cntContra={};
+              pensByArb.forEach(p=>{ if(p.equipo_favor) cntFavor[p.equipo_favor]=(cntFavor[p.equipo_favor]||0)+1; if(p.equipo_contra) cntContra[p.equipo_contra]=(cntContra[p.equipo_contra]||0)+1; });
+              const _escBadge=(eq,n)=>`<div style="position:relative;display:inline-flex;">${escudoHTML(eq,'me')}${n>1?`<span style="position:absolute;top:-4px;right:-4px;background:var(--accent);color:#111;font-size:8px;font-weight:800;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;line-height:1;">${n}</span>`:''}</div>`;
+              const escFavor=Object.entries(cntFavor).map(([eq,n])=>_escBadge(eq,n)).join('');
+              const escContra=Object.entries(cntContra).map(([eq,n])=>_escBadge(eq,n)).join('');
               return `<tr style="border-bottom:1px solid var(--border);">
                 <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
@@ -3515,10 +3516,12 @@ function renderPartidosClub(nombre){
   const jugados  = filt==='todos' ? allJugados  : allJugados.filter(p  => filt==='local'?p.esLocal:!p.esLocal);
   const proximos = filt==='todos' ? allProximos : allProximos.filter(p => filt==='local'?p.esLocal:!p.esLocal);
 
+  const tc = _pltData?.clubColor || '';
+  const activeStyle = tc ? `background:${tc}33;color:#f0f0f0;border-color:${tc};` : '';
   const filterBar = `<div class="plt-filter-row">
-    <button class="plt-filter-btn${filt==='todos'?' active':''}" data-f="todos" onclick="setPltFilter('todos')">Todos</button>
-    <button class="plt-filter-btn${filt==='local'?' active':''}" data-f="local" onclick="setPltFilter('local')">Local</button>
-    <button class="plt-filter-btn${filt==='visitante'?' active':''}" data-f="visitante" onclick="setPltFilter('visitante')">Visitante</button>
+    <button class="plt-filter-btn${filt==='local'?' active':''}" data-f="local" onclick="setPltFilter('local')" ${filt==='local'&&tc?`style="${activeStyle}"`:''}>Local</button>
+    <button class="plt-filter-btn${filt==='visitante'?' active':''}" data-f="visitante" onclick="setPltFilter('visitante')" ${filt==='visitante'&&tc?`style="${activeStyle}"`:''}>Visitante</button>
+    <button class="plt-filter-btn${filt==='todos'?' active':''}" data-f="todos" onclick="setPltFilter('todos')" ${filt==='todos'&&tc?`style="${activeStyle}"`:''}>Todos</button>
   </div>`;
 
   let html = filterBar;
