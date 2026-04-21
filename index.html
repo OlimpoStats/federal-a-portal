@@ -12,8 +12,9 @@
 body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
 
 .hdr{background:#111;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:62px;position:sticky;top:0;z-index:10;}
-.logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;color:var(--accent);}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;color:var(--accent);position:relative;}
 .logo span{color:#fff;}
+.logo-beta{position:absolute;bottom:1px;right:-4px;font-family:'Georgia',serif;font-style:italic;font-weight:400;font-size:9px;color:rgba(232,196,74,.65);transform:rotate(-18deg);transform-origin:right bottom;pointer-events:none;letter-spacing:.5px;}
 .nav{display:flex;gap:0;margin-left:auto;align-items:center;}
 .ni{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;letter-spacing:.5px;padding:0 1.1rem;height:62px;display:flex;align-items:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;text-transform:uppercase;}
 .ni:hover{color:var(--text);}
@@ -306,6 +307,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tbl-arbitros thead th:first-child{font-size:11px!important;padding:.25rem .4rem!important;}
   #tbl-arbitros tbody td{font-size:11px!important;padding:.25rem .1rem!important;}
   #tbl-arbitros tbody td:first-child{font-size:11px!important;padding:.25rem .4rem!important;}
+  .arbi-det-row td{font-size:11px!important;padding:.3rem .4rem!important;}
 }
 @media(max-width:400px){
   .ni{font-size:11px;padding:0 .35rem;}
@@ -332,6 +334,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-squad-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#f0f0f0;margin:1.5rem 0 .7rem;}
 .plt-matches-list{display:flex;flex-direction:column;gap:.22rem;margin-bottom:2rem;}
 .plt-filter-row{display:flex;gap:.4rem;margin:.4rem 0 .65rem;}
+.arbi-row{cursor:pointer;transition:background .12s;}
+.arbi-row:hover td{background:rgba(255,255,255,.04)!important;}
+.arbi-row.open td{background:rgba(232,196,74,.05)!important;}
+.arbi-det-row{background:#111;}
+.arbi-det-row td{padding:.5rem .75rem!important;border-bottom:1px solid #1a1a1a;}
+.arbi-match-link{cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:#ddd;transition:color .12s;}
+.arbi-match-link:hover{color:var(--accent);}
 .plt-filter-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.3px;padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
 .plt-filter-btn:hover{color:#ddd;border-color:rgba(255,255,255,.3);}
 .plt-filter-btn.active{background:rgba(255,255,255,.1);color:#f0f0f0;border-color:rgba(255,255,255,.35);}
@@ -354,12 +363,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
 .plt-table thead th{padding:.45rem .55rem;border-bottom:2px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;color:var(--muted);font-weight:700;font-size:11px;user-select:none;transition:color .15s;position:relative;}
-.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:var(--bg);}
+.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:var(--bg);border-right:1px solid rgba(255,255,255,.18);}
 .plt-table thead th:hover{color:#ddd;}
 .plt-table thead th.plt-sorted{color:#fff;}
 .plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
-.plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center;vertical-align:middle;}
-.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--bg);}
+.plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.09);text-align:center;vertical-align:middle;}
+.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--bg);border-right:1px solid rgba(255,255,255,.18);}
 .plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
 .plt-table tbody tr:hover td:first-child{background:#181818;}
 .plt-table td.plt-nac-col{color:#aaa;}
@@ -388,7 +397,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <body>
 
 <div class="hdr">
-  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni.active'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span></div>
+  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni.active'))" style="cursor:pointer;">ASCENSO <span>FEDERAL</span><span class="logo-beta">beta</span></div>
   <div class="nav">
     <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
@@ -3005,32 +3014,66 @@ async function cargarEstadisticas(){
       <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}</div></div>`;
     }).join('');
 
-    // ÁRBITROS
+    // ÁRBITROS — build per-match data for detail expand
+    _ARBI_PARTIDOS = {};
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
-        const cW = '36px';
-    const colH = `background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:${cW};min-width:${cW};max-width:${cW};`;
-    const colD = `text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
-    const arbiTableHtml = `<div style="overflow-x:auto;"><table style="border-collapse:collapse;table-layout:fixed;">
-      <colgroup>
-        <col style="width:180px;">
-        ${Array(10).fill(`<col style="width:${cW};">`).join('')}
-      </colgroup>
+    arbiRows.forEach(([nombre])=>{ _ARBI_PARTIDOS[nombre]=[]; });
+    ZONAS.forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          const key=`${z}_${f}_${m.local}_${m.visitante}`;
+          const arb=arbitroPorPartido[key]||"";
+          if(!arb||!_ARBI_PARTIDOS[arb]) return;
+          _ARBI_PARTIDOS[arb].push({zona:z,fecha:f,local:m.local,visitante:m.visitante,gl:m.gl,gv:m.gv,aml:0,amv:0,rl:0,rv:0,penales:[],fichaKey:key,tienePlanilla:!!PLANILLA_CARGADA[key]});
+        });
+      }
+    });
+    (eventos||[]).forEach(ev=>{
+      if(!['amarilla','doble_amarilla','roja'].includes(ev.tipo)) return;
+      const pl=ev.planillas; if(!pl) return;
+      const pid=planillaPartido[ev.planilla_id]||pl.partido_id;
+      const px=partidosById[pid]; if(!px||px.goles_local===null) return;
+      const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+      const arb=arbitroPorPartido[k]||""; if(!arb||!_ARBI_PARTIDOS[arb]) return;
+      const md=(_ARBI_PARTIDOS[arb]||[]).find(x=>x.fichaKey===k); if(!md) return;
+      const esL=pl.equipos?.nombre===px.equipo_local_nombre;
+      if(ev.tipo==='amarilla'||ev.tipo==='doble_amarilla'){ if(esL) md.aml++; else md.amv++; }
+      if(ev.tipo==='roja'||ev.tipo==='doble_amarilla'){ if(esL) md.rl++; else md.rv++; }
+    });
+    (penalesDB||[]).forEach(p=>{
+      let arb=null,k=null;
+      const px=p.partido_id?partidosById[p.partido_id]:null;
+      if(px){ k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`; arb=arbitroPorPartido[k]||null; }
+      if(!arb&&p.fixture_id) arb=fixtureIdToArbitro[p.fixture_id]||fixtureIdToArbitro[String(p.fixture_id)]||null;
+      if(!arb||!_ARBI_PARTIDOS[arb]) return;
+      const md=k?(_ARBI_PARTIDOS[arb]||[]).find(x=>x.fichaKey===k):null;
+      if(md) md.penales.push({favor:p.equipo_favor,contra:p.equipo_contra,resultado:p.resultado});
+    });
+
+    const cW='36px';
+    const colH=`background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:#f5e99a;width:${cW};min-width:${cW};max-width:${cW};`;
+    const colD=`text-align:center;font-size:14px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
+    const arbiTableHtml=`<div style="overflow-x:auto;"><table id="arbi-table" style="border-collapse:collapse;width:100%;">
       <thead><tr>
-        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Árbitro</th>
+        <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;">Árbitro</th>
         ${['PJ','GL','Emp','GV','🟨L','🟨V','🟥L','🟥V','PL','PV'].map(h=>`<th style="${colH}">${h}</th>`).join('')}
       </tr></thead>
-      <tbody>${arbiRows.map(([nombre,a])=>`<tr style="border-bottom:1px solid var(--border);">
-        <td style="font-size:13px;text-align:left;padding:.4rem .6rem;width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${nombre}">${nombre}</td>
-        <td style="${colD}">${a.pj}</td><td style="${colD}">${a.vl}</td>
-        <td style="${colD}">${a.emp}</td><td style="${colD}">${a.vv}</td>
-        <td style="${colD}">${a.aml}</td><td style="${colD}">${a.amv}</td>
-        <td style="${colD}">${a.rl}</td><td style="${colD}">${a.rv}</td>
-        <td style="${colD}">${a.penl}</td><td style="${colD}">${a.penv}</td>
-      </tr>`).join('')}</tbody>
+      <tbody>${arbiRows.map(([nombre,a])=>{
+        const sid=`arbi-det-${nombre.replace(/[^a-zA-Z0-9]/g,'_')}`;
+        return `<tr class="arbi-row" id="arbi-row-${sid}" onclick="toggleArbiDetalle('${nombre.replace(/'/g,"\\'")}')" style="border-bottom:1px solid var(--border);">
+          <td style="font-size:13px;text-align:left;padding:.4rem .6rem;white-space:nowrap;">${nombre} <span style="font-size:10px;color:#555;">▾</span></td>
+          <td style="${colD}">${a.pj}</td><td style="${colD}">${a.vl}</td>
+          <td style="${colD}">${a.emp}</td><td style="${colD}">${a.vv}</td>
+          <td style="${colD}">${a.aml}</td><td style="${colD}">${a.amv}</td>
+          <td style="${colD}">${a.rl}</td><td style="${colD}">${a.rv}</td>
+          <td style="${colD}">${a.penl}</td><td style="${colD}">${a.penv}</td>
+        </tr>`;
+      }).join('')}</tbody>
     </table></div>`;
     document.getElementById('tbl-arbitros').innerHTML = arbiRows.length
       ? arbiTableHtml
-      : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';;
+      : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // PENALES EJECUTANTES
     const penEjec = {};
@@ -3365,6 +3408,9 @@ function renderSegundaFase(){
       </div>
     </div>`;
 }
+if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 const _loadingHTML = '<div style="padding:2.5rem 1rem;text-align:center;color:var(--muted);font-size:13px;letter-spacing:.5px;">Cargando datos...</div>';
 async function init(){
   // Mostrar estado de carga mientras Supabase responde
@@ -3506,6 +3552,53 @@ function voltarPlanteles(){
 
 let _pltMatchFilter = 'todos';
 let _pltCurrentClub = null;
+let _ARBI_PARTIDOS = {};
+function toggleArbiDetalle(nombre){
+  const sid = 'arbi-det-' + nombre.replace(/[^a-zA-Z0-9]/g,'_');
+  const row = document.getElementById('arbi-row-' + sid);
+  if(!row) return;
+  const existing = document.getElementById('arbi-open-' + sid);
+  if(existing){ existing.remove(); row.classList.remove('open'); return; }
+  row.classList.add('open');
+
+  const partidos = _ARBI_PARTIDOS[nombre] || [];
+  if(!partidos.length){
+    const tr = document.createElement('tr');
+    tr.id = 'arbi-open-' + sid;
+    tr.className = 'arbi-det-row';
+    tr.innerHTML = `<td colspan="11" style="padding:.5rem .75rem;font-size:12px;color:var(--muted);">Sin partidos registrados.</td>`;
+    row.insertAdjacentElement('afterend', tr);
+    return;
+  }
+
+  const rowsHtml = partidos.map(m => {
+    const cardsLocal = (m.aml ? `🟨×${m.aml} ` : '') + (m.rl ? `🟥×${m.rl}` : '');
+    const cardsVisit = (m.amv ? `🟨×${m.amv} ` : '') + (m.rv ? `🟥×${m.rv}` : '');
+    const pens = m.penales.map(p => {
+      const ico = p.resultado === 'gol' ? '⚽' : p.resultado === 'atajado' ? '🧤' : '❌';
+      return `${ico} ${p.favor||'?'} vs ${p.contra||'?'}`;
+    }).join(' | ');
+    const cardsStr = [cardsLocal ? `L: ${cardsLocal}` : '', cardsVisit ? `V: ${cardsVisit}` : ''].filter(Boolean).join(' &nbsp;|&nbsp; ');
+    return `<tr style="border-bottom:1px solid #1a1a1a;">
+      <td colspan="11" style="padding:.35rem .75rem;">
+        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">
+          ${m.local} ${m.gl} – ${m.gv} ${m.visitante}
+        </span>
+        <span style="font-size:11px;color:#888;margin-left:.5rem;">Z${m.zona} F${m.fecha}</span>
+        ${cardsStr ? `<span style="font-size:11px;color:#ccc;margin-left:.75rem;">${cardsStr}</span>` : ''}
+        ${pens ? `<div style="font-size:11px;color:#aaa;margin-top:.15rem;">Penales: ${pens}</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const tr = document.createElement('tr');
+  tr.id = 'arbi-open-' + sid;
+  tr.className = 'arbi-det-row';
+  tr.innerHTML = `<td colspan="11" style="padding:0;background:#111;">
+    <table style="width:100%;border-collapse:collapse;">${rowsHtml}</table>
+  </td>`;
+  row.insertAdjacentElement('afterend', tr);
+}
 function setPltFilter(f){
   _pltMatchFilter = f;
   document.querySelectorAll('.plt-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.f === f));
@@ -3737,7 +3830,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.min)}</td>
     </tr>`;
   }).join('');
-  cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#555;font-size:13px;text-transform:none;letter-spacing:0;">— Datos: @FMENASCENSO</span></div>
+  cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#888;font-size:14px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
     <div class="plt-table-wrap"><table class="plt-table">
       <thead><tr>${thead}</tr></thead>
       <tbody>${tbody}</tbody>
