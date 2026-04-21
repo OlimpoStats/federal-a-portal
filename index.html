@@ -3129,11 +3129,10 @@ async function cargarEstadisticas(){
       if(!arb && p.fixture_id) arb = fixtureIdToArbitro[p.fixture_id]||fixtureIdToArbitro[String(p.fixture_id)]||null;
       if(arb){ if(!penArbiStats[arb]) penArbiStats[arb]=0; penArbiStats[arb]++; }
     });
-    // Fallback: also count from arbiStats penl+penv fields
+    // Fallback: solo si penalesDB no encontró nada para este árbitro
     Object.entries(arbiStats).forEach(([arb,a])=>{
       const total = (a.penl||0)+(a.penv||0);
       if(total>0 && !penArbiStats[arb]) penArbiStats[arb]=total;
-      else if(total>0 && penArbiStats[arb]<total) penArbiStats[arb]=total;
     });
     const penArbiRows = Object.entries(penArbiStats).sort((a,b)=>b[1]-a[1]);
 
