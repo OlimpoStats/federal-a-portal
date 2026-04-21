@@ -14,7 +14,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .hdr{background:#111;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:62px;position:sticky;top:0;z-index:10;}
 .logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;color:var(--accent);position:relative;}
 .logo span{color:#fff;}
-.logo-beta{position:absolute;bottom:1px;right:-4px;font-family:'Georgia',serif;font-style:italic;font-weight:400;font-size:9px;color:rgba(232,196,74,.65);transform:rotate(-18deg);transform-origin:right bottom;pointer-events:none;letter-spacing:.5px;}
+.logo-beta{position:absolute;bottom:-3px;right:-18px;font-family:'Georgia',serif;font-style:italic;font-weight:700;font-size:13px;color:#e53935;transform:rotate(-18deg);transform-origin:right bottom;pointer-events:none;letter-spacing:.5px;text-shadow:0 0 6px rgba(229,57,53,.4);}
 .nav{display:flex;gap:0;margin-left:auto;align-items:center;}
 .ni{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;letter-spacing:.5px;padding:0 1.1rem;height:62px;display:flex;align-items:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;text-transform:uppercase;}
 .ni:hover{color:var(--text);}
@@ -182,7 +182,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 }
 @media(max-width:700px){
   /* Header */
-  .hdr{padding:0 .75rem;gap:.5rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;}
+  .hdr{padding:0 .75rem;gap:.5rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;position:fixed;top:0;left:0;right:0;}
   .logo{font-size:15px;white-space:nowrap;flex-shrink:0;}
   .nav{display:none;}
   .hamburger{display:flex;}
@@ -190,7 +190,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #user-btn-mob{display:flex!important;width:28px;height:28px;}
   /* Pages */
   html,body{overflow-x:hidden;}
-  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;}
+  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;padding-top:calc(.75rem + 52px);}
   /* Inicio grid */
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
@@ -363,12 +363,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
 .plt-table thead th{padding:.45rem .55rem;border-bottom:2px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;color:var(--muted);font-weight:700;font-size:11px;user-select:none;transition:color .15s;position:relative;}
-.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:var(--bg);border-right:1px solid rgba(255,255,255,.18);}
+.plt-table thead th:first-child{text-align:left;min-width:130px;position:sticky;left:0;z-index:2;background:var(--bg);border-right:2px solid rgba(255,255,255,.22);}
 .plt-table thead th:hover{color:#ddd;}
 .plt-table thead th.plt-sorted{color:#fff;}
 .plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
-.plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.09);text-align:center;vertical-align:middle;}
-.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--bg);border-right:1px solid rgba(255,255,255,.18);}
+.plt-table tbody td{padding:.35rem .55rem;border-bottom:2px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;}
+.plt-table tbody td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:var(--bg);border-right:2px solid rgba(255,255,255,.22);}
+.plt-name-desk{display:block;}.plt-name-mob{display:none;}
 .plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
 .plt-table tbody tr:hover td:first-child{background:#181818;}
 .plt-table td.plt-nac-col{color:#aaa;}
@@ -389,8 +390,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .plt-table{font-size:10px;}
   .plt-table thead th{padding:.35rem .25rem;font-size:9px;}
   .plt-table tbody td{padding:.25rem .25rem;}
-  .plt-table thead th:first-child{min-width:80px;max-width:100px;}
-  .plt-table tbody td:first-child{font-size:10px;min-width:80px;max-width:100px;white-space:normal;word-break:break-word;}
+  .plt-table thead th:first-child{min-width:80px;max-width:110px;}
+  .plt-table tbody td:first-child{min-width:80px;max-width:110px;white-space:normal;word-break:break-word;}
+  .plt-name-desk{display:none;}
+  .plt-name-mob{display:block;}
 }
 </style>
 </head>
@@ -3571,22 +3574,20 @@ function toggleArbiDetalle(nombre){
     return;
   }
 
+  const penSvg = `<svg width="20" height="14" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:3px;"><rect x="1" y="1" width="18" height="11" rx="1.5" stroke="#777" stroke-width="1.2" fill="rgba(255,255,255,.04)"/><rect x="6" y="1" width="8" height="4" rx="0" stroke="#999" stroke-width="1" fill="rgba(255,255,255,.07)"/><circle cx="10" cy="10" r="1.3" fill="#e8c44a"/></svg>`;
   const rowsHtml = partidos.map(m => {
-    const cardsLocal = (m.aml ? `🟨×${m.aml} ` : '') + (m.rl ? `🟥×${m.rl}` : '');
-    const cardsVisit = (m.amv ? `🟨×${m.amv} ` : '') + (m.rv ? `🟥×${m.rv}` : '');
-    const pens = m.penales.map(p => {
-      const ico = p.resultado === 'gol' ? '⚽' : p.resultado === 'atajado' ? '🧤' : '❌';
-      return `${ico} ${p.favor||'?'} vs ${p.contra||'?'}`;
-    }).join(' | ');
-    const cardsStr = [cardsLocal ? `L: ${cardsLocal}` : '', cardsVisit ? `V: ${cardsVisit}` : ''].filter(Boolean).join(' &nbsp;|&nbsp; ');
+    const cardsLocal = (m.aml ? `🟨×${m.aml}` : '') + (m.rl ? ` 🟥×${m.rl}` : '');
+    const cardsVisit = (m.amv ? `🟨×${m.amv}` : '') + (m.rv ? ` 🟥×${m.rv}` : '');
+    const penL = m.penales.filter(p => p.favor === m.local).length;
+    const penV = m.penales.filter(p => p.favor === m.visitante).length;
+    const cardsStr = [cardsLocal.trim() ? `L: ${cardsLocal.trim()}` : '', cardsVisit.trim() ? `V: ${cardsVisit.trim()}` : ''].filter(Boolean).join('  |  ');
+    const penStr = m.penales.length ? `${penSvg}${penL}–${penV}` : '';
     return `<tr style="border-bottom:1px solid #1a1a1a;">
-      <td colspan="11" style="padding:.35rem .75rem;">
-        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">
-          ${m.local} ${m.gl} – ${m.gv} ${m.visitante}
-        </span>
-        <span style="font-size:11px;color:#888;margin-left:.5rem;">Z${m.zona} F${m.fecha}</span>
-        ${cardsStr ? `<span style="font-size:11px;color:#ccc;margin-left:.75rem;">${cardsStr}</span>` : ''}
-        ${pens ? `<div style="font-size:11px;color:#aaa;margin-top:.15rem;">Penales: ${pens}</div>` : ''}
+      <td colspan="11" style="padding:.35rem .75rem;text-align:left;">
+        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
+        <span style="font-size:11px;color:#888;margin-left:.4rem;">${m.zona} F${m.fecha}</span>
+        ${cardsStr ? `<span style="font-size:11px;color:#ccc;margin-left:.5rem;">${cardsStr}</span>` : ''}
+        ${penStr ? `<span style="font-size:11px;color:#bbb;margin-left:.5rem;">${penStr}</span>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -3797,6 +3798,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
   });
   const rowColor = clubColor ? clubColor+'22' : 'rgba(255,255,255,.05)';
   const hdrColor = clubColor ? clubColor : 'rgba(255,255,255,.12)';
+  const vBorder = clubColor ? `2px solid ${clubColor}` : '2px solid rgba(255,255,255,.22)';
   const thead=_PLT_COLS.map(c=>{
     const isSorted=_pltSort.col===c.key;
     const arrow=isSorted?`<span class="plt-sort-arrow">${_pltSort.dir==='asc'?'▲':'▼'}</span>`:'';
@@ -3806,31 +3808,37 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
   const tbody=sorted.map(j=>{
     const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
     const name=j.nombre||j.nombre_display||'—';
+    const nameParts=name.split(',');
+    const apellidos=(nameParts[0]||name).trim();
+    const primerNombre=(nameParts[1]||'').trim();
     const cumple=_pltIsCumple(j.fecha_nacimiento);
     const cumpleHtml=cumple?` <span class="plt-cumple" title="¡Hoy está cumpliendo años!">🎂</span>`:'';
     const edad=_pltEdad(j.fecha_nacimiento);
     const nacFmt=j.fecha_nacimiento?`${_pltFmtFecha(j.fecha_nacimiento)}${edad?` <span style="color:#555;font-size:10px;">(${edad})</span>`:''}`: '—';
     const alt=j.altura_m?parseFloat(j.altura_m).toFixed(2).replace('.',','):'—';
     const sv=(v,cls='')=>v>0?`<span class="plt-stat-hi ${cls}">${v}</span>`:`<span class="plt-stat-0">0</span>`;
-    return `<tr style="border-bottom:1px solid ${rowColor}">
-      <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor}">${name}${cumpleHtml}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
-      <td class="plt-nac-col" style="font-size:11px;border-bottom:1px solid ${rowColor}">${nacFmt}</td>
-      <td class="plt-ori-col" style="border-bottom:1px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${alt}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${j.peso_kg||'—'}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${j.pierna_habil||'—'}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.pj)}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.tit)}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.bnc)}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ent)}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.sal)}</td>
-      <td style="border-bottom:1px solid ${rowColor}">${sv(s.min)}</td>
+    const nameCell=primerNombre
+      ?`<span class="plt-name-desk">${name}${cumpleHtml}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b><br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
+      :`${name}${cumpleHtml}`;
+    return `<tr style="border-bottom:2px solid ${rowColor}">
+      <td style="font-size:13px;font-weight:500;border-bottom:2px solid ${rowColor};border-right:${vBorder}">${nameCell}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${j.posicion||'—'}</td>
+      <td class="plt-nac-col" style="font-size:11px;border-bottom:2px solid ${rowColor}">${nacFmt}</td>
+      <td class="plt-ori-col" style="border-bottom:2px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${alt}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${j.peso_kg||'—'}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${j.pierna_habil||'—'}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.pj)}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.tit)}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.bnc)}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.ent)}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.sal)}</td>
+      <td style="border-bottom:2px solid ${rowColor}">${sv(s.min)}</td>
     </tr>`;
   }).join('');
-  cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#888;font-size:14px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
+  cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#bbb;font-size:16px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
     <div class="plt-table-wrap"><table class="plt-table">
       <thead><tr>${thead}</tr></thead>
       <tbody>${tbody}</tbody>
