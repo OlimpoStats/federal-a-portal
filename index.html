@@ -2229,6 +2229,20 @@ function renderFxCont(){
   document.getElementById("fx-cont").innerHTML=html;
 }
 
+// ── ROUTING ──
+const _PATH_MAP = {
+  '/': 'inicio',
+  '/fixture': 'fixture',
+  '/equipos': 'planteles',
+  '/estadisticas': 'estadisticas',
+  '/reglamento': 'reglamento',
+  '/foro': 'foro',
+  '/prode': 'prode',
+  '/calc': 'calculadora',
+};
+const _PAGE_PATH = {};
+Object.entries(_PATH_MAP).forEach(([path, id]) => _PAGE_PATH[id] = path);
+
 function goPage(id, el){
   document.querySelectorAll(".page").forEach(p=>{
     p.classList.remove("active","page-entering");
@@ -2254,6 +2268,10 @@ function goPage(id, el){
     page.style.height=`calc(100vh - ${hdrH}px)`;
     cargarMensajesForo();
   }
+
+  // Update URL
+  const path = _PAGE_PATH[id] || '/';
+  if(location.pathname !== path) history.pushState({page: id}, '', path);
 }
 
 // Drawer helpers
@@ -3516,7 +3534,19 @@ async function init(){
     _guardarCache();
     try { iniciarPollingEnVivo(); } catch(e){}
   }
+
+  // Navigate to URL path after data is ready
+  const startPage = _PATH_MAP[location.pathname];
+  if(startPage && startPage !== 'inicio'){
+    goPage(startPage, document.querySelector(`.ni[onclick*="'${startPage}'"]`));
+  }
 }
+
+window.addEventListener('popstate', ()=>{
+  const id = _PATH_MAP[location.pathname] || 'inicio';
+  goPage(id, document.querySelector(`.ni[onclick*="'${id}'"]`));
+});
+
 init();
 
 // ── LIVE SCORE POLLING ──
