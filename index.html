@@ -2456,25 +2456,26 @@ async function cargarEstadisticas(){
   document.getElementById('stats-content').style.display='none';
   try {
     const evSelect = 'tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))';
-    // Fire all queries in parallel (eventos page 0 + support tables)
+    const jugSelect = 'id,nombre,nombre_display,equipo_id,equipos(nombre)';
+    // Fire page 0 of paginated tables + small tables in parallel
     const [
-      evRes0,
+      evRes0, jugsRes0,
       {data:partidosDB, error:pErr},
       {data:planillasDB},
-      {data:penalesDB, error:penErr},
-      {data:jugsDB}
+      {data:penalesDB, error:penErr}
     ] = await Promise.all([
       sb.from('eventos').select(evSelect).range(0, 999),
+      sb.from('jugadores').select(jugSelect).range(0, 999),
       sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante').not('goles_local','is',null),
       sb.from('planillas').select('id,partido_id,equipo_id'),
-      sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
-      sb.from('jugadores').select('id,nombre,nombre_display,equipo_id,equipos(nombre)')
+      sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id')
     ]);
     if(evRes0.error) throw evRes0.error;
+    if(jugsRes0.error) throw jugsRes0.error;
     if(pErr) throw pErr;
     if(penErr) console.warn('Penales error:', penErr.message);
 
-    // Fetch any remaining eventos pages sequentially
+    // Paginate eventos and jugadores sequentially if needed
     let eventos = evRes0.data || [];
     let evFrom = 1000;
     while(eventos.length % 1000 === 0 && eventos.length > 0){
@@ -2484,6 +2485,15 @@ async function cargarEstadisticas(){
       eventos = eventos.concat(evBatch);
       if(evBatch.length < 1000) break;
       evFrom += 1000;
+    }
+    let jugsDB = jugsRes0.data || [];
+    let jugsFrom = 1000;
+    while(jugsDB.length % 1000 === 0 && jugsDB.length > 0){
+      const {data:jugsBatch} = await sb.from('jugadores').select(jugSelect).range(jugsFrom, jugsFrom+999);
+      if(!jugsBatch?.length) break;
+      jugsDB = jugsDB.concat(jugsBatch);
+      if(jugsBatch.length < 1000) break;
+      jugsFrom += 1000;
     }
 
     const partidosById = {};
@@ -2717,11 +2727,14 @@ async function cargarEstadisticas(){
     // Also use fixtureData directly (already loaded) - it has arbitro field
     // Fetch arbitros directly from fixture table
     const {data:fixtureArbitros} = await sb.from('fixture')
-      .select('zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
+      .select('id,zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
       .not('arbitro','is',null).neq('arbitro','');
+    const fixtureIdToArbitro = {};
     (fixtureArbitros||[]).forEach(p=>{
       const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
       arbitroPorPartido[key]=p.arbitro;
+      if(p.id) fixtureIdToArbitro[p.id]=p.arbitro;
+      if(p.id) fixtureIdToArbitro[String(p.id)]=p.arbitro;
     });
 
     // Build arbiStats from partido results
@@ -3107,11 +3120,13 @@ async function cargarEstadisticas(){
     // Arbitros que cobraron penales
     const penArbiStats = {};
     (penalesDB||[]).forEach(p=>{
+      let arb = null;
       const px = p.partido_id ? partidosById[p.partido_id] : null;
-      if(!px) return;
-      // Use exact same key format as arbiStats
-      const k = `${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
-      const arb = arbitroPorPartido[k] || null;
+      if(px){
+        const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+        arb = arbitroPorPartido[k] || null;
+      }
+      if(!arb && p.fixture_id) arb = fixtureIdToArbitro[p.fixture_id]||fixtureIdToArbitro[String(p.fixture_id)]||null;
       if(arb){ if(!penArbiStats[arb]) penArbiStats[arb]=0; penArbiStats[arb]++; }
     });
     // Fallback: also count from arbiStats penl+penv fields
@@ -3141,11 +3156,19 @@ async function cargarEstadisticas(){
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
               const pensByArb = (penalesDB||[]).filter(p=>{
+                // Path 1: via partido_id → partidos table → arbitroPorPartido key
                 const px=p.partido_id?partidosById[p.partido_id]:null;
-                if(!px) return false;
-                const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
-                const arbK = arbitroPorPartido[k] || (PARTIDO_META[k]||{}).arbitro || null;
-                return arbK===arb;
+                if(px){
+                  const k=`${px.zona}_${px.fecha}_${px.equipo_local_nombre}_${px.equipo_visitante_nombre}`;
+                  const arbK=arbitroPorPartido[k]||(PARTIDO_META[k]||{}).arbitro||null;
+                  if(arbK===arb) return true;
+                }
+                // Path 2: via fixture_id → fixtureIdToArbitro (for penales loaded with fixture_id only)
+                if(p.fixture_id){
+                  const arbF=fixtureIdToArbitro[p.fixture_id]||fixtureIdToArbitro[String(p.fixture_id)]||null;
+                  if(arbF===arb) return true;
+                }
+                return false;
               });
               const cntFavor={}, cntContra={};
               pensByArb.forEach(p=>{ if(p.equipo_favor) cntFavor[p.equipo_favor]=(cntFavor[p.equipo_favor]||0)+1; if(p.equipo_contra) cntContra[p.equipo_contra]=(cntContra[p.equipo_contra]||0)+1; });
