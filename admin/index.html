@@ -1726,7 +1726,7 @@ function renderPlanilla(containerId, jugadores){
       <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="width:68px;"><input type="text" inputmode="numeric" value="${j.id||""}" style="width:64px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--muted);padding:2px 3px;background:transparent;border:1px solid transparent;border-radius:3px;" title="ID Federal" onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onblur="this.style.borderColor='transparent';this.style.background='transparent'" onchange="actualizarJugadorPorId('${containerId}',${i},this.value)"></td>
       <td style="min-width:140px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
-      <td style="width:24px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.titular?"#5dba7d":"var(--muted)"};">${j.titular?"T":"S"}</td>
+      <td style="width:24px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
       <td style="overflow:hidden;max-width:220px;">${eventosHtml}</td>
       <td style="width:56px;white-space:nowrap;text-align:center;">
         <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})" title="Agregar evento">+</button>
@@ -1736,7 +1736,7 @@ function renderPlanilla(containerId, jugadores){
   });
   // Check if less than 20 players and add "add player" row
   const faltanTitulares = Math.max(0, 11 - jugadores.filter(j=>j.titular).length);
-  const faltanSuplentes = Math.max(0, 9 - jugadores.filter(j=>!j.titular).length);
+  const faltanSuplentes = Math.max(0, 9 - jugadores.filter(j=>!j.titular&&!j.nc).length);
   const faltan = faltanTitulares + faltanSuplentes;
   if(faltan > 0){
     html+=`<tr style="background:rgba(232,196,74,0.05);">
@@ -1849,10 +1849,6 @@ function cerrarModalEv(){
 }
 
 function abrirAgregarJugadorPlanilla(containerId){
-  const esTitular = containerId === "tabla-local" 
-    ? (planillaLocal.jugadores||[]).filter(j=>j.titular).length < 11
-    : (planillaVisit.jugadores||[]).filter(j=>j.titular).length < 11;
-
   const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;" id="modal-add-jug">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:400px;max-width:95vw;">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:1rem;">Agregar jugador</div>
@@ -1868,11 +1864,7 @@ function abrirAgregarJugadorPlanilla(containerId){
           <input type="text" id="add-jug-nombre" placeholder="Nombre" style="width:100%;">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-          <input type="text" id="add-jug-numero" placeholder="Nro camiseta" style="width:100%;">
-          <select id="add-jug-titular" style="width:100%;">
-            <option value="true" ${esTitular?"selected":""}>Titular</option>
-            <option value="false" ${!esTitular?"selected":""}>Suplente</option>
-          </select>
+          <input type="text" id="add-jug-numero" placeholder="Nro camiseta (1–11 T, 12–20 S, sin número = NC)" style="width:100%;grid-column:1/-1;">
         </div>
       </div>
       <div style="display:flex;gap:.5rem;justify-content:flex-end;">
@@ -1931,21 +1923,25 @@ function confirmarAgregarJugadorPlanilla(containerId){
   const id_federal = document.getElementById("add-jug-id")?.value.trim();
   const nombre = document.getElementById("add-jug-nombre")?.value.trim();
   const numero = document.getElementById("add-jug-numero")?.value.trim();
-  const titular = document.getElementById("add-jug-titular")?.value === "true";
 
   if(!id_federal || !nombre){ alert("ID Federal y nombre son obligatorios."); return; }
 
+  const n = parseInt(numero);
+  const tieneNumero = n >= 1 && n <= 20;
   const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
   arr.push({
-    numero: parseInt(numero)||"",
+    numero: tieneNumero ? n : "",
     id: id_federal,
     id_federal,
     nombre: formatearNombre(nombre) || nombre,
-    titular,
+    titular: tieneNumero ? n <= 11 : false,
+    nc: !tieneNumero,
     es_capitan: false,
     eventos: [],
   });
   arr.sort((a,b) => {
+    if(a.nc && !b.nc) return 1;
+    if(!a.nc && b.nc) return -1;
     if(a.titular && !b.titular) return -1;
     if(!a.titular && b.titular) return 1;
     return (Number(a.numero)||99) - (Number(b.numero)||99);
@@ -2264,8 +2260,16 @@ function updateJugador(containerId, idx, field, value){
   arr[idx][field]=value;
   if(field==="numero"){
     const n = parseInt(value);
-    if(n>=1 && n<=20) arr[idx].titular = n<=11;
+    if(n>=1 && n<=20){
+      arr[idx].titular = n<=11;
+      arr[idx].nc = false;
+    } else {
+      arr[idx].titular = false;
+      arr[idx].nc = true;
+    }
     arr.sort((a,b)=>{
+      if(a.nc && !b.nc) return 1;
+      if(!a.nc && b.nc) return -1;
       const an=parseInt(a.numero)||999, bn=parseInt(b.numero)||999;
       return an-bn;
     });
@@ -2645,6 +2649,11 @@ async function confirmarCarga(publicar=true){
 
     const partidoId = await upsertPartido(partidoPayload);
     if(!partidoId) throw new Error("No se pudo resolver el partido_id.");
+
+    // Backfill any penales saved before this partidos row existed
+    if(fixtureId){
+      await sb.from("penales").update({partido_id: partidoId}).eq("fixture_id", fixtureId).is("partido_id", null);
+    }
 
     const localId = await upsertEquipo(partidoActual.local, partidoActual.zona);
     const visitId = await upsertEquipo(partidoActual.visit, partidoActual.zona);

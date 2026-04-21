@@ -593,7 +593,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <!-- FORO -->
 <div class="page" id="page-foro" style="display:none;flex-direction:column;">
-  <div id="foro-msgs" style="flex:1;overflow-y:auto;background:#1e1e1e;"></div>
+  <div id="foro-msgs" style="flex:1;overflow-y:auto;background:#161616;"></div>
   <div id="foro-input-area" style="border-top:2px solid #1a1a1a;padding:.5rem 1rem;background:#222;flex-shrink:0;max-width:1450px;margin-left:158px;"></div>
 </div>
 <div class="page" id="page-planteles">
@@ -2370,7 +2370,7 @@ function renderForoMsgs(msgs, pagina=0, total=0){
     const svgAlert = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
     return `
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:80px;max-width:1600px;position:relative;">
-      <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding:.5rem .4rem;background:#1a1a1a;border-right:2px solid #1a1a1a;">
+      <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding:.5rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
         ${m.rol==='dueno'&&ADMIN_PHOTO_URL ? `<img src="${ADMIN_PHOTO_URL}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">` : escudoHTML(m.equipo,'esc')}
         <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${escHtml(m.user)}</span>
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${escHtml(m.rango)}</span>
