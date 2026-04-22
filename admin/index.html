@@ -2906,7 +2906,7 @@ async function hsGuardarTodo(){
     const estadioInput = document.getElementById(`hs-estadio-${i}`);
     const estadioVal = estadioInput?.value?.trim() || null;
 
-    const fixtureId = await buscarFixtureId(zona, fecha, p.local, p.visitante);
+    const fixtureId = p.id || await buscarFixtureId(zona, fecha, p.local, p.visitante);
     if(!fixtureId) continue;
 
     const {error} = await sb.from("fixture").update({
