@@ -367,12 +367,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
 .plt-table thead th{padding:.45rem .55rem;border-bottom:2px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;color:var(--muted);font-weight:700;font-size:11px;user-select:none;transition:color .15s;position:relative;}
-.plt-table thead th:first-child{text-align:left;min-width:130px;position:-webkit-sticky;position:sticky;left:0;z-index:2;background:var(--bg);border-right:2px solid rgba(255,255,255,.22);}
+.plt-table thead th:first-child{text-align:left;min-width:130px;position:-webkit-sticky;position:sticky;left:0;z-index:2;background:var(--bg);box-shadow:2px 0 0 rgba(255,255,255,.22);}
 .plt-table thead th:hover{color:#ddd;}
 .plt-table thead th.plt-sorted{color:#fff;}
 .plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
 .plt-table tbody td{padding:.35rem .55rem;border-bottom:2px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;}
-.plt-table tbody td:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:1;background:var(--bg);border-right:2px solid rgba(255,255,255,.22);}
+.plt-table tbody td:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:1;background:var(--bg);box-shadow:2px 0 0 rgba(255,255,255,.22);}
 .plt-name-desk{display:block;}.plt-name-mob{display:none;}
 .plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
 .plt-table tbody tr:hover td:first-child{background:#181818;}
@@ -1142,8 +1142,8 @@ const TEAM_COLORS = {
   "Bartolomé Mitre":      "#F9A825",
   "Boca Unidos":          "#E53935",
   "Defensores (PV)":      "#388E3C",
-  "Juv. Antoniana":       "#7B1FA2",
-  "San Martín (F)":       "#7B1FA2",
+  "Juv. Antoniana":       "#1a237e",
+  "San Martín (F)":       "#1a237e",
   "Sarmiento (LB)":       "#283593",
   "Sarmiento (R)":        "#E53935",
   "Sol de América (F)":   "#1976D2",
@@ -1152,7 +1152,7 @@ const TEAM_COLORS = {
   "Atenas (RC)":          "#283593",
   "Cipolletti":           "#E0E0E0",
   "Costa Brava":          "#E53935",
-  "Dep. Rincón":          "#7B1FA2",
+  "Dep. Rincón":          "#1a237e",
   "FADEP":                "#E53935",
   "Huracán LH":           "#E53935",
   "Juv. Unida (SL)":      "#F9A825",
@@ -2192,16 +2192,38 @@ document.addEventListener("click", e=>{
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
 function renderFxTabs(){
-  document.getElementById("fx-tabs").innerHTML=ZONAS.map(z=>
-    `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
-  ).join("");
+  const fechas=Array.from({length:18},(_,i)=>i+1);
+  const filas=[fechas.slice(0,9),fechas.slice(9)];
+  const cuadraditos=filas.map(fila=>
+    `<div style="display:flex;gap:4px;">${fila.map(f=>{
+      const hasResult=(FIXTURE[fxZona]?.[String(f)]||[]).some(m=>m.gl!==null);
+      const bg=hasResult?'var(--surface2)':'var(--surface)';
+      const col=hasResult?'var(--accent)':'var(--muted)';
+      return `<div onclick="irAFechaFx(${f})" style="width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:${bg};color:${col};font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(232,196,74,.18)';this.style.color='var(--accent)'" onmouseout="this.style.background='${bg}';this.style.color='${col}'">${f}</div>`;
+    }).join('')}</div>`
+  ).join('<div style="height:4px;"></div>');
+
+  document.getElementById("fx-tabs").innerHTML=`
+    <div style="margin-bottom:.75rem;">
+      <div class="ztab active" style="display:inline-block;margin-bottom:.5rem;">Primera Fase</div>
+    </div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem;">${ZONAS.map(z=>
+      `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
+    ).join("")}</div>
+    <div style="margin-bottom:.75rem;">${cuadraditos}</div>`;
 }
 function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
+function irAFechaFx(f){
+  const el=document.getElementById('fx-fecha-'+f);
+  if(!el) return;
+  const y=el.getBoundingClientRect().top+window.scrollY-80;
+  window.scrollTo({top:y,behavior:'smooth'});
+}
 function renderFxCont(){
   let html="";
   for(let f=1;f<=18;f++){
     const ms=FIXTURE[fxZona][String(f)]||[];
-    html+=`<div class="zona-lbl">Fecha ${f}</div>`;
+    html+=`<div class="zona-lbl" id="fx-fecha-${f}">Fecha ${f}</div>`;
     ms.forEach(m=>{
       const meta=PARTIDO_META[getMetaKey(fxZona,f,m.local,m.visitante)]||{};
       const fichaKey=getMetaKey(fxZona,f,m.local,m.visitante);
@@ -3536,14 +3558,35 @@ async function init(){
   }
 
   // Navigate to URL path after data is ready
-  const startPage = _PATH_MAP[location.pathname];
-  if(startPage && startPage !== 'inicio'){
-    goPage(startPage, document.querySelector(`.ni[onclick*="'${startPage}'"]`));
+  const equipoMatch = location.pathname.match(/^\/equipos\/(.+)$/);
+  if(equipoMatch){
+    goPage('planteles', document.querySelector(".ni[onclick*=\"'planteles'\"]"));
+    const nombre = _slugToTeam(equipoMatch[1]);
+    if(nombre) abrirClub(nombre);
+  } else {
+    const startPage = _PATH_MAP[location.pathname];
+    if(startPage && startPage !== 'inicio'){
+      goPage(startPage, document.querySelector(`.ni[onclick*="'${startPage}'"]`));
+    }
   }
 }
 
 window.addEventListener('popstate', ()=>{
-  const id = _PATH_MAP[location.pathname] || 'inicio';
+  const path = location.pathname;
+  const equipoMatch = path.match(/^\/equipos\/(.+)$/);
+  if(equipoMatch){
+    goPage('planteles', document.querySelector(".ni[onclick*=\"'planteles'\"]"));
+    const slug = equipoMatch[1];
+    const nombre = _slugToTeam(slug);
+    if(nombre) abrirClub(nombre);
+    return;
+  }
+  if(path === '/equipos'){
+    goPage('planteles', document.querySelector(".ni[onclick*=\"'planteles'\"]"));
+    voltarPlanteles();
+    return;
+  }
+  const id = _PATH_MAP[path] || 'inicio';
   goPage(id, document.querySelector(`.ni[onclick*="'${id}'"]`));
 });
 
@@ -3622,6 +3665,25 @@ function _zonaDeClub(nombre){
   return null;
 }
 
+function _slugToTeam(slug){
+  const teams = new Set();
+  Object.values(FIXTURE).forEach(fechas=>Object.values(fechas).forEach(ms=>ms.forEach(m=>{teams.add(m.local);teams.add(m.visitante);})));
+  for(const t of teams){ if(slugify(t)===slug) return t; }
+  return null;
+}
+
+function slugify(nombre){
+  return nombre
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/ñ/g,'n')
+    .replace(/\s*\(([^)]*)\)/g,' $1')
+    .replace(/\./g,'')
+    .replace(/\s+/g,'-')
+    .replace(/-+/g,'-')
+    .replace(/^-|-$/g,'');
+}
+
 async function abrirClub(nombre){
   document.getElementById('plt-landing').style.display = 'none';
   const det = document.getElementById('plt-club-detail');
@@ -3644,6 +3706,7 @@ async function abrirClub(nombre){
 
   _pltCurrentClub = nombre;
   _pltMatchFilter = 'todos';
+  history.pushState({page:'planteles', club:nombre}, '', '/equipos/'+slugify(nombre));
   renderPartidosClub(nombre);
 
   document.getElementById('plt-squad-cont').innerHTML = '<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando...</div>';
@@ -3659,6 +3722,7 @@ function voltarPlanteles(){
   document.getElementById('plt-club-detail').style.display = 'none';
   document.getElementById('plt-landing').style.display = '';
   _pltMatchFilter = 'todos';
+  history.pushState({page:'planteles'}, '', '/equipos');
   window.scrollTo(0, 0);
 }
 
@@ -3693,7 +3757,7 @@ function toggleArbiDetalle(nombre){
     const penStr = m.penales.length ? `${penSvg}${penL}–${penV}` : '';
     return `<tr style="border-bottom:1px solid #1a1a1a;">
       <td colspan="11" style="padding:.35rem .75rem;text-align:left;">
-        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:400;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
+        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-weight:400;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
         <span style="font-size:11px;color:#888;margin-left:.4rem;">${m.zona} F${m.fecha}</span>
         ${cardsStr ? `<span style="font-size:11px;color:#ccc;margin-left:.5rem;">${cardsStr}</span>` : ''}
         ${penStr ? `<span style="font-size:11px;color:#bbb;margin-left:.5rem;">${penStr}</span>` : ''}
@@ -3891,7 +3955,7 @@ function _fnToISO(fn){ // DD.MM.YYYY → YYYY-MM-DD for proper sort
 }
 
 function _renderPlantelTable(cont, jugadores, stats, clubColor){
-  const STAT_KEYS=['pj','tit','bnc','gol','ast','ent','sal','min'];
+  const STAT_KEYS=['pj','tit','bnc','gol','ast','ent','sal','min','c90'];
   const sorted=[...jugadores].sort((a,b)=>{
     const k=_pltSort.col; const isStat=STAT_KEYS.includes(k);
     let va,vb;
@@ -3909,13 +3973,13 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
   });
   const rowColor = clubColor ? clubColor+'22' : 'rgba(255,255,255,.05)';
   const hdrColor = clubColor ? clubColor : 'rgba(255,255,255,.12)';
-  const vBorder = clubColor ? `2px solid ${clubColor}` : '2px solid rgba(255,255,255,.22)';
+  const vShadow = clubColor ? `2px 0 0 ${clubColor}` : `2px 0 0 rgba(255,255,255,.22)`;
   const thead=_PLT_COLS.map((c,i)=>{
     const isSorted=_pltSort.col===c.key;
     const arrow=isSorted?`<span class="plt-sort-arrow">${_pltSort.dir==='asc'?'▲':'▼'}</span>`:'';
     const ta=c.title?` title="${c.title}"`:'';;
-    const extraBorder=i===0?`;border-right:${vBorder}`:'';
-    return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')" style="border-bottom-color:${hdrColor}${extraBorder}">${c.label}${arrow}</th>`;
+    const extraShadow=i===0?`;box-shadow:${vShadow}`:'';
+    return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')" style="border-bottom-color:${hdrColor}${extraShadow}">${c.label}${arrow}</th>`;
   }).join('');
   const tbody=sorted.map(j=>{
     const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
@@ -3933,7 +3997,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
       ?`<span class="plt-name-desk">${name}${cumpleHtml}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b><br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
       :`${name}${cumpleHtml}`;
     return `<tr style="border-bottom:2px solid ${rowColor}">
-      <td style="font-size:13px;font-weight:500;border-bottom:2px solid ${rowColor};border-right:${vBorder}">${nameCell}</td>
+      <td style="font-size:13px;font-weight:500;border-bottom:2px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
       <td style="border-bottom:2px solid ${rowColor}">${j.posicion||'—'}</td>
       <td class="plt-nac-col" style="font-size:11px;border-bottom:2px solid ${rowColor}">${nacFmt}</td>
       <td class="plt-ori-col" style="border-bottom:2px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
