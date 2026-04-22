@@ -108,6 +108,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
 .ztab:hover{opacity:.85;}
 .ztab.active{background:#fff;color:#111;border-color:#fff;font-weight:800;border-radius:8px;}
+/* fixture phase selector */
+.fx-fase-sel{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:#1a1a1a;color:var(--accent);border:1px solid #444;border-radius:8px;padding:6px 12px;cursor:pointer;outline:none;margin-bottom:.65rem;}
+.fx-fase-sel:focus{border-color:var(--accent);}
+/* fixture date buttons */
+.fx-fecha-btn{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s;user-select:none;}
+.fx-fecha-btn.fx-has-result{background:var(--surface2);color:var(--accent);}
+@media(hover:hover){.fx-fecha-btn:hover{background:rgba(232,196,74,.18)!important;color:var(--accent)!important;}}
 #stats-jugadores,#stats-equipos,#stats-arbitros,#stats-penales,#subtab-cont-grupos,#subtab-cont-generales{transition:opacity .18s ease;}
 
 
@@ -371,7 +378,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table thead th:hover{color:#ddd;}
 .plt-table thead th.plt-sorted{color:#fff;}
 .plt-table thead th .plt-sort-arrow{font-size:8px;margin-left:2px;opacity:.7;}
-.plt-table tbody td{padding:.35rem .55rem;border-bottom:2px solid rgba(255,255,255,.07);text-align:center;vertical-align:middle;}
+.plt-table tbody td{padding:.35rem .55rem;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;vertical-align:middle;}
 .plt-table tbody td:first-child{text-align:left;position:-webkit-sticky;position:sticky;left:0;z-index:1;background:var(--bg);box-shadow:2px 0 0 rgba(255,255,255,.22);}
 .plt-name-desk{display:block;}.plt-name-mob{display:none;}
 .plt-table tbody tr:hover td{background:rgba(255,255,255,.04);}
@@ -2197,21 +2204,22 @@ function renderFxTabs(){
   const cuadraditos=filas.map(fila=>
     `<div style="display:flex;gap:4px;">${fila.map(f=>{
       const hasResult=(FIXTURE[fxZona]?.[String(f)]||[]).some(m=>m.gl!==null);
-      const bg=hasResult?'var(--surface2)':'var(--surface)';
-      const col=hasResult?'var(--accent)':'var(--muted)';
-      return `<div onclick="irAFechaFx(${f})" style="width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:${bg};color:${col};font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s;" onmouseover="this.style.background='rgba(232,196,74,.18)';this.style.color='var(--accent)'" onmouseout="this.style.background='${bg}';this.style.color='${col}'">${f}</div>`;
+      return `<div class="fx-fecha-btn${hasResult?' fx-has-result':''}" onclick="irAFechaFx(${f})">${f}</div>`;
     }).join('')}</div>`
   ).join('<div style="height:4px;"></div>');
 
   document.getElementById("fx-tabs").innerHTML=`
-    <div style="margin-bottom:.75rem;">
-      <div class="ztab active" style="display:inline-block;margin-bottom:.5rem;">Primera Fase</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;">
+      <select class="fx-fase-sel" onchange="selFase(this.value)">
+        <option value="primera">▾ Primera Fase</option>
+      </select>
+      <div class="ztabs" style="margin-bottom:0;justify-content:flex-end;">${ZONAS.map(z=>
+        `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
+      ).join("")}</div>
     </div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem;">${ZONAS.map(z=>
-      `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
-    ).join("")}</div>
     <div style="margin-bottom:.75rem;">${cuadraditos}</div>`;
 }
+function selFase(v){ /* futuro: seleccionar fase */ }
 function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
 function irAFechaFx(f){
   const el=document.getElementById('fx-fecha-'+f);
@@ -2241,11 +2249,9 @@ function renderFxCont(){
       const streamBtn=meta.stream
         ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión"><svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
         : '';
-      const hasBtns=fichaBtn||streamBtn;
+      const fichaArea=fichaBtn||'<div style="width:22px;"></div>';
       const partidoEl=`<div class="partido" style="flex:1;"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
-      html+=hasBtns
-        ? `<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">${fichaBtn}${streamBtn}</div></div>`
-        : `<div style="margin-bottom:.5rem;">${partidoEl}</div>`;
+      html+=`<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;gap:.25rem;align-items:center;flex-shrink:0;">${fichaArea}${streamBtn}</div></div>`;
     });
   }
   document.getElementById("fx-cont").innerHTML=html;
@@ -3757,7 +3763,7 @@ function toggleArbiDetalle(nombre){
     const penStr = m.penales.length ? `${penSvg}${penL}–${penV}` : '';
     return `<tr style="border-bottom:1px solid #1a1a1a;">
       <td colspan="11" style="padding:.35rem .75rem;text-align:left;">
-        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-family:'Barlow Condensed',sans-serif;font-weight:400;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
+        <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})" style="font-size:10px;font-weight:500;color:#e8c44a;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
         <span style="font-size:11px;color:#888;margin-left:.4rem;">${m.zona} F${m.fecha}</span>
         ${cardsStr ? `<span style="font-size:11px;color:#ccc;margin-left:.5rem;">${cardsStr}</span>` : ''}
         ${penStr ? `<span style="font-size:11px;color:#bbb;margin-left:.5rem;">${penStr}</span>` : ''}
@@ -3996,23 +4002,23 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
     const nameCell=primerNombre
       ?`<span class="plt-name-desk">${name}${cumpleHtml}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b><br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
       :`${name}${cumpleHtml}`;
-    return `<tr style="border-bottom:2px solid ${rowColor}">
-      <td style="font-size:13px;font-weight:500;border-bottom:2px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${j.posicion||'—'}</td>
-      <td class="plt-nac-col" style="font-size:11px;border-bottom:2px solid ${rowColor}">${nacFmt}</td>
-      <td class="plt-ori-col" style="border-bottom:2px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${alt}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${j.peso_kg||'—'}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${j.pierna_habil||'—'}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.pj)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.tit)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.bnc)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.ent)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.sal)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.min)}</td>
-      <td style="border-bottom:2px solid ${rowColor}">${sv(s.c90)}</td>
+    return `<tr style="border-bottom:1px solid ${rowColor}">
+      <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
+      <td class="plt-nac-col" style="font-size:11px;border-bottom:1px solid ${rowColor}">${nacFmt}</td>
+      <td class="plt-ori-col" style="border-bottom:1px solid ${rowColor}">${j.lugar_nacimiento||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${alt}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.peso_kg||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${j.pierna_habil||'—'}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.pj)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.tit)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.bnc)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.ent)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.sal)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.min)}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.c90)}</td>
     </tr>`;
   }).join('');
   cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#ccc;font-size:18px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
