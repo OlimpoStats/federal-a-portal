@@ -2527,6 +2527,7 @@ function renderForo(){ cargarMensajesForo(); }
 
 // ── ESTADÍSTICAS ──
 let STATS_LOADED = false;
+let _statsLoadedAt = 0;
 
 function showStatsTab(tab, el){
   document.querySelectorAll('#stats-tabs .ztab').forEach(t=>t.classList.remove('active'));
@@ -2539,7 +2540,12 @@ function showStatsTab(tab, el){
 }
 
 async function cargarEstadisticas(){
-  // Always recalculate to pick up new match data
+  // Skip if loaded recently (< 10 min ago)
+  if(STATS_LOADED && Date.now() - _statsLoadedAt < 10*60*1000){
+    document.getElementById('stats-loading').style.display='none';
+    document.getElementById('stats-content').style.display='';
+    return;
+  }
   document.getElementById('stats-loading').style.display='';
   document.getElementById('stats-content').style.display='none';
   try {
@@ -3317,6 +3323,7 @@ async function cargarEstadisticas(){
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     STATS_LOADED = true;
+    _statsLoadedAt = Date.now();
     document.getElementById('stats-loading').style.display='none';
     document.getElementById('stats-content').style.display='';
   } catch(e){
