@@ -318,7 +318,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tbl-arbitros tbody td{font-size:11px!important;padding:.25rem .1rem!important;}
   #tbl-arbitros tbody td:first-child{font-size:11px!important;padding:.25rem .4rem!important;}
   .arbi-det-row td{font-size:10px!important;padding:.25rem .35rem!important;}
-  .arbi-match-link{font-size:11px!important;}
+  .arbi-match-link{font-size:11px!important;font-family:inherit!important;font-weight:400!important;}
 }
 @media(max-width:400px){
   .ni{font-size:11px;padding:0 .35rem;}
@@ -2209,7 +2209,7 @@ function renderFxTabs(){
   ).join('<div style="height:4px;"></div>');
 
   document.getElementById("fx-tabs").innerHTML=`
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem;">
       <select class="fx-fase-sel" onchange="selFase(this.value)">
         <option value="primera">▾ Primera Fase</option>
       </select>
@@ -2217,7 +2217,7 @@ function renderFxTabs(){
         `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
       ).join("")}</div>
     </div>
-    <div style="margin-bottom:.75rem;">${cuadraditos}</div>`;
+    <div style="margin-bottom:1rem;">${cuadraditos}</div>`;
 }
 function selFase(v){ /* futuro: seleccionar fase */ }
 function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
@@ -2245,17 +2245,40 @@ function renderFxCont(){
         ? tienePlanilla
           ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey.replace(/'/g,"\\'")}',true)">📄</div>`
           : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
-        : '';
+        : `<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
       const streamBtn=meta.stream
         ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión"><svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
-        : '';
-      const fichaArea=fichaBtn||'<div style="width:22px;"></div>';
-      const partidoEl=`<div class="partido" style="flex:1;"><div class="eq">${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div><div class="res">${r}</div><div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div></div>`;
-      html+=`<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;gap:.25rem;align-items:center;flex-shrink:0;">${fichaArea}${streamBtn}</div></div>`;
+        : `<div style="width:24px;height:24px;flex-shrink:0;"></div>`;
+      const localQ=m.local.replace(/"/g,'&quot;');
+      const visitQ=m.visitante.replace(/"/g,'&quot;');
+      const partidoEl=`<div class="partido fx-partido" data-local="${localQ}" data-visit="${visitQ}" style="flex:1;"><div class="eq"><div style="display:contents;">${escudoHTML(m.local)}</div><div class="eqn fx-eqn" onclick="fxHighlight('${m.local.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.local}</div></div><div class="res">${r}</div><div class="eq vis"><div class="eqn fx-eqn" onclick="fxHighlight('${m.visitante.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.visitante}</div><div style="display:contents;">${escudoHTML(m.visitante)}</div></div></div>`;
+      html+=`<div class="fx-row" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;gap:.25rem;align-items:center;flex-shrink:0;">${fichaBtn}${streamBtn}</div></div>`;
     });
   }
   document.getElementById("fx-cont").innerHTML=html;
 }
+
+let _fxHighTeam = null;
+function fxHighlight(team, e){
+  e.stopPropagation();
+  const clear = ()=>{ document.querySelectorAll('.fx-partido').forEach(p=>{ p.style.background=''; p.style.borderRadius=''; }); };
+  if(_fxHighTeam===team){ _fxHighTeam=null; clear(); return; }
+  clear();
+  _fxHighTeam=team;
+  document.querySelectorAll('.fx-partido').forEach(p=>{
+    if(p.dataset.local===team||p.dataset.visit===team){
+      p.style.background='rgba(232,196,74,.1)';
+      p.style.borderRadius='6px';
+    }
+  });
+}
+document.addEventListener('click', e=>{
+  if(!_fxHighTeam) return;
+  if(!e.target.closest('.fx-eqn')){
+    _fxHighTeam=null;
+    document.querySelectorAll('.fx-partido').forEach(p=>{ p.style.background=''; p.style.borderRadius=''; });
+  }
+});
 
 // ── ROUTING ──
 const _PATH_MAP = {
