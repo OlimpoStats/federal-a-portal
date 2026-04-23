@@ -2907,15 +2907,16 @@ async function hsGuardarTodo(){
     const estadioVal = estadioInput?.value?.trim() || null;
 
     const fixtureId = p.id || await buscarFixtureId(zona, fecha, p.local, p.visitante);
-    if(!fixtureId) continue;
+    if(!fixtureId){ console.warn("No fixtureId para", p.local, "vs", p.visitante); continue; }
 
-    const {error} = await sb.from("fixture").update({
-      dia, hora, stream_url:stream, fotmob_url:fotmob, sofascore_url:sofascore, estadio:estadioVal,
-      arbitro, juez1, juez2, cuarto_arbitro:cuarto,
-      estado:"programado"
-    }).eq("id", fixtureId);
+    const updatePayload = { dia, hora, stream_url:stream, fotmob_url:fotmob, estadio:estadioVal,
+      arbitro, juez1, juez2, cuarto_arbitro:cuarto, estado:"programado" };
 
-    if(!error){
+    const {error} = await sb.from("fixture").update(updatePayload).eq("id", fixtureId);
+
+    if(error){
+      console.error("Error guardando partido", p.local, "vs", p.visitante, error);
+    } else {
       saved++;
       await upsertABMSiNuevo("arbitros", arbitro);
       await upsertABMSiNuevo("arbitros", juez1);
@@ -2925,10 +2926,14 @@ async function hsGuardarTodo(){
     }
   }
 
-  _hsModificados.clear();
-  alert(`✓ ${saved} partido${saved!==1?"s":""} guardado${saved!==1?"s":""}.`);
-  await cargarFixture();
-  hsActualizar();
+  if(saved > 0){
+    _hsModificados.clear();
+    alert(`✓ ${saved} partido${saved!==1?"s":""} guardado${saved!==1?"s":""}.`);
+    await cargarFixture();
+    hsActualizar();
+  } else {
+    alert("⚠️ No se guardó ningún partido. Revisá la consola del navegador (F12) para ver el error.");
+  }
 }
 
 function hsMostrar(){
@@ -3205,6 +3210,9 @@ function acSelect(fieldId, nombre){
   if(input) input.value = nombre;
   const listEl = document.getElementById("ac-"+fieldId);
   if(listEl) listEl.classList.remove("open");
+  // Mark the match as modified (fieldId ends in -idx, e.g. hs-arb-2)
+  const idx = parseInt(fieldId.split('-').pop(), 10);
+  if(!isNaN(idx)) marcarModificado(idx);
 }
 
 document.addEventListener("click", e=>{
