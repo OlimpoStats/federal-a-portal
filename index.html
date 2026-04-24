@@ -115,7 +115,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .fx-fecha-btn{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s;user-select:none;}
 .fx-fecha-btn.fx-has-result{background:var(--surface2);color:var(--accent);}
 @media(hover:hover){.fx-fecha-btn:hover{background:rgba(232,196,74,.18)!important;color:var(--accent)!important;}}
-#stats-jugadores,#stats-equipos,#stats-arbitros,#stats-penales,#subtab-cont-grupos,#subtab-cont-generales{transition:opacity .18s ease;}
+#stats-tablas,#stats-penales,#stats-arbitros,#stats-dt,#stats-jugadores,#subtab-cont-grupos,#subtab-cont-generales{transition:opacity .18s ease;}
 
 
 /* placeholders */
@@ -224,12 +224,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-a .tr-eq,#tablas-zona-b .tr-eq,#tablas-zona-c .tr-eq,#tablas-zona-d .tr-eq,#cont-quintos .tr-eq{gap:.1rem;}
   #tablas-zona-a .me,#tablas-zona-b .me,#tablas-zona-c .me,#tablas-zona-d .me,#cont-quintos .me{width:13px!important;height:13px!important;}
   /* Stats grids 1 col */
-  #stats-jugadores > div[style*="grid"],
+  #jugcont-goles > div[style*="grid"],
+  #jugcont-disciplina > div[style*="grid"],
   #subtab-cont-generales > div[style*="grid"],
-  #subtab-cont-grupos > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
-  #tbl-posiciones-ampliadas{grid-template-columns:1fr!important;}
-  #tbl-posiciones-ampliadas > div{min-width:0;overflow:hidden;}
   /* Tablas ampliadas mobile */
   .zona-amp-table{table-layout:auto!important;width:auto!important;}
   .zona-amp-table td:nth-child(n+3){font-size:10px!important;padding:.2rem .15rem!important;}
@@ -621,34 +619,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div id="stats-content" style="display:none;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem;">
       <div class="ztabs" id="stats-tabs" style="margin-bottom:0;">
-        <div class="ztab active" onclick="showStatsTab('jugadores',this)">Jugadores</div>
-        <div class="ztab" onclick="showStatsTab('equipos',this)">Tablas</div>
-        <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
+        <div class="ztab active" onclick="showStatsTab('tablas',this)">Tablas</div>
         <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
+        <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
+        <div class="ztab" onclick="showStatsTab('dt',this)">Dir. Técnicos</div>
+        <div class="ztab" onclick="showStatsTab('jugadores',this)">Jugadores</div>
       </div>
       <span style="font-size:11px;color:#999;font-style:italic;">* Solo se cuentan los partidos con ficha cargada</span>
     </div>
-    <div id="stats-jugadores">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-        <div><p class="sec">⚽ Goleadores</p><div class="tabla-mini" id="tbl-goleadores"></div></div>
-        <div><p class="sec">👟 Asistentes</p><div class="tabla-mini" id="tbl-asistentes"></div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-        <div><p class="sec">🟨 Amonestaciones <span style="font-size:10px;color:#999;font-weight:400;">(incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
-        <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-        <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
-        <div><p class="sec">🎯 Goles de tiro libre</p><div class="tabla-mini" id="tbl-tiro-libre"></div></div>
-      </div>
-    </div>
-    <div id="stats-equipos" style="display:none;">
+
+    <!-- TABLAS -->
+    <div id="stats-tablas">
       <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
         <div class="ztab active" id="subtab-grupos" onclick="showSubTab('grupos',this)" style="font-size:12px;padding:.3rem .8rem;">Grupos</div>
         <div class="ztab" id="subtab-generales" onclick="showSubTab('generales',this)" style="font-size:12px;padding:.3rem .8rem;">Generales</div>
       </div>
       <div id="subtab-cont-grupos">
-        <div style="margin-bottom:1rem;"><p class="sec">📊 Posiciones ampliadas por zona</p><div id="tbl-posiciones-ampliadas" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"></div></div>
+        <p class="sec">📊 Posiciones ampliadas por zona</p>
+        <div id="tbl-posiciones-ampliadas"></div>
       </div>
       <div id="subtab-cont-generales" style="display:none;">
         <div style="margin-bottom:1rem;"><p class="sec">📋 Tabla general</p><div class="tabla-mini" style="max-width:600px;overflow-x:auto;" id="tbl-general"></div></div>
@@ -662,10 +650,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         </div>
       </div>
     </div>
-    <div id="stats-arbitros" style="display:none;">
-      <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
-      <div class="tabla-mini" id="tbl-arbitros"></div>
-    </div>
+
+    <!-- PENALES -->
     <div id="stats-penales" style="display:none;">
       <div id="pen-banner-cont"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
@@ -674,6 +660,66 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
       <div id="pen-equipos-cont"></div>
     </div>
+
+    <!-- ÁRBITROS -->
+    <div id="stats-arbitros" style="display:none;">
+      <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
+      <div class="tabla-mini" id="tbl-arbitros"></div>
+    </div>
+
+    <!-- DIR. TÉCNICOS -->
+    <div id="stats-dt" style="display:none;">
+      <p class="sec">👔 Directores Técnicos</p>
+      <div id="tbl-dt"></div>
+    </div>
+
+    <!-- JUGADORES -->
+    <div id="stats-jugadores" style="display:none;">
+      <div class="ztabs" id="jugadores-subtabs" style="margin-bottom:1rem;">
+        <div class="ztab active" onclick="showJugSubTab('goles',this)">Goles</div>
+        <div class="ztab" onclick="showJugSubTab('arqueros',this)">Arqueros</div>
+        <div class="ztab" onclick="showJugSubTab('disciplina',this)">Disciplina</div>
+        <div class="ztab" onclick="showJugSubTab('otros',this)">Otros</div>
+      </div>
+
+      <div id="jugcont-goles">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">⚽ Goleadores</p><div class="tabla-mini" id="tbl-goleadores"></div></div>
+          <div><p class="sec">👟 Asistentes</p><div class="tabla-mini" id="tbl-asistentes"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">🎯 Goles de tiro libre</p><div class="tabla-mini" id="tbl-tiro-libre"></div></div>
+          <div><p class="sec">🙈 Goles en contra</p><div class="tabla-mini" id="tbl-goles-contra"></div></div>
+        </div>
+      </div>
+
+      <div id="jugcont-arqueros" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
+          <div style="color:var(--muted);font-size:13px;padding:1rem 0;">Más estadísticas de arqueros próximamente.</div>
+        </div>
+      </div>
+
+      <div id="jugcont-disciplina" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">🟨 Amarillas totales <span style="font-size:10px;color:#999;font-weight:400;">(incl. dobles)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
+          <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
+        </div>
+        <div style="max-width:480px;">
+          <p class="sec">⚠️ Amarillas para límite <span style="font-size:10px;color:#999;font-weight:400;">(sin contar partidos con expulsión)</span></p>
+          <div class="tabla-mini" id="tbl-amarillas-limite"></div>
+        </div>
+      </div>
+
+      <div id="jugcont-otros" style="display:none;">
+        <div style="padding:2rem 1rem;text-align:center;color:var(--muted);">
+          <div style="font-size:32px;margin-bottom:.75rem;">🚧</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#ccc;margin-bottom:.5rem;">Sector en construcción</div>
+          <div style="font-size:13px;">Agregaremos datos relevantes o curiosidades del torneo pronto.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2532,10 +2578,19 @@ let _statsLoadedAt = 0;
 function showStatsTab(tab, el){
   document.querySelectorAll('#stats-tabs .ztab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['jugadores','equipos','arbitros','penales'].forEach(t=>{
+  ['tablas','penales','arbitros','dt','jugadores'].forEach(t=>{
     const p=document.getElementById('stats-'+t);
+    if(!p) return;
     if(t!==tab){ p.style.display='none'; }
     else{ p.style.opacity='0';p.style.display='';requestAnimationFrame(()=>requestAnimationFrame(()=>{ p.style.opacity='1'; })); }
+  });
+}
+function showJugSubTab(tab, el){
+  document.querySelectorAll('#jugadores-subtabs .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['goles','arqueros','disciplina','otros'].forEach(t=>{
+    const c=document.getElementById('jugcont-'+t);
+    if(c) c.style.display=t===tab?'':'none';
   });
 }
 
@@ -2556,13 +2611,15 @@ async function cargarEstadisticas(){
       evRes0, jugsRes0,
       {data:partidosDB, error:pErr},
       {data:planillasDB},
-      {data:penalesDB, error:penErr}
+      {data:penalesDB, error:penErr},
+      {data:dtDB}
     ] = await Promise.all([
       sb.from('eventos').select(evSelect).range(0, 999),
       sb.from('jugadores').select(jugSelect).range(0, 999),
       sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante').not('goles_local','is',null),
       sb.from('planillas').select('id,partido_id,equipo_id'),
-      sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id')
+      sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
+      sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha')
     ]);
     if(evRes0.error) throw evRes0.error;
     if(jugsRes0.error) throw jugsRes0.error;
@@ -2618,16 +2675,53 @@ async function cargarEstadisticas(){
       if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0};
 
       if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
-      // gol_contra does NOT count as a goal for that player
       if(ev.tipo==='asistencia') jugStats[key].asist++;
       if(ev.tipo==='amarilla') jugStats[key].amarillas++;
       if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=2; jugStats[key].rojas++; }
       if(ev.tipo==='roja') jugStats[key].rojas++;
+    });
 
-      // Vallas: track arqueros (nota=AR implied by position or es_capitan)
-      if(ev.tipo==='gol'||ev.tipo==='gol_penal'||ev.tipo==='gol_tiro_libre'){
-        // The goalkeeper of the team that conceded
-        // We'll calculate vallas separately from fixture data
+    // GOLES EN CONTRA
+    const golesContraMap = {}; // key → {nombre, equipo, count, beneficiarios}
+    (eventos||[]).forEach(ev=>{
+      if(ev.tipo!=='gol_contra') return;
+      const pl=ev.planillas; if(!pl) return;
+      const jug=pl.jugadores; if(!jug) return;
+      const equipo=pl.equipos?.nombre;
+      const jId=jug.id;
+      const nombre=jug.nombre_display||jug.nombre||'?';
+      const key=jId||nombre;
+      const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
+      const partido=partidosById[partidoId];
+      if(!golesContraMap[key]) golesContraMap[key]={nombre,equipo,count:0,beneficiarios:[]};
+      golesContraMap[key].count++;
+      if(partido){
+        const bene=equipo===partido.equipo_local_nombre?partido.equipo_visitante_nombre:partido.equipo_local_nombre;
+        golesContraMap[key].beneficiarios.push(bene);
+      }
+    });
+
+    // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
+    const _amLimPartido={}; // "jId_partidoId" → {jId, nombre, equipo, amarilla, expulsion}
+    (eventos||[]).forEach(ev=>{
+      if(!['amarilla','doble_amarilla','roja'].includes(ev.tipo)) return;
+      const pl=ev.planillas; if(!pl) return;
+      const jug=pl.jugadores; if(!jug) return;
+      const jId=jug.id;
+      const nombre=jug.nombre_display||jug.nombre||'?';
+      const equipo=pl.equipos?.nombre;
+      const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
+      const mk=`${jId}_${partidoId}`;
+      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId,nombre,equipo,amarilla:false,expulsion:false};
+      if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
+      if(ev.tipo==='doble_amarilla'){ _amLimPartido[mk].amarilla=true; _amLimPartido[mk].expulsion=true; }
+      if(ev.tipo==='roja') _amLimPartido[mk].expulsion=true;
+    });
+    const amarillasLimiteMap={}; // jId → {nombre, equipo, count}
+    Object.values(_amLimPartido).forEach(m=>{
+      if(m.amarilla&&!m.expulsion){
+        if(!amarillasLimiteMap[m.jId]) amarillasLimiteMap[m.jId]={nombre:m.nombre,equipo:m.equipo,count:0};
+        amarillasLimiteMap[m.jId].count++;
       }
     });
 
@@ -2893,19 +2987,37 @@ async function cargarEstadisticas(){
     ) + tirLibreRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
+    // GOLES EN CONTRA
+    const golesContraRows=Object.values(golesContraMap).sort((a,b)=>b.count-a.count);
+    document.getElementById('tbl-goles-contra').innerHTML=golesContraRows.length?tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['40px','GC','GC'],['','A favor de','A favor de']
+    )+golesContraRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.count}</strong></td><td><div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">${j.beneficiarios.map(b=>escudoHTML(b,'me')).join('')}</div></td></tr>`).join('')+'</tbody></table>'
+    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin goles en contra registrados.</div>';
+
     // AMARILLAS
-    const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,10);
+    const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,15);
     document.getElementById('tbl-amarillas').innerHTML = amonestados.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','Amarillas','🟨']
     ) + amonestados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.amarillas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // ROJAS
-    const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,10);
+    const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,15);
     document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','Rojas','🟥']
     ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // AMARILLAS PARA LÍMITE
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>0).sort((a,b)=>b.count-a.count).slice(0,20);
+    document.getElementById('tbl-amarillas-limite').innerHTML=amLimRows.length?tblHead(
+      ['28px','','#'],['','Jugador','Jugador'],['50px','Amarillas','🟨'],['50px','Límite','Límite']
+    )+amLimRows.map((j,i)=>{
+      const pct=Math.round(j.count/5*100);
+      const color=j.count>=5?'#e57373':j.count>=4?'#ffa726':j.count>=3?'#fff176':'var(--muted)';
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong style="color:${color};">${j.count}</strong></td><td><div style="font-size:10px;color:${color};">${j.count}/5</div></td></tr>`;
+    }).join('')+'</tbody></table>'
+    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // VALLAS INVICTAS
     const vallas = Object.values(vallasPorArquero)
@@ -3095,9 +3207,53 @@ async function cargarEstadisticas(){
     posAmpDiv.innerHTML = ZONAS.map(z=>{
       const zc=zonaConfig(z);
       const rows=calcTabla(z).map(r=>({...r,dif:r.gf-r.gc}));
-      return `<div>
-      <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}</div></div>`;
+      let vl=0,e=0,vv=0;
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+          if(m.gl===null) return;
+          if(m.gl>m.gv) vl++; else if(m.gl<m.gv) vv++; else e++;
+        });
+      }
+      const tot=vl+e+vv;
+      const pct=n=>tot?Math.round(n/tot*100):0;
+      const vlEvv=tot?`<div style="display:flex;gap:1.2rem;flex-wrap:wrap;font-size:11px;color:#888;padding:.45rem .6rem;border-top:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);">
+        <span>🏠 ${vl} victorias locales <span style="color:#555;">(${pct(vl)}%)</span></span>
+        <span>⚖️ ${e} empates <span style="color:#555;">(${pct(e)}%)</span></span>
+        <span>✈️ ${vv} victorias visitante <span style="color:#555;">(${pct(vv)}%)</span></span>
+      </div>`:'';
+      return `<div style="margin-bottom:1.5rem;">
+        <div class="tabla-mini" style="overflow-x:auto;">${renderZonaTable(rows,zc,z)}${vlEvv}</div>
+      </div>`;
     }).join('');
+
+    // DIR. TÉCNICOS
+    const dtHistory={}; // clubNombre → [{dt, desde, hasta}]
+    [...(dtDB||[])].sort((a,b)=>a.fecha-b.fecha).forEach(p=>{
+      [[p.equipo_local_nombre,p.dt_local],[p.equipo_visitante_nombre,p.dt_visitante]].forEach(([club,dt])=>{
+        if(!club||!dt||!dt.trim()) return;
+        if(!dtHistory[club]) dtHistory[club]=[];
+        const last=dtHistory[club][dtHistory[club].length-1];
+        if(last&&last.dt===dt) last.hasta=p.fecha;
+        else dtHistory[club].push({dt,desde:p.fecha,hasta:p.fecha});
+      });
+    });
+    const dtDiv=document.getElementById('tbl-dt');
+    const clubsConDT=Object.keys(dtHistory).sort();
+    if(!clubsConDT.length){
+      dtDiv.innerHTML='<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos cargados aún.</div>';
+    } else {
+      dtDiv.innerHTML=`<div style="display:flex;flex-direction:column;gap:.5rem;">${
+        clubsConDT.map(club=>{
+          const periodos=dtHistory[club];
+          const maxFecha=Math.max(...ZONAS.map(z=>Math.max(...Object.keys(FIXTURE[z]||{}).map(Number))));
+          const periodosStr=periodos.map(p=>`<span style="font-size:12px;color:#ccc;">${p.dt}</span> <span style="font-size:11px;color:#666;">F${p.desde}${p.hasta!==p.desde?`–${p.hasta}`:''}${p.hasta===maxFecha?'–act.':''}</span>`).join('<span style="color:#444;margin:0 .3rem;">|</span>');
+          return `<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .65rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:.5rem;min-width:140px;flex-shrink:0;">${escudoHTML(club,'me')}<span style="font-size:13px;font-weight:500;">${club}</span></div>
+            <div style="flex:1;display:flex;flex-wrap:wrap;gap:.4rem .75rem;align-items:center;">${periodosStr}</div>
+          </div>`;
+        }).join('')
+      }</div>`;
+    }
 
     // ÁRBITROS — build per-match data for detail expand
     _ARBI_PARTIDOS = {};
