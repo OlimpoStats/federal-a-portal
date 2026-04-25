@@ -1502,16 +1502,26 @@ function renderPartidos(f){
       if(parts.length === 1) return parts[0];
       return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
     };
-    const fmtMiniGol = g => {
-      const ec = g.tipo==="gol_contra" ? " <span style='color:vf0f0f0;font-size:10px;'>(E/C)</span>" : "";
-      const min = g.minuto || "";
-      return "<span class='mini-gol-min'>" + min + "'</span> <span class='mini-gol-nombre'>" + fmtMiniNombre(g.nombre) + "</span>" + ec;
-    };
-    const todosGoles = [...golesLocal.map(g=>({...g,bando:"local"})), ...golesVisit.map(g=>({...g,bando:"visit"}))]
-      .sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
     const _zc = zonaConfig(zona);
-    const golesLocalFmt = golesLocal.map(fmtMiniGol).join(', ');
-    const golesVisitFmt = golesVisit.map(fmtMiniGol).join(', ');
+    // Group goals by player (same name + type), show combined minutes
+    const groupGoles = (goles) => {
+      if(!goles.length) return '';
+      const byKey = {};
+      goles.forEach(g => {
+        const k = (g.nombre||'?') + '|' + g.tipo;
+        if(!byKey[k]) byKey[k] = {nombre: g.nombre, mins: [], ec: g.tipo==='gol_contra'};
+        byKey[k].mins.push(parseInt(g.minuto)||0);
+      });
+      return Object.values(byKey)
+        .sort((a,b) => (a.mins[0]||0) - (b.mins[0]||0))
+        .map(p => {
+          const minsStr = p.mins.sort((a,b)=>a-b).map(m=>m+"'").join(' y ');
+          const ec = p.ec ? " <span style='font-size:9px;color:#999;'>(EC)</span>" : '';
+          return `<span class='mini-gol-min'>${minsStr}</span> <span class='mini-gol-nombre'>${fmtMiniNombre(p.nombre)}</span>${ec}`;
+        }).join(', ');
+    };
+    const golesLocalFmt = groupGoles(golesLocal);
+    const golesVisitFmt = groupGoles(golesVisit);
 
     // Info bar: programmed = estadio + arbitro; live = no bar
     const infoItems = [];
@@ -1533,11 +1543,16 @@ function renderPartidos(f){
     const liveVisitParts = [..._ld.gv.map(g=>fmtLiveGol(g)+' ⚽'), ..._ld.rvn.map(r=>fmtLiveRoja(r)+' 🟥')];
     const hasLiveEvents = liveLocalParts.length > 0 || liveVisitParts.length > 0;
     const showLiveEvents = !tienePlanilla && m.gl !== null && hasLiveEvents;
+    const _golesCols = (golesLocalFmt && golesVisitFmt) ? '1fr 1fr' : '1fr';
+    const _golesInner = (golesLocalFmt && golesVisitFmt)
+      ? `<span style="text-align:left;word-break:break-word;">⚽ ${golesLocalFmt}</span><span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`
+      : golesLocalFmt
+        ? `<span style="word-break:break-word;">⚽ ${golesLocalFmt}</span>`
+        : `<span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`;
     goleadoresHTML = hayGoles
       ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
-        <span style="text-align:left;word-break:break-word;">${golesLocalFmt ? '⚽ ' + golesLocalFmt + (golesLocal.length > 1 ? '.' : '') : ''}</span>
-        <span style="text-align:right;word-break:break-word;">${golesVisitFmt ? golesVisitFmt + ' ⚽' : ''}</span>
+      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:${_golesCols};gap:.4rem;">
+        ${_golesInner}
       </div>
       <div style="width:56px;flex-shrink:0;"></div>
     </div>`
@@ -1552,18 +1567,18 @@ function renderPartidos(f){
         : "";
 
     const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
+    const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
     const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
-    let fichaBtn, streamBtn;
+    // Always 2 slots: [stream, planilla] — stream left, planilla right
+    let leftBtn, rightBtn;
     if(m.gl !== null){
-      // Finished: planilla then stream
-      fichaBtn = tienePlanilla
+      leftBtn = _streamLink || _filler26;
+      rightBtn = tienePlanilla
         ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
         : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
-      streamBtn = _streamLink || `<div style="width:26px;flex-shrink:0"></div>`;
     } else {
-      // Programmed/live: stream only (no planilla)
-      fichaBtn = '';
-      streamBtn = _streamLink;
+      leftBtn = _streamLink || _filler26;
+      rightBtn = _filler26;
     }
     const zc = zonaConfig(zona);
     const zonaShort = zc.code || letraZona(zona);
@@ -1576,8 +1591,8 @@ function renderPartidos(f){
           <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${showRedIcons&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
         </div>
         <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
-          ${fichaBtn}
-          ${streamBtn}
+          ${leftBtn}
+          ${rightBtn}
         </div>
       </div>
       ${goleadoresHTML}
@@ -2309,21 +2324,22 @@ function renderFxCont(){
           ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`
           : `<div class="vs">VS</div>`);
       const _fxStreamSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
+      const _fxFill=`<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
       const _fxStreamLink=meta.stream?`<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión">${_fxStreamSvg}</a>`:'';
       let fichaBtn, streamBtn;
       if(m.gl!==null){
+        streamBtn=_fxStreamLink||_fxFill;
         fichaBtn=tienePlanilla
           ?`<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey.replace(/'/g,"\\'")}',true)">📄</div>`
           :`<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
-        streamBtn=_fxStreamLink||`<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
       } else {
-        fichaBtn='';
-        streamBtn=_fxStreamLink;
+        streamBtn=_fxStreamLink||_fxFill;
+        fichaBtn=_fxFill;
       }
       const localQ=m.local.replace(/"/g,'&quot;');
       const visitQ=m.visitante.replace(/"/g,'&quot;');
       const partidoEl=`<div class="partido fx-partido" data-local="${localQ}" data-visit="${visitQ}" style="flex:1;"><div class="eq"><div style="display:contents;">${escudoHTML(m.local)}</div><div class="eqn fx-eqn" onclick="fxHighlight('${m.local.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.local}</div></div><div class="res">${r}</div><div class="eq vis"><div class="eqn fx-eqn" onclick="fxHighlight('${m.visitante.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.visitante}</div><div style="display:contents;">${escudoHTML(m.visitante)}</div></div></div>`;
-      html+=`<div class="fx-row" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;gap:.25rem;align-items:center;flex-shrink:0;">${fichaBtn}${streamBtn}</div></div>`;
+      html+=`<div class="fx-row" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">${partidoEl}<div style="display:flex;gap:.25rem;align-items:center;flex-shrink:0;">${streamBtn}${fichaBtn}</div></div>`;
     });
   }
   document.getElementById("fx-cont").innerHTML=html;
