@@ -722,7 +722,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div id="sanc-pendientes-pub-wrap" style="display:none;">
             <p class="sec">🚫 Suspensiones pendientes</p>
             <div class="tabla-mini" id="tbl-suspensiones-pendientes"></div>
-            <div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>🔄</span><span>Esta tabla se actualiza los jueves a la tarde, luego de la salida del boletín.</span></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
@@ -3074,7 +3073,7 @@ async function cargarEstadisticas(){
           <td style="text-align:center;font-size:13px;">${tipoIcon}</td>
           <td style="text-align:center;font-weight:700;color:${color};">${ptdos}</td>
         </tr>`;
-      }).join('') + '</tbody></table>';
+      }).join('') + '</tbody></table><div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>🔄</span><span>Esta tabla se actualiza los jueves a la tarde, luego de la salida del boletín.</span></div>';
     } else {
       sancWrap.style.display = 'none';
     }
