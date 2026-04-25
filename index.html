@@ -1575,7 +1575,7 @@ function renderPartidos(f){
     const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
     // Always 2 slots: [stream, planilla] — stream left, planilla right
     let leftBtn, rightBtn;
-    if(m.gl !== null){
+    if(m.gl !== null && !esEnVivo){
       leftBtn = _streamLink || _filler26;
       rightBtn = tienePlanilla
         ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
@@ -2127,7 +2127,7 @@ function liveScoreBadge(equipo){
     if(m.local!==equipo&&m.visitante!==equipo) return false;
     // Same check as esEnVivo: require a real minute in minuto_actual
     const _ld = parseLiveData(m.minuto_actual);
-    const _min = _ld && _ld.m ? _ld.m : null;
+    const _min = _ld && _ld.min ? _ld.min : null;
     return _min !== null;
   });
   if(!liveM||liveM.gl===null) return "";
@@ -2330,8 +2330,9 @@ function renderFxCont(){
       const _fxStreamSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
       const _fxFill=`<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
       const _fxStreamLink=meta.stream?`<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión">${_fxStreamSvg}</a>`:'';
+      const fxEnVivo = m.estado === "en_curso";
       let fichaBtn, streamBtn;
-      if(m.gl!==null){
+      if(m.gl!==null && !fxEnVivo){
         streamBtn=_fxStreamLink||_fxFill;
         fichaBtn=tienePlanilla
           ?`<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey.replace(/'/g,"\\'")}',true)">📄</div>`
