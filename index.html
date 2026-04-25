@@ -712,13 +712,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-disciplina" style="display:none;">
-        <div id="sanc-pendientes-pub-wrap" style="display:none;max-width:640px;margin-bottom:1.25rem;">
-          <p class="sec">🚫 Suspensiones pendientes</p>
-          <div class="tabla-mini" id="tbl-suspensiones-pendientes"></div>
-        </div>
         <div style="max-width:480px;margin-bottom:1.25rem;">
           <p class="sec">⚠️ Límite de amarillas p/ susp.</p>
           <div class="tabla-mini" id="tbl-amarillas-limite"></div>
+        </div>
+        <div id="sanc-pendientes-pub-wrap" style="display:none;max-width:480px;margin-bottom:1.25rem;">
+          <p class="sec">🚫 Suspensiones pendientes</p>
+          <div class="tabla-mini" id="tbl-suspensiones-pendientes"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
           <div><p class="sec">🟨 Amarillas totales <span style="font-size:10px;color:#999;font-weight:400;">(Incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
@@ -3051,22 +3051,22 @@ async function cargarEstadisticas(){
     ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // SUSPENSIONES PENDIENTES (desde tabla sanciones)
-    const sancPend = sancionesDB||[];
+    // SUSPENSIONES PENDIENTES (desde tabla sanciones — solo partidos_sancion > 0)
+    const sancPend = (sancionesDB||[]).filter(s => s.partidos_sancion > 0);
     const sancWrap = document.getElementById('sanc-pendientes-pub-wrap');
     if(sancPend.length){
       sancWrap.style.display = '';
       document.getElementById('tbl-suspensiones-pendientes').innerHTML = tblHead(
-        ['','Jugador','Jugador'],['','Equipo','Equipo'],['60px','Zona','Zona'],['','Motivo','Motivo'],['70px','Partidos','Partidos']
-      ) + sancPend.map(s=>{
-        const tipoIcon = s.tipo==='amarillas' ? '🟨' : '🟥';
+        ['28px','','#'],['','Jugador','Jugador'],['55px','Tipo','Tipo'],['80px','Partidos','Partidos susp.']
+      ) + sancPend.map((s,i)=>{
+        const tipoIcon = s.motivo==='Doble amarilla' ? '🟨🟨' : s.tipo==='amarillas' ? '🟨×5' : '🟥';
         const color = s.tipo==='amarillas' ? '#ffa726' : '#e57373';
+        const ptdos = s.partidos_sancion === 1 ? '1 partido' : `${s.partidos_sancion} partidos`;
         return `<tr>
-          <td><strong style="color:${color};">${tipoIcon} ${s.jugador_nombre}</strong></td>
-          <td>${escudoHTML(s.equipo,'me')} <span style="font-size:13px;">${s.equipo}</span></td>
-          <td style="text-align:center;font-size:12px;color:#aaa;">${s.zona?'Zona '+s.zona:'—'}</td>
-          <td style="font-size:12px;color:#aaa;">${s.motivo||'—'}</td>
-          <td style="text-align:center;font-weight:700;color:${color};">${s.partidos_sancion} partido${s.partidos_sancion!==1?'s':''}</td>
+          <td><span class="pos">${i+1}</span></td>
+          <td>${fmtJug(s.jugador_nombre, s.equipo)}</td>
+          <td style="text-align:center;font-size:13px;">${tipoIcon}</td>
+          <td style="text-align:center;font-weight:700;color:${color};">${ptdos}</td>
         </tr>`;
       }).join('') + '</tbody></table>';
     } else {

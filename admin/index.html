@@ -692,13 +692,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
         <div id="sanc-activas-cont" style="padding:0;">Cargando...</div>
       </div>
 
-      <div class="card" style="margin-bottom:1.5rem;">
-        <div class="card-hdr">🟥 Expulsados en el torneo</div>
-        <div id="sanc-expulsados-cont" style="padding:0;">Cargando...</div>
-      </div>
-
       <div class="card">
-        <div class="card-hdr">➕ Agregar sanción por roja directa</div>
+        <div class="card-hdr">➕ Agregar sanción manual</div>
         <div class="card-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
             <div>
@@ -708,20 +703,6 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <div>
               <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Equipo</label>
               <input id="sanc-equipo" type="text" placeholder="Nombre del equipo" style="width:100%;">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Zona</label>
-              <select id="sanc-zona" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;color:var(--text);font-size:14px;">
-                <option value="">— Zona —</option>
-                <option value="A">Zona A</option>
-                <option value="B">Zona B</option>
-                <option value="C">Zona C</option>
-                <option value="D">Zona D</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Partidos de suspensión</label>
-              <input id="sanc-partidos" type="number" min="1" value="1" style="width:100%;">
             </div>
             <div style="grid-column:1/-1;">
               <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Motivo</label>
@@ -3848,7 +3829,6 @@ async function importarPlantelExcel(){
 
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
-  document.getElementById('sanc-expulsados-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
   const [{data: sanciones, error: sErr}, {data: expEvs}] = await Promise.all([
     sb.from('sanciones').select('*').order('created_at', {ascending: false}),
@@ -3856,10 +3836,9 @@ async function cargarSancionados(){
       .select('tipo, planillas!inner(partido_id, jugadores(nombre_display,nombre), equipos(nombre))')
       .in('tipo', ['doble_amarilla','roja'])
   ]);
-
   if(sErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${sErr.message}</div>`; return; }
 
-  // Load partido info for expelled players
+  // Load partido info
   const pids = [...new Set((expEvs||[]).map(ev => ev.planillas?.partido_id).filter(Boolean))];
   const {data: partidosExp} = pids.length
     ? await sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre').in('id', pids)
@@ -3867,58 +3846,105 @@ async function cargarSancionados(){
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
-  renderSancActivas(sanciones||[]);
-  renderExpulsadosAdmin(expEvs||[], partidoMap, sanciones||[]);
+  // Auto-create sancion record (partidos=0) for any expulsado that has none
+  let allSanc = sanciones || [];
+  const existingKeys = new Set(allSanc.map(s => `${s.jugador_nombre}|${s.equipo}|${s.fecha_origen||0}`));
+  const toCreate = [];
+  for(const ev of (expEvs||[])){
+    const pl = ev.planillas;
+    if(!pl?.jugadores || !pl?.equipos) continue;
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
+    if(!jNom) continue;
+    const eq = pl.equipos.nombre || '';
+    const p = partidoMap[pl.partido_id] || {};
+    const fo = p.fecha || null;
+    const key = `${jNom}|${eq}|${fo||0}`;
+    if(!existingKeys.has(key)){
+      toCreate.push({ jugador_nombre: jNom, equipo: eq, zona: p.zona||null, tipo: 'roja',
+        partidos_sancion: 0, motivo: ev.tipo==='doble_amarilla'?'Doble amarilla':'Roja directa',
+        fecha_origen: fo, estado: 'pendiente' });
+      existingKeys.add(key);
+    }
+  }
+  if(toCreate.length){
+    await sb.from('sanciones').insert(toCreate);
+    const {data: fresh} = await sb.from('sanciones').select('*').order('created_at', {ascending: false});
+    allSanc = fresh || allSanc;
+  }
+
+  renderSancActivas(allSanc, partidoMap);
 }
 
-function renderSancActivas(sanciones){
+function renderSancActivas(sanciones, partidoMap){
   const cont = document.getElementById('sanc-activas-cont');
-  const pendientes = sanciones.filter(s => s.estado === 'pendiente');
-  const cumplidas = sanciones.filter(s => s.estado === 'cumplida').slice(0, 5);
-
-  const btnStyle = (bg) => `style="background:${bg};color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:12px;"`;
-  const renderRow = (s) => `
-    <tr style="border-bottom:1px solid rgba(255,255,255,.06);">
-      <td style="padding:.5rem .75rem;font-size:13px;font-weight:600;">${s.jugador_nombre}</td>
-      <td style="padding:.5rem .75rem;font-size:13px;color:#ccc;">${s.equipo}</td>
-      <td style="padding:.5rem .75rem;font-size:12px;color:#999;">${s.zona||'—'}</td>
-      <td style="padding:.5rem .75rem;font-size:12px;">${s.tipo==='amarillas'?'🟨 5 amarillas':'🟥 Roja'}</td>
-      <td style="padding:.5rem .75rem;font-size:13px;text-align:center;">${s.partidos_sancion}</td>
-      <td style="padding:.5rem .75rem;font-size:12px;color:#aaa;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.motivo||'—'}</td>
-      <td style="padding:.5rem .75rem;font-size:12px;color:#888;">${s.fecha_origen ? 'F'+s.fecha_origen : '—'}</td>
-      <td style="padding:.5rem .75rem;">
-        ${s.estado==='pendiente'
-          ? `<button ${btnStyle('#1e5c35')} onclick="marcarSancionCumplida(${s.id})">✓ Cumplida</button>`
-          : `<span style="font-size:11px;color:#555;padding:3px 8px;background:rgba(255,255,255,.04);border-radius:4px;">✓ Cumplida</span>`}
-        <button ${btnStyle('#5c1e1e')} style="margin-left:4px;" onclick="eliminarSancion(${s.id})">🗑</button>
-      </td>
-    </tr>`;
+  const pendientes = sanciones.filter(s => s.estado === 'pendiente')
+    .sort((a,b) => (b.fecha_origen||0) - (a.fecha_origen||0));
+  const cumplidas = sanciones.filter(s => s.estado === 'cumplida')
+    .sort((a,b) => (b.fecha_origen||0) - (a.fecha_origen||0)).slice(0, 8);
 
   if(!pendientes.length && !cumplidas.length){
     cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">No hay sanciones registradas.</div>';
     return;
   }
 
+  const cntBtn = `style="background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.12);border-radius:4px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;line-height:1;"`;
+  const renderRow = (s, isPend) => {
+    const numColor = s.partidos_sancion > 0 ? '#f0b429' : '#555';
+    const counter = isPend ? `
+      <div style="display:flex;align-items:center;gap:5px;">
+        <button ${cntBtn} onclick="updatePartidosSancion(${s.id},-1,${s.partidos_sancion},this)">−</button>
+        <span data-sanc-num="${s.partidos_sancion}" style="font-size:14px;font-weight:700;min-width:18px;text-align:center;color:${numColor};">${s.partidos_sancion}</span>
+        <button ${cntBtn} onclick="updatePartidosSancion(${s.id},1,${s.partidos_sancion},this)">+</button>
+      </div>` : `<span style="font-size:13px;color:#555;">${s.partidos_sancion}</span>`;
+    const tipoLabel = s.motivo==='Doble amarilla'
+      ? `<span style="color:#ffa726;font-size:12px;">🟨🟨</span>`
+      : s.tipo==='amarillas'
+        ? `<span style="color:#ffa726;font-size:12px;">🟨×5</span>`
+        : `<span style="color:#e57373;font-size:12px;">🟥</span>`;
+    const accion = isPend
+      ? `<button style="background:#1e5c35;color:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:12px;white-space:nowrap;" onclick="marcarSancionCumplida(${s.id})">✓ Cumplida</button>
+         <button style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>`
+      : `<span style="font-size:11px;color:#3a3a3a;padding:3px 7px;background:rgba(255,255,255,.03);border-radius:4px;">✓ Cumplida</span>
+         <button style="background:none;border:none;color:#3a3a3a;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>`;
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);${isPend?'':'opacity:.45;'}">
+      <td style="padding:.5rem .75rem;font-size:13px;font-weight:600;">${s.jugador_nombre}</td>
+      <td style="padding:.5rem .75rem;font-size:13px;color:#ccc;">${s.equipo}</td>
+      <td style="padding:.5rem .75rem;font-size:12px;color:#888;">${s.fecha_origen?'F'+s.fecha_origen:'—'}</td>
+      <td style="padding:.5rem .75rem;">${tipoLabel} <span style="font-size:11px;color:#888;">${s.motivo||'—'}</span></td>
+      <td style="padding:.5rem .75rem;">${counter}</td>
+      <td style="padding:.5rem .75rem;white-space:nowrap;">${accion}</td>
+    </tr>`;
+  };
+
   const thead = `<thead><tr style="background:rgba(255,255,255,.04);">
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;white-space:nowrap;">JUGADOR</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">EQUIPO</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">ZONA</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">TIPO</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:center;font-weight:600;">PTDOS</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">MOTIVO</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">FECHA</th>
-    <th style="padding:.4rem .75rem;font-size:11px;color:#666;font-weight:600;"></th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">JUGADOR</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">EQUIPO</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">FECHA</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">MOTIVO</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">PARTIDOS</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#555;font-weight:600;"></th>
   </tr></thead>`;
 
   let html = `<table style="width:100%;border-collapse:collapse;">${thead}<tbody>`;
-  if(pendientes.length) html += pendientes.map(renderRow).join('');
-  else html += `<tr><td colspan="8" style="padding:.75rem;font-size:13px;color:#555;text-align:center;">Sin sanciones pendientes</td></tr>`;
+  html += pendientes.map(s => renderRow(s, true)).join('');
   if(cumplidas.length){
-    html += `<tr><td colspan="8" style="padding:.4rem .75rem;font-size:11px;color:#444;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.08);">ÚLTIMAS CUMPLIDAS</td></tr>`;
-    html += cumplidas.map(renderRow).join('');
+    html += `<tr><td colspan="6" style="padding:.35rem .75rem;font-size:10px;color:#333;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06);letter-spacing:.5px;">CUMPLIDAS</td></tr>`;
+    html += cumplidas.map(s => renderRow(s, false)).join('');
   }
   html += '</tbody></table>';
   cont.innerHTML = html;
+}
+
+async function updatePartidosSancion(id, delta, current, btn){
+  const newVal = Math.max(0, (current||0) + delta);
+  const {error} = await sb.from('sanciones').update({partidos_sancion: newVal}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  const wrap = btn.parentElement;
+  const numEl = wrap.querySelector('[data-sanc-num]');
+  if(numEl){ numEl.textContent = newVal; numEl.dataset.sancNum = newVal; numEl.style.color = newVal > 0 ? '#f0b429' : '#555'; }
+  wrap.querySelectorAll('button').forEach(b => {
+    b.setAttribute('onclick', b.getAttribute('onclick').replace(/,\d+,this/, `,${newVal},this`));
+  });
 }
 
 function renderExpulsadosAdmin(expEvs, partidoMap, sanciones){
@@ -3986,10 +4012,8 @@ function renderExpulsadosAdmin(expEvs, partidoMap, sanciones){
 function prefillSancion(jugNom, equipo, zona, fechaOrigen, tipoExpulsion){
   document.getElementById('sanc-jugador').value = jugNom;
   document.getElementById('sanc-equipo').value = equipo;
-  document.getElementById('sanc-zona').value = zona || '';
   document.getElementById('sanc-fecha-origen').value = fechaOrigen || '';
   document.getElementById('sanc-motivo').value = tipoExpulsion === 'doble_amarilla' ? 'Doble amarilla' : 'Roja directa';
-  document.getElementById('sanc-partidos').value = '1';
   document.getElementById('sanc-jugador').scrollIntoView({behavior:'smooth', block:'center'});
   document.getElementById('sanc-jugador').focus();
 }
@@ -3997,20 +4021,15 @@ function prefillSancion(jugNom, equipo, zona, fechaOrigen, tipoExpulsion){
 async function agregarSancion(){
   const jugador = document.getElementById('sanc-jugador').value.trim();
   const equipo = document.getElementById('sanc-equipo').value.trim();
-  const zona = document.getElementById('sanc-zona').value;
-  const partidos = parseInt(document.getElementById('sanc-partidos').value) || 1;
   const motivo = document.getElementById('sanc-motivo').value.trim();
   const fechaOrigen = parseInt(document.getElementById('sanc-fecha-origen').value) || null;
   if(!jugador || !equipo){ alert('Completá al menos jugador y equipo.'); return; }
   const {error} = await sb.from('sanciones').insert({
-    jugador_nombre: jugador, equipo, zona: zona||null, tipo: 'roja',
-    partidos_sancion: partidos, motivo: motivo||null, fecha_origen: fechaOrigen, estado: 'pendiente'
+    jugador_nombre: jugador, equipo, tipo: 'roja',
+    partidos_sancion: 0, motivo: motivo||null, fecha_origen: fechaOrigen, estado: 'pendiente'
   });
   if(error){ alert('Error al guardar: ' + error.message); return; }
-  ['sanc-jugador','sanc-equipo','sanc-motivo'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('sanc-partidos').value = '1';
-  document.getElementById('sanc-zona').value = '';
-  document.getElementById('sanc-fecha-origen').value = '';
+  ['sanc-jugador','sanc-equipo','sanc-motivo','sanc-fecha-origen'].forEach(id => document.getElementById(id).value='');
   cargarSancionados();
 }
 
