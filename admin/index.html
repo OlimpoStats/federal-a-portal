@@ -693,8 +693,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       </div>
 
       <div class="card" style="margin-bottom:1.5rem;">
-        <div class="card-hdr">⚠️ Amarillas computables acumuladas (3+)</div>
-        <div id="sanc-amarillas-cont" style="padding:0;font-size:13px;color:#666;padding:1rem;">Cargando...</div>
+        <div class="card-hdr">🟥 Expulsados en el torneo</div>
+        <div id="sanc-expulsados-cont" style="padding:0;">Cargando...</div>
       </div>
 
       <div class="card">
@@ -3848,40 +3848,27 @@ async function importarPlantelExcel(){
 
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
-  document.getElementById('sanc-amarillas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
+  document.getElementById('sanc-expulsados-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
-  const [{data: sanciones, error: sErr}, {data: evs}] = await Promise.all([
+  const [{data: sanciones, error: sErr}, {data: expEvs}] = await Promise.all([
     sb.from('sanciones').select('*').order('created_at', {ascending: false}),
     sb.from('eventos')
       .select('tipo, planillas!inner(partido_id, jugadores(nombre_display,nombre), equipos(nombre))')
-      .in('tipo', ['amarilla','doble_amarilla'])
+      .in('tipo', ['doble_amarilla','roja'])
   ]);
 
   if(sErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${sErr.message}</div>`; return; }
 
-  // Compute amarillas computables per player
-  const byPJ = {};
-  (evs||[]).forEach(ev => {
-    const pl = ev.planillas;
-    if(!pl?.jugadores || !pl?.equipos) return;
-    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
-    if(!jNom) return;
-    const eq = pl.equipos.nombre || '';
-    const key = `${pl.partido_id}|${jNom}|${eq}`;
-    if(!byPJ[key]) byPJ[key] = {jNom, eq, am: 0, expuls: false};
-    if(ev.tipo==='amarilla') byPJ[key].am++;
-    if(ev.tipo==='doble_amarilla') byPJ[key].expuls = true;
-  });
-  const amComp = {};
-  Object.values(byPJ).forEach(({jNom, eq, am, expuls}) => {
-    const key = `${jNom}|${eq}`;
-    if(!amComp[key]) amComp[key] = {jNom, eq, count: 0};
-    if(!expuls) amComp[key].count += am;
-  });
-  const amArr = Object.values(amComp).filter(j => j.count >= 3).sort((a,b) => b.count - a.count);
+  // Load partido info for expelled players
+  const pids = [...new Set((expEvs||[]).map(ev => ev.planillas?.partido_id).filter(Boolean))];
+  const {data: partidosExp} = pids.length
+    ? await sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre').in('id', pids)
+    : {data: []};
+  const partidoMap = {};
+  (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
   renderSancActivas(sanciones||[]);
-  renderAmCompAdmin(amArr, sanciones||[]);
+  renderExpulsadosAdmin(expEvs||[], partidoMap, sanciones||[]);
 }
 
 function renderSancActivas(sanciones){
@@ -3934,37 +3921,77 @@ function renderSancActivas(sanciones){
   cont.innerHTML = html;
 }
 
-function renderAmCompAdmin(amArr, sanciones){
-  const cont = document.getElementById('sanc-amarillas-cont');
-  if(!amArr.length){ cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Ningún jugador con 3+ amarillas computables aún.</div>'; return; }
+function renderExpulsadosAdmin(expEvs, partidoMap, sanciones){
+  const cont = document.getElementById('sanc-expulsados-cont');
+  if(!expEvs.length){ cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Sin expulsiones registradas.</div>'; return; }
 
-  const pendingKeys = new Set(
-    sanciones.filter(s => s.tipo==='amarillas' && s.estado==='pendiente').map(s => `${s.jugador_nombre}|${s.equipo}`)
-  );
+  // Build set of jugador|equipo that have a pending sanción
+  const pendingKeys = new Set(sanciones.filter(s=>s.estado==='pendiente').map(s=>`${s.jugador_nombre}|${s.equipo}`));
+  const cumplKeys = new Set(sanciones.filter(s=>s.estado==='cumplida').map(s=>`${s.jugador_nombre}|${s.equipo}`));
 
-  const rows = amArr.map(j => {
-    const key = `${j.jNom}|${j.eq}`;
-    const badge5 = j.count >= 5
-      ? pendingKeys.has(key)
-        ? `<span style="font-size:10px;background:#5c1e1e;color:#fbb;border-radius:3px;padding:2px 6px;margin-left:6px;">SANCIÓN PENDIENTE</span>`
-        : `<button style="font-size:10px;background:#e8c44a;color:#111;border:none;border-radius:3px;padding:2px 8px;margin-left:6px;cursor:pointer;font-weight:700;" onclick="crearSancionAmarillas('${j.jNom.replace(/'/g,"\\'")}','${j.eq.replace(/'/g,"\\'")}')">+ Crear sanción</button>`
-      : '';
-    const color = j.count >= 5 ? '#f0b429' : j.count >= 4 ? '#e8c44a' : '#ccc';
+  // Sort by fecha DESC
+  const sorted = [...expEvs].sort((a,b) => {
+    const fa = partidoMap[a.planillas?.partido_id]?.fecha || 0;
+    const fb = partidoMap[b.planillas?.partido_id]?.fecha || 0;
+    return fb - fa;
+  });
+
+  const esc = s => String(s||'').replace(/'/g,'&#39;');
+  const rows = sorted.map(ev => {
+    const pl = ev.planillas;
+    if(!pl?.jugadores || !pl?.equipos) return '';
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '?';
+    const eq = pl.equipos.nombre || '?';
+    const partido = partidoMap[pl.partido_id] || {};
+    const fecha = partido.fecha ? `F${partido.fecha}` : '—';
+    const zona = partido.zona ? `Zona ${partido.zona}` : '—';
+    const partido_txt = (partido.equipo_local_nombre && partido.equipo_visitante_nombre)
+      ? `${partido.equipo_local_nombre} vs ${partido.equipo_visitante_nombre}` : '—';
+    const tipoLabel = ev.tipo==='doble_amarilla'
+      ? `<span style="color:#ffa726;">🟨🟨 Doble amarilla</span>`
+      : `<span style="color:#e57373;">🟥 Roja directa</span>`;
+    const key = `${jNom}|${eq}`;
+    let sancStatus;
+    if(pendingKeys.has(key)){
+      sancStatus = `<span style="font-size:11px;background:#5c1e1e;color:#fbb;border-radius:3px;padding:2px 7px;">PENDIENTE</span>`;
+    } else if(cumplKeys.has(key)){
+      sancStatus = `<span style="font-size:11px;color:#555;padding:2px 7px;background:rgba(255,255,255,.04);border-radius:3px;">✓ Cumplida</span>`;
+    } else {
+      const z = partido.zona||''; const f = partido.fecha||'';
+      sancStatus = `<button style="font-size:11px;background:#e8c44a;color:#111;border:none;border-radius:3px;padding:2px 8px;cursor:pointer;font-weight:700;" onclick="prefillSancion('${esc(jNom)}','${esc(eq)}','${z}',${f||'null'},'${ev.tipo}')">+ Crear sanción</button>`;
+    }
     return `<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
-      <td style="padding:.45rem .75rem;font-size:13px;font-weight:600;color:${color};">${j.jNom}${badge5}</td>
-      <td style="padding:.45rem .75rem;font-size:13px;color:#aaa;">${j.eq}</td>
-      <td style="padding:.45rem .75rem;font-size:14px;font-weight:700;text-align:center;color:${color};">${j.count}</td>
+      <td style="padding:.45rem .75rem;font-size:13px;font-weight:600;">${jNom}</td>
+      <td style="padding:.45rem .75rem;font-size:13px;color:#ccc;">${eq}</td>
+      <td style="padding:.45rem .75rem;font-size:12px;color:#aaa;">${fecha} — ${zona}</td>
+      <td style="padding:.45rem .75rem;font-size:12px;color:#888;">${partido_txt}</td>
+      <td style="padding:.45rem .75rem;font-size:12px;">${tipoLabel}</td>
+      <td style="padding:.45rem .75rem;">${sancStatus}</td>
     </tr>`;
-  }).join('');
+  }).filter(Boolean).join('');
 
   cont.innerHTML = `<table style="width:100%;border-collapse:collapse;">
     <thead><tr style="background:rgba(255,255,255,.04);">
       <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">JUGADOR</th>
       <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">EQUIPO</th>
-      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:center;font-weight:600;">AM. COMP.</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">FECHA/ZONA</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">PARTIDO</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">TIPO</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;font-weight:600;">SANCIÓN</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+function prefillSancion(jugNom, equipo, zona, fechaOrigen, tipoExpulsion){
+  document.getElementById('sanc-jugador').value = jugNom;
+  document.getElementById('sanc-equipo').value = equipo;
+  document.getElementById('sanc-zona').value = zona || '';
+  document.getElementById('sanc-fecha-origen').value = fechaOrigen || '';
+  document.getElementById('sanc-motivo').value = tipoExpulsion === 'doble_amarilla' ? 'Doble amarilla' : 'Roja directa';
+  document.getElementById('sanc-partidos').value = '1';
+  document.getElementById('sanc-jugador').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('sanc-jugador').focus();
 }
 
 async function agregarSancion(){
@@ -3984,15 +4011,6 @@ async function agregarSancion(){
   document.getElementById('sanc-partidos').value = '1';
   document.getElementById('sanc-zona').value = '';
   document.getElementById('sanc-fecha-origen').value = '';
-  cargarSancionados();
-}
-
-async function crearSancionAmarillas(jugNombre, equipo){
-  const {error} = await sb.from('sanciones').insert({
-    jugador_nombre: jugNombre, equipo, tipo: 'amarillas',
-    partidos_sancion: 1, motivo: '5 amarillas computables acumuladas', estado: 'pendiente'
-  });
-  if(error){ alert('Error: ' + error.message); return; }
   cargarSancionados();
 }
 
