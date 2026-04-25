@@ -689,25 +689,25 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
           <div><p class="sec">🎯 Goles de tiro libre</p><div class="tabla-mini" id="tbl-tiro-libre"></div></div>
-          <div><p class="sec">🙈 Goles en contra</p><div class="tabla-mini" id="tbl-goles-contra"></div></div>
+          <div><p class="sec"><span style="color:#e57373;font-weight:700;font-size:15px;">✕</span> Goles en contra</p><div class="tabla-mini" id="tbl-goles-contra"></div></div>
         </div>
       </div>
 
       <div id="jugcont-arqueros" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
           <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
-          <div style="color:var(--muted);font-size:13px;padding:1rem 0;">Más estadísticas de arqueros próximamente.</div>
+          <div><p class="sec">⚽ Goles recibidos</p><div class="tabla-mini" id="tbl-goles-recibidos"></div></div>
         </div>
       </div>
 
       <div id="jugcont-disciplina" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div><p class="sec">🟨 Amarillas totales <span style="font-size:10px;color:#999;font-weight:400;">(incl. dobles)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
-          <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
-        </div>
-        <div style="max-width:480px;">
-          <p class="sec">⚠️ Amarillas para límite <span style="font-size:10px;color:#999;font-weight:400;">(sin contar partidos con expulsión)</span></p>
+        <div style="max-width:480px;margin-bottom:1.25rem;">
+          <p class="sec">⚠️ Límite de amarillas p/ susp.</p>
           <div class="tabla-mini" id="tbl-amarillas-limite"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div><p class="sec">🟨 Amarillas totales <span style="font-size:10px;color:#999;font-weight:400;">(Incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
+          <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
         </div>
       </div>
 
@@ -2672,13 +2672,14 @@ async function cargarEstadisticas(){
       const jNombre = jugador?.nombre_display || jugador?.nombre || '?';
       const key = jId || jNombre;
 
-      if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0};
+      if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0, rojas_da:0, rojas_directas:0};
 
       if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
       if(ev.tipo==='asistencia') jugStats[key].asist++;
       if(ev.tipo==='amarilla') jugStats[key].amarillas++;
-      if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=2; jugStats[key].rojas++; }
-      if(ev.tipo==='roja') jugStats[key].rojas++;
+      // doble_amarilla = 1 amarilla extra (la primera ya fue registrada como 'amarilla')
+      if(ev.tipo==='doble_amarilla') { jugStats[key].amarillas+=1; jugStats[key].rojas++; jugStats[key].rojas_da++; }
+      if(ev.tipo==='roja') { jugStats[key].rojas++; jugStats[key].rojas_directas++; }
     });
 
     // GOLES EN CONTRA
@@ -2878,7 +2879,7 @@ async function cargarEstadisticas(){
       // Normalize: full game = 9000-0 = 9000, treat as 90
       const minutosEfectivos = minuteOut===9000 ? 90 - (minuteIn===0?0:minuteIn/100) : (minuteOut-minuteIn)/100;
 
-      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0, minutos:0};
+      if(!vallasPorArquero[jId]) vallasPorArquero[jId]={nombre, equipo, pj:0, vallas:0, minutos:0, golesRecibidos:0};
 
       // Goals conceded BY this keeper's team while he was on
       const golesContra = (golesConcedidosMap[pl.partido_id]?.[equipo] || []);
@@ -2887,13 +2888,12 @@ async function cargarEstadisticas(){
       const tuvoValla = golesEnSuTurno.length===0;
       const minJugados = minuteOut===9000 ? (90 - minuteIn/100) : (minuteOut-minuteIn)/100;
 
-      // Count partido:
-      // - If conceded goals: always count as PJ (regardless of minutes)
-      // - If clean sheet: only count if played 60+ minutes
+      // Cuenta PJ si recibió gol (siempre) o si jugó 60'+ sin recibir (valla)
       if(!tuvoValla || minJugados>=60){
         vallasPorArquero[jId].pj++;
         vallasPorArquero[jId].minutos += Math.round(minJugados);
         if(tuvoValla) vallasPorArquero[jId].vallas++;
+        vallasPorArquero[jId].golesRecibidos += golesEnSuTurno.length;
       }
     });
 
@@ -2991,7 +2991,7 @@ async function cargarEstadisticas(){
     const golesContraRows=Object.values(golesContraMap).sort((a,b)=>b.count-a.count);
     document.getElementById('tbl-goles-contra').innerHTML=golesContraRows.length?tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','GC','GC'],['','A favor de','A favor de']
-    )+golesContraRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.count}</strong></td><td><div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">${j.beneficiarios.map(b=>escudoHTML(b,'me')).join('')}</div></td></tr>`).join('')+'</tbody></table>'
+    )+golesContraRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.count}</strong></td><td style="text-align:center;"><div style="display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap;">${j.beneficiarios.map(b=>escudoHTML(b,'me')).join('')}</div></td></tr>`).join('')+'</tbody></table>'
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin goles en contra registrados.</div>';
 
     // AMARILLAS
@@ -3004,8 +3004,8 @@ async function cargarEstadisticas(){
     // ROJAS
     const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,15);
     document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
-      ['28px','','#'],['','Jugador','Jugador'],['40px','Rojas','🟥']
-    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
+      ['28px','','#'],['','Jugador','Jugador'],['52px','Doble amarilla','2🟨'],['52px','Roja directa','🟥'],['44px','Total','Total']
+    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // AMARILLAS PARA LÍMITE
@@ -3020,11 +3020,27 @@ async function cargarEstadisticas(){
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // VALLAS INVICTAS
-    const vallas = Object.values(vallasPorArquero)
-      .sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj).slice(0,10);
+    const vallasArr = Object.values(vallasPorArquero).sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj);
+    const vallas = vallasArr.slice(0,15);
+    const notaVallas = `<div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>📝</span><span>Se les computan los partidos en los que hayan recibido un gol o en los que hayan jugado al menos 60'.</span></div>`;
     document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
-      ['28px','','#'],['','Arquero','Arquero'],['40px','PJ','PJ'],['55px','Minutos','⏱'],['50px','Vallas','🧤']
-    ) + vallas.map((v,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td><strong class="pts">${v.vallas}</strong></td></tr>`).join('') + '</tbody></table>'
+      ['28px','','#'],['','Arquero','Arquero'],['44px','Vallas invictas','🧤'],['40px','PJ','PJ'],['44px','% vallas','%']
+    ) + vallas.map((v,i)=>{
+      const pct=v.pj?Math.round(v.vallas/v.pj*100):0;
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td><strong class="pts">${v.vallas}</strong></td><td>${v.pj}</td><td>${pct}%</td></tr>`;
+    }).join('') + `</tbody></table>${notaVallas}`
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // GOLES RECIBIDOS (arqueros)
+    const golesRecibidosArr = vallasArr.filter(v=>v.pj>0).sort((a,b)=>b.pj-a.pj).slice(0,15);
+    const tblGolRec = document.getElementById('tbl-goles-recibidos');
+    if(tblGolRec) tblGolRec.innerHTML = golesRecibidosArr.length ? tblHead(
+      ['28px','','#'],['','Arquero','Arquero'],['36px','PJ','PJ'],['52px','Minutos','⏱'],['44px','Recibidos','Recib.'],['52px','Rec./min','Rec./min'],['52px','Rec./PJ','Rec./PJ']
+    ) + golesRecibidosArr.map((v,i)=>{
+      const recMin = v.minutos&&v.golesRecibidos ? (v.minutos/v.golesRecibidos).toFixed(0)+"'" : '—';
+      const recPJ  = v.pj ? (v.golesRecibidos/v.pj).toFixed(2) : '—';
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td>${v.golesRecibidos}</td><td>${recMin}</td><td>${recPJ}</td></tr>`;
+    }).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // TABLA GENERAL
@@ -3246,7 +3262,7 @@ async function cargarEstadisticas(){
         clubsConDT.map(club=>{
           const periodos=dtHistory[club];
           const maxFecha=Math.max(...ZONAS.map(z=>Math.max(...Object.keys(FIXTURE[z]||{}).map(Number))));
-          const periodosStr=periodos.map(p=>`<span style="font-size:12px;color:#ccc;">${p.dt}</span> <span style="font-size:11px;color:#666;">F${p.desde}${p.hasta!==p.desde?`–${p.hasta}`:''}${p.hasta===maxFecha?'–act.':''}</span>`).join('<span style="color:#444;margin:0 .3rem;">|</span>');
+          const periodosStr=periodos.map(p=>`<span style="font-size:12px;color:#ccc;vertical-align:middle;">${p.dt}</span><span style="font-size:11px;color:#666;vertical-align:middle;"> F${p.desde}${p.hasta!==p.desde?`–${p.hasta}`:''}${p.hasta===maxFecha?'–act.':''}</span>`).join('<span style="color:#444;margin:0 .3rem;vertical-align:middle;">|</span>');
           return `<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .65rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
             <div style="display:flex;align-items:center;gap:.5rem;min-width:140px;flex-shrink:0;">${escudoHTML(club,'me')}<span style="font-size:13px;font-weight:500;">${club}</span></div>
             <div style="flex:1;display:flex;flex-wrap:wrap;gap:.4rem .75rem;align-items:center;">${periodosStr}</div>
