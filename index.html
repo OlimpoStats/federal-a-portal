@@ -309,7 +309,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .planillas-grid{grid-template-columns:1fr 1fr!important;gap:.4rem!important;}
   #fecha-picker-grid{width:160px!important;}
   .mini-goles{font-size:9px;padding:.15rem .4rem .2rem;}
-  #page-foro{height:calc(100vh - 52px)!important;}
+  #page-foro{height:calc(100vh - 52px)!important;margin-top:52px!important;}
+  #foro-input-area{margin-left:0!important;max-width:100%!important;}
+  .foro-sb{width:80px!important;min-width:80px!important;}
+  .foro-sb span[style*="font-size:13px"]{font-size:11px!important;}
+  .foro-sb span[style*="font-size:10px"]{font-size:9px!important;}
+  /* Arqueros tables mobile border fix */
+  .arq-grid > div{min-width:0;overflow:hidden;border-radius:7px;}
+  .arq-grid .tabla-mini{border-radius:0;width:100%;}
   /* Árbitros table mobile compact */
   #tbl-arbitros table{font-size:11px!important;}
   #tbl-arbitros thead th{font-size:9px!important;padding:.25rem .1rem!important;}
@@ -621,12 +628,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem;">
       <div class="ztabs" id="stats-tabs" style="margin-bottom:0;">
         <div class="ztab active" onclick="showStatsTab('tablas',this)">Tablas</div>
-        <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
-        <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
-        <div class="ztab" onclick="showStatsTab('dt',this)">Dir. Técnicos</div>
         <div class="ztab" onclick="showStatsTab('jugadores',this)">Jugadores</div>
+        <div class="ztab" onclick="showStatsTab('arbitros',this)">Árbitros</div>
+        <div class="ztab" onclick="showStatsTab('penales',this)">Penales</div>
+        <div class="ztab" onclick="showStatsTab('dt',this)">Dir. Técnicos</div>
       </div>
-      <span style="font-size:11px;color:#999;font-style:italic;">* Solo se cuentan los partidos con ficha cargada</span>
+      <span style="font-size:13px;color:#fff;font-style:italic;">* Solo se cuentan los partidos con ficha cargada</span>
     </div>
 
     <!-- TABLAS -->
@@ -695,7 +702,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-arqueros" style="display:none;">
-        <div style="font-size:12px;color:#888;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.4rem;">
+        <div style="font-size:13px;color:#fff;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.4rem;">
           <span>📝</span><span>Solo aparecen aquellos arqueros que hayan computado partidos en al menos la mitad de los partidos de sus clubes.</span>
         </div>
         <div class="arq-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
@@ -1540,14 +1547,20 @@ function renderPartidos(f){
     </div>`
         : "";
 
-    const streamBtn = meta.stream
-      ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo"><svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
-      : `<div style="width:26px;flex-shrink:0"></div>`;
-    const fichaBtn = m.gl!==null
-      ? tienePlanilla
+    const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
+    const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
+    let fichaBtn, streamBtn;
+    if(m.gl !== null){
+      // Finished: planilla then stream
+      fichaBtn = tienePlanilla
         ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
-        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
-      : `<div style="width:26px;flex-shrink:0"></div>`;
+        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
+      streamBtn = _streamLink || `<div style="width:26px;flex-shrink:0"></div>`;
+    } else {
+      // Programmed/live: stream only (no planilla)
+      fichaBtn = '';
+      streamBtn = _streamLink;
+    }
     const zc = zonaConfig(zona);
     const zonaShort = zc.code || letraZona(zona);
 
@@ -2291,14 +2304,18 @@ function renderFxCont(){
         : (meta.hora
           ? `<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`
           : `<div class="vs">VS</div>`);
-      const fichaBtn=m.gl!==null
-        ? tienePlanilla
-          ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey.replace(/'/g,"\\'")}',true)">📄</div>`
-          : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`
-        : `<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
-      const streamBtn=meta.stream
-        ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión"><svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>`
-        : `<div style="width:24px;height:24px;flex-shrink:0;"></div>`;
+      const _fxStreamSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
+      const _fxStreamLink=meta.stream?`<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión">${_fxStreamSvg}</a>`:'';
+      let fichaBtn, streamBtn;
+      if(m.gl!==null){
+        fichaBtn=tienePlanilla
+          ?`<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey.replace(/'/g,"\\'")}',true)">📄</div>`
+          :`<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
+        streamBtn=_fxStreamLink||`<div style="width:26px;height:26px;flex-shrink:0;"></div>`;
+      } else {
+        fichaBtn='';
+        streamBtn=_fxStreamLink;
+      }
       const localQ=m.local.replace(/"/g,'&quot;');
       const visitQ=m.visitante.replace(/"/g,'&quot;');
       const partidoEl=`<div class="partido fx-partido" data-local="${localQ}" data-visit="${visitQ}" style="flex:1;"><div class="eq"><div style="display:contents;">${escudoHTML(m.local)}</div><div class="eqn fx-eqn" onclick="fxHighlight('${m.local.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.local}</div></div><div class="res">${r}</div><div class="eq vis"><div class="eqn fx-eqn" onclick="fxHighlight('${m.visitante.replace(/'/g,"\\'")}',event)" style="cursor:pointer;">${m.visitante}</div><div style="display:contents;">${escudoHTML(m.visitante)}</div></div></div>`;
@@ -2489,7 +2506,7 @@ function renderForoMsgs(msgs, pagina=0, total=0){
     const svgAlert = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
     return `
     <div style="display:flex;border-bottom:2px solid #1a1a1a;min-height:80px;max-width:1600px;position:relative;">
-      <div style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding:.5rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
+      <div class="foro-sb" style="width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;padding:.5rem .4rem;background:#0e0e0e;border-right:2px solid #1a1a1a;">
         ${m.rol==='dueno'&&ADMIN_PHOTO_URL ? `<img src="${ADMIN_PHOTO_URL}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">` : escudoHTML(m.equipo,'esc')}
         <span style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;word-break:break-word;width:100%;padding:0 4px;">${escHtml(m.user)}</span>
         <span style="font-size:10px;color:#aaa;background:var(--surface2);padding:1px 7px;border-radius:8px;">${escHtml(m.rango)}</span>
@@ -2582,7 +2599,7 @@ let _statsLoadedAt = 0;
 function showStatsTab(tab, el){
   document.querySelectorAll('#stats-tabs .ztab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['tablas','penales','arbitros','dt','jugadores'].forEach(t=>{
+  ['tablas','jugadores','arbitros','penales','dt'].forEach(t=>{
     const p=document.getElementById('stats-'+t);
     if(!p) return;
     if(t!==tab){ p.style.display='none'; }
