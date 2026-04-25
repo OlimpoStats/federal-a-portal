@@ -196,13 +196,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #cont-quintos tbody td{padding:.4rem .18rem;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
   #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:155px;}
-  #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),
-  #tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),
-  #cont-quintos tbody td:nth-child(2){overflow:hidden!important;max-width:155px!important;}
-  #tablas-zona-a tbody td:nth-child(2) .tr-eq,#tablas-zona-b tbody td:nth-child(2) .tr-eq,
-  #tablas-zona-c tbody td:nth-child(2) .tr-eq,#tablas-zona-d tbody td:nth-child(2) .tr-eq{flex-wrap:nowrap;overflow:hidden;width:100%;}
-  #tablas-zona-a tbody td:nth-child(2) .tr-eq > span,#tablas-zona-b tbody td:nth-child(2) .tr-eq > span,
-  #tablas-zona-c tbody td:nth-child(2) .tr-eq > span,#tablas-zona-d tbody td:nth-child(2) .tr-eq > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1;}
+  #tablas-zona-a .tr-eq,#tablas-zona-b .tr-eq,#tablas-zona-c .tr-eq,#tablas-zona-d .tr-eq{flex-wrap:nowrap;overflow:hidden;}
+  .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
 }
 @media(max-width:1450px) and (min-width:901px){
   .inicio-grid{gap:1rem;}
@@ -2197,7 +2192,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       html+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td>
         <td>${r.g}</td>
@@ -2238,7 +2233,7 @@ function renderTablas(){
       else if(pos===5&&z!=="Zona A") posClass="quinto";
       zh+=`<tr>
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
         <td>${r.gf}</td><td>${r.gc}</td>
