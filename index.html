@@ -712,6 +712,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-disciplina" style="display:none;">
+        <div id="sanc-pendientes-pub-wrap" style="display:none;max-width:640px;margin-bottom:1.25rem;">
+          <p class="sec">🚫 Suspensiones pendientes</p>
+          <div class="tabla-mini" id="tbl-suspensiones-pendientes"></div>
+        </div>
         <div style="max-width:480px;margin-bottom:1.25rem;">
           <p class="sec">⚠️ Límite de amarillas p/ susp.</p>
           <div class="tabla-mini" id="tbl-amarillas-limite"></div>
@@ -2633,14 +2637,16 @@ async function cargarEstadisticas(){
       {data:partidosDB, error:pErr},
       {data:planillasDB},
       {data:penalesDB, error:penErr},
-      {data:dtDB}
+      {data:dtDB},
+      {data:sancionesDB}
     ] = await Promise.all([
       sb.from('eventos').select(evSelect).range(0, 999),
       sb.from('jugadores').select(jugSelect).range(0, 999),
       sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante').not('goles_local','is',null),
       sb.from('planillas').select('id,partido_id,equipo_id'),
       sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
-      sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha')
+      sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
+      sb.from('sanciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false})
     ]);
     if(evRes0.error) throw evRes0.error;
     if(jugsRes0.error) throw jugsRes0.error;
@@ -3028,6 +3034,28 @@ async function cargarEstadisticas(){
       ['28px','','#'],['','Jugador','Jugador'],['52px','Doble amarilla','2🟨'],['52px','Roja directa','🟥'],['44px','Total','Total']
     ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+
+    // SUSPENSIONES PENDIENTES (desde tabla sanciones)
+    const sancPend = sancionesDB||[];
+    const sancWrap = document.getElementById('sanc-pendientes-pub-wrap');
+    if(sancPend.length){
+      sancWrap.style.display = '';
+      document.getElementById('tbl-suspensiones-pendientes').innerHTML = tblHead(
+        ['','Jugador','Jugador'],['','Equipo','Equipo'],['60px','Zona','Zona'],['','Motivo','Motivo'],['70px','Partidos','Partidos']
+      ) + sancPend.map(s=>{
+        const tipoIcon = s.tipo==='amarillas' ? '🟨' : '🟥';
+        const color = s.tipo==='amarillas' ? '#ffa726' : '#e57373';
+        return `<tr>
+          <td><strong style="color:${color};">${tipoIcon} ${s.jugador_nombre}</strong></td>
+          <td>${escudoHTML(s.equipo,'me')} <span style="font-size:13px;">${s.equipo}</span></td>
+          <td style="text-align:center;font-size:12px;color:#aaa;">${s.zona?'Zona '+s.zona:'—'}</td>
+          <td style="font-size:12px;color:#aaa;">${s.motivo||'—'}</td>
+          <td style="text-align:center;font-weight:700;color:${color};">${s.partidos_sancion} partido${s.partidos_sancion!==1?'s':''}</td>
+        </tr>`;
+      }).join('') + '</tbody></table>';
+    } else {
+      sancWrap.style.display = 'none';
+    }
 
     // AMARILLAS PARA LÍMITE
     const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=3).sort((a,b)=>b.count-a.count);

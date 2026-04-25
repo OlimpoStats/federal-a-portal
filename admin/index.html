@@ -204,6 +204,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Comunidad</div>
     <div class="sb-item" onclick="goPanel('foro-admin')"><span class="sb-icon">💬</span>Moderar mensajes</div>
     <div class="sb-item" onclick="goPanel('sugerencias')"><span class="sb-icon">✉️</span>Sugerencias</div>
+    <div class="sb-item" onclick="goPanel('sancionados')"><span class="sb-icon">🚫</span>Sancionados</div>
   </div>
 
   <!-- CONTENT -->
@@ -679,6 +680,63 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div class="card"><div class="card-body" id="foro-admin-cont" style="color:var(--muted);font-size:13px;">Cargando reportes...</div></div>
     </div>
 
+    <!-- ===================== SANCIONADOS ===================== -->
+    <div class="panel" id="panel-sancionados">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Sancionados</h2>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>🔴 Sanciones activas</span>
+          <button class="btn btn-secondary btn-sm" onclick="cargarSancionados()">↺ Actualizar</button>
+        </div>
+        <div id="sanc-activas-cont" style="padding:0;">Cargando...</div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-hdr">⚠️ Amarillas computables acumuladas (3+)</div>
+        <div id="sanc-amarillas-cont" style="padding:0;font-size:13px;color:#666;padding:1rem;">Cargando...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">➕ Agregar sanción por roja directa</div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Jugador</label>
+              <input id="sanc-jugador" type="text" placeholder="Nombre del jugador" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Equipo</label>
+              <input id="sanc-equipo" type="text" placeholder="Nombre del equipo" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Zona</label>
+              <select id="sanc-zona" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;color:var(--text);font-size:14px;">
+                <option value="">— Zona —</option>
+                <option value="A">Zona A</option>
+                <option value="B">Zona B</option>
+                <option value="C">Zona C</option>
+                <option value="D">Zona D</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Partidos de suspensión</label>
+              <input id="sanc-partidos" type="number" min="1" value="1" style="width:100%;">
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Motivo</label>
+              <input id="sanc-motivo" type="text" placeholder="Ej: Roja directa — conducta violenta" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Fecha de origen</label>
+              <input id="sanc-fecha-origen" type="number" min="1" max="18" placeholder="Nº de fecha" style="width:100%;">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="agregarSancion()">💾 Guardar sanción</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 </div><!-- /layout-wrap -->
@@ -925,6 +983,7 @@ function goPanel(id){
   if(id==="jugadores") cargarJugadores();
   if(id==="foro-admin") cargarReportesForo();
   if(id==="sugerencias") cargarSugerencias();
+  if(id==="sancionados") cargarSancionados();
 }
 
 async function cargarSugerencias(){
@@ -3783,6 +3842,171 @@ async function importarPlantelExcel(){
     statusEl.textContent = 'Error.';
     console.error(e);
   }
+}
+
+// ── SANCIONADOS ──────────────────────────────────────────────────────────────
+
+async function cargarSancionados(){
+  document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
+  document.getElementById('sanc-amarillas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
+
+  const [{data: sanciones, error: sErr}, {data: evs}] = await Promise.all([
+    sb.from('sanciones').select('*').order('created_at', {ascending: false}),
+    sb.from('eventos')
+      .select('tipo, planillas!inner(partido_id, jugadores(nombre_display,nombre), equipos(nombre))')
+      .in('tipo', ['amarilla','doble_amarilla'])
+  ]);
+
+  if(sErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${sErr.message}</div>`; return; }
+
+  // Compute amarillas computables per player
+  const byPJ = {};
+  (evs||[]).forEach(ev => {
+    const pl = ev.planillas;
+    if(!pl?.jugadores || !pl?.equipos) return;
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
+    if(!jNom) return;
+    const eq = pl.equipos.nombre || '';
+    const key = `${pl.partido_id}|${jNom}|${eq}`;
+    if(!byPJ[key]) byPJ[key] = {jNom, eq, am: 0, expuls: false};
+    if(ev.tipo==='amarilla') byPJ[key].am++;
+    if(ev.tipo==='doble_amarilla') byPJ[key].expuls = true;
+  });
+  const amComp = {};
+  Object.values(byPJ).forEach(({jNom, eq, am, expuls}) => {
+    const key = `${jNom}|${eq}`;
+    if(!amComp[key]) amComp[key] = {jNom, eq, count: 0};
+    if(!expuls) amComp[key].count += am;
+  });
+  const amArr = Object.values(amComp).filter(j => j.count >= 3).sort((a,b) => b.count - a.count);
+
+  renderSancActivas(sanciones||[]);
+  renderAmCompAdmin(amArr, sanciones||[]);
+}
+
+function renderSancActivas(sanciones){
+  const cont = document.getElementById('sanc-activas-cont');
+  const pendientes = sanciones.filter(s => s.estado === 'pendiente');
+  const cumplidas = sanciones.filter(s => s.estado === 'cumplida').slice(0, 5);
+
+  const btnStyle = (bg) => `style="background:${bg};color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:12px;"`;
+  const renderRow = (s) => `
+    <tr style="border-bottom:1px solid rgba(255,255,255,.06);">
+      <td style="padding:.5rem .75rem;font-size:13px;font-weight:600;">${s.jugador_nombre}</td>
+      <td style="padding:.5rem .75rem;font-size:13px;color:#ccc;">${s.equipo}</td>
+      <td style="padding:.5rem .75rem;font-size:12px;color:#999;">${s.zona||'—'}</td>
+      <td style="padding:.5rem .75rem;font-size:12px;">${s.tipo==='amarillas'?'🟨 5 amarillas':'🟥 Roja'}</td>
+      <td style="padding:.5rem .75rem;font-size:13px;text-align:center;">${s.partidos_sancion}</td>
+      <td style="padding:.5rem .75rem;font-size:12px;color:#aaa;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.motivo||'—'}</td>
+      <td style="padding:.5rem .75rem;font-size:12px;color:#888;">${s.fecha_origen ? 'F'+s.fecha_origen : '—'}</td>
+      <td style="padding:.5rem .75rem;">
+        ${s.estado==='pendiente'
+          ? `<button ${btnStyle('#1e5c35')} onclick="marcarSancionCumplida(${s.id})">✓ Cumplida</button>`
+          : `<span style="font-size:11px;color:#555;padding:3px 8px;background:rgba(255,255,255,.04);border-radius:4px;">✓ Cumplida</span>`}
+        <button ${btnStyle('#5c1e1e')} style="margin-left:4px;" onclick="eliminarSancion(${s.id})">🗑</button>
+      </td>
+    </tr>`;
+
+  if(!pendientes.length && !cumplidas.length){
+    cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">No hay sanciones registradas.</div>';
+    return;
+  }
+
+  const thead = `<thead><tr style="background:rgba(255,255,255,.04);">
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;white-space:nowrap;">JUGADOR</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">EQUIPO</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">ZONA</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">TIPO</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:center;font-weight:600;">PTDOS</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">MOTIVO</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">FECHA</th>
+    <th style="padding:.4rem .75rem;font-size:11px;color:#666;font-weight:600;"></th>
+  </tr></thead>`;
+
+  let html = `<table style="width:100%;border-collapse:collapse;">${thead}<tbody>`;
+  if(pendientes.length) html += pendientes.map(renderRow).join('');
+  else html += `<tr><td colspan="8" style="padding:.75rem;font-size:13px;color:#555;text-align:center;">Sin sanciones pendientes</td></tr>`;
+  if(cumplidas.length){
+    html += `<tr><td colspan="8" style="padding:.4rem .75rem;font-size:11px;color:#444;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.08);">ÚLTIMAS CUMPLIDAS</td></tr>`;
+    html += cumplidas.map(renderRow).join('');
+  }
+  html += '</tbody></table>';
+  cont.innerHTML = html;
+}
+
+function renderAmCompAdmin(amArr, sanciones){
+  const cont = document.getElementById('sanc-amarillas-cont');
+  if(!amArr.length){ cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Ningún jugador con 3+ amarillas computables aún.</div>'; return; }
+
+  const pendingKeys = new Set(
+    sanciones.filter(s => s.tipo==='amarillas' && s.estado==='pendiente').map(s => `${s.jugador_nombre}|${s.equipo}`)
+  );
+
+  const rows = amArr.map(j => {
+    const key = `${j.jNom}|${j.eq}`;
+    const badge5 = j.count >= 5
+      ? pendingKeys.has(key)
+        ? `<span style="font-size:10px;background:#5c1e1e;color:#fbb;border-radius:3px;padding:2px 6px;margin-left:6px;">SANCIÓN PENDIENTE</span>`
+        : `<button style="font-size:10px;background:#e8c44a;color:#111;border:none;border-radius:3px;padding:2px 8px;margin-left:6px;cursor:pointer;font-weight:700;" onclick="crearSancionAmarillas('${j.jNom.replace(/'/g,"\\'")}','${j.eq.replace(/'/g,"\\'")}')">+ Crear sanción</button>`
+      : '';
+    const color = j.count >= 5 ? '#f0b429' : j.count >= 4 ? '#e8c44a' : '#ccc';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.06);">
+      <td style="padding:.45rem .75rem;font-size:13px;font-weight:600;color:${color};">${j.jNom}${badge5}</td>
+      <td style="padding:.45rem .75rem;font-size:13px;color:#aaa;">${j.eq}</td>
+      <td style="padding:.45rem .75rem;font-size:14px;font-weight:700;text-align:center;color:${color};">${j.count}</td>
+    </tr>`;
+  }).join('');
+
+  cont.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:rgba(255,255,255,.04);">
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">JUGADOR</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:left;font-weight:600;">EQUIPO</th>
+      <th style="padding:.4rem .75rem;font-size:11px;color:#666;text-align:center;font-weight:600;">AM. COMP.</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function agregarSancion(){
+  const jugador = document.getElementById('sanc-jugador').value.trim();
+  const equipo = document.getElementById('sanc-equipo').value.trim();
+  const zona = document.getElementById('sanc-zona').value;
+  const partidos = parseInt(document.getElementById('sanc-partidos').value) || 1;
+  const motivo = document.getElementById('sanc-motivo').value.trim();
+  const fechaOrigen = parseInt(document.getElementById('sanc-fecha-origen').value) || null;
+  if(!jugador || !equipo){ alert('Completá al menos jugador y equipo.'); return; }
+  const {error} = await sb.from('sanciones').insert({
+    jugador_nombre: jugador, equipo, zona: zona||null, tipo: 'roja',
+    partidos_sancion: partidos, motivo: motivo||null, fecha_origen: fechaOrigen, estado: 'pendiente'
+  });
+  if(error){ alert('Error al guardar: ' + error.message); return; }
+  ['sanc-jugador','sanc-equipo','sanc-motivo'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('sanc-partidos').value = '1';
+  document.getElementById('sanc-zona').value = '';
+  document.getElementById('sanc-fecha-origen').value = '';
+  cargarSancionados();
+}
+
+async function crearSancionAmarillas(jugNombre, equipo){
+  const {error} = await sb.from('sanciones').insert({
+    jugador_nombre: jugNombre, equipo, tipo: 'amarillas',
+    partidos_sancion: 1, motivo: '5 amarillas computables acumuladas', estado: 'pendiente'
+  });
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarSancionados();
+}
+
+async function marcarSancionCumplida(id){
+  const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarSancionados();
+}
+
+async function eliminarSancion(id){
+  if(!confirm('¿Eliminar esta sanción?')) return;
+  const {error} = await sb.from('sanciones').delete().eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarSancionados();
 }
 </script>
 </body>
