@@ -185,10 +185,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #cont-quintos thead th:nth-child(2){width:160px;}
   #hdr-mob-wrap{display:none!important;}
 }
-/* Intermediate desktop: 1536px (1920x1080 @ 125% DPI) */
-@media(max-width:1650px) and (min-width:901px){
-  #inner-grid{grid-template-columns:1fr!important;}
+/* Intermediate desktop: 1920x1080 @ 125% DPI = 1536px CSS */
+@media(max-width:1700px) and (min-width:1451px){
   .inicio-grid{gap:1.5rem;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,
+  #cont-quintos table,#cont-goleadores-resumen table{width:100%;min-width:0;}
+  #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:130px;}
+  #cont-quintos thead th:nth-child(2){width:120px;}
+}
+@media(max-width:1450px) and (min-width:901px){
+  .inicio-grid{gap:1rem;}
+  #inner-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:1250px) and (min-width:701px){
   .ni{padding:0 .65rem;}
