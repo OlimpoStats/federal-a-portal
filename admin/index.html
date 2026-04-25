@@ -2431,6 +2431,8 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
     await sb.from("planillas").delete().in("id", ids);
   }
 
+  const savedJugIds = new Set();
+
   for(const j of jugadores){
     const idFederal = String(j.id_federal || j.id || "");
     if(!idFederal) continue;
@@ -2454,6 +2456,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
     }
 
     if(!jDB) continue;
+    savedJugIds.add(jDB.id);
 
     const {data:pDB} = await sb.from("planillas").insert({
       partido_id: partidoId,
@@ -2473,6 +2476,36 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
         minuto: ev.minuto || 0,
         extra: String(ev.extra || ""),
       });
+    }
+  }
+
+  // Check suspensions: decrement any sanctioned player from this equipo who didn't appear
+  await verificarSuspensiones(equipoId, savedJugIds);
+}
+
+async function verificarSuspensiones(equipoId, planillaJugIds){
+  const {data: pendSancs} = await sb.from('sanciones')
+    .select('id, jugador_id, partidos_sancion')
+    .eq('estado', 'pendiente')
+    .gt('partidos_sancion', 0)
+    .not('jugador_id', 'is', null);
+  if(!pendSancs?.length) return;
+
+  // Find which sanctioned players belong to this equipo
+  const {data: sanctJugs} = await sb.from('jugadores')
+    .select('id')
+    .in('id', pendSancs.map(s => s.jugador_id))
+    .eq('equipo_id', equipoId);
+  if(!sanctJugs?.length) return;
+
+  const thisEquipoIds = new Set(sanctJugs.map(j => j.id));
+  for(const sanc of pendSancs){
+    if(thisEquipoIds.has(sanc.jugador_id) && !planillaJugIds.has(sanc.jugador_id)){
+      const newVal = sanc.partidos_sancion - 1;
+      await sb.from('sanciones').update({
+        partidos_sancion: newVal,
+        estado: newVal <= 0 ? 'recien_cumplida' : 'pendiente'
+      }).eq('id', sanc.id);
     }
   }
 }
@@ -3830,13 +3863,13 @@ async function importarPlantelExcel(){
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
-  const [{data: sanciones, error: sErr}, {data: expEvs}] = await Promise.all([
-    sb.from('sanciones').select('*').order('created_at', {ascending: false}),
+  const [{data: expEvs, error: evErr}, {data: allSancForCheck}] = await Promise.all([
     sb.from('eventos')
-      .select('tipo, planillas!inner(partido_id, jugadores(nombre_display,nombre), equipos(nombre))')
-      .in('tipo', ['doble_amarilla','roja'])
+      .select('tipo, planillas!inner(partido_id, jugadores(id,nombre_display,nombre), equipos(nombre))')
+      .in('tipo', ['doble_amarilla','roja']),
+    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado')
   ]);
-  if(sErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${sErr.message}</div>`; return; }
+  if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
   // Load partido info
   const pids = [...new Set((expEvs||[]).map(ev => ev.planillas?.partido_id).filter(Boolean))];
@@ -3846,75 +3879,109 @@ async function cargarSancionados(){
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
-  // Auto-create sancion record (partidos=0) for any expulsado that has none
-  let allSanc = sanciones || [];
-  const existingKeys = new Set(allSanc.map(s => `${s.jugador_nombre}|${s.equipo}|${s.fecha_origen||0}`));
-  const toCreate = [];
+  // Build jugador_id lookup from expEvs: "nombre|equipo" -> jugador.id
+  const jugIdByKey = {};
   for(const ev of (expEvs||[])){
     const pl = ev.planillas;
-    if(!pl?.jugadores || !pl?.equipos) continue;
+    if(!pl?.jugadores?.id || !pl?.equipos) continue;
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
+    const eq = pl.equipos.nombre || '';
+    if(jNom && eq) jugIdByKey[`${jNom}|${eq}`] = pl.jugadores.id;
+  }
+
+  // Backfill jugador_id for existing sanciones missing it
+  const toBackfill = (allSancForCheck||[]).filter(s => !s.jugador_id && s.jugador_nombre && s.equipo);
+  for(const s of toBackfill){
+    const jId = jugIdByKey[`${s.jugador_nombre}|${s.equipo}`];
+    if(jId) await sb.from('sanciones').update({jugador_id: jId}).eq('id', s.id);
+  }
+
+  // Build existing-keys set to avoid duplicates
+  const existingKeys = new Set();
+  (allSancForCheck||[]).forEach(s => {
+    if(s.jugador_id) existingKeys.add(`${s.jugador_id}|${s.fecha_origen||0}`);
+    existingKeys.add(`${s.jugador_nombre}|${s.equipo}|${s.fecha_origen||0}`);
+  });
+
+  // Auto-create sanciones for expulsados not yet in DB
+  const toCreate = [];
+  const seenInBatch = new Set();
+  for(const ev of (expEvs||[])){
+    const pl = ev.planillas;
+    if(!pl?.jugadores?.id || !pl?.equipos) continue;
+    const jId = pl.jugadores.id;
     const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
     if(!jNom) continue;
     const eq = pl.equipos.nombre || '';
     const p = partidoMap[pl.partido_id] || {};
     const fo = p.fecha || null;
-    const key = `${jNom}|${eq}|${fo||0}`;
-    if(!existingKeys.has(key)){
-      toCreate.push({ jugador_nombre: jNom, equipo: eq, zona: p.zona||null, tipo: 'roja',
-        partidos_sancion: 0, motivo: ev.tipo==='doble_amarilla'?'Doble amarilla':'Roja directa',
-        fecha_origen: fo, estado: 'pendiente' });
-      existingKeys.add(key);
-    }
+    const key = `${jId}|${fo||0}`;
+    const legacyKey = `${jNom}|${eq}|${fo||0}`;
+    if(existingKeys.has(key) || existingKeys.has(legacyKey) || seenInBatch.has(key)) continue;
+    toCreate.push({ jugador_id: jId, jugador_nombre: jNom, equipo: eq, tipo: 'roja',
+      partidos_sancion: 0, motivo: ev.tipo==='doble_amarilla'?'Doble amarilla':'Roja directa',
+      fecha_origen: fo, estado: 'pendiente' });
+    seenInBatch.add(key);
   }
-  if(toCreate.length){
-    await sb.from('sanciones').insert(toCreate);
-    const {data: fresh} = await sb.from('sanciones').select('*').order('created_at', {ascending: false});
-    allSanc = fresh || allSanc;
-  }
+  if(toCreate.length) await sb.from('sanciones').insert(toCreate);
 
-  renderSancActivas(allSanc, partidoMap);
+  // Fetch only active sanciones for rendering
+  const {data: activeSanc} = await sb.from('sanciones')
+    .select('*').in('estado', ['pendiente','recien_cumplida']).order('created_at', {ascending: false});
+
+  renderSancActivas(activeSanc || [], partidoMap);
 }
 
 function renderSancActivas(sanciones, partidoMap){
   const cont = document.getElementById('sanc-activas-cont');
-  const pendientes = sanciones.filter(s => s.estado === 'pendiente')
+  const recienCumplidas = sanciones.filter(s => s.estado === 'recien_cumplida')
     .sort((a,b) => (b.fecha_origen||0) - (a.fecha_origen||0));
-  const cumplidas = sanciones.filter(s => s.estado === 'cumplida')
-    .sort((a,b) => (b.fecha_origen||0) - (a.fecha_origen||0)).slice(0, 8);
+  const pendientes = sanciones.filter(s => s.estado === 'pendiente')
+    .sort((a,b) => (b.partidos_sancion||0) - (a.partidos_sancion||0));
 
-  if(!pendientes.length && !cumplidas.length){
-    cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">No hay sanciones registradas.</div>';
+  if(!pendientes.length && !recienCumplidas.length){
+    cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">No hay sanciones activas.</div>';
     return;
   }
 
   const cntBtn = `style="background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.12);border-radius:4px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;line-height:1;"`;
-  const renderRow = (s, isPend) => {
+
+  const tipoLabel = (s) => s.motivo==='Doble amarilla'
+    ? `<span style="color:#ffa726;font-size:12px;">🟨🟨</span>`
+    : s.tipo==='amarillas'
+      ? `<span style="color:#ffa726;font-size:12px;">🟨×5</span>`
+      : `<span style="color:#e57373;font-size:12px;">🟥</span>`;
+
+  const renderPendiente = (s) => {
     const numColor = s.partidos_sancion > 0 ? '#f0b429' : '#555';
-    const counter = isPend ? `
-      <div style="display:flex;align-items:center;gap:5px;">
-        <button ${cntBtn} onclick="updatePartidosSancion(${s.id},-1,${s.partidos_sancion},this)">−</button>
-        <span data-sanc-num="${s.partidos_sancion}" style="font-size:14px;font-weight:700;min-width:18px;text-align:center;color:${numColor};">${s.partidos_sancion}</span>
-        <button ${cntBtn} onclick="updatePartidosSancion(${s.id},1,${s.partidos_sancion},this)">+</button>
-      </div>` : `<span style="font-size:13px;color:#555;">${s.partidos_sancion}</span>`;
-    const tipoLabel = s.motivo==='Doble amarilla'
-      ? `<span style="color:#ffa726;font-size:12px;">🟨🟨</span>`
-      : s.tipo==='amarillas'
-        ? `<span style="color:#ffa726;font-size:12px;">🟨×5</span>`
-        : `<span style="color:#e57373;font-size:12px;">🟥</span>`;
-    const accion = isPend
-      ? `<button style="background:#1e5c35;color:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:12px;white-space:nowrap;" onclick="marcarSancionCumplida(${s.id})">✓ Cumplida</button>
-         <button style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>`
-      : `<span style="font-size:11px;color:#3a3a3a;padding:3px 7px;background:rgba(255,255,255,.03);border-radius:4px;">✓ Cumplida</span>
-         <button style="background:none;border:none;color:#3a3a3a;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>`;
-    return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);${isPend?'':'opacity:.45;'}">
+    const counter = `<div style="display:flex;align-items:center;gap:5px;">
+      <button ${cntBtn} onclick="updatePartidosSancion(${s.id},-1,${s.partidos_sancion},this)">−</button>
+      <span data-sanc-num="${s.partidos_sancion}" style="font-size:14px;font-weight:700;min-width:18px;text-align:center;color:${numColor};">${s.partidos_sancion}</span>
+      <button ${cntBtn} onclick="updatePartidosSancion(${s.id},1,${s.partidos_sancion},this)">+</button>
+    </div>`;
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);">
       <td style="padding:.5rem .75rem;font-size:13px;font-weight:600;">${s.jugador_nombre}</td>
       <td style="padding:.5rem .75rem;font-size:13px;color:#ccc;">${s.equipo}</td>
       <td style="padding:.5rem .75rem;font-size:12px;color:#888;">${s.fecha_origen?'F'+s.fecha_origen:'—'}</td>
-      <td style="padding:.5rem .75rem;">${tipoLabel} <span style="font-size:11px;color:#888;">${s.motivo||'—'}</span></td>
+      <td style="padding:.5rem .75rem;">${tipoLabel(s)} <span style="font-size:11px;color:#888;">${s.motivo||'—'}</span></td>
       <td style="padding:.5rem .75rem;">${counter}</td>
-      <td style="padding:.5rem .75rem;white-space:nowrap;">${accion}</td>
+      <td style="padding:.5rem .75rem;white-space:nowrap;">
+        <button style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>
+      </td>
     </tr>`;
   };
+
+  const renderRecienCumplida = (s) => `<tr style="border-bottom:1px solid rgba(255,255,255,.05);background:rgba(42,122,74,.1);">
+    <td style="padding:.5rem .75rem;font-size:13px;font-weight:600;color:#4caf7a;">${s.jugador_nombre}</td>
+    <td style="padding:.5rem .75rem;font-size:13px;color:#ccc;">${s.equipo}</td>
+    <td style="padding:.5rem .75rem;font-size:12px;color:#888;">${s.fecha_origen?'F'+s.fecha_origen:'—'}</td>
+    <td style="padding:.5rem .75rem;">${tipoLabel(s)} <span style="font-size:11px;color:#888;">${s.motivo||'—'}</span></td>
+    <td style="padding:.5rem .75rem;font-size:12px;color:#4caf7a;font-weight:600;">✅ Suspensión cumplida</td>
+    <td style="padding:.5rem .75rem;white-space:nowrap;">
+      <button style="background:#1e5c35;color:#fff;border:none;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:12px;" onclick="dismissSancionCumplida(${s.id})">OK</button>
+      <button style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 3px;" onclick="eliminarSancion(${s.id})">🗑</button>
+    </td>
+  </tr>`;
 
   const thead = `<thead><tr style="background:rgba(255,255,255,.04);">
     <th style="padding:.4rem .75rem;font-size:11px;color:#555;text-align:left;font-weight:600;">JUGADOR</th>
@@ -3926,11 +3993,8 @@ function renderSancActivas(sanciones, partidoMap){
   </tr></thead>`;
 
   let html = `<table style="width:100%;border-collapse:collapse;">${thead}<tbody>`;
-  html += pendientes.map(s => renderRow(s, true)).join('');
-  if(cumplidas.length){
-    html += `<tr><td colspan="6" style="padding:.35rem .75rem;font-size:10px;color:#333;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06);letter-spacing:.5px;">CUMPLIDAS</td></tr>`;
-    html += cumplidas.map(s => renderRow(s, false)).join('');
-  }
+  html += recienCumplidas.map(renderRecienCumplida).join('');
+  html += pendientes.map(renderPendiente).join('');
   html += '</tbody></table>';
   cont.innerHTML = html;
 }
@@ -4034,6 +4098,12 @@ async function agregarSancion(){
 }
 
 async function marcarSancionCumplida(id){
+  const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarSancionados();
+}
+
+async function dismissSancionCumplida(id){
   const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
   cargarSancionados();
