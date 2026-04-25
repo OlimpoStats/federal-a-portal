@@ -3051,12 +3051,13 @@ async function cargarEstadisticas(){
     // ROJAS
     const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas).slice(0,15);
     document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
-      ['28px','','#'],['','Jugador','Jugador'],['52px','Doble amarilla','2🟨'],['52px','Roja directa','🟥'],['44px','Total','Total']
+      ['28px','','#'],['','Jugador','Jugador'],['52px','Doble amarilla','🟨🟨'],['52px','Roja directa','🟥'],['44px','Total','Total']
     ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // SUSPENSIONES PENDIENTES (desde tabla sanciones — solo partidos_sancion > 0)
-    const sancPend = (sancionesDB||[]).filter(s => s.partidos_sancion > 0);
+    const sancPend = (sancionesDB||[]).filter(s => s.partidos_sancion > 0)
+      .sort((a,b) => b.partidos_sancion - a.partidos_sancion || (a.zona||99) - (b.zona||99));
     const sancWrap = document.getElementById('sanc-pendientes-pub-wrap');
     if(sancPend.length){
       sancWrap.style.display = '';
