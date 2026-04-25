@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0e0e0e;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--win:#1e5c35;--loss:#5c1e1e;--draw:#3a3a3a;}
-body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden;}
 
 .hdr{background:#111;border-bottom:2px solid var(--accent);padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:62px;position:sticky;top:0;z-index:10;}
 .logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;color:var(--accent);position:relative;}
@@ -226,6 +226,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   /* Stats grids 1 col */
   #jugcont-goles > div[style*="grid"],
   #jugcont-disciplina > div[style*="grid"],
+  .arq-grid,
   #subtab-cont-generales > div[style*="grid"],
   #stats-penales > div[style*="grid"]{grid-template-columns:1fr!important;}
   /* Tablas ampliadas mobile */
@@ -694,7 +695,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-arqueros" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+        <div style="font-size:12px;color:#888;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.4rem;">
+          <span>📝</span><span>Solo aparecen aquellos arqueros que hayan computado partidos en al menos la mitad de los partidos de sus clubes.</span>
+        </div>
+        <div class="arq-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
           <div><p class="sec">🧤 Vallas invictas</p><div class="tabla-mini" id="tbl-vallas"></div></div>
           <div><p class="sec">⚽ Goles recibidos</p><div class="tabla-mini" id="tbl-goles-recibidos"></div></div>
         </div>
@@ -3009,7 +3013,7 @@ async function cargarEstadisticas(){
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // AMARILLAS PARA LÍMITE
-    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>0).sort((a,b)=>b.count-a.count).slice(0,20);
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=3).sort((a,b)=>b.count-a.count);
     document.getElementById('tbl-amarillas-limite').innerHTML=amLimRows.length?tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['50px','Amarillas','🟨'],['50px','Límite','Límite']
     )+amLimRows.map((j,i)=>{
@@ -3019,10 +3023,27 @@ async function cargarEstadisticas(){
     }).join('')+'</tbody></table>'
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // VALLAS INVICTAS
-    const vallasArr = Object.values(vallasPorArquero).sort((a,b)=>b.vallas-a.vallas||b.pj-a.pj);
-    const vallas = vallasArr.slice(0,15);
+    // Partidos jugados por club (para filtro de arqueros con al menos 50%)
+    const clubMatchCount = {};
+    ZONAS.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        if(m.gl===null) return;
+        clubMatchCount[m.local]=(clubMatchCount[m.local]||0)+1;
+        clubMatchCount[m.visitante]=(clubMatchCount[m.visitante]||0)+1;
+      });
+    }});
+    const calificaArquero = v => {
+      const total = clubMatchCount[v.equipo]||0;
+      return total>0 && v.pj >= total/2;
+    };
+
+    // VALLAS INVICTAS — sort: % DESC, PJ DESC en igualdad
     const notaVallas = `<div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>📝</span><span>Se les computan los partidos en los que hayan recibido un gol o en los que hayan jugado al menos 60'.</span></div>`;
+    const vallasArr = Object.values(vallasPorArquero).filter(calificaArquero);
+    const vallas = vallasArr.slice().sort((a,b)=>{
+      const pA=a.pj?a.vallas/a.pj:0, pB=b.pj?b.vallas/b.pj:0;
+      return pB-pA||b.pj-a.pj;
+    }).slice(0,15);
     document.getElementById('tbl-vallas').innerHTML = vallas.length ? tblHead(
       ['28px','','#'],['','Arquero','Arquero'],['44px','Vallas invictas','🧤'],['40px','PJ','PJ'],['44px','% vallas','%']
     ) + vallas.map((v,i)=>{
@@ -3031,15 +3052,19 @@ async function cargarEstadisticas(){
     }).join('') + `</tbody></table>${notaVallas}`
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // GOLES RECIBIDOS (arqueros)
-    const golesRecibidosArr = vallasArr.filter(v=>v.pj>0).sort((a,b)=>b.pj-a.pj).slice(0,15);
+    // GOLES RECIBIDOS — sort: "Gol cada..." (min/goles) DESC = mayor intervalo primero
+    const golesRecibidosArr = vallasArr.slice().sort((a,b)=>{
+      const gA=a.golesRecibidos||0, gB=b.golesRecibidos||0;
+      const cadaA=gA>0?a.minutos/gA:Infinity, cadaB=gB>0?b.minutos/gB:Infinity;
+      return cadaB-cadaA;
+    }).slice(0,15);
     const tblGolRec = document.getElementById('tbl-goles-recibidos');
     if(tblGolRec) tblGolRec.innerHTML = golesRecibidosArr.length ? tblHead(
-      ['28px','','#'],['','Arquero','Arquero'],['36px','PJ','PJ'],['52px','Minutos','⏱'],['44px','Recibidos','Recib.'],['52px','Rec./min','Rec./min'],['52px','Rec./PJ','Rec./PJ']
+      ['28px','','#'],['','Arquero','Arquero'],['44px','Goles recibidos','Recib.'],['36px','PJ','PJ'],['52px','Minutos','⏱'],['52px','Rec./PJ','Rec./PJ'],['60px','Gol cada...','Gol cada...']
     ) + golesRecibidosArr.map((v,i)=>{
-      const recMin = v.minutos&&v.golesRecibidos ? (v.minutos/v.golesRecibidos).toFixed(0)+"'" : '—';
-      const recPJ  = v.pj ? (v.golesRecibidos/v.pj).toFixed(2) : '—';
-      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td>${v.golesRecibidos}</td><td>${recMin}</td><td>${recPJ}</td></tr>`;
+      const cada = v.golesRecibidos>0 ? Math.round(v.minutos/v.golesRecibidos)+"'" : '—';
+      const recPJ = v.pj ? (v.golesRecibidos/v.pj).toFixed(2) : '—';
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(v.nombre,v.equipo)}</td><td>${v.golesRecibidos}</td><td>${v.pj}</td><td>${v.minutos||0}'</td><td>${recPJ}</td><td><strong>${cada}</strong></td></tr>`;
     }).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
