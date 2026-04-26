@@ -1596,11 +1596,13 @@ function renderPartidos(f){
     // Always 2 slots: [stream, planilla] — stream left, planilla right
     let leftBtn, rightBtn;
     if(m.gl !== null && !esEnVivo){
-      leftBtn = _streamLink || _filler26;
-      rightBtn = tienePlanilla
+      // Finished: planilla icon left (primary), stream right (secondary)
+      leftBtn = tienePlanilla
         ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
         : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
+      rightBtn = _streamLink || _filler26;
     } else {
+      // Programado or live: stream left, nothing right
       leftBtn = _streamLink || _filler26;
       rightBtn = _filler26;
     }

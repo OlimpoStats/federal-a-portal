@@ -215,13 +215,25 @@ module.exports = async (req, res) => {
         const { rojasLocal, rojasVisit } = eventos;
         const minuto = live ? parseMinuto(html) : null;
 
+        // When closing a match, preserve existing goal/card data if FotMob returns
+        // fewer events than we already have (FT is sometimes reported before events load)
+        let existingMa = {};
+        try { existingMa = JSON.parse(fx.minuto_actual || '{}'); } catch(e) {}
+        const isClosing = finished || implicitFinished;
+        const newGl = eventos.golesLocal.map(g => ({n: g.nombre, t: g.min}));
+        const newGv = eventos.golesVisit.map(g => ({n: g.nombre, t: g.min}));
+        const finalGl = isClosing && (existingMa.gl||[]).length > newGl.length ? existingMa.gl : newGl;
+        const finalGv = isClosing && (existingMa.gv||[]).length > newGv.length ? existingMa.gv : newGv;
+        const finalRln = isClosing && (existingMa.rln||[]).length > eventos.rojasLocalNames.length ? existingMa.rln : eventos.rojasLocalNames;
+        const finalRvn = isClosing && (existingMa.rvn||[]).length > eventos.rojasVisitNames.length ? existingMa.rvn : eventos.rojasVisitNames;
+
         const eventData = JSON.stringify({
           m: implicitFinished ? null : minuto,
           rl: rojasLocal, rv: rojasVisit,
-          gl: eventos.golesLocal.map(g => ({n: g.nombre, t: g.min})),
-          gv: eventos.golesVisit.map(g => ({n: g.nombre, t: g.min})),
-          rln: eventos.rojasLocalNames,
-          rvn: eventos.rojasVisitNames
+          gl: finalGl,
+          gv: finalGv,
+          rln: finalRln,
+          rvn: finalRvn
         });
 
         if (implicitFinished) {
