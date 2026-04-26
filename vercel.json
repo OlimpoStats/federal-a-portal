@@ -6,6 +6,10 @@
     "api/procesar.js": {
       "memory": 256,
       "maxDuration": 30
+    },
+    "api/sync-live.js": {
+      "memory": 256,
+      "maxDuration": 45
     }
   }
 }
