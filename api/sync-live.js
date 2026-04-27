@@ -159,9 +159,23 @@ module.exports = async (req, res) => {
     // Close any en_curso fixtures from previous days in one bulk UPDATE
     const staleResult = await sbCloseStale(today);
 
-    const fixtures = await sbGet(`fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual,dia&or=(dia.eq.${today},estado.eq.en_curso)`);
+    const fixtures = await sbGet(`fotmob_url=not.is.null&fotmob_url=neq.&select=id,goles_local,goles_visitante,fotmob_url,estado,minuto_actual,dia,hora&or=(dia.eq.${today},estado.eq.en_curso)`);
     if (!Array.isArray(fixtures)) return res.status(500).json({ error: 'DB error' });
     if (!fixtures.length) return res.status(200).json({ ok: true, message: 'No fixtures today', today, stale: staleResult });
+
+    // Early exit: only hit FotMob if at least one match is en_curso or has kicked off (±15 min)
+    const nowArgMin = (() => {
+      const d = new Date(Date.now() - 3 * 60 * 60 * 1000); // UTC-3
+      return d.getUTCHours() * 60 + d.getUTCMinutes();
+    })();
+    const needsProcessing = fixtures.some(fx => {
+      if (fx.estado === 'en_curso') return true;
+      if (fx.estado === 'jugado') return false;
+      if (!fx.hora || fx.dia !== today) return true; // no time set or stale — handle in loop
+      const [h, m] = fx.hora.split(':').map(Number);
+      return nowArgMin >= (h * 60 + (m || 0)) - 15;
+    });
+    if (!needsProcessing) return res.status(200).json({ ok: true, message: 'No matches active yet', today, stale: staleResult });
 
     const results = [];
 

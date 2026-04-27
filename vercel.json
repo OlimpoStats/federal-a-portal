@@ -8,7 +8,7 @@
       "maxDuration": 30
     },
     "api/sync-live.js": {
-      "memory": 256,
+      "memory": 128,
       "maxDuration": 45
     }
   }
