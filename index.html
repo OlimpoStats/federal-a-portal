@@ -1838,7 +1838,9 @@ async function verFicha(key, tienePlanilla){
         ${titulares.map(j=>renderJug(j,true)).join("")}
         ${dtNombre?`<div style="font-size:14px;color:#ccc;padding:.55rem 0 .3rem;margin-top:.1rem;display:flex;align-items:center;gap:.5rem;"><span style="width:18px;text-align:right;flex-shrink:0;font-size:11px;color:transparent;">0</span><span>👔 ${dtNombre}</span></div>`:""}
         <div style="height:.5rem;"></div>
-        ${suplentes.length?`${secHeader("SUPLENTES")}${suplentes.map(j=>renderJug(j,false)).join("")}`:""}
+        ${secHeader("SUPLENTES")}
+        ${suplentes.map(j=>renderJug(j,false)).join("")}
+        ${Array.from({length:Math.max(0,9-suplentes.length)},()=>`<div style="height:30px;border-bottom:1px solid rgba(255,255,255,0.05);box-sizing:border-box;"></div>`).join("")}
         ${cambiosSec}
         ${tarjetasSec}
       `;
