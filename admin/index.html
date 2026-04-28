@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Federal A — Panel Admin</title>
+<link rel="icon" type="image/png" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1749,20 +1750,17 @@ function renderPlanilla(containerId, jugadores){
     document.getElementById(containerId).innerHTML='<p style="color:var(--muted);font-size:13px;">No se encontraron jugadores.</p>';
     return;
   }
-  let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
-    <thead><tr>
-      <th style="width:32px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
-      <th style="width:62px">ID</th>
-      <th style="width:150px">Nombre</th>
-      <th style="width:24px">T</th>
-      <th style="width:220px">Eventos</th>
-      <th style="width:56px"></th>
-    </tr></thead><tbody>`;
-  jugadores.forEach((j,i)=>{
+
+  const titulares = jugadores.filter(j=>j.titular && !j.nc);
+  const suplentes = jugadores.filter(j=>!j.titular && !j.nc);
+  const ncs      = jugadores.filter(j=>j.nc);
+
+  function renderRow(j){
+    const i = jugadores.indexOf(j);
     const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
     const trBg = j.titular ? "" : "background:rgba(255,255,255,0.015);";
     const cpBadge = j.es_capitan ? '<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px;margin-right:4px;vertical-align:middle;font-family:Barlow,sans-serif;font-weight:700;">CP</span>' : "";
-    html+=`<tr style="${trBg}">
+    return `<tr style="${trBg}">
       <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
       <td style="width:68px;"><input type="text" inputmode="numeric" value="${j.id||""}" style="width:64px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--muted);padding:2px 3px;background:transparent;border:1px solid transparent;border-radius:3px;" title="ID Federal" onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onblur="this.style.borderColor='transparent';this.style.background='transparent'" onchange="actualizarJugadorPorId('${containerId}',${i},this.value)"></td>
       <td style="min-width:140px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
@@ -1773,10 +1771,46 @@ function renderPlanilla(containerId, jugadores){
         <button class="add-ev-btn" style="color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})" title="Agregar asistencia">👟</button>
       </td>
     </tr>`;
-  });
-  // Check if less than 20 players and add "add player" row
-  const faltanTitulares = Math.max(0, 11 - jugadores.filter(j=>j.titular).length);
-  const faltanSuplentes = Math.max(0, 9 - jugadores.filter(j=>!j.titular&&!j.nc).length);
+  }
+
+  function emptyRow(bg){
+    return `<tr style="${bg||""}"><td colspan="6" style="height:28px;border-bottom:1px solid rgba(255,255,255,0.04);"></td></tr>`;
+  }
+
+  function separator(){
+    return `<tr><td colspan="6" style="padding:0;background:rgba(255,255,255,0.07);height:2px;"></td></tr>`;
+  }
+
+  let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
+    <thead><tr>
+      <th style="width:32px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
+      <th style="width:62px">ID</th>
+      <th style="width:150px">Nombre</th>
+      <th style="width:24px">T</th>
+      <th style="width:220px">Eventos</th>
+      <th style="width:56px"></th>
+    </tr></thead><tbody>`;
+
+  // Titulares: siempre 11 filas
+  titulares.forEach(j => { html += renderRow(j); });
+  for(let p = titulares.length; p < 11; p++) html += emptyRow();
+
+  // Separador fijo entre titulares y suplentes
+  html += separator();
+
+  // Suplentes: siempre 9 filas
+  suplentes.forEach(j => { html += renderRow(j); });
+  for(let p = suplentes.length; p < 9; p++) html += emptyRow("background:rgba(255,255,255,0.015);");
+
+  // NC (si hay)
+  if(ncs.length){
+    html += separator();
+    ncs.forEach(j => { html += renderRow(j); });
+  }
+
+  // Aviso si faltan jugadores
+  const faltanTitulares = Math.max(0, 11 - titulares.length);
+  const faltanSuplentes = Math.max(0, 9 - suplentes.length);
   const faltan = faltanTitulares + faltanSuplentes;
   if(faltan > 0){
     html+=`<tr style="background:rgba(232,196,74,0.05);">
