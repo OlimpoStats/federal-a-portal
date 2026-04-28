@@ -1,9 +1,19 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-async function callGemini(image, prompt) {
+function getGeminiKeys() {
+  const keys = [
+    process.env.GEMINI_API_KEY_1,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY, // clave original como último recurso
+  ].filter(Boolean);
+  return keys;
+}
+
+async function callGeminiWithKey(key, image, prompt) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,38 +45,7 @@ async function callGemini(image, prompt) {
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
   const finishReason = data.candidates?.[0]?.finishReason || "";
-  return { text, finishReason, provider: "gemini" };
-}
-
-async function callClaude(image, prompt) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 8192,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: "image/png", data: image } },
-          { type: "text", text: prompt }
-        ]
-      }]
-    })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error?.message || "Error de Claude");
-  }
-
-  const text = data.content?.[0]?.text || "{}";
-  return { text, finishReason: data.stop_reason || "", provider: "claude" };
+  return { text, finishReason };
 }
 
 export default async function handler(req, res) {
@@ -104,21 +83,26 @@ export default async function handler(req, res) {
 
   try {
     const { image, prompt } = req.body;
-    let result;
+    const keys = getGeminiKeys();
 
-    try {
-      result = await callGemini(image, prompt);
-    } catch (geminiErr) {
-      if (!geminiErr.isQuota) throw geminiErr;
-      // Gemini quota exceeded — fall back to Claude
-      result = await callClaude(image, prompt);
+    if (!keys.length) return res.status(500).json({ error: "No hay API keys de Gemini configuradas." });
+
+    let lastError;
+    for (const key of keys) {
+      try {
+        const result = await callGeminiWithKey(key, image, prompt);
+        return res.status(200).json({
+          content: [{ type: "text", text: result.text }],
+          finishReason: result.finishReason
+        });
+      } catch (err) {
+        lastError = err;
+        if (!err.isQuota) break; // error que no es de cuota → no sirve rotar
+        // cuota agotada → probar siguiente key
+      }
     }
 
-    res.status(200).json({
-      content: [{ type: "text", text: result.text }],
-      finishReason: result.finishReason,
-      provider: result.provider
-    });
+    res.status(500).json({ error: lastError?.message || "Error procesando imagen." });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
