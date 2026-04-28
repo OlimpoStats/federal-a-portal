@@ -6,7 +6,8 @@ function getGeminiKeys() {
     process.env.GEMINI_API_KEY_1,
     process.env.GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY_3,
-    process.env.GEMINI_API_KEY, // clave original como último recurso
+    process.env.GEMINI_API_KEY_4,
+    process.env.GEMINI_API_KEY,
   ].filter(Boolean);
   return keys;
 }
