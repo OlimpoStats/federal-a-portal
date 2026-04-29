@@ -3637,7 +3637,8 @@ async function renderGoleadoresResumen(){
       if(r===3 && pl.length>1){
         tableRows+=`<tr>
           <td><span class="pos">${r}</span></td>
-          <td colspan="2" style="font-size:12px;color:var(--muted);text-align:left;padding-left:.4rem;">${pl.length} jugadores — <strong style="color:var(--text)">${pl[0].goles} goles</strong></td>
+          <td style="font-size:12px;color:var(--muted);padding-left:.4rem;">${pl.length} jugadores</td>
+          <td><strong class="pts">${pl[0].goles}</strong></td>
         </tr>`;
       } else {
         pl.forEach(j=>{tableRows+=`<tr>
@@ -3885,13 +3886,15 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="margin-bottom:.75rem;">
-      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
-      ${renderLista(nonA,'#2ea043')}
-    </div>
-    <div style="margin-bottom:1rem;">
-      <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
-      ${renderLista(nonB,'#2ea043')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
+        ${renderLista(nonA,'#2ea043')}
+      </div>
+      <div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
+        ${renderLista(nonB,'#2ea043')}
+      </div>
     </div>
     <div style="margin-bottom:1.25rem;">${renderRevBTabla(revB)}</div>`;
 
