@@ -3735,6 +3735,26 @@ function renderSegundaFase(){
 
   const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
 
+  // Devuelve 'red', 'orange' o null según posición y empates en el límite
+  const calcDangerColor = (rows, idx, criterion) => {
+    const N = rows.length;
+    if (N < 2 || idx < N - 2) {
+      // Fuera de los últimos 2 — naranja solo si empata con el anteúltimo
+      if (idx >= N - 2) return null; // no llega aquí, pero por claridad
+      const valAnteultimo = criterion(rows[N-2]);
+      const outsideTied = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+      return (criterion(rows[idx]) === valAnteultimo && outsideTied > 0) ? 'orange' : null;
+    }
+    const valAnteultimo = criterion(rows[N-2]);
+    const valUltimo    = criterion(rows[N-1]);
+    const outsideTied  = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+    const tiedAtUltimo = rows.filter(r => criterion(r) === valUltimo).length;
+    if (idx === N-2) return outsideTied > 0 ? 'orange' : 'red';
+    // idx === N-1
+    const tiedWithAnteultimoOutside = criterion(rows[idx]) === valAnteultimo && outsideTied > 0;
+    return (tiedAtUltimo > 2 || tiedWithAnteultimoOutside) ? 'orange' : 'red';
+  };
+
   const renderRevATabla = (equipos) => {
     const rows = equipos.map(r => ({...r}));
     rows.sort((a,b)=>{
@@ -3742,22 +3762,26 @@ function renderSegundaFase(){
       const pb = b.pj>0 ? b.pts/b.pj : 0;
       return pb-pa || b.pts-a.pts;
     });
+    const criterion = r => r.pj > 0 ? Math.trunc(r.pts/r.pj*1000) : -1;
     const fmtProm = (pts,pj) => {
       if(!pj) return '—';
-      const val = Math.trunc(pts/pj*1000)/1000;
-      return val.toFixed(3).replace('.',',');
+      return (Math.trunc(pts/pj*1000)/1000).toFixed(3).replace('.',',');
     };
     const tableRows = rows.map((r,i)=>{
+      const dc = calcDangerColor(rows, i, criterion);
+      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
+      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
+      const promSty = dc ? dataSty : 'color:var(--accent);';
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
-        <td><span class="pos" style="color:#aaa">${i+1}</span></td>
+        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td>${r.pj}</td>
-        <td><strong class="pts">${r.pts}</strong></td>
-        <td style="font-weight:700;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;">${fmtProm(r.pts,r.pj)}</td>
+        <td style="${dataSty}">${r.pj}</td>
+        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
+        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r.pts,r.pj)}</td>
       </tr>`;
     }).join('');
-    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Reválida A</p>
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso A</p>
     <div class="tabla-mini"><table>
       <thead><tr>
         <th style="width:30px">#</th>
@@ -3771,16 +3795,20 @@ function renderSegundaFase(){
 
   const renderRevBTabla = (equipos) => {
     const rows = [...equipos].sort((a,b)=>b.pts-a.pts||(b.pj-a.pj));
+    const criterion = r => r.pts;
     const tableRows = rows.map((r,i)=>{
+      const dc = calcDangerColor(rows, i, criterion);
+      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
+      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
-        <td><span class="pos" style="color:#aaa">${i+1}</span></td>
+        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td>${r.pj}</td>
-        <td><strong class="pts">${r.pts}</strong></td>
+        <td style="${dataSty}">${r.pj}</td>
+        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
       </tr>`;
     }).join('');
-    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Reválida B</p>
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso B</p>
     <div class="tabla-mini"><table>
       <thead><tr>
         <th style="width:30px">#</th>
