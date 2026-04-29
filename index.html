@@ -3735,6 +3735,62 @@ function renderSegundaFase(){
 
   const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
 
+  const renderRevATabla = (equipos) => {
+    const rows = equipos.map(r => ({...r}));
+    rows.sort((a,b)=>{
+      const pa = a.pj>0 ? a.pts/a.pj : 0;
+      const pb = b.pj>0 ? b.pts/b.pj : 0;
+      return pb-pa || b.pts-a.pts;
+    });
+    const fmtProm = (pts,pj) => {
+      if(!pj) return '—';
+      const val = Math.trunc(pts/pj*1000)/1000;
+      return val.toFixed(3).replace('.',',');
+    };
+    const tableRows = rows.map((r,i)=>{
+      const isQuinto=r._quinto||r._topQuinto;
+      return `<tr>
+        <td><span class="pos" style="color:#aaa">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td>${r.pj}</td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td style="font-weight:700;color:var(--accent);font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;">${fmtProm(r.pts,r.pj)}</td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Reválida A</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Puntos">Pts</th>
+        <th title="Promedio de puntos por partido">Prom.</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+  };
+
+  const renderRevBTabla = (equipos) => {
+    const rows = [...equipos].sort((a,b)=>b.pts-a.pts||(b.pj-a.pj));
+    const tableRows = rows.map((r,i)=>{
+      const isQuinto=r._quinto||r._topQuinto;
+      return `<tr>
+        <td><span class="pos" style="color:#aaa">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td>${r.pj}</td>
+        <td><strong class="pts">${r.pts}</strong></td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Reválida B</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Puntos">Pts</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+  };
+
   // Quintos mini table
   const quintosOrdenados = [...quintos].sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf);
   const quintosTable = (() => {
@@ -3777,15 +3833,9 @@ function renderSegundaFase(){
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
     <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonA,'Nonagonal A','#2ea043')}</div>
     <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonB,'Nonagonal B','#2ea043')}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-      <div>
-        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
-        ${renderLista(revA,'#e07040')}
-      </div>
-      <div>
-        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
-        ${renderLista(revB,'#e07040')}
-      </div>
+    <div style="margin-bottom:1.25rem;">${renderRevATabla(revA)}</div>
+    <div style="margin-bottom:1.25rem;">${renderRevBTabla(revB)}</div>
+    <div style="display:none">
     </div>`;
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
