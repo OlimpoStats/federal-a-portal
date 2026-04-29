@@ -3700,6 +3700,38 @@ function renderSegundaFase(){
     </div>`;
   }).join('') + `</div>`;
 
+  const renderNonagonalTabla = (equipos, titulo, color) => {
+    const rows = equipos.map(r => ({n:r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
+    rows.sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||(b.gf-a.gf));
+    const tableRows = rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      const isQuinto=r._quinto||r._topQuinto;
+      const isTied=r._tied;
+      return `<tr>
+        <td><span class="pos" style="color:${isTied?'#3b82f6':'#aaa'}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${isTied?'&nbsp;<span style="font-size:9px;color:#3b82f6;" title="Empate — sorteo">⚖️</span>':''}</div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${color};margin:.5rem 0 .4rem;">${titulo}</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+
     const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
 
   // Quintos mini table
@@ -3742,16 +3774,8 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-      <div>
-        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
-        ${renderLista(nonA,'#2ea043')}
-      </div>
-      <div>
-        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
-        ${renderLista(nonB,'#2ea043')}
-      </div>
-    </div>
+    <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonA,'Nonagonal A','#2ea043')}</div>
+    <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonB,'Nonagonal B','#2ea043')}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
       <div>
         <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
