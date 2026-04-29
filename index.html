@@ -611,6 +611,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="col-izq" style="align-self:start;">
           <div id="cont-quintos"></div>
           <div id="cont-goleadores-resumen" style="margin-top:1rem;"></div>
+          <div id="cont-descenso-a" style="margin-top:1rem;"></div>
         </div>
         <div id="col-der" style="align-self:start;">
           <div id="cont-2dafase"></div>
@@ -3859,12 +3860,20 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonA,'Nonagonal A','#2ea043')}</div>
-    <div style="margin-bottom:1.25rem;">${renderNonagonalTabla(nonB,'Nonagonal B','#2ea043')}</div>
-    <div style="margin-bottom:1.25rem;">${renderRevATabla(revA)}</div>
-    <div style="margin-bottom:1.25rem;">${renderRevBTabla(revB)}</div>
-    <div style="display:none">
-    </div>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
+        ${renderLista(nonA,'#2ea043')}
+      </div>
+      <div>
+        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
+        ${renderLista(nonB,'#2ea043')}
+      </div>
+    </div>
+    <div style="margin-bottom:1.25rem;">${renderRevBTabla(revB)}</div>`;
+
+  const elDA = document.getElementById('cont-descenso-a');
+  if(elDA) elDA.innerHTML = renderRevATabla(revA);
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
