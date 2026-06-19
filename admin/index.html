@@ -2466,27 +2466,55 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
   }
 
   const savedJugIds = new Set();
+  const sinMatch = []; // jugadores que no matchearon con nadie del plantel - para revisión
+
+  // Cargar plantel del equipo UNA SOLA VEZ para todos los jugadores
+  const {data: plantelEquipo} = await sb.from("jugadores")
+    .select("id, id_federal, nombre, nombre_display")
+    .eq("equipo_id", equipoId);
 
   for(const j of jugadores){
-    const idFederal = String(j.id_federal || j.id || "");
-    if(!idFederal) continue;
+    const nombreRaw = j.nombre || "";
+    const idFederal = String(j.id_federal || j.id || "").trim();
+    let jDB = null;
 
-    // If jugador already exists, NEVER touch nombre or nombre_display — only update equipo_id
-    const {data:jExist} = await sb.from("jugadores").select("id").eq("id_federal", idFederal).maybeSingle();
-    let jDB;
-    if(jExist){
-      // Player exists: just update equipo_id, preserve all profile data
-      const {data} = await sb.from("jugadores").update({ equipo_id: equipoId }).eq("id", jExist.id).select("id").single();
-      jDB = data;
-    } else {
-      // New player: create with planilla name; generate common name by rule
-      const {data} = await sb.from("jugadores").insert({
-        id_federal: idFederal,
-        nombre: j.nombre,
-        nombre_display: generarCommonName(j.nombre),
-        equipo_id: equipoId,
-      }).select("id").single();
-      jDB = data;
+    // PASO 1: si viene id_federal (planillas viejas), usarlo como antes - máxima confianza
+    if(idFederal && idFederal !== "0" && idFederal !== "00000"){
+      const jExist = plantelEquipo?.find(p => p.id_federal === idFederal);
+      if(jExist){
+        const {data} = await sb.from("jugadores").update({ equipo_id: equipoId }).eq("id", jExist.id).select("id").single();
+        jDB = data;
+      } else {
+        const {data} = await sb.from("jugadores").insert({
+          id_federal: idFederal,
+          nombre: nombreRaw,
+          nombre_display: generarCommonName(nombreRaw),
+          equipo_id: equipoId,
+        }).select("id").single();
+        jDB = data;
+        if(data) plantelEquipo?.push({id:data.id, id_federal:idFederal, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)});
+      }
+    }
+
+    // PASO 2: SIN id_federal (planilla nueva sin ID) → buscar dentro del PLANTEL del equipo por nombre
+    if(!jDB && nombreRaw){
+      const { jugador, score, candidatos } = buscarEnPlantel(nombreRaw, plantelEquipo);
+      if(jugador){
+        // Match confiable encontrado en el plantel: usar ese jugador, NO tocar su nombre
+        jDB = { id: jugador.id };
+      } else {
+        // No hubo match confiable: crear jugador nuevo SIN id_federal real (se le asigna uno temporal)
+        // para no perder los datos del evento. Queda marcado para revisión manual.
+        const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+        const {data} = await sb.from("jugadores").insert({
+          id_federal: idTemp,
+          nombre: nombreRaw,
+          nombre_display: generarCommonName(nombreRaw) || nombreRaw,
+          equipo_id: equipoId,
+        }).select("id").single();
+        jDB = data;
+        sinMatch.push({ nombre: nombreRaw, candidatos, jugadorId: data?.id });
+      }
     }
 
     if(!jDB) continue;
@@ -2511,6 +2539,16 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
         extra: String(ev.extra || ""),
       });
     }
+  }
+
+  // Avisar al operador si hubo jugadores sin match confiable (requieren revisión manual)
+  if(sinMatch.length){
+    console.warn("[guardarPlanilla] Jugadores sin match confiable en el plantel:", sinMatch);
+    const detalle = sinMatch.map(s=>{
+      const top = s.candidatos[0];
+      return `• ${s.nombre}` + (top ? ` (similar a: ${top.jugador.nombre_display||top.jugador.nombre}, score ${top.score})` : ' (sin candidatos)');
+    }).join("\n");
+    alert(`⚠️ ${sinMatch.length} jugador(es) no matchearon con el plantel cargado y se crearon como NUEVOS. Revisar y fusionar si corresponde:\n\n${detalle}`);
   }
 
   // Check suspensions: decrement any sanctioned player from this equipo who didn't appear
@@ -3404,6 +3442,75 @@ async function vincularEquipo(nombre, campo, valor){
 // ── JUGADORES ──
 let JUGADORES_CACHE = [];
 let EQUIPOS_ID_MAP = {}; // nombre -> id
+
+function normalizarTexto(s){
+  // Quita tildes, pasa a mayúsculas, colapsa espacios. Para comparar nombres sin importar acentos/case.
+  return String(s||"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"") // quita tildes
+    .toUpperCase()
+    .replace(/[.,]/g,"")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function extraerApellidosNombres(raw){
+  // Acepta tanto "APELLIDOS, Nombres" como "Nombre Apellido" y devuelve {apellidos:[...], nombres:[...]}
+  const s = String(raw||"").trim();
+  if(s.includes(",")){
+    const [ap, no] = s.split(",").map(x=>x.trim());
+    return {
+      apellidos: normalizarTexto(ap).split(" ").filter(Boolean),
+      nombres: normalizarTexto(no).split(" ").filter(Boolean)
+    };
+  }
+  // Sin coma: asumimos formato "Nombre Apellido" (último token = apellido más probable)
+  const partes = normalizarTexto(s).split(" ").filter(Boolean);
+  if(partes.length <= 1) return { apellidos: partes, nombres: [] };
+  return { apellidos: [partes[partes.length-1]], nombres: partes.slice(0,-1) };
+}
+
+function scoreMatchJugador(rawPlanilla, jugadorDB){
+  // Compara el nombre de planilla contra un jugador ya cargado en ESE equipo.
+  // Devuelve un score 0-100. Compara por primer apellido + primer nombre, no por ID.
+  const p = extraerApellidosNombres(rawPlanilla);
+  const d = extraerApellidosNombres(jugadorDB.nombre_display || jugadorDB.nombre || "");
+  if(!p.apellidos.length || !d.apellidos.length) return 0;
+
+  let score = 0;
+  // Primer apellido coincide → peso fuerte
+  if(p.apellidos[0] === d.apellidos[0]) score += 60;
+  // Algún apellido adicional coincide
+  else if(p.apellidos.some(a=>d.apellidos.includes(a))) score += 35;
+
+  // Primer nombre coincide → peso fuerte
+  if(p.nombres[0] && d.nombres[0] && p.nombres[0] === d.nombres[0]) score += 40;
+  else if(p.nombres.some(n=>d.nombres.includes(n))) score += 20;
+
+  return score;
+}
+
+function buscarEnPlantel(rawNombre, plantel){
+  // Busca el mejor match dentro de un plantel ya cargado en memoria.
+  if(!plantel?.length) return { jugador:null, score:0, candidatos:[] };
+  let mejor = null, mejorScore = 0;
+  const candidatos = [];
+  for(const j of plantel){
+    const sc = scoreMatchJugador(rawNombre, j);
+    if(sc > 0) candidatos.push({jugador:j, score:sc});
+    if(sc > mejorScore){ mejorScore = sc; mejor = j; }
+  }
+  candidatos.sort((a,b)=>b.score-a.score);
+  // Umbral: 60+ = match confiable (al menos primer apellido exacto)
+  return { jugador: mejorScore>=60 ? mejor : null, score: mejorScore, candidatos };
+}
+
+async function buscarJugadorEnEquipo(rawNombre, equipoId){
+  // Versión async que carga el plantel y luego delega en buscarEnPlantel
+  const {data: plantel} = await sb.from("jugadores")
+    .select("id, id_federal, nombre, nombre_display")
+    .eq("equipo_id", equipoId);
+  return buscarEnPlantel(rawNombre, plantel);
+}
 
 function generarCommonName(nombreCompleto){
   // Input: "APELLIDOS, Nombres" → Output: "Primer Nombre Apellido(s)"
