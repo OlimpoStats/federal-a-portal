@@ -525,6 +525,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
           <button class="btn btn-secondary btn-sm" onclick="generarCommonNamesMasivo()" id="btn-commonnames" title="Generar common name para jugadores que no tienen">🏷️ Generar common names</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetearCommonNamesIncorrectos()" title="Resetea a NULL los common names que quedaron iguales al nombre completo">↩️ Resetear incorrectos</button>
           <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
         </div>
       </div>
@@ -3588,6 +3589,31 @@ async function generarCommonNamesMasivo(){
   cargarJugadores();
 }
 
+async function resetearCommonNamesIncorrectos(){
+  // Encuentra jugadores donde nombre_display === nombre (generacion fallida, sin coma)
+  const {data, error} = await sb.from("jugadores")
+    .select("id, nombre, nombre_display")
+    .not("nombre_display", "is", null)
+    .not("nombre", "is", null);
+  if(error){ alert("Error: " + error.message); return; }
+
+  const incorrectos = (data||[]).filter(j => j.nombre_display === j.nombre);
+  if(incorrectos.length === 0){ alert("✓ No se encontraron common names incorrectos."); return; }
+
+  if(!confirm(`Se encontraron ${incorrectos.length} jugadores con common name igual al nombre completo (generación fallida).\n\nSe resetearán a NULL para que queden identificables en el filtro "Sin common name".\n\n¿Continuar?`)) return;
+
+  let ok = 0, err = 0;
+  for(let i = 0; i < incorrectos.length; i += 50){
+    const bloque = incorrectos.slice(i, i + 50);
+    await Promise.all(bloque.map(async j => {
+      const {error} = await sb.from("jugadores").update({nombre_display: null}).eq("id", j.id);
+      if(error) err++; else ok++;
+    }));
+  }
+  alert(`✓ ${ok} reseteados.${err ? ` ${err} con error.` : ""} Ahora aparecen en el filtro "Sin common name".`);
+  cargarJugadores();
+}
+
 async function cargarJugadores(){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
@@ -3759,7 +3785,7 @@ async function abrirEditJugador(id){
   document.getElementById("jug-edit-display").value = j.nombre_display ?? "";
   document.getElementById("jug-edit-posicion").value = j.posicion ?? "";
   document.getElementById("jug-edit-pierna").value = j.pierna_habil ?? "";
-  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento ?? "";
+  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento ? j.fecha_nacimiento.slice(0, 10) : "";
   document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento ?? "";
   document.getElementById("jug-edit-altura").value = j.altura_m ?? "";
   document.getElementById("jug-edit-peso").value = j.peso_kg ?? "";
