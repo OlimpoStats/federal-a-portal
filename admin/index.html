@@ -524,6 +524,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </select>
           <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
+          <button class="btn btn-secondary btn-sm" onclick="generarCommonNamesMasivo()" id="btn-commonnames" title="Generar common name para jugadores que no tienen">🏷️ Generar common names</button>
           <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
         </div>
       </div>
@@ -3532,6 +3533,61 @@ function generarCommonName(nombreCompleto){
   return `${cap(primerNombre)} ${bloque.map(cap).join(" ")}`.trim();
 }
 
+async function generarCommonNamesMasivo(){
+  const btn = document.getElementById("btn-commonnames");
+  btn.disabled = true;
+  btn.textContent = "Procesando...";
+
+  // Traer todos los jugadores sin nombre_display
+  let pagina = 0;
+  const CHUNK = 1000;
+  let sinDisplay = [];
+  while(true){
+    const {data, error} = await sb.from("jugadores")
+      .select("id, nombre")
+      .is("nombre_display", null)
+      .range(pagina * CHUNK, (pagina + 1) * CHUNK - 1);
+    if(error){ alert("Error consultando jugadores: " + error.message); break; }
+    if(!data || data.length === 0) break;
+    sinDisplay = sinDisplay.concat(data);
+    if(data.length < CHUNK) break;
+    pagina++;
+  }
+
+  if(sinDisplay.length === 0){
+    alert("✓ Todos los jugadores ya tienen common name.");
+    btn.disabled = false;
+    btn.textContent = "🏷️ Generar common names";
+    return;
+  }
+
+  if(!confirm(`Se generará el common name para ${sinDisplay.length} jugadores sin nombre_display. ¿Continuar?`)){
+    btn.disabled = false;
+    btn.textContent = "🏷️ Generar common names";
+    return;
+  }
+
+  let actualizados = 0;
+  let errores = 0;
+  // Procesar en bloques de 50 para no saturar
+  for(let i = 0; i < sinDisplay.length; i += 50){
+    const bloque = sinDisplay.slice(i, i + 50);
+    btn.textContent = `Procesando ${Math.min(i + 50, sinDisplay.length)}/${sinDisplay.length}...`;
+    await Promise.all(bloque.map(async j => {
+      const cn = generarCommonName(j.nombre);
+      if(!cn) return;
+      const {error} = await sb.from("jugadores").update({nombre_display: cn}).eq("id", j.id);
+      if(error) errores++;
+      else actualizados++;
+    }));
+  }
+
+  btn.textContent = "🏷️ Generar common names";
+  btn.disabled = false;
+  alert(`✓ ${actualizados} jugadores actualizados.${errores ? ` ${errores} con error.` : ""}`);
+  cargarJugadores();
+}
+
 async function cargarJugadores(){
   const lista = document.getElementById("jug-lista");
   if(!lista) return;
@@ -3681,24 +3737,36 @@ function abrirCrearJugador(){
   document.getElementById("jug-modal").style.display = "flex";
 }
 
-function abrirEditJugador(id){
-  const j = JUGADORES_CACHE.find(x => x.id === id);
-  if(!j) return;
+async function abrirEditJugador(id){
+  const modal = document.getElementById("jug-modal");
+  modal.style.display = "flex";
+  document.querySelector("#jug-modal div div:first-child").textContent = "Cargando...";
+
+  const {data: j, error} = await sb.from("jugadores")
+    .select("id, id_federal, nombre, nombre_display, equipo_id, posicion, pierna_habil, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, equipos(id,nombre)")
+    .eq("id", id)
+    .single();
+
+  if(error || !j){
+    alert("Error al cargar el jugador.");
+    modal.style.display = "none";
+    return;
+  }
+
   document.getElementById("jug-edit-id").value = j.id;
-  document.getElementById("jug-edit-idfederal").value = j.id_federal || "";
-  document.getElementById("jug-edit-nombre").value = j.nombre || "";
-  document.getElementById("jug-edit-display").value = j.nombre_display || "";
-  document.getElementById("jug-edit-posicion").value = j.posicion || "";
-  document.getElementById("jug-edit-pierna").value = j.pierna_habil || "";
-  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento || "";
-  document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento || "";
-  document.getElementById("jug-edit-altura").value = j.altura_m || "";
-  document.getElementById("jug-edit-peso").value = j.peso_kg || "";
+  document.getElementById("jug-edit-idfederal").value = j.id_federal ?? "";
+  document.getElementById("jug-edit-nombre").value = j.nombre ?? "";
+  document.getElementById("jug-edit-display").value = j.nombre_display ?? "";
+  document.getElementById("jug-edit-posicion").value = j.posicion ?? "";
+  document.getElementById("jug-edit-pierna").value = j.pierna_habil ?? "";
+  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento ?? "";
+  document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento ?? "";
+  document.getElementById("jug-edit-altura").value = j.altura_m ?? "";
+  document.getElementById("jug-edit-peso").value = j.peso_kg ?? "";
   const sel = document.getElementById("jug-edit-equipo");
   sel.innerHTML = '<option value="">— Sin club —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}" ${j.equipos?.nombre===t?"selected":""}>${t}</option>`).join("");
   document.querySelector("#jug-modal div div:first-child").textContent = "Editar jugador";
-  document.getElementById("jug-modal").style.display = "flex";
 }
 
 function cerrarEditJugador(){
