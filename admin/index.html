@@ -3444,6 +3444,7 @@ async function vincularEquipo(nombre, campo, valor){
 // ── JUGADORES ──
 let JUGADORES_CACHE = [];
 let EQUIPOS_ID_MAP = {}; // nombre -> id
+let _jugadorEditData = null; // datos originales del jugador abierto en el modal
 
 function normalizarTexto(s){
   // Quita tildes, pasa a mayúsculas, colapsa espacios. Para comparar nombres sin importar acentos/case.
@@ -3763,6 +3764,15 @@ function abrirCrearJugador(){
   document.getElementById("jug-modal").style.display = "flex";
 }
 
+function _setSelect(id, value){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const v = value ?? "";
+  let matched = false;
+  for(const opt of el.options){ if(opt.value === v){ opt.selected = true; matched = true; } else opt.selected = false; }
+  if(!matched) el.options[0].selected = true;
+}
+
 async function abrirEditJugador(id){
   const modal = document.getElementById("jug-modal");
   modal.style.display = "flex";
@@ -3779,12 +3789,14 @@ async function abrirEditJugador(id){
     return;
   }
 
+  _jugadorEditData = j;
+
   document.getElementById("jug-edit-id").value = j.id;
   document.getElementById("jug-edit-idfederal").value = j.id_federal ?? "";
   document.getElementById("jug-edit-nombre").value = j.nombre ?? "";
   document.getElementById("jug-edit-display").value = j.nombre_display ?? "";
-  document.getElementById("jug-edit-posicion").value = j.posicion ?? "";
-  document.getElementById("jug-edit-pierna").value = j.pierna_habil ?? "";
+  _setSelect("jug-edit-posicion", j.posicion);
+  _setSelect("jug-edit-pierna", j.pierna_habil);
   document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento ? j.fecha_nacimiento.slice(0, 10) : "";
   document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento ?? "";
   document.getElementById("jug-edit-altura").value = j.altura_m ?? "";
@@ -3801,17 +3813,21 @@ function cerrarEditJugador(){
 
 async function guardarJugador(){
   const id = document.getElementById("jug-edit-id").value;
-  const id_federal = document.getElementById("jug-edit-idfederal").value.trim();
-  const nombre = document.getElementById("jug-edit-nombre").value.trim();
+  const orig = _jugadorEditData || {};
+
+  const id_federal = document.getElementById("jug-edit-idfederal").value.trim() || orig.id_federal || null;
+  const nombre = document.getElementById("jug-edit-nombre").value.trim() || orig.nombre || null;
   const nombre_display = document.getElementById("jug-edit-display").value.trim() || nombre;
   const equipoNombre = document.getElementById("jug-edit-equipo").value;
-  const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : null;
-  const posicion = document.getElementById("jug-edit-posicion").value || null;
-  const pierna_habil = document.getElementById("jug-edit-pierna").value || null;
-  const fecha_nacimiento = document.getElementById("jug-edit-fnac").value || null;
-  const lugar_nacimiento = document.getElementById("jug-edit-lugar").value.trim() || null;
-  const altura_m = document.getElementById("jug-edit-altura").value ? parseFloat(document.getElementById("jug-edit-altura").value) : null;
-  const peso_kg = document.getElementById("jug-edit-peso").value ? parseInt(document.getElementById("jug-edit-peso").value) : null;
+  const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : (orig.equipo_id || null);
+  const posicion = document.getElementById("jug-edit-posicion").value || orig.posicion || null;
+  const pierna_habil = document.getElementById("jug-edit-pierna").value || orig.pierna_habil || null;
+  const fecha_nacimiento = document.getElementById("jug-edit-fnac").value || orig.fecha_nacimiento || null;
+  const lugar_nacimiento = document.getElementById("jug-edit-lugar").value.trim() || orig.lugar_nacimiento || null;
+  const alturaVal = document.getElementById("jug-edit-altura").value;
+  const altura_m = alturaVal ? parseFloat(alturaVal) : (orig.altura_m ?? null);
+  const pesoVal = document.getElementById("jug-edit-peso").value;
+  const peso_kg = pesoVal ? parseInt(pesoVal) : (orig.peso_kg ?? null);
 
   const fields = { id_federal, nombre, nombre_display, equipo_id, posicion, pierna_habil, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg };
 
