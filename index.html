@@ -2684,7 +2684,8 @@ async function cargarEstadisticas(){
       {data:planillasDB},
       {data:penalesDB, error:penErr},
       {data:dtDB},
-      {data:sancionesDB}
+      {data:sancionesDB},
+      {data:transfersDB}
     ] = await Promise.all([
       sb.from('eventos').select(evSelect).range(0, 999),
       sb.from('jugadores').select(jugSelect).range(0, 999),
@@ -2692,7 +2693,8 @@ async function cargarEstadisticas(){
       sb.from('planillas').select('id,partido_id,equipo_id'),
       sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
       sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
-      sb.from('sanciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false})
+      sb.from('sanciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false}),
+      sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
     ]);
     if(evRes0.error) throw evRes0.error;
     if(jugsRes0.error) throw jugsRes0.error;
@@ -2727,6 +2729,21 @@ async function cargarEstadisticas(){
     const jugsById = {};
     (jugsDB||[]).forEach(j=>{ jugsById[j.id]=j; jugsById[String(j.id)]=j; jugsById[Number(j.id)]=j; });
 
+    // Mapa de transferencias: jugDestinoId → jugOrigenId + info de "2 clubes"
+    const canonicalJugId = {}; // jugDestinoId → jugOrigenId (para agrupar stats)
+    const dosClubes = {}; // jugOrigenId → {equipo1, equipo2}
+    (transfersDB||[]).forEach(t => {
+      if(!t.jugador_origen_id || !t.jugador_destino_id) return;
+      canonicalJugId[t.jugador_destino_id] = t.jugador_origen_id;
+      canonicalJugId[String(t.jugador_destino_id)] = t.jugador_origen_id;
+      if(!dosClubes[t.jugador_origen_id]){
+        dosClubes[t.jugador_origen_id] = {
+          equipo1: jugsById[t.jugador_origen_id]?.equipos?.nombre,
+          equipo2: jugsById[t.jugador_destino_id]?.equipos?.nombre,
+        };
+      }
+    });
+
     // Process jugadores stats
     const jugStats = {}; // id → {nombre, equipo, goles, asist, amarillas, rojas}
     const equipoStats = {}; // nombre → {pj,g,e,p,gf,gc,pts, local:{}, visit:{}}
@@ -2742,10 +2759,11 @@ async function cargarEstadisticas(){
       const jugador = pl.jugadores;
       const equipo = pl.equipos?.nombre;
       const jId = jugador?.id;
+      const canonId = canonicalJugId[jId] || jId;
       const jNombre = jugador?.nombre_display || jugador?.nombre || '?';
-      const key = jId || jNombre;
+      const key = canonId || jNombre;
 
-      if(!jugStats[key]) jugStats[key] = {nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0, rojas_da:0, rojas_directas:0};
+      if(!jugStats[key]) jugStats[key] = {key, nombre:jNombre, equipo, goles:0, asist:0, amarillas:0, rojas:0, rojas_da:0, rojas_directas:0};
 
       if(['gol','gol_penal','gol_tiro_libre'].includes(ev.tipo)) jugStats[key].goles++;
       if(ev.tipo==='asistencia') jugStats[key].asist++;
@@ -2763,11 +2781,12 @@ async function cargarEstadisticas(){
       const jug=pl.jugadores; if(!jug) return;
       const equipo=pl.equipos?.nombre;
       const jId=jug.id;
+      const canonId=canonicalJugId[jId]||jId;
       const nombre=jug.nombre_display||jug.nombre||'?';
-      const key=jId||nombre;
+      const key=canonId||nombre;
       const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
       const partido=partidosById[partidoId];
-      if(!golesContraMap[key]) golesContraMap[key]={nombre,equipo,count:0,beneficiarios:[]};
+      if(!golesContraMap[key]) golesContraMap[key]={key,nombre,equipo,count:0,beneficiarios:[]};
       golesContraMap[key].count++;
       if(partido){
         const bene=equipo===partido.equipo_local_nombre?partido.equipo_visitante_nombre:partido.equipo_local_nombre;
@@ -2782,11 +2801,12 @@ async function cargarEstadisticas(){
       const pl=ev.planillas; if(!pl) return;
       const jug=pl.jugadores; if(!jug) return;
       const jId=jug.id;
+      const canonId=canonicalJugId[jId]||jId;
       const nombre=jug.nombre_display||jug.nombre||'?';
       const equipo=pl.equipos?.nombre;
       const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
-      const mk=`${jId}_${partidoId}`;
-      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId,nombre,equipo,amarilla:false,expulsion:false};
+      const mk=`${canonId}_${partidoId}`;
+      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,amarilla:false,expulsion:false};
       if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
       if(ev.tipo==='doble_amarilla'){ _amLimPartido[mk].amarilla=true; _amLimPartido[mk].expulsion=true; }
       if(ev.tipo==='roja') _amLimPartido[mk].expulsion=true;
@@ -2794,7 +2814,7 @@ async function cargarEstadisticas(){
     const amarillasLimiteMap={}; // jId → {nombre, equipo, count}
     Object.values(_amLimPartido).forEach(m=>{
       if(m.amarilla&&!m.expulsion){
-        if(!amarillasLimiteMap[m.jId]) amarillasLimiteMap[m.jId]={nombre:m.nombre,equipo:m.equipo,count:0};
+        if(!amarillasLimiteMap[m.jId]) amarillasLimiteMap[m.jId]={key:m.jId,nombre:m.nombre,equipo:m.equipo,count:0};
         amarillasLimiteMap[m.jId].count++;
       }
     });
@@ -2808,9 +2828,10 @@ async function cargarEstadisticas(){
       const jug = pl.jugadores;
       const equipo = pl.equipos?.nombre;
       const jId = jug?.id;
+      const canonId = canonicalJugId[jId]||jId;
       const nombre = jug?.nombre_display||jug?.nombre||'?';
-      const key = jId||nombre;
-      if(!tirLibreMap[key]) tirLibreMap[key]={nombre, equipo, goles:0};
+      const key = canonId||nombre;
+      if(!tirLibreMap[key]) tirLibreMap[key]={key, nombre, equipo, goles:0};
       tirLibreMap[key].goles++;
     });
 
@@ -3036,49 +3057,55 @@ async function cargarEstadisticas(){
     });
 
     // ── RENDER FUNCTIONS ──
-    const fmtJug = (nombre, equipo) => `<div style="display:flex;align-items:center;gap:.4rem;max-width:180px;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div><div style="font-size:10px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${equipo||''}</div></div></div>`;
+    const fmtJug = (nombre, equipo, key) => {
+      const dc = key !== undefined ? dosClubes[key] : null;
+      if(dc?.equipo1 && dc?.equipo2){
+        return `<div style="display:flex;align-items:center;gap:.4rem;max-width:200px;"><span style="flex-shrink:0;display:flex;gap:2px;">${escudoHTML(dc.equipo1,'me')}${escudoHTML(dc.equipo2,'me')}</span><div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div><div style="font-size:10px;color:#999;">2 clubes</div></div></div>`;
+      }
+      return `<div style="display:flex;align-items:center;gap:.4rem;max-width:180px;"><span style="flex-shrink:0;">${escudoHTML(equipo,'me')}</span><div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nombre}</div><div style="font-size:10px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${equipo||''}</div></div></div>`;
+    };
     const tblHead = (...cols) => `<table class="tabla-stats"><thead><tr>${cols.map(([w,t,l,al])=>`<th style="${w?`width:${w};`:''}${al?`text-align:${al};`:''}" ${t?`title="${t}"`:''} >${l}</th>`).join('')}</tr></thead><tbody>`;
 
     // GOLEADORES
     const goleadores = Object.values(jugStats).filter(j=>j.goles>0).sort((a,b)=>b.goles-a.goles).slice(0,10);
     document.getElementById('tbl-goleadores').innerHTML = goleadores.length ? tblHead(
       ['28px','Posición','#'],['','Jugador','Jugador'],['40px','Goles','⚽']
-    ) + goleadores.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    ) + goleadores.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // ASISTENTES
     const asistentes = Object.values(jugStats).filter(j=>j.asist>0).sort((a,b)=>b.asist-a.asist).slice(0,10);
     document.getElementById('tbl-asistentes').innerHTML = asistentes.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','Asistencias','👟']
-    ) + asistentes.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.asist}</strong></td></tr>`).join('') + '</tbody></table>'
+    ) + asistentes.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong class="pts">${j.asist}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // TIRO LIBRE
     const tirLibreRows = Object.values(tirLibreMap).sort((a,b)=>b.goles-a.goles);
     document.getElementById('tbl-tiro-libre').innerHTML = tirLibreRows.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','Goles','🎯']
-    ) + tirLibreRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
+    ) + tirLibreRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong class="pts">${j.goles}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // GOLES EN CONTRA
     const golesContraRows=Object.values(golesContraMap).sort((a,b)=>b.count-a.count);
     document.getElementById('tbl-goles-contra').innerHTML=golesContraRows.length?tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','GC','GC'],['','A favor de','A favor de']
-    )+golesContraRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.count}</strong></td><td style="text-align:center;"><div style="display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap;">${j.beneficiarios.map(b=>escudoHTML(b,'me')).join('')}</div></td></tr>`).join('')+'</tbody></table>'
+    )+golesContraRows.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong class="pts">${j.count}</strong></td><td style="text-align:center;"><div style="display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap;">${j.beneficiarios.map(b=>escudoHTML(b,'me')).join('')}</div></td></tr>`).join('')+'</tbody></table>'
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin goles en contra registrados.</div>';
 
     // AMARILLAS
     const amonestados = Object.values(jugStats).filter(j=>j.amarillas>0).sort((a,b)=>b.amarillas-a.amarillas).slice(0,15);
     document.getElementById('tbl-amarillas').innerHTML = amonestados.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['40px','Amarillas','🟨']
-    ) + amonestados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong class="pts">${j.amarillas}</strong></td></tr>`).join('') + '</tbody></table>'
+    ) + amonestados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong class="pts">${j.amarillas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // ROJAS
     const expulsados = Object.values(jugStats).filter(j=>j.rojas>0).sort((a,b)=>b.rojas-a.rojas||b.rojas_directas-a.rojas_directas||b.rojas_da-a.rojas_da).slice(0,15);
     document.getElementById('tbl-rojas').innerHTML = expulsados.length ? tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['52px','Doble amarilla','🟨🟨'],['52px','Roja directa','🟥'],['44px','Total','Total']
-    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
+    ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // SUSPENSIONES PENDIENTES (desde tabla sanciones — solo partidos_sancion > 0)
@@ -3111,7 +3138,7 @@ async function cargarEstadisticas(){
     )+amLimRows.map((j,i)=>{
       const pct=Math.round(j.count/5*100);
       const color=j.count>=5?'#e57373':j.count>=4?'#ffa726':j.count>=3?'#fff176':'var(--muted)';
-      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong style="color:${color};">${j.count}</strong></td><td><div style="font-size:10px;color:${color};">${j.count}/5</div></td></tr>`;
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td><div style="font-size:10px;color:${color};">${j.count}/5</div></td></tr>`;
     }).join('')+'</tbody></table>'
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
@@ -3451,7 +3478,7 @@ async function cargarEstadisticas(){
       ['180px','Jugador','Jugador'],['44px','Pat.','Pateados'],['44px','Conv.','Convertidos'],['44px','%','Efectividad']
     ) + penEjecRows.map(j=>{
       const pct = j.ejecutados ? Math.round(j.goles/j.ejecutados*100)+'%' : '—';
-      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo)}</td><td style="text-align:center;">${j.ejecutados}</td><td style="text-align:center;">${j.goles}</td><td style="text-align:center;">${pct}</td></tr>`;
+      return `<tr><td style="text-align:left;">${fmtJug(j.nombre,j.equipo,j.key)}</td><td style="text-align:center;">${j.ejecutados}</td><td style="text-align:center;">${j.goles}</td><td style="text-align:center;">${pct}</td></tr>`;
     }).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
