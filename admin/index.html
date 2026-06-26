@@ -950,6 +950,7 @@ let imgLocalB64=null, imgVisitB64=null;
 let partidoActual=null;
 let planillaLocal={jugadores:[]}, planillaVisit={jugadores:[]};
 const FIXTURE_CON_PLANILLA = new Set();
+let _resolveTransfer = null;
 
 // ── NAVEGACIÓN ──
 function goPanel(id){
@@ -2455,12 +2456,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
   if(!jugadores || !jugadores.length) return;
 
   // Borrar planillas de ESTE equipo en ESTE partido antes de reinsertar
-  const {data:prevPlan} = await sb
-    .from("planillas")
-    .select("id")
-    .eq("partido_id", partidoId)
-    .eq("equipo_id", equipoId);
-
+  const {data:prevPlan} = await sb.from("planillas").select("id").eq("partido_id", partidoId).eq("equipo_id", equipoId);
   if(prevPlan?.length){
     const ids = prevPlan.map(p => p.id);
     await sb.from("eventos").delete().in("planilla_id", ids);
@@ -2468,54 +2464,92 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
   }
 
   const savedJugIds = new Set();
-  const sinMatch = []; // jugadores que no matchearon con nadie del plantel - para revisión
 
-  // Cargar plantel del equipo UNA SOLA VEZ para todos los jugadores
-  const {data: plantelEquipo} = await sb.from("jugadores")
+  // Cargar plantel propio UNA SOLA VEZ
+  const {data: plantelPropio} = await sb.from("jugadores")
     .select("id, id_federal, nombre, nombre_display")
     .eq("equipo_id", equipoId);
+
+  // Cargar jugadores de todos los demás equipos UNA SOLA VEZ (detección de transferencias)
+  const {data: plantelOtros} = await sb.from("jugadores")
+    .select("id, nombre, nombre_display, equipo_id, equipos(nombre)")
+    .neq("equipo_id", equipoId);
 
   for(const j of jugadores){
     const nombreRaw = j.nombre || "";
     const idFederal = String(j.id_federal || j.id || "").trim();
     let jDB = null;
 
-    // PASO 1: si viene id_federal (planillas viejas), usarlo como antes - máxima confianza
+    // PASO 1: id_federal presente (planillas viejas) → máxima confianza
     if(idFederal && idFederal !== "0" && idFederal !== "00000"){
-      const jExist = plantelEquipo?.find(p => p.id_federal === idFederal);
+      const jExist = plantelPropio?.find(p => p.id_federal === idFederal);
       if(jExist){
-        const {data} = await sb.from("jugadores").update({ equipo_id: equipoId }).eq("id", jExist.id).select("id").single();
+        const {data} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExist.id).select("id").single();
         jDB = data;
       } else {
         const {data} = await sb.from("jugadores").insert({
-          id_federal: idFederal,
-          nombre: nombreRaw,
-          nombre_display: generarCommonName(nombreRaw),
-          equipo_id: equipoId,
+          id_federal: idFederal, nombre: nombreRaw,
+          nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
         }).select("id").single();
         jDB = data;
-        if(data) plantelEquipo?.push({id:data.id, id_federal:idFederal, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)});
+        if(data) plantelPropio?.push({id:data.id, id_federal:idFederal, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)});
       }
     }
 
-    // PASO 2: SIN id_federal (planilla nueva sin ID) → buscar dentro del PLANTEL del equipo por nombre
+    // PASO 2: Sin id_federal → matcheo por nombre
     if(!jDB && nombreRaw){
-      const { jugador, score, candidatos } = buscarEnPlantel(nombreRaw, plantelEquipo);
-      if(jugador){
-        // Match confiable encontrado en el plantel: usar ese jugador, NO tocar su nombre
-        jDB = { id: jugador.id };
+      const { jugador: jugPropio } = buscarEnPlantel(nombreRaw, plantelPropio);
+
+      if(jugPropio){
+        // Match en plantel propio → usar ese, no tocar nombre_display
+        jDB = { id: jugPropio.id };
       } else {
-        // No hubo match confiable: crear jugador nuevo SIN id_federal real (se le asigna uno temporal)
-        // para no perder los datos del evento. Queda marcado para revisión manual.
-        const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-        const {data} = await sb.from("jugadores").insert({
-          id_federal: idTemp,
-          nombre: nombreRaw,
-          nombre_display: generarCommonName(nombreRaw) || nombreRaw,
-          equipo_id: equipoId,
-        }).select("id").single();
-        jDB = data;
-        sinMatch.push({ nombre: nombreRaw, candidatos, jugadorId: data?.id });
+        // Sin match en equipo propio → buscar en otros equipos
+        const { jugador: jugOtro, score: scoreOtro } = buscarEnPlantel(nombreRaw, plantelOtros);
+
+        if(jugOtro && scoreOtro >= 60){
+          // Posible transferencia → pausar y esperar decisión del operador
+          const decision = await mostrarModalTransfer(nombreRaw, jugOtro);
+
+          if(decision === "transferencia"){
+            // Crear nuevo registro para este equipo; el registro viejo queda intacto con sus stats
+            const {data} = await sb.from("jugadores").insert({
+              nombre: jugOtro.nombre,
+              nombre_display: jugOtro.nombre_display,
+              equipo_id: equipoId,
+              id_federal: "TRANS_" + Date.now(),
+            }).select("id").single();
+            jDB = data;
+            if(data){
+              await registrarTransferencia(jugOtro.id, jugOtro.equipo_id, data.id, equipoId);
+              plantelPropio?.push({id:data.id, nombre:jugOtro.nombre, nombre_display:jugOtro.nombre_display});
+            }
+          } else {
+            // Son personas distintas → confirmar creación de jugador nuevo
+            const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
+            if(ok){
+              const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+              const {data} = await sb.from("jugadores").insert({
+                id_federal: idTemp, nombre: nombreRaw,
+                nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
+              }).select("id").single();
+              jDB = data;
+              if(data) plantelPropio?.push({id:data.id, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)||nombreRaw});
+            }
+          }
+        } else {
+          // No encontrado en ningún equipo → crear nuevo con confirmación
+          const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
+          if(ok){
+            const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            const {data} = await sb.from("jugadores").insert({
+              id_federal: idTemp, nombre: nombreRaw,
+              nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
+            }).select("id").single();
+            jDB = data;
+            if(data) plantelPropio?.push({id:data.id, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)||nombreRaw});
+          }
+        }
       }
     }
 
@@ -2543,18 +2577,73 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
     }
   }
 
-  // Avisar al operador si hubo jugadores sin match confiable (requieren revisión manual)
-  if(sinMatch.length){
-    console.warn("[guardarPlanilla] Jugadores sin match confiable en el plantel:", sinMatch);
-    const detalle = sinMatch.map(s=>{
-      const top = s.candidatos[0];
-      return `• ${s.nombre}` + (top ? ` (similar a: ${top.jugador.nombre_display||top.jugador.nombre}, score ${top.score})` : ' (sin candidatos)');
-    }).join("\n");
-    alert(`⚠️ ${sinMatch.length} jugador(es) no matchearon con el plantel cargado y se crearon como NUEVOS. Revisar y fusionar si corresponde:\n\n${detalle}`);
-  }
-
-  // Check suspensions: decrement any sanctioned player from this equipo who didn't appear
+  // Check suspensions
   await verificarSuspensiones(equipoId, savedJugIds);
+}
+
+function mostrarModalTransfer(nombrePlanilla, jugOtro){
+  return new Promise(resolve => {
+    _resolveTransfer = resolve;
+    document.getElementById("modal-transfer-body").innerHTML = `
+      <p>El jugador <strong>"${nombrePlanilla}"</strong> no está en el plantel de este equipo,
+      pero aparece registrado en <strong>${jugOtro.equipos?.nombre || 'otro equipo'}</strong>:</p>
+      <div style="background:var(--bg);padding:.5rem .75rem;border-radius:6px;margin:.6rem 0;font-size:13px;color:var(--muted);">
+        ${jugOtro.nombre_display || jugOtro.nombre}
+      </div>
+      <p style="color:var(--muted);font-size:13px;">¿Qué hacemos con este jugador?</p>
+    `;
+    document.getElementById("modal-transfer-historial").innerHTML = "";
+    document.getElementById("btn-transfer-historial").dataset.jugId = jugOtro.id;
+    document.getElementById("btn-transfer-historial").disabled = false;
+    document.getElementById("btn-transfer-historial").textContent = "📋 Ver historial";
+    document.getElementById("modal-transfer").style.display = "flex";
+  });
+}
+
+function resolverTransfer(decision){
+  document.getElementById("modal-transfer").style.display = "none";
+  if(_resolveTransfer){ _resolveTransfer(decision); _resolveTransfer = null; }
+}
+
+async function cargarHistorialTransfer(){
+  const jugId = document.getElementById("btn-transfer-historial").dataset.jugId;
+  const btn = document.getElementById("btn-transfer-historial");
+  btn.disabled = true;
+  btn.textContent = "Cargando...";
+
+  const {data} = await sb.from("planillas")
+    .select("titular, partidos(fecha, equipos_local:equipos!partidos_local_id_fkey(nombre), equipos_visit:equipos!partidos_visit_id_fkey(nombre), goles_local, goles_visit)")
+    .eq("jugador_id", jugId)
+    .order("partido_id", {ascending: false})
+    .limit(8);
+
+  const hist = document.getElementById("modal-transfer-historial");
+  if(!data?.length){
+    hist.innerHTML = `<p style="color:var(--muted);">Sin partidos registrados.</p>`;
+  } else {
+    hist.innerHTML = `<p style="color:var(--muted);margin-bottom:.35rem;">Últimos partidos:</p>` +
+      data.map(p => {
+        const pt = p.partidos;
+        return `<div style="padding:.3rem .6rem;background:var(--bg);border-radius:4px;margin-bottom:.25rem;">
+          ${pt?.fecha || '—'} &nbsp;·&nbsp; ${pt?.equipos_local?.nombre||'?'} ${pt?.goles_local??''}:${pt?.goles_visit??''} ${pt?.equipos_visit?.nombre||'?'}
+          ${p.titular ? '' : '<span style="color:var(--muted);font-size:11px;"> (suplente)</span>'}
+        </div>`;
+      }).join("");
+  }
+  btn.disabled = false;
+  btn.textContent = "📋 Ver historial";
+}
+
+async function registrarTransferencia(jugOrigenId, equipoOrigenId, jugDestinoId, equipoDestinoId){
+  const {error} = await sb.from("transferencias").insert({
+    jugador_origen_id: jugOrigenId,
+    equipo_origen_id: equipoOrigenId,
+    jugador_destino_id: jugDestinoId,
+    equipo_destino_id: equipoDestinoId,
+    fecha: new Date().toISOString().slice(0,10),
+    origen: 'automatico',
+  });
+  if(error) console.warn("[registrarTransferencia] Error:", error.message);
 }
 
 async function verificarSuspensiones(equipoId, planillaJugIds){
@@ -4367,5 +4456,19 @@ async function eliminarSancion(id){
   cargarSancionados();
 }
 </script>
+
+<!-- Modal transferencia - permanente en el DOM, controlado por JS -->
+<div id="modal-transfer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:520px;max-width:95vw;max-height:85vh;overflow-y:auto;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#f0b429;margin-bottom:1rem;">⚠️ Posible transferencia detectada</div>
+    <div id="modal-transfer-body" style="font-size:14px;line-height:1.5;"></div>
+    <div id="modal-transfer-historial" style="margin-top:.75rem;font-size:13px;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" id="btn-transfer-historial" onclick="cargarHistorialTransfer()">📋 Ver historial</button>
+      <button class="btn btn-secondary btn-sm" id="btn-transfer-nuevo" onclick="resolverTransfer('nuevo')">Son personas distintas</button>
+      <button class="btn btn-primary btn-sm" id="btn-transfer-si" onclick="resolverTransfer('transferencia')">✓ Es transferencia</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
