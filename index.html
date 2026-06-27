@@ -2693,7 +2693,7 @@ async function cargarEstadisticas(){
       sb.from('planillas').select('id,partido_id,equipo_id'),
       sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
       sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
-      sb.from('sanciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false}),
+      sb.from('sanciones').select('*').or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)').order('created_at',{ascending:false}),
       sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
     ]);
     if(evRes0.error) throw evRes0.error;
@@ -2817,6 +2817,10 @@ async function cargarEstadisticas(){
         if(!amarillasLimiteMap[m.jId]) amarillasLimiteMap[m.jId]={key:m.jId,nombre:m.nombre,equipo:m.equipo,count:0};
         amarillasLimiteMap[m.jId].count++;
       }
+    });
+    // Restar 5 por cada sanción de acumulación ya cumplida (el jugador "borró" esas amarillas)
+    (sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado!=='pendiente'&&s.estado!=='eliminada').forEach(s=>{
+      if(s.jugador_id && amarillasLimiteMap[s.jugador_id]) amarillasLimiteMap[s.jugador_id].count = Math.max(0, amarillasLimiteMap[s.jugador_id].count - 5);
     });
 
     // GOLES DE TIRO LIBRE
@@ -3108,11 +3112,15 @@ async function cargarEstadisticas(){
     ) + expulsados.map((j,i)=>`<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td>${j.rojas_da||0}</td><td>${j.rojas_directas||0}</td><td><strong class="pts">${j.rojas}</strong></td></tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // SUSPENSIONES PENDIENTES (desde tabla sanciones — solo partidos_sancion > 0)
-    const sancPend = (sancionesDB||[]).filter(s => s.partidos_sancion > 0)
+    // SUSPENSIONES PENDIENTES
+    // Incluye: sanciones de DB con partidos_sancion > 0 + jugadores con 5 amarillas acumuladas sin sanción registrada
+    const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0)
       .sort((a,b) => b.partidos_sancion - a.partidos_sancion || (a.zona||'Z').localeCompare(b.zona||'Z'));
+    // Jugadores con 5+ amarillas que NO tienen sanción de acumulación pendiente en DB
+    const pendingAcumIds = new Set((sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado==='pendiente').map(s=>s.jugador_id).filter(Boolean));
+    const cincoAmarillas = Object.values(amarillasLimiteMap).filter(j => j.count >= 5 && !pendingAcumIds.has(j.key));
     const sancWrap = document.getElementById('sanc-pendientes-pub-wrap');
-    if(sancPend.length){
+    if(sancPend.length || cincoAmarillas.length){
       sancWrap.style.display = '';
       document.getElementById('tbl-suspensiones-pendientes').innerHTML = tblHead(
         ['28px','','#'],['','Jugador','Jugador'],['55px','Tipo','Tipo'],['80px','Partidos','Partidos susp.']
@@ -3126,7 +3134,14 @@ async function cargarEstadisticas(){
           <td style="text-align:center;font-size:13px;">${tipoIcon}</td>
           <td style="text-align:center;font-weight:700;color:${color};">${ptdos}</td>
         </tr>`;
-      }).join('') + '</tbody></table><div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>🔄</span><span>Esta tabla se actualiza los jueves a la tarde, luego de la salida del boletín.</span></div>';
+      }).join('')
+      + cincoAmarillas.map((j,i)=>`<tr>
+          <td><span class="pos">${sancPend.length+i+1}</span></td>
+          <td>${fmtJug(j.nombre, j.equipo, j.key)}</td>
+          <td style="text-align:center;font-size:13px;">🟨×5</td>
+          <td style="text-align:center;font-weight:700;color:#ffa726;">Acumulación</td>
+        </tr>`).join('')
+      + '</tbody></table><div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>🔄</span><span>Esta tabla se actualiza los jueves a la tarde, luego de la salida del boletín.</span></div>';
     } else {
       sancWrap.style.display = 'none';
     }
@@ -3136,9 +3151,9 @@ async function cargarEstadisticas(){
     document.getElementById('tbl-amarillas-limite').innerHTML=amLimRows.length?tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['50px','Amarillas','🟨'],['50px','Límite','Límite']
     )+amLimRows.map((j,i)=>{
-      const pct=Math.round(j.count/5*100);
       const color=j.count>=5?'#e57373':j.count>=4?'#ffa726':j.count>=3?'#fff176':'var(--muted)';
-      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td><div style="font-size:10px;color:${color};">${j.count}/5</div></td></tr>`;
+      const badge = j.count>=5 ? `<span style="font-size:9px;background:#e57373;color:#fff;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:4px;">SANCIONADO</span>` : `<span style="font-size:10px;color:${color};">${j.count}/5</span>`;
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
     }).join('')+'</tbody></table>'
     :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 

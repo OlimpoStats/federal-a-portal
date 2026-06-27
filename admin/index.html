@@ -4367,8 +4367,8 @@ async function cargarSancionados(){
   const [{data: expEvs, error: evErr}, {data: allSancForCheck}] = await Promise.all([
     sb.from('eventos')
       .select('tipo, planillas!inner(partido_id, jugadores(id,nombre_display,nombre), equipos(nombre))')
-      .in('tipo', ['doble_amarilla','roja']),
-    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado')
+      .in('tipo', ['amarilla','doble_amarilla','roja']),
+    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo')
   ]);
   if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
@@ -4425,6 +4425,55 @@ async function cargarSancionados(){
     seenInBatch.add(key);
   }
   if(toCreate.length) await sb.from('sanciones').insert(toCreate);
+
+  // Auto-detectar jugadores con 5 amarillas acumuladas
+  // Cuenta una amarilla por partido (sin expulsión en ese mismo partido)
+  const _amPartido = {}; // "jId_partidoId" → {jId, jNom, eq, fo, amarilla, expulsion}
+  for(const ev of (expEvs||[])){
+    const pl = ev.planillas;
+    if(!pl?.jugadores?.id || !pl?.equipos) continue;
+    const jId = pl.jugadores.id;
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '';
+    const eq = pl.equipos.nombre || '';
+    const p = partidoMap[pl.partido_id] || {};
+    const fo = p.fecha || null;
+    const mk = `${jId}_${pl.partido_id}`;
+    if(!_amPartido[mk]) _amPartido[mk] = {jId, jNom, eq, fo, amarilla:false, expulsion:false};
+    if(ev.tipo==='amarilla') _amPartido[mk].amarilla = true;
+    if(ev.tipo==='doble_amarilla'){ _amPartido[mk].amarilla = true; _amPartido[mk].expulsion = true; }
+    if(ev.tipo==='roja') _amPartido[mk].expulsion = true;
+  }
+  // Contar amarillas netas (sin expulsión) por jugador y detectar cuántas acumulaciones ya tiene en DB
+  const amCountMap = {}; // jId → {jNom, eq, count, matchFo}
+  Object.values(_amPartido).forEach(m => {
+    if(!m.amarilla || m.expulsion) return;
+    if(!amCountMap[m.jId]) amCountMap[m.jId] = {jNom:m.jNom, eq:m.eq, count:0, lastFo:m.fo};
+    amCountMap[m.jId].count++;
+    if((m.fo||0) > (amCountMap[m.jId].lastFo||0)) amCountMap[m.jId].lastFo = m.fo;
+  });
+  // Restar 5 por cada sanción de acumulación no-eliminada ya registrada en DB
+  const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas' && s.estado !== 'eliminada');
+  accumSancExist.forEach(s => {
+    if(s.jugador_id && amCountMap[s.jugador_id]) amCountMap[s.jugador_id].count -= 5;
+  });
+  // Construir set de claves ya existentes para acumulación (incluyendo eliminadas, para no recrear)
+  const accumKeys = new Set((allSancForCheck||[]).filter(s=>s.tipo==='amarillas').map(s=>s.jugador_id).filter(Boolean));
+  // Detectar cuántas acumulaciones pendientes tiene cada jugador para saber cuándo crear la siguiente
+  const accumPendCount = {}; // jId → cantidad de sanciones pendientes tipo amarillas
+  (allSancForCheck||[]).filter(s=>s.tipo==='amarillas'&&s.estado==='pendiente').forEach(s=>{ if(s.jugador_id) accumPendCount[s.jugador_id]=(accumPendCount[s.jugador_id]||0)+1; });
+
+  const toCreateAccum = [];
+  Object.entries(amCountMap).forEach(([jId, d]) => {
+    if(d.count < 5) return; // no llegó a 5
+    if((accumPendCount[jId]||0) > 0) return; // ya tiene una pendiente
+    toCreateAccum.push({
+      jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: d.eq,
+      tipo: 'amarillas', partidos_sancion: 1,
+      motivo: 'Acumulación de amarillas', fecha_origen: d.lastFo,
+      estado: 'pendiente',
+    });
+  });
+  if(toCreateAccum.length) await sb.from('sanciones').insert(toCreateAccum);
 
   // Fetch only active sanciones for rendering
   const {data: activeSanc} = await sb.from('sanciones')
@@ -4612,7 +4661,8 @@ async function dismissSancionCumplida(id){
 
 async function eliminarSancion(id){
   if(!confirm('¿Eliminar esta sanción?')) return;
-  const {error} = await sb.from('sanciones').delete().eq('id', id);
+  // Soft-delete: marcar como 'eliminada' para que no se recree automáticamente
+  const {error} = await sb.from('sanciones').update({estado:'eliminada'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
   cargarSancionados();
 }
