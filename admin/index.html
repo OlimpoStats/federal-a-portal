@@ -2453,9 +2453,88 @@ async function upsertPartido(payload){
 }
 
 async function guardarPlanilla(jugadores, equipoId, partidoId){
-  if(!jugadores || !jugadores.length) return;
+  if(!jugadores || !jugadores.length) return true;
 
-  // Borrar planillas de ESTE equipo en ESTE partido antes de reinsertar
+  // Cargar planteles UNA SOLA VEZ
+  const {data: plantelPropio} = await sb.from("jugadores")
+    .select("id, id_federal, nombre, nombre_display")
+    .eq("equipo_id", equipoId);
+  const {data: plantelOtros} = await sb.from("jugadores")
+    .select("id, nombre, nombre_display, equipo_id, equipos(nombre)")
+    .neq("equipo_id", equipoId);
+
+  // Copia mutable local para detectar dupes dentro del mismo batch
+  const plantelLocal = [...(plantelPropio || [])];
+
+  // ── FASE 1: Resolver todos los jugadores SIN tocar la BD ──────────────────
+  // Si el usuario cancela cualquier confirm, retornamos false y no se escribe nada.
+  const resoluciones = [];
+
+  for(const j of jugadores){
+    const nombreRaw = j.nombre || "";
+    const idFederal = String(j.id_federal || j.id || "").trim();
+
+    if(idFederal && idFederal !== "0" && idFederal !== "00000"){
+      const jExist = plantelLocal.find(p => p.id_federal === idFederal);
+      if(jExist){
+        resoluciones.push({ accion: "actualizar_equipo", jExistente: jExist, jugadorDatos: j });
+      } else {
+        const datosInsert = {
+          id_federal: idFederal, nombre: nombreRaw,
+          nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
+        };
+        resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
+        plantelLocal.push({ id: "_p_"+idFederal, id_federal: idFederal, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+      }
+    } else if(nombreRaw){
+      const { jugador: jugPropio } = buscarEnPlantel(nombreRaw, plantelLocal);
+
+      if(jugPropio){
+        resoluciones.push({ accion: "existente", jExistente: jugPropio, jugadorDatos: j });
+      } else {
+        const { jugador: jugOtro, score: scoreOtro } = buscarEnPlantel(nombreRaw, plantelOtros);
+
+        if(jugOtro && scoreOtro >= 60){
+          const decision = await mostrarModalTransfer(nombreRaw, jugOtro);
+
+          if(decision === "transferencia"){
+            const datosInsert = {
+              nombre: jugOtro.nombre,
+              nombre_display: jugOtro.nombre_display,
+              equipo_id: equipoId,
+              id_federal: "TRANS_" + Date.now(),
+            };
+            resoluciones.push({ accion: "transferencia", datosInsert, transferInfo: { jugOrigenId: jugOtro.id, equipoOrigenId: jugOtro.equipo_id }, jugadorDatos: j });
+            plantelLocal.push({ id: "_p_trans", nombre: datosInsert.nombre, nombre_display: datosInsert.nombre_display });
+          } else {
+            // Son personas distintas → confirmar creación; si dice NO, cancelar todo
+            const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
+            if(!ok) return false;
+            const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            const datosInsert = {
+              id_federal: idTemp, nombre: nombreRaw,
+              nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
+            };
+            resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
+            plantelLocal.push({ id: "_p_"+idTemp, id_federal: idTemp, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+          }
+        } else {
+          // No encontrado en ningún equipo → confirmar creación; si dice NO, cancelar todo
+          const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
+          if(!ok) return false;
+          const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+          const datosInsert = {
+            id_federal: idTemp, nombre: nombreRaw,
+            nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
+          };
+          resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
+          plantelLocal.push({ id: "_p_"+idTemp, id_federal: idTemp, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+        }
+      }
+    }
+  }
+
+  // ── FASE 2: Todos los jugadores resueltos → ahora sí borrar previas e insertar ──
   const {data:prevPlan} = await sb.from("planillas").select("id").eq("partido_id", partidoId).eq("equipo_id", equipoId);
   if(prevPlan?.length){
     const ids = prevPlan.map(p => p.id);
@@ -2465,91 +2544,20 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
 
   const savedJugIds = new Set();
 
-  // Cargar plantel propio UNA SOLA VEZ
-  const {data: plantelPropio} = await sb.from("jugadores")
-    .select("id, id_federal, nombre, nombre_display")
-    .eq("equipo_id", equipoId);
-
-  // Cargar jugadores de todos los demás equipos UNA SOLA VEZ (detección de transferencias)
-  const {data: plantelOtros} = await sb.from("jugadores")
-    .select("id, nombre, nombre_display, equipo_id, equipos(nombre)")
-    .neq("equipo_id", equipoId);
-
-  for(const j of jugadores){
-    const nombreRaw = j.nombre || "";
-    const idFederal = String(j.id_federal || j.id || "").trim();
+  for(const res of resoluciones){
+    const { accion, jExistente, datosInsert, transferInfo, jugadorDatos: j } = res;
     let jDB = null;
 
-    // PASO 1: id_federal presente (planillas viejas) → máxima confianza
-    if(idFederal && idFederal !== "0" && idFederal !== "00000"){
-      const jExist = plantelPropio?.find(p => p.id_federal === idFederal);
-      if(jExist){
-        const {data} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExist.id).select("id").single();
-        jDB = data;
-      } else {
-        const {data} = await sb.from("jugadores").insert({
-          id_federal: idFederal, nombre: nombreRaw,
-          nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
-        }).select("id").single();
-        jDB = data;
-        if(data) plantelPropio?.push({id:data.id, id_federal:idFederal, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)});
-      }
-    }
-
-    // PASO 2: Sin id_federal → matcheo por nombre
-    if(!jDB && nombreRaw){
-      const { jugador: jugPropio } = buscarEnPlantel(nombreRaw, plantelPropio);
-
-      if(jugPropio){
-        // Match en plantel propio → usar ese, no tocar nombre_display
-        jDB = { id: jugPropio.id };
-      } else {
-        // Sin match en equipo propio → buscar en otros equipos
-        const { jugador: jugOtro, score: scoreOtro } = buscarEnPlantel(nombreRaw, plantelOtros);
-
-        if(jugOtro && scoreOtro >= 60){
-          // Posible transferencia → pausar y esperar decisión del operador
-          const decision = await mostrarModalTransfer(nombreRaw, jugOtro);
-
-          if(decision === "transferencia"){
-            // Crear nuevo registro para este equipo; el registro viejo queda intacto con sus stats
-            const {data} = await sb.from("jugadores").insert({
-              nombre: jugOtro.nombre,
-              nombre_display: jugOtro.nombre_display,
-              equipo_id: equipoId,
-              id_federal: "TRANS_" + Date.now(),
-            }).select("id").single();
-            jDB = data;
-            if(data){
-              await registrarTransferencia(jugOtro.id, jugOtro.equipo_id, data.id, equipoId);
-              plantelPropio?.push({id:data.id, nombre:jugOtro.nombre, nombre_display:jugOtro.nombre_display});
-            }
-          } else {
-            // Son personas distintas → confirmar creación de jugador nuevo
-            const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
-            if(ok){
-              const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-              const {data} = await sb.from("jugadores").insert({
-                id_federal: idTemp, nombre: nombreRaw,
-                nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
-              }).select("id").single();
-              jDB = data;
-              if(data) plantelPropio?.push({id:data.id, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)||nombreRaw});
-            }
-          }
-        } else {
-          // No encontrado en ningún equipo → crear nuevo con confirmación
-          const ok = confirm(`⚠️ Se va a crear un jugador NUEVO:\n"${nombreRaw}"\n\n¿Es correcto?`);
-          if(ok){
-            const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-            const {data} = await sb.from("jugadores").insert({
-              id_federal: idTemp, nombre: nombreRaw,
-              nombre_display: generarCommonName(nombreRaw) || nombreRaw, equipo_id: equipoId,
-            }).select("id").single();
-            jDB = data;
-            if(data) plantelPropio?.push({id:data.id, nombre:nombreRaw, nombre_display:generarCommonName(nombreRaw)||nombreRaw});
-          }
-        }
+    if(accion === "existente"){
+      jDB = { id: jExistente.id };
+    } else if(accion === "actualizar_equipo"){
+      const {data} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExistente.id).select("id").single();
+      jDB = data;
+    } else if(accion === "insertar" || accion === "transferencia"){
+      const {data} = await sb.from("jugadores").insert(datosInsert).select("id").single();
+      jDB = data;
+      if(data && accion === "transferencia"){
+        await registrarTransferencia(transferInfo.jugOrigenId, transferInfo.equipoOrigenId, data.id, equipoId);
       }
     }
 
@@ -2577,8 +2585,8 @@ async function guardarPlanilla(jugadores, equipoId, partidoId){
     }
   }
 
-  // Check suspensions
   await verificarSuspensiones(equipoId, savedJugIds);
+  return true;
 }
 
 function mostrarModalTransfer(nombrePlanilla, jugOtro){
@@ -2900,8 +2908,14 @@ async function confirmarCarga(publicar=true){
     await upsertABMSiNuevo("arbitros", cuarto);
     await upsertABMSiNuevo("estadios", estadio);
 
-    if(localId) await guardarPlanilla(planillaLocal.jugadores || [], localId, partidoId);
-    if(visitId) await guardarPlanilla(planillaVisit.jugadores || [], visitId, partidoId);
+    if(localId){
+      const okLocal = await guardarPlanilla(planillaLocal.jugadores || [], localId, partidoId);
+      if(okLocal === false){ alert("Carga cancelada. No se guardó ningún dato."); return; }
+    }
+    if(visitId){
+      const okVisit = await guardarPlanilla(planillaVisit.jugadores || [], visitId, partidoId);
+      if(okVisit === false){ alert("Carga cancelada en el visitante. El local ya fue guardado."); return; }
+    }
 
     document.getElementById("paso3").style.display = "none";
     document.getElementById("paso4").style.display = "";
