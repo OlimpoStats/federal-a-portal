@@ -3752,13 +3752,29 @@ function buscarJugadores(){
 }
 
 function mostrarDuplicados(){
-  const groups = {};
+  // Agrupar por nombre_display normalizado (sin tildes) Y por nombre raw normalizado.
+  // Así se detectan duplicados aunque difieran en tildes o en display vs raw.
+  const groups = new Map(); // clave → Map<id, jugador>
   JUGADORES_CACHE.forEach(j => {
-    const key = ((j.nombre_display||j.nombre||"").toLowerCase().trim()) + "||" + (j.equipo_id||"");
-    if(!groups[key]) groups[key] = [];
-    groups[key].push(j);
+    const eqSuffix = "||" + (j.equipo_id||"");
+    const k1 = normalizarTexto(j.nombre_display || j.nombre || "") + eqSuffix;
+    const k2 = normalizarTexto(j.nombre || j.nombre_display || "") + eqSuffix;
+    for(const k of new Set([k1, k2])){
+      if(k.startsWith("||")) continue;
+      if(!groups.has(k)) groups.set(k, new Map());
+      groups.get(k).set(j.id, j);
+    }
   });
-  const dupGroups = Object.values(groups).filter(g => g.length > 1);
+  // Convertir a arrays y deduplicar grupos con exactamente el mismo conjunto de ids
+  const seen = new Set();
+  const dupGroups = [...groups.values()]
+    .map(m => [...m.values()])
+    .filter(g => {
+      if(g.length < 2) return false;
+      const key = g.map(j=>j.id).sort().join(",");
+      if(seen.has(key)) return false;
+      seen.add(key); return true;
+    });
   if(!dupGroups.length){ alert("✓ No se encontraron jugadores duplicados."); return; }
   renderDuplicados(dupGroups);
   document.getElementById("jug-buscar").value = "";
@@ -3840,8 +3856,15 @@ async function fusionarJugador(keepId, deleteIds){
   const delNames = dels.map(d=>`• ${d.nombre_display||d.nombre} (ID ${d.id_federal})`).join('\n');
   if(!confirm(`Fusión:\n✓ CONSERVAR: ${keep.nombre_display||keep.nombre} (ID ${keep.id_federal})\n\nELIMINAR y reasignar sus planillas:\n${delNames}\n\n¿Confirmar?`)) return;
   for(const del of dels){
+    // Reasignar planillas al jugador que se conserva
     const {error:pErr} = await sb.from("planillas").update({jugador_id: keepId}).eq("jugador_id", del.id);
     if(pErr){ alert("Error reasignando planillas: "+pErr.message); return; }
+    // Reasignar sanciones al jugador que se conserva
+    const {error:sErr} = await sb.from("sanciones").update({jugador_id: keepId}).eq("jugador_id", del.id);
+    if(sErr){ alert("Error reasignando sanciones: "+sErr.message); return; }
+    // Eliminar entradas de transferencias que involucren al duplicado (eran producto del bug)
+    await sb.from("transferencias").delete().or(`jugador_origen_id.eq.${del.id},jugador_destino_id.eq.${del.id}`);
+    // Ahora sí eliminar el duplicado
     const {error:dErr} = await sb.from("jugadores").delete().eq("id", del.id);
     if(dErr){ alert("Error eliminando duplicado: "+dErr.message); return; }
   }
@@ -3950,7 +3973,11 @@ async function guardarJugador(){
 async function eliminarJugador(){
   const id = document.getElementById("jug-edit-id").value;
   if(!confirm("¿Eliminar este jugador? Sus planillas históricas quedan intactas.")) return;
-  await sb.from("jugadores").delete().eq("id", id);
+  const {error} = await sb.from("jugadores").delete().eq("id", id);
+  if(error){
+    alert("No se pudo eliminar.\n" + error.message + "\n\nSi el jugador tiene planillas asociadas, usá el botón ⚠️ Duplicados para fusionarlo primero.");
+    return;
+  }
   cerrarEditJugador();
   cargarJugadores();
 }
