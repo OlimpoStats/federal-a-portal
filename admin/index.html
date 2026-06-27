@@ -524,6 +524,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </select>
           <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirFusionManual()" title="Fusionar dos jugadores manualmente">🔀 Fusión manual</button>
           <button class="btn btn-secondary btn-sm" onclick="generarCommonNamesMasivo()" id="btn-commonnames" title="Generar common name para jugadores que no tienen">🏷️ Generar common names</button>
           <button class="btn btn-secondary btn-sm" onclick="resetearCommonNamesIncorrectos()" title="Resetea a NULL los common names que quedaron iguales al nombre completo">↩️ Resetear incorrectos</button>
           <button class="btn btn-primary btn-sm" onclick="abrirCrearJugador()">+ Nuevo jugador</button>
@@ -575,6 +576,47 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <button class="btn btn-danger btn-sm" onclick="eliminarJugador()">Eliminar</button>
             <button class="btn btn-primary btn-sm" onclick="guardarJugador()">Guardar</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== MODAL FUSIÓN MANUAL ===================== -->
+    <div id="modal-fusion-manual" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;align-items:center;justify-content:center;overflow-y:auto;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:540px;max-width:95vw;margin:auto;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);margin-bottom:.25rem;">Fusión manual de jugadores</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">Buscá cada jugador por nombre o ID. El que elegís en "Conservar" queda con todas las planillas del otro.</div>
+
+        <!-- Jugador a ELIMINAR -->
+        <div style="margin-bottom:1.1rem;">
+          <div style="font-size:11px;font-weight:700;color:#e57373;letter-spacing:1px;margin-bottom:.35rem;">ELIMINAR (duplicado a borrar)</div>
+          <input type="text" id="fusion-buscar-del" placeholder="Nombre o ID federal..." oninput="buscarFusionJugador('del')" style="margin-bottom:.35rem;">
+          <div id="fusion-lista-del" style="display:none;border:1px solid var(--border);border-radius:6px;overflow:hidden;max-height:160px;overflow-y:auto;font-size:12px;"></div>
+          <div id="fusion-sel-del" style="display:none;background:#2a1a1a;border:1px solid #e5737366;border-radius:6px;padding:.5rem .75rem;font-size:13px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span id="fusion-sel-del-nombre" style="font-weight:600;color:#f0f0f0;"></span>
+              <span id="fusion-sel-del-sub" style="font-size:11px;color:#888;margin-left:.5rem;"></span>
+            </div>
+            <button onclick="limpiarFusionSel('del')" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;padding:0 .2rem;">✕</button>
+          </div>
+        </div>
+
+        <!-- Jugador a CONSERVAR -->
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-size:11px;font-weight:700;color:#66bb6a;letter-spacing:1px;margin-bottom:.35rem;">CONSERVAR (el que queda)</div>
+          <input type="text" id="fusion-buscar-keep" placeholder="Nombre o ID federal..." oninput="buscarFusionJugador('keep')" style="margin-bottom:.35rem;">
+          <div id="fusion-lista-keep" style="display:none;border:1px solid var(--border);border-radius:6px;overflow:hidden;max-height:160px;overflow-y:auto;font-size:12px;"></div>
+          <div id="fusion-sel-keep" style="display:none;background:#1a2a1a;border:1px solid #66bb6a66;border-radius:6px;padding:.5rem .75rem;font-size:13px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span id="fusion-sel-keep-nombre" style="font-weight:600;color:#f0f0f0;"></span>
+              <span id="fusion-sel-keep-sub" style="font-size:11px;color:#888;margin-left:.5rem;"></span>
+            </div>
+            <button onclick="limpiarFusionSel('keep')" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;padding:0 .2rem;">✕</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="cerrarFusionManual()">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmarFusionManual()">✓ Fusionar</button>
         </div>
       </div>
     </div>
@@ -3871,6 +3913,84 @@ async function fusionarJugador(keepId, deleteIds){
   await cargarJugadores();
   mostrarDuplicados();
 }
+
+// ── FUSIÓN MANUAL ────────────────────────────────────────────────────────────
+
+let _fusionSelDel = null;  // jugador a eliminar
+let _fusionSelKeep = null; // jugador a conservar
+
+function abrirFusionManual(){
+  _fusionSelDel = null; _fusionSelKeep = null;
+  ["del","keep"].forEach(t => {
+    document.getElementById("fusion-buscar-"+t).value = "";
+    document.getElementById("fusion-lista-"+t).style.display = "none";
+    document.getElementById("fusion-lista-"+t).innerHTML = "";
+    document.getElementById("fusion-sel-"+t).style.display = "none";
+  });
+  document.getElementById("modal-fusion-manual").style.display = "flex";
+}
+
+function cerrarFusionManual(){
+  document.getElementById("modal-fusion-manual").style.display = "none";
+}
+
+function buscarFusionJugador(tipo){
+  const q = normalizarTexto(document.getElementById("fusion-buscar-"+tipo).value);
+  const lista = document.getElementById("fusion-lista-"+tipo);
+  if(q.length < 2){ lista.style.display = "none"; lista.innerHTML = ""; return; }
+
+  const resultados = JUGADORES_CACHE.filter(j =>
+    normalizarTexto(j.nombre_display||j.nombre||"").includes(q) ||
+    normalizarTexto(j.nombre||"").includes(q) ||
+    String(j.id_federal||"").includes(document.getElementById("fusion-buscar-"+tipo).value.trim())
+  ).slice(0, 20);
+
+  if(!resultados.length){ lista.innerHTML = `<div style="padding:.5rem .75rem;color:var(--muted);">Sin resultados.</div>`; lista.style.display="block"; return; }
+
+  lista.innerHTML = resultados.map(j => {
+    const otroTipo = tipo === "del" ? "keep" : "del";
+    const otroSel = tipo === "del" ? _fusionSelKeep : _fusionSelDel;
+    const esElOtro = otroSel && otroSel.id === j.id;
+    const bg = esElOtro ? "#2a2a10" : "";
+    return `<div onclick="seleccionarFusionJugador('${tipo}',${j.id})" style="padding:.45rem .75rem;cursor:pointer;border-bottom:1px solid var(--border);background:${bg};"
+      onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='${bg}'">
+      <span style="font-weight:500;color:#f0f0f0;">${j.nombre_display||j.nombre||"—"}</span>
+      <span style="font-size:11px;color:#666;margin-left:.5rem;">${j.equipos?.nombre||"sin club"}</span>
+      <span style="font-size:10px;color:#555;margin-left:.4rem;">ID: ${j.id_federal||j.id}</span>
+    </div>`;
+  }).join("");
+  lista.style.display = "block";
+}
+
+function seleccionarFusionJugador(tipo, id){
+  const j = JUGADORES_CACHE.find(x => x.id === id);
+  if(!j) return;
+  if(tipo === "del") _fusionSelDel = j; else _fusionSelKeep = j;
+
+  document.getElementById("fusion-sel-"+tipo+"-nombre").textContent = j.nombre_display || j.nombre || "—";
+  document.getElementById("fusion-sel-"+tipo+"-sub").textContent = (j.equipos?.nombre||"sin club") + " · ID: " + (j.id_federal||j.id);
+  document.getElementById("fusion-sel-"+tipo).style.display = "flex";
+  document.getElementById("fusion-lista-"+tipo).style.display = "none";
+  document.getElementById("fusion-buscar-"+tipo).value = "";
+}
+
+function limpiarFusionSel(tipo){
+  if(tipo === "del") _fusionSelDel = null; else _fusionSelKeep = null;
+  document.getElementById("fusion-sel-"+tipo).style.display = "none";
+}
+
+async function confirmarFusionManual(){
+  if(!_fusionSelDel || !_fusionSelKeep){
+    alert("Seleccioná los dos jugadores primero."); return;
+  }
+  if(_fusionSelDel.id === _fusionSelKeep.id){
+    alert("Son el mismo jugador."); return;
+  }
+  cerrarFusionManual();
+  await fusionarJugador(_fusionSelKeep.id, [_fusionSelDel.id]);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function abrirCrearJugador(){
   document.getElementById("jug-edit-id").value = "";
