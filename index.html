@@ -735,23 +735,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-disciplina" style="display:none;">
-        <div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:14px;border:1px solid var(--border);border-radius:8px;">🔧 Reconstruyendo la sección.</div>
-        <!-- OCULTO TEMPORALMENTE
-        <div id="disc-top-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;align-items:start;">
-          <div>
-            <p class="sec">⚠️ Límite de amarillas p/ susp.</p>
-            <div class="tabla-mini" id="tbl-amarillas-limite"></div>
+        <div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:14px;border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;">🔧 Reconstruyendo la sección.</div>
+        <div style="display:none;">
+          <div id="disc-top-grid">
+            <div><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
+            <div id="sanc-pendientes-pub-wrap"><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
           </div>
-          <div id="sanc-pendientes-pub-wrap" style="display:none;">
-            <p class="sec">🚫 Suspensiones pendientes</p>
-            <div class="tabla-mini" id="tbl-suspensiones-pendientes"></div>
-          </div>
+          <div><div class="tabla-mini" id="tbl-amarillas"></div></div>
+          <div><div class="tabla-mini" id="tbl-rojas"></div></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div><p class="sec">🟨 Amarillas totales <span style="font-size:10px;color:#999;font-weight:400;">(Incl. dobles amarillas)</span></p><div class="tabla-mini" id="tbl-amarillas"></div></div>
-          <div><p class="sec">🟥 Expulsiones <span style="font-size:10px;color:#999;font-weight:400;">(rojas + dobles amarillas)</span></p><div class="tabla-mini" id="tbl-rojas"></div></div>
-        </div>
-        -->
       </div>
 
       <div id="jugcont-otros" style="display:none;">
