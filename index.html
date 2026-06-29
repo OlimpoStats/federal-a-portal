@@ -437,9 +437,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .plt-name-desk{display:none;}
   .plt-name-mob{display:block;}
 }
-.calc-input{width:38px;height:34px;text-align:center;font-size:17px;font-weight:700;background:#f0f0f0;color:#111;border:1.5px solid #bbb;border-radius:4px;padding:0;appearance:textfield;-moz-appearance:textfield;}
+.calc-input{width:28px;height:28px;text-align:center;font-size:14px;font-weight:700;background:#f0f0f0;color:#111;border:1.5px solid #bbb;border-radius:4px;padding:0;appearance:textfield;-moz-appearance:textfield;}
 .calc-input:focus{outline:none;border-color:#4a9eff;background:#fff;}
 .calc-input::-webkit-inner-spin-button,.calc-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
+@media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -4633,9 +4635,10 @@ function cargarCalculadora(){
     setTimeout(cargarCalculadora,500);
     return;
   }
-  const zonas=['Zona A','Zona B','Zona C','Zona D'];
-  let html='',hasPending=false;
-  zonas.forEach(zona=>{
+  const pares=[['Zona A','Zona B'],['Zona C','Zona D']];
+  let hasPending=false;
+
+  const makeZonaBlock=zona=>{
     const code=zona.replace('Zona ','');
     const color=(ZONA_COLORES[zona]||{color:'#777'}).color;
     let fechasHtml='';
@@ -4644,28 +4647,33 @@ function cargarCalculadora(){
       const pending=allM.map((m,i)=>({m,i})).filter(({m})=>m.gl===null);
       if(!pending.length) continue;
       hasPending=true;
-      const matchRows=pending.map(({m,i})=>`
+      const rows=pending.map(({m,i})=>`
         <div class="calc-partido" data-zona="${zona}" data-fecha="${f}" data-idx="${i}"
-          style="display:grid;grid-template-columns:1fr 38px 14px 38px 1fr;align-items:center;gap:.35rem;padding:.42rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);">
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3rem;min-width:0;overflow:hidden;">
-            <span style="font-size:11.5px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.local}</span>
-            ${escudoHTML(m.local,'me')}
-          </div>
+          style="display:flex;align-items:center;justify-content:center;gap:.45rem;padding:.32rem .3rem;border-bottom:1px solid rgba(255,255,255,.04);">
+          ${escudoHTML(m.local,'esc')}
           <input type="number" class="calc-gl calc-input" min="0" max="20" placeholder="-">
-          <span style="color:#444;text-align:center;font-size:13px;user-select:none;">:</span>
+          <span style="color:#444;font-size:11px;user-select:none;flex-shrink:0;">:</span>
           <input type="number" class="calc-gv calc-input" min="0" max="20" placeholder="-">
-          <div style="display:flex;align-items:center;gap:.3rem;min-width:0;overflow:hidden;">
-            ${escudoHTML(m.visitante,'me')}
-            <span style="font-size:11.5px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.visitante}</span>
-          </div>
+          ${escudoHTML(m.visitante,'esc')}
         </div>`).join('');
-      fechasHtml+=`<div style="font-size:10px;font-weight:700;color:#555;letter-spacing:1px;padding:.4rem .6rem .1rem;">FECHA ${f}</div>${matchRows}`;
+      fechasHtml+=`<div style="font-size:9px;font-weight:700;color:#555;letter-spacing:1px;padding:.3rem .4rem .08rem;text-align:center;">FECHA ${f}</div>${rows}`;
     }
-    if(!fechasHtml) return;
-    html+=`<div style="margin-bottom:.85rem;border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden;">
-      <div style="background:${color}22;border-bottom:2px solid ${color};padding:.35rem .6rem;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;color:${color};">ZONA ${code}</div>
-      ${fechasHtml}</div>`;
+    if(!fechasHtml) return null;
+    return `<div id="calc-zona-block-${code}" style="border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden;">
+      <div onclick="toggleCalcZona('${code}')" style="background:${color}22;border-bottom:2px solid ${color};padding:.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;color:${color};">ZONA ${code}</span>
+        <span id="calc-zona-toggle-${code}" style="font-size:10px;color:${color};">▲</span>
+      </div>
+      <div id="calc-zona-body-${code}">${fechasHtml}</div>
+    </div>`;
+  };
+
+  let html='';
+  pares.forEach(par=>{
+    const blocks=par.map(makeZonaBlock).filter(Boolean);
+    if(blocks.length) html+=`<div class="calc-form-grid">${blocks.join('')}</div>`;
   });
+
   if(!hasPending){
     form.innerHTML='<div style="padding:.5rem 0;color:#888;font-size:13px;">✓ Todos los partidos ya fueron jugados.</div>';
     btnWrap.style.display='none';
@@ -4673,6 +4681,14 @@ function cargarCalculadora(){
     form.innerHTML=html;
     btnWrap.style.display='block';
   }
+}
+
+function toggleCalcZona(code){
+  const body=document.getElementById('calc-zona-body-'+code);
+  const icon=document.getElementById('calc-zona-toggle-'+code);
+  const shown=body.style.display!=='none';
+  body.style.display=shown?'none':'block';
+  icon.textContent=shown?'▼':'▲';
 }
 
 function calcTablaFx(zona,fx){
@@ -4769,20 +4785,35 @@ function calcularProyeccion(){
   } else {
     restQ.forEach(q=>revB.push({...q,_quinto:true}));
   }
+  const tiedZonas=tied.length>1?tied.map(q=>q.zona):[];
   const cont=document.getElementById('calc-resultados');
-  cont.innerHTML=_renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB);
+  cont.innerHTML=_renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,bestZona,tiedZonas);
   cont.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB){
+function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,bestZona,tiedZonas){
+  const VB='rgba(74,222,128,.14)',RB='rgba(252,165,165,.11)',OB='rgba(251,191,36,.13)';
+  const VT='#4ade80',RT='#fca5a5',OT='#fbbf24';
+
+  const rowClr=(z,i)=>{
+    if(z==='Zona A') return i<5?{bg:VB,t:VT}:{bg:RB,t:RT};
+    if(i<4) return{bg:VB,t:VT};
+    if(i===4){
+      if(tiedZonas.includes(z)) return{bg:OB,t:OT};
+      return z===bestZona?{bg:VB,t:VT}:{bg:RB,t:RT};
+    }
+    return{bg:RB,t:RT};
+  };
+
   const zonaTable=(rows,z)=>{
     const c=(ZONA_COLORES[z]||{color:'#777'}).color,code=z.replace('Zona ','');
     const trs=rows.map((r,i)=>{
-      const pos=i+1,ptColor=pos===1?'#ffd700':pos<=4?'var(--accent)':'#ccc';
-      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);">
-        <td style="padding:.26rem .28rem;font-size:10px;color:#666;text-align:center;">${pos}</td>
+      const{bg,t}=rowClr(z,i);
+      const ptColor=(i===0)?'#ffd700':(i<4)?'var(--accent)':'#ccc';
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:${bg};">
+        <td style="padding:.26rem .28rem;font-size:11px;font-weight:700;color:${t};text-align:center;">${i+1}</td>
         <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;max-width:145px;">
-          ${escudoHTML(r.n,'me')}<span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}</span>
+          ${escudoHTML(r.n,'me')}<span style="font-size:11px;color:${t};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}</span>
         </div></td>
         <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${r.pj}</td>
         <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${r.pts}</td>
@@ -4801,6 +4832,45 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB){
         </tr></thead><tbody>${trs}</tbody>
       </table></div>`;
   };
+
+  // Quintos table
+  const qStatus=q=>{
+    if(tiedZonas.includes(q.zona))return{label:'⚖️ Sorteo',t:OT,bg:OB};
+    if(q.zona===bestZona)return{label:'🏆 Nonagonal B',t:VT,bg:VB};
+    if(bestZona!=='Zona B'&&q.zona==='Zona B')return{label:'⚔️ Reválida A',t:RT,bg:RB};
+    return{label:'⚔️ Reválida B',t:RT,bg:RB};
+  };
+  let qRows='';
+  quintos.forEach((q,i)=>{
+    const{label,t,bg}=qStatus(q);
+    const ptColor=i===0&&tiedZonas.length===0?'#ffd700':'#ccc';
+    qRows+=`<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:${bg};">
+      <td style="padding:.26rem .28rem;font-size:11px;font-weight:700;color:${t};text-align:center;">${i+1}</td>
+      <td style="padding:.26rem .28rem;font-size:10px;color:#888;text-align:center;">${q.zona.replace('Zona ','')}</td>
+      <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;">
+        ${escudoHTML(q.n,'me')}<span style="font-size:11px;color:${t};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${q.n}</span>
+      </div></td>
+      <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${q.pj}</td>
+      <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${q.pts}</td>
+      <td style="padding:.26rem .28rem;font-size:10px;color:${t};">${label}</td>
+    </tr>`;
+  });
+  const quintosSection=quintos.length?`
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:#bbb;margin-bottom:.3rem;padding-left:.15rem;">🧮 QUINTOS (5° de B / C / D)</div>
+      <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.02);border-radius:6px;overflow:hidden;">
+        <thead><tr style="background:rgba(255,255,255,.05);">
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:18px;">#</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">Zona</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Equipo</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:22px;">PJ</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">PTS</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Clasif.</th>
+        </tr></thead>
+        <tbody>${qRows}</tbody>
+      </table>
+    </div>`:'';
+
   const lista=(equipos,titulo,color)=>{
     const items=equipos.map((r,i)=>{
       const isQ=r._quinto||r._topQ,isTied=r._tied;
@@ -4816,21 +4886,15 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB){
       <div style="border:1px solid rgba(255,255,255,.07);border-radius:6px;overflow:hidden;">${items}</div>
     </div>`;
   };
+
   return `<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:1.25rem;">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">TABLAS PROYECTADAS</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem;margin-bottom:1.1rem;">
-      ${zonaTable(tabA,'Zona A')}${zonaTable(tabB,'Zona B')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem;margin-bottom:1.4rem;">
-      ${zonaTable(tabC,'Zona C')}${zonaTable(tabD,'Zona D')}
-    </div>
+    <div class="calc-form-grid">${zonaTable(tabA,'Zona A')}${zonaTable(tabB,'Zona B')}</div>
+    <div class="calc-form-grid" style="margin-bottom:1.2rem;">${zonaTable(tabC,'Zona C')}${zonaTable(tabD,'Zona D')}</div>
+    ${quintosSection}
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">CLASIFICACIÓN PROYECTADA</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-bottom:.8rem;">
-      ${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;">
-      ${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}
-    </div>
+    <div class="calc-form-grid">${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}</div>
+    <div class="calc-form-grid" style="margin-bottom:0;">${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}</div>
   </div>`;
 }
 
