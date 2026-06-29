@@ -233,6 +233,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-d{order:4;}
   #col-izq{order:5;}
   #col-der{order:6;}
+  #cont-descenso{order:7;}
+  #cont-descenso > div{grid-template-columns:1fr!important;}
   #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr 1fr!important;gap:.5rem!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
   /* Zona tables scoped - no global tabla-mini changes */
@@ -615,6 +617,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="col-der" style="align-self:start;">
           <div id="cont-2dafase"></div>
         </div>
+        <div id="cont-descenso" style="grid-column:1/-1;align-self:start;"></div>
       </div>
     </div>
   </div>
@@ -2255,7 +2258,7 @@ function renderTablas(){
   const qEl=document.getElementById('cont-quintos');
   if(qEl && quintosRows.length>0){
     quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
-    qEl.innerHTML=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin:1.5rem 0 .28rem;">Tabla de quintos</p>
+    qEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">🧮 Tabla de quintos</p>
     <div class="tabla-mini"><table><thead><tr>
       <th style="width:18px">#</th><th style="width:150px;text-align:left">Equipo</th><th>Zona</th>
       <th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>
@@ -3885,7 +3888,7 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
       <div>
         <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
         ${renderLista(nonA,'#2ea043')}
@@ -3894,8 +3897,10 @@ function renderSegundaFase(){
         <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
         ${renderLista(nonB,'#2ea043')}
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+    </div>`;
+
+  const elD = document.getElementById('cont-descenso');
+  if(elD) elD.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;margin-top:1rem;">
       <div>${renderRevATabla(revA)}</div>
       <div>${renderRevBTabla(revB)}</div>
     </div>`;
