@@ -3804,7 +3804,7 @@ function renderSegundaFase(){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
         <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
         <td style="${dataSty}">${r.pj}</td>
         <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r.pts,r.pj)}</td>
@@ -3832,7 +3832,7 @@ function renderSegundaFase(){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
         <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
         <td style="${dataSty}">${r.pj}</td>
       </tr>`;
