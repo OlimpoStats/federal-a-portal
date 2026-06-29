@@ -3992,13 +3992,19 @@ async function confirmarTraspaso(origenId,origenEqId,destinoId,destinoEqId,aId,b
 // ── TRASPASO MANUAL (modal) ───────────────────────────────────────────────────
 
 let _traspasoSelJugador = null;
+let _traspasoOrigenJugador = null;
 
 function abrirTraspasoManual(){
   _traspasoSelJugador = null;
+  _traspasoOrigenJugador = null;
   document.getElementById("traspaso-buscar").value = "";
   document.getElementById("traspaso-resultados").style.display = "none";
   document.getElementById("traspaso-resultados").innerHTML = "";
   document.getElementById("traspaso-seleccionado").style.display = "none";
+  document.getElementById("traspaso-origen-buscar").value = "";
+  document.getElementById("traspaso-origen-resultados").style.display = "none";
+  document.getElementById("traspaso-origen-resultados").innerHTML = "";
+  document.getElementById("traspaso-origen-sel").style.display = "none";
   document.getElementById("traspaso-origen").innerHTML =
     '<option value="">— Seleccionar —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
@@ -4044,6 +4050,40 @@ function seleccionarJugadorTraspaso(id){
   });
 }
 
+function buscarOrigenTraspaso(){
+  const q=(document.getElementById("traspaso-origen-buscar").value||"").toLowerCase().trim();
+  const res=document.getElementById("traspaso-origen-resultados");
+  if(!q){ res.style.display="none"; return; }
+  const destId=_traspasoSelJugador?.id;
+  const matches=JUGADORES_CACHE.filter(j=>
+    j.id!==destId &&
+    ((j.nombre_display||"").toLowerCase().includes(q)||(j.nombre||"").toLowerCase().includes(q))
+  ).slice(0,8);
+  if(!matches.length){ res.style.display="none"; return; }
+  res.innerHTML=matches.map(j=>`
+    <div style="padding:.4rem .65rem;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05);"
+      onmouseenter="this.style.background='rgba(255,255,255,.07)'"
+      onmouseleave="this.style.background=''"
+      onclick="seleccionarOrigenTraspaso(${j.id})">
+      <strong>${j.nombre_display||j.nombre}</strong>
+      <span style="font-size:11px;color:#999;margin-left:.4rem;">${j.equipos?.nombre||'Sin club'}</span>
+    </div>`).join("");
+  res.style.display="block";
+}
+
+function seleccionarOrigenTraspaso(id){
+  const j=JUGADORES_CACHE.find(x=>x.id===id);
+  if(!j) return;
+  _traspasoOrigenJugador=j;
+  document.getElementById("traspaso-origen-buscar").value=j.nombre_display||j.nombre;
+  document.getElementById("traspaso-origen-resultados").style.display="none";
+  document.getElementById("traspaso-origen-sel").textContent=`✓ ${j.nombre_display||j.nombre} — ${j.equipos?.nombre||'Sin club'}`;
+  document.getElementById("traspaso-origen-sel").style.display="block";
+  // Sincronizar dropdown con el club del jugador origen seleccionado
+  const sel=document.getElementById("traspaso-origen");
+  [...sel.options].forEach(o=>{ o.selected=o.value===j.equipos?.nombre; o.disabled=false; });
+}
+
 async function guardarTraspasoManual(){
   if(!_traspasoSelJugador){ alert("Seleccioná un jugador primero."); return; }
   const origenNombre=document.getElementById("traspaso-origen").value;
@@ -4051,8 +4091,10 @@ async function guardarTraspasoManual(){
   const fecha=document.getElementById("traspaso-fecha").value;
   const origenEqId=EQUIPOS_ID_MAP[origenNombre]||null;
   const destinoEqId=_traspasoSelJugador.equipo_id||null;
+  // Si hay registro de origen separado, usarlo; si no, mismo jugador para los dos lados
+  const origenJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : _traspasoSelJugador.id;
   const {error}=await sb.from("transferencias").insert({
-    jugador_origen_id: _traspasoSelJugador.id,
+    jugador_origen_id: origenJugId,
     equipo_origen_id: origenEqId,
     jugador_destino_id: _traspasoSelJugador.id,
     equipo_destino_id: destinoEqId,
@@ -4992,6 +5034,12 @@ async function eliminarSancion(id){
     <div style="margin-bottom:.75rem;">
       <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Club de origen (de dónde viene)</label>
       <select id="traspaso-origen" style="width:100%;"><option value="">— Seleccionar —</option></select>
+    </div>
+    <div style="margin-bottom:.75rem;padding:.6rem .75rem;border:1px solid rgba(255,255,255,.08);border-radius:6px;">
+      <div style="font-size:11px;color:#888;margin-bottom:.4rem;">Registro separado en el club de origen <span style="color:#555;">(opcional — solo si el jugador figura como entrada distinta en ese club)</span></div>
+      <input type="text" id="traspaso-origen-buscar" placeholder="Buscar el registro del jugador en el club anterior..." style="width:100%;margin-bottom:.3rem;" oninput="buscarOrigenTraspaso()">
+      <div id="traspaso-origen-resultados" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:130px;overflow-y:auto;background:var(--surface);"></div>
+      <div id="traspaso-origen-sel" style="display:none;font-size:12px;color:#4caf50;margin-top:.3rem;"></div>
     </div>
     <div style="margin-bottom:1.25rem;">
       <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Fecha del traspaso</label>
