@@ -437,6 +437,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .plt-name-desk{display:none;}
   .plt-name-mob{display:block;}
 }
+.calc-input{width:38px;height:34px;text-align:center;font-size:17px;font-weight:700;background:#f0f0f0;color:#111;border:1.5px solid #bbb;border-radius:4px;padding:0;appearance:textfield;-moz-appearance:textfield;}
+.calc-input:focus{outline:none;border-color:#4a9eff;background:#fff;}
+.calc-input::-webkit-inner-spin-button,.calc-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 </style>
 </head>
 <body>
@@ -569,10 +572,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <!-- CALCULADORA -->
 <div class="page" id="page-calculadora">
-  <div class="pronto-wrap">
-    <div class="pronto-icon">🧮</div>
-    <div class="pronto-title">Calculadora — Próximamente</div>
-    <div class="pronto-sub">Simulá resultados para ver cómo quedan las tablas y nuevos grupos. Se habilitará en las últimas fechas de cada fase.</div>
+  <div style="padding:1rem 1rem 2.5rem;max-width:860px;margin:0 auto;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:.2rem;">🧮 Calculadora</div>
+    <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y la clasificación proyectada.</p>
+    <div id="calc-form"><div style="color:#888;font-size:13px;">Cargando partidos...</div></div>
+    <div id="calc-btn-wrap" style="display:none;margin:1.25rem 0;text-align:center;">
+      <button onclick="calcularProyeccion()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.65rem 2.5rem;font-size:16px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;">CALCULAR</button>
+    </div>
+    <div id="calc-resultados"></div>
   </div>
 </div>
 
@@ -2428,6 +2435,7 @@ function goPage(id, el){
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas") cargarEstadisticas();
   if(id==="planteles") cargarPlanteles();
+  if(id==="calculadora") cargarCalculadora();
   if(id==="foro"){
     page.style.display="flex";
     const hdrH = window.innerWidth<=700?52:62;
@@ -4613,6 +4621,217 @@ async function cargarPlantelClub(equipoId, clubColor){
   } catch(e){
     cont.innerHTML='<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
   }
+}
+
+// ===== CALCULADORA =====
+function cargarCalculadora(){
+  const form=document.getElementById('calc-form');
+  const btnWrap=document.getElementById('calc-btn-wrap');
+  document.getElementById('calc-resultados').innerHTML='';
+  if(!FIXTURE||!Object.keys(FIXTURE).length){
+    form.innerHTML='<div style="color:#888;font-size:13px;">Cargando...</div>';
+    setTimeout(cargarCalculadora,500);
+    return;
+  }
+  const zonas=['Zona A','Zona B','Zona C','Zona D'];
+  let html='',hasPending=false;
+  zonas.forEach(zona=>{
+    const code=zona.replace('Zona ','');
+    const color=(ZONA_COLORES[zona]||{color:'#777'}).color;
+    let fechasHtml='';
+    for(let f=1;f<=18;f++){
+      const allM=FIXTURE[zona]?.[String(f)]||[];
+      const pending=allM.map((m,i)=>({m,i})).filter(({m})=>m.gl===null);
+      if(!pending.length) continue;
+      hasPending=true;
+      const matchRows=pending.map(({m,i})=>`
+        <div class="calc-partido" data-zona="${zona}" data-fecha="${f}" data-idx="${i}"
+          style="display:grid;grid-template-columns:1fr 38px 14px 38px 1fr;align-items:center;gap:.35rem;padding:.42rem .6rem;border-bottom:1px solid rgba(255,255,255,.04);">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:.3rem;min-width:0;overflow:hidden;">
+            <span style="font-size:11.5px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.local}</span>
+            ${escudoHTML(m.local,'me')}
+          </div>
+          <input type="number" class="calc-gl calc-input" min="0" max="20" placeholder="-">
+          <span style="color:#444;text-align:center;font-size:13px;user-select:none;">:</span>
+          <input type="number" class="calc-gv calc-input" min="0" max="20" placeholder="-">
+          <div style="display:flex;align-items:center;gap:.3rem;min-width:0;overflow:hidden;">
+            ${escudoHTML(m.visitante,'me')}
+            <span style="font-size:11.5px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.visitante}</span>
+          </div>
+        </div>`).join('');
+      fechasHtml+=`<div style="font-size:10px;font-weight:700;color:#555;letter-spacing:1px;padding:.4rem .6rem .1rem;">FECHA ${f}</div>${matchRows}`;
+    }
+    if(!fechasHtml) return;
+    html+=`<div style="margin-bottom:.85rem;border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden;">
+      <div style="background:${color}22;border-bottom:2px solid ${color};padding:.35rem .6rem;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;color:${color};">ZONA ${code}</div>
+      ${fechasHtml}</div>`;
+  });
+  if(!hasPending){
+    form.innerHTML='<div style="padding:.5rem 0;color:#888;font-size:13px;">✓ Todos los partidos ya fueron jugados.</div>';
+    btnWrap.style.display='none';
+  } else {
+    form.innerHTML=html;
+    btnWrap.style.display='block';
+  }
+}
+
+function calcTablaFx(zona,fx){
+  const eq={},partidos=[];
+  for(let f=1;f<=18;f++){
+    (fx[zona]?.[String(f)]||[]).forEach(m=>{
+      [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+      if(m.gl===null)return;
+      partidos.push(m);
+      eq[m.local].pj++;eq[m.visitante].pj++;
+      eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
+      eq[m.visitante].gf+=m.gv;eq[m.visitante].gc+=m.gl;
+      if(m.gl>m.gv){eq[m.local].g++;eq[m.local].pts+=3;eq[m.visitante].p++;}
+      else if(m.gl<m.gv){eq[m.visitante].g++;eq[m.visitante].pts+=3;eq[m.local].p++;}
+      else{eq[m.local].e++;eq[m.visitante].e++;eq[m.local].pts++;eq[m.visitante].pts++;}
+    });
+  }
+  const all=new Set();
+  for(let f=1;f<=18;f++){(fx[zona]?.[String(f)]||[]).forEach(m=>{all.add(m.local);all.add(m.visitante);});}
+  all.forEach(t=>{if(!eq[t])eq[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
+  const calcH2H=equipos=>{
+    const h2h={};
+    equipos.forEach(e=>{h2h[e]={pts:0,dif:0,gf:0,gv:0};});
+    partidos.forEach(m=>{
+      if(!equipos.includes(m.local)||!equipos.includes(m.visitante))return;
+      h2h[m.local].gf+=m.gl;h2h[m.local].gc=h2h[m.local].gc||0;h2h[m.local].dif+=m.gl-m.gv;
+      h2h[m.visitante].gf+=m.gv;h2h[m.visitante].dif+=m.gv-m.gl;
+      h2h[m.visitante].gv=(h2h[m.visitante].gv||0)+m.gv;
+      if(m.gl>m.gv)h2h[m.local].pts+=3;
+      else if(m.gl<m.gv)h2h[m.visitante].pts+=3;
+      else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
+    });
+    return h2h;
+  };
+  const rows=Object.entries(eq).map(([n,s])=>({n,...s,h2h:'—'}));
+  rows.sort((a,b)=>b.pts!==a.pts?b.pts-a.pts:0);
+  const ptGroups={};
+  rows.forEach(r=>{(ptGroups[r.pts]=ptGroups[r.pts]||[]).push(r.n);});
+  const h2hRank={};
+  Object.entries(ptGroups).forEach(([,teams])=>{
+    if(teams.length<2)return;
+    const h2h=calcH2H(teams);
+    const sorted=[...teams].sort((a,b)=>
+      (h2h[b].pts-h2h[a].pts)||(h2h[b].dif-h2h[a].dif)||(h2h[b].gf-h2h[a].gf)||
+      ((h2h[b].gv||0)-(h2h[a].gv||0))||((eq[b].gf-eq[b].gc)-(eq[a].gf-eq[a].gc))||(eq[b].gf-eq[a].gf)||0
+    );
+    sorted.forEach((t,i)=>{h2hRank[t]={rank:i,label:`${h2h[t].pts}`};});
+    const h2hM=partidos.filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
+    rows.forEach(r=>{if(teams.includes(r.n)){r.h2h=h2hRank[r.n]?.label||'—';r.h2hMatches=h2hM;r.h2hGroup=teams;}});
+  });
+  rows.sort((a,b)=>{
+    if(b.pts!==a.pts)return b.pts-a.pts;
+    const ra=h2hRank[a.n]?.rank??0,rb=h2hRank[b.n]?.rank??0;
+    if(ra!==rb)return ra-rb;
+    return((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||(b.gf-b.pj)-(a.gf-a.pj)||0;
+  });
+  return rows;
+}
+
+function calcularProyeccion(){
+  const fx={};
+  for(const zona in FIXTURE){
+    fx[zona]={};
+    for(const fecha in FIXTURE[zona])fx[zona][fecha]=FIXTURE[zona][fecha].map(m=>({...m}));
+  }
+  document.querySelectorAll('.calc-partido').forEach(row=>{
+    const zona=row.dataset.zona,fecha=row.dataset.fecha,idx=parseInt(row.dataset.idx);
+    const glV=row.querySelector('.calc-gl').value.trim(),gvV=row.querySelector('.calc-gv').value.trim();
+    if(glV!==''&&gvV!==''){
+      const gl=parseInt(glV),gv=parseInt(gvV);
+      if(!isNaN(gl)&&!isNaN(gv)&&gl>=0&&gv>=0){fx[zona][fecha][idx].gl=gl;fx[zona][fecha][idx].gv=gv;}
+    }
+  });
+  const tabA=calcTablaFx('Zona A',fx),tabB=calcTablaFx('Zona B',fx);
+  const tabC=calcTablaFx('Zona C',fx),tabD=calcTablaFx('Zona D',fx);
+  const quintos=[
+    tabB[4]?{...tabB[4],zona:'Zona B'}:null,
+    tabC[4]?{...tabC[4],zona:'Zona C'}:null,
+    tabD[4]?{...tabD[4],zona:'Zona D'}:null
+  ].filter(Boolean);
+  quintos.sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||(b.gf-a.gf));
+  const topQ=quintos[0],bestZona=topQ?.zona;
+  const tied=topQ?quintos.filter(q=>q.pts===topQ.pts&&(q.gf-q.gc)===(topQ.gf-topQ.gc)&&q.gf===topQ.gf):[];
+  const nonA=[...tabA.slice(0,5),...tabB.slice(0,4)];
+  const nonB=[...tabC.slice(0,4),...tabD.slice(0,4)];
+  if(topQ) nonB.push({...topQ,_topQ:true,_tied:tied.length>1});
+  const restQ=quintos.slice(1);
+  const revA=[...tabA.slice(5,10),...tabB.slice(5,9)];
+  const revB=[...tabC.slice(5,9),...tabD.slice(5,9)];
+  if(bestZona!=='Zona B'){
+    const qB=restQ.find(q=>q.zona==='Zona B'),qO=restQ.find(q=>q.zona!=='Zona B');
+    if(qB)revA.push({...qB,_quinto:true});
+    if(qO)revB.push({...qO,_quinto:true});
+  } else {
+    restQ.forEach(q=>revB.push({...q,_quinto:true}));
+  }
+  const cont=document.getElementById('calc-resultados');
+  cont.innerHTML=_renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB);
+  cont.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB){
+  const zonaTable=(rows,z)=>{
+    const c=(ZONA_COLORES[z]||{color:'#777'}).color,code=z.replace('Zona ','');
+    const trs=rows.map((r,i)=>{
+      const pos=i+1,ptColor=pos===1?'#ffd700':pos<=4?'var(--accent)':'#ccc';
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+        <td style="padding:.26rem .28rem;font-size:10px;color:#666;text-align:center;">${pos}</td>
+        <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;max-width:145px;">
+          ${escudoHTML(r.n,'me')}<span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}</span>
+        </div></td>
+        <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${r.pj}</td>
+        <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${r.pts}</td>
+        <td style="padding:.26rem .28rem;font-size:10px;color:#777;text-align:center;">${r.h2h}</td>
+      </tr>`;
+    }).join('');
+    return `<div style="flex:1;min-width:0;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:${c};margin-bottom:.3rem;padding-left:.15rem;">ZONA ${code}</div>
+      <table style="width:100%;border-collapse:collapse;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.02);">
+        <thead><tr style="background:rgba(255,255,255,.05);">
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:18px;">#</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Equipo</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:22px;">PJ</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">PTS</th>
+          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:28px;">H2H</th>
+        </tr></thead><tbody>${trs}</tbody>
+      </table></div>`;
+  };
+  const lista=(equipos,titulo,color)=>{
+    const items=equipos.map((r,i)=>{
+      const isQ=r._quinto||r._topQ,isTied=r._tied;
+      return `<div style="display:flex;align-items:center;gap:.38rem;padding:.26rem .48rem;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="font-size:10px;color:#555;width:13px;text-align:center;flex-shrink:0;">${i+1}</span>
+        ${escudoHTML(r.n,'me')}
+        <span style="font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;${isQ?'color:#f5e64a;':''}">${r.n}${isQ?' <span style="font-size:9px;opacity:.65;">(5°)</span>':''}</span>
+        ${isTied?'<span title="Empate en criterios — sorteo" style="font-size:9px;color:#60a5fa;flex-shrink:0;">⚖️</span>':''}
+      </div>`;
+    }).join('');
+    return `<div style="flex:1;min-width:0;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:${color};margin-bottom:.3rem;padding-left:.15rem;">${titulo}</div>
+      <div style="border:1px solid rgba(255,255,255,.07);border-radius:6px;overflow:hidden;">${items}</div>
+    </div>`;
+  };
+  return `<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:1.25rem;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">TABLAS PROYECTADAS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem;margin-bottom:1.1rem;">
+      ${zonaTable(tabA,'Zona A')}${zonaTable(tabB,'Zona B')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem;margin-bottom:1.4rem;">
+      ${zonaTable(tabC,'Zona C')}${zonaTable(tabD,'Zona D')}
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">CLASIFICACIÓN PROYECTADA</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-bottom:.8rem;">
+      ${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;">
+      ${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}
+    </div>
+  </div>`;
 }
 
 </script>
