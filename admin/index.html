@@ -195,6 +195,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Clubes</div>
     <div class="sb-item" onclick="goPanel('escudos')"><span class="sb-icon">🛡️</span>Escudos</div>
     <div class="sb-item" onclick="goPanel('jugadores')"><span class="sb-icon">👤</span>Jugadores</div>
+    <div class="sb-item" onclick="goPanel('traspasos')"><span class="sb-icon">📋</span>Traspasos</div>
     <div class="sb-section">Database</div>
     <div class="sb-item" onclick="goPanel('abm-arbitros')"><span class="sb-icon">🧑‍⚖️</span>Árbitros</div>
     <div class="sb-item" onclick="goPanel('abm-estadios')"><span class="sb-icon">🏟️</span>Estadios</div>
@@ -523,7 +524,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <option value="pierna_habil">Pierna hábil</option>
           </select>
           <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
-          <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados">⚠️ Duplicados</button>
+          <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados en el mismo club">⚠️ Duplicados</button>
+          <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicadosInterclub()" title="Detectar mismo nombre en distintos clubes (posibles traspasos)">🔍 Interclub</button>
           <button class="btn btn-secondary btn-sm" onclick="abrirFusionManual()" title="Fusionar dos jugadores manualmente">🔀 Fusión manual</button>
           <button class="btn btn-secondary btn-sm" onclick="generarCommonNamesMasivo()" id="btn-commonnames" title="Generar common name para jugadores que no tienen">🏷️ Generar common names</button>
           <button class="btn btn-secondary btn-sm" onclick="resetearCommonNamesIncorrectos()" title="Resetea a NULL los common names que quedaron iguales al nombre completo">↩️ Resetear incorrectos</button>
@@ -619,6 +621,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <button class="btn btn-primary btn-sm" onclick="confirmarFusionManual()">✓ Fusionar</button>
         </div>
       </div>
+    </div>
+
+    <!-- ===================== TRASPASOS ===================== -->
+    <div class="panel" id="panel-traspasos">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.4rem;">Traspasos</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Registro de todos los traspasos — detectados automáticamente al cargar planillas o registrados manualmente desde <em>Jugadores → Interclub</em>.</p>
+      <div id="traspasos-cont" style="font-size:13px;color:var(--muted);">Cargando...</div>
     </div>
 
     <!-- ===================== ABM ÁRBITROS ===================== -->
@@ -1008,6 +1017,7 @@ function goPanel(id){
   if(id==="abm-arbitros"||id==="abm-estadios"||id==="abm-tecnicos") cargarABM();
   if(id==="abm-equipos") renderEquiposVinculos();
   if(id==="jugadores") cargarJugadores();
+  if(id==="traspasos") cargarTraspasos();
   if(id==="foro-admin") cargarReportesForo();
   if(id==="sugerencias") cargarSugerencias();
   if(id==="sancionados") cargarSancionados();
@@ -3862,6 +3872,170 @@ function renderDuplicados(dupGroups){
     html += `</div>`;
   });
   lista.innerHTML = html;
+}
+
+// ── DUPLICADOS INTERCLUB ─────────────────────────────────────────────────────
+
+async function mostrarDuplicadosInterclub(){
+  const {data: transfers} = await sb.from("transferencias").select("jugador_origen_id,jugador_destino_id");
+  const transferPairs = new Set(
+    (transfers||[]).flatMap(t=>[`${t.jugador_origen_id}_${t.jugador_destino_id}`,`${t.jugador_destino_id}_${t.jugador_origen_id}`])
+  );
+
+  const groups = new Map();
+  JUGADORES_CACHE.forEach(j => {
+    const keys = new Set([
+      normalizarTexto(j.nombre_display||j.nombre||""),
+      normalizarTexto(j.nombre||j.nombre_display||"")
+    ]);
+    keys.forEach(k => {
+      if(!k) return;
+      if(!groups.has(k)) groups.set(k, new Map());
+      groups.get(k).set(j.id, j);
+    });
+  });
+
+  const seenPairs = new Set();
+  const pairs = [];
+  groups.forEach(playerMap => {
+    const players = [...playerMap.values()];
+    for(let i=0;i<players.length;i++){
+      for(let j=i+1;j<players.length;j++){
+        const a=players[i], b=players[j];
+        if(a.equipo_id===b.equipo_id) continue;
+        const pairKey=[a.id,b.id].sort().join("_");
+        if(seenPairs.has(pairKey)) continue;
+        seenPairs.add(pairKey);
+        const yaRegistrado=transferPairs.has(`${a.id}_${b.id}`)||transferPairs.has(`${b.id}_${a.id}`);
+        pairs.push({a,b,yaRegistrado});
+      }
+    }
+  });
+
+  if(!pairs.length){ alert("✓ No hay jugadores con el mismo nombre en distintos clubes."); return; }
+  renderDuplicadosInterclub(pairs);
+  document.getElementById("jug-buscar").value="";
+}
+
+function renderDuplicadosInterclub(pairs){
+  const lista=document.getElementById("jug-lista");
+  if(!lista) return;
+  const sinReg=pairs.filter(p=>!p.yaRegistrado).length;
+  let html=`<div style="background:#001a2e;border:1px solid #4a9eff;border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:12px;color:#74b9ff;">
+    🔍 ${pairs.length} coincidencia(s) de nombre entre distintos clubes${sinReg>0?` — <strong style="color:#fff;">${sinReg} sin registrar como traspaso</strong>`:''}.
+    <br><span style="color:#ccc;">Si el jugador se transfirió, registralo. Si son personas distintas con el mismo apellido, ignorá la fila.</span>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;background:#1a2a3a;padding:.35rem .75rem;">
+      <div style="font-size:10px;font-weight:700;color:#74b9ff;letter-spacing:1px;">JUGADOR — CLUB A</div>
+      <div style="font-size:10px;font-weight:700;color:#74b9ff;letter-spacing:1px;">JUGADOR — CLUB B</div>
+      <div></div>
+    </div>`;
+  pairs.forEach(({a,b,yaRegistrado})=>{
+    html+=`<div style="border-top:1px solid rgba(255,255,255,.07);padding:.5rem .75rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:.5rem;">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:#f0f0f0;">${a.nombre_display||a.nombre}</div>
+          <div style="font-size:11px;color:#999;">📍 ${a.equipos?.nombre||'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:#f0f0f0;">${b.nombre_display||b.nombre}</div>
+          <div style="font-size:11px;color:#999;">📍 ${b.equipos?.nombre||'—'}</div>
+        </div>
+        <div style="display:flex;gap:.3rem;flex-shrink:0;">
+          ${yaRegistrado
+            ?`<span style="font-size:11px;color:#4caf50;padding:.2rem .5rem;background:rgba(76,175,80,.12);border-radius:4px;white-space:nowrap;">✓ Traspaso registrado</span>`
+            :`<button class="btn btn-secondary btn-sm" style="font-size:11px;white-space:nowrap;" onclick="mostrarOpcionesTraspaso(${a.id},${a.equipo_id||'null'},${b.id},${b.equipo_id||'null'})">📋 Registrar traspaso</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="fusionarJugador(${a.id},[${b.id}])" title="Son el mismo jugador, error de carga">🔀 Fusionar</button>`
+          }
+        </div>
+      </div>
+      <div id="dir-${a.id}-${b.id}" style="display:none;margin-top:.4rem;padding:.4rem .6rem;background:var(--bg);border-radius:4px;font-size:12px;"></div>
+    </div>`;
+  });
+  html+=`</div>`;
+  lista.innerHTML=html;
+}
+
+function mostrarOpcionesTraspaso(aId,aEqId,bId,bEqId){
+  const a=JUGADORES_CACHE.find(x=>x.id===aId);
+  const b=JUGADORES_CACHE.find(x=>x.id===bId);
+  const cont=document.getElementById(`dir-${aId}-${bId}`);
+  if(!cont) return;
+  cont.style.display='block';
+  cont.innerHTML=`<span style="color:#ccc;">¿Dirección del traspaso?</span>
+    <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.3rem;">
+      <button class="btn btn-primary btn-sm" style="font-size:11px;"
+        onclick="confirmarTraspaso(${aId},${aEqId},${bId},${bEqId},${aId},${bId})">
+        ${a?.equipos?.nombre||'Club A'} → ${b?.equipos?.nombre||'Club B'}
+      </button>
+      <button class="btn btn-primary btn-sm" style="font-size:11px;"
+        onclick="confirmarTraspaso(${bId},${bEqId},${aId},${aEqId},${aId},${bId})">
+        ${b?.equipos?.nombre||'Club B'} → ${a?.equipos?.nombre||'Club A'}
+      </button>
+      <button class="btn btn-secondary btn-sm" style="font-size:11px;"
+        onclick="document.getElementById('dir-${aId}-${bId}').style.display='none'">✕</button>
+    </div>`;
+}
+
+async function confirmarTraspaso(origenId,origenEqId,destinoId,destinoEqId,aId,bId){
+  await registrarTransferencia(origenId,origenEqId,destinoId,destinoEqId);
+  const cont=document.getElementById(`dir-${aId}-${bId}`);
+  const origin=JUGADORES_CACHE.find(x=>x.id===origenId);
+  const dest=JUGADORES_CACHE.find(x=>x.id===destinoId);
+  if(cont) cont.innerHTML=`<span style="color:#4caf50;">✓ Registrado: ${origin?.equipos?.nombre||'?'} → ${dest?.equipos?.nombre||'?'}</span>`;
+}
+
+// ── LISTA DE TRASPASOS ────────────────────────────────────────────────────────
+
+async function cargarTraspasos(){
+  const cont=document.getElementById("traspasos-cont");
+  if(!cont) return;
+  cont.innerHTML='<div style="color:var(--muted);padding:1rem;">Cargando...</div>';
+  const {data,error}=await sb.from("transferencias")
+    .select(`id,fecha,origen,
+      jug_origen:jugadores!jugador_origen_id(nombre_display,nombre),
+      eq_origen:equipos!equipo_origen_id(nombre),
+      jug_destino:jugadores!jugador_destino_id(nombre_display,nombre),
+      eq_destino:equipos!equipo_destino_id(nombre)`)
+    .order("fecha",{ascending:false});
+  if(error||!data){
+    cont.innerHTML=`<div style="color:#e57373;padding:1rem;">Error: ${error?.message||'sin datos'}</div>`;
+    return;
+  }
+  if(!data.length){
+    cont.innerHTML='<div style="color:var(--muted);padding:1rem;">No hay traspasos registrados aún.</div>';
+    return;
+  }
+  cont.innerHTML=`<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:100px 1fr 1fr 70px 50px;background:#2a2a2a;padding:.4rem .75rem;">
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">FECHA</div>
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">JUGADOR / ORIGEN</div>
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">CLUB DESTINO</div>
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:1px;">TIPO</div>
+      <div></div>
+    </div>
+    ${data.map((t,i)=>`
+      <div style="display:grid;grid-template-columns:100px 1fr 1fr 70px 50px;border-top:1px solid var(--border);background:${i%2===0?"#1a1a1a":"#202020"};align-items:center;">
+        <div style="padding:.45rem .75rem;font-size:12px;color:#999;">${t.fecha||'—'}</div>
+        <div style="padding:.45rem .75rem;">
+          <div style="font-size:13px;font-weight:500;color:#f0f0f0;">${t.jug_origen?.nombre_display||t.jug_origen?.nombre||'—'}</div>
+          <div style="font-size:11px;color:#999;">📍 ${t.eq_origen?.nombre||'—'}</div>
+        </div>
+        <div style="padding:.45rem .75rem;font-size:12px;color:#bbb;">→ ${t.eq_destino?.nombre||'—'}</div>
+        <div style="padding:.45rem .75rem;font-size:11px;color:${t.origen==='automatico'?'#74b9ff':'#a5d6a7'};">${t.origen==='automatico'?'Auto':'Manual'}</div>
+        <div style="padding:.45rem .75rem;">
+          <button class="btn btn-danger btn-sm" style="font-size:11px;" onclick="eliminarTransferencia(${t.id})">🗑️</button>
+        </div>
+      </div>`).join("")}
+  </div>`;
+}
+
+async function eliminarTransferencia(id){
+  if(!confirm("¿Eliminar este registro de traspaso?")) return;
+  const {error}=await sb.from("transferencias").delete().eq("id",id);
+  if(error){ alert("Error: "+error.message); return; }
+  cargarTraspasos();
 }
 
 function renderJugadores(jugadores){
