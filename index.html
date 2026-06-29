@@ -611,7 +611,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="col-izq" style="align-self:start;">
           <div id="cont-quintos"></div>
           <div id="cont-goleadores-resumen" style="margin-top:1rem;"></div>
-          <div id="cont-descenso-a" style="margin-top:1rem;"></div>
         </div>
         <div id="col-der" style="align-self:start;">
           <div id="cont-2dafase"></div>
@@ -3649,7 +3648,7 @@ async function renderGoleadoresResumen(){
       }
     }
     if(!tableRows){gEl.innerHTML='';return;}
-    gEl.innerHTML=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin:1.5rem 0 .28rem;">⚽ Goleadores</p>
+    gEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">⚽ Goleadores</p>
     <div class="tabla-mini"><table><thead><tr>
       <th style="width:24px">#</th><th style="text-align:left">Jugador</th><th>⚽</th>
     </tr></thead><tbody>${tableRows}</tbody></table></div>`;
@@ -3803,8 +3802,8 @@ function renderSegundaFase(){
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td style="${dataSty}">${r.pj}</td>
         <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
+        <td style="${dataSty}">${r.pj}</td>
         <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r.pts,r.pj)}</td>
       </tr>`;
     }).join('');
@@ -3813,8 +3812,8 @@ function renderSegundaFase(){
       <thead><tr>
         <th style="width:30px">#</th>
         <th style="text-align:left;min-width:150px;">Equipo</th>
-        <th title="Partidos jugados">PJ</th>
         <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
         <th title="Promedio de puntos por partido">Prom.</th>
       </tr></thead><tbody>${tableRows}</tbody>
     </table></div>`;
@@ -3831,8 +3830,8 @@ function renderSegundaFase(){
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td style="${dataSty}">${r.pj}</td>
         <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
+        <td style="${dataSty}">${r.pj}</td>
       </tr>`;
     }).join('');
     return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso B</p>
@@ -3840,8 +3839,8 @@ function renderSegundaFase(){
       <thead><tr>
         <th style="width:30px">#</th>
         <th style="text-align:left;min-width:150px;">Equipo</th>
-        <th title="Partidos jugados">PJ</th>
         <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
       </tr></thead><tbody>${tableRows}</tbody>
     </table></div>`;
   };
@@ -3864,7 +3863,7 @@ function renderSegundaFase(){
     </tr>`;
   }).join('');
   return `<div style="margin-bottom:2.5rem;">
-    <p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin:.5rem 0 .4rem;">Tabla de quintos</p>
+    <p class="sec-2dafase" style="margin:.5rem 0 .4rem;">Tabla de quintos</p>
     <div class="tabla-mini"><table>
       <thead><tr>
         <th style="width:30px">#</th>
@@ -3886,7 +3885,7 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;align-items:start;">
       <div>
         <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
         ${renderLista(nonA,'#2ea043')}
@@ -3896,10 +3895,10 @@ function renderSegundaFase(){
         ${renderLista(nonB,'#2ea043')}
       </div>
     </div>
-    <div style="margin-bottom:1.25rem;">${renderRevBTabla(revB)}</div>`;
-
-  const elDA = document.getElementById('cont-descenso-a');
-  if(elDA) elDA.innerHTML = renderRevATabla(revA);
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+      <div>${renderRevATabla(revA)}</div>
+      <div>${renderRevBTabla(revB)}</div>
+    </div>`;
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
