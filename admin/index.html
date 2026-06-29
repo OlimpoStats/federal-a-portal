@@ -526,6 +526,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <button class="btn btn-secondary btn-sm" onclick="exportarJugadoresExcel()" title="Exportar lista actual a Excel">📤 Exportar</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicados()" id="btn-dup" title="Detectar jugadores duplicados en el mismo club">⚠️ Duplicados</button>
           <button class="btn btn-secondary btn-sm" onclick="mostrarDuplicadosInterclub()" title="Detectar mismo nombre en distintos clubes (posibles traspasos)">🔍 Interclub</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirTraspasoManual()" title="Registrar un traspaso manualmente">📋 Traspaso manual</button>
           <button class="btn btn-secondary btn-sm" onclick="abrirFusionManual()" title="Fusionar dos jugadores manualmente">🔀 Fusión manual</button>
           <button class="btn btn-secondary btn-sm" onclick="generarCommonNamesMasivo()" id="btn-commonnames" title="Generar common name para jugadores que no tienen">🏷️ Generar common names</button>
           <button class="btn btn-secondary btn-sm" onclick="resetearCommonNamesIncorrectos()" title="Resetea a NULL los common names que quedaron iguales al nombre completo">↩️ Resetear incorrectos</button>
@@ -3945,8 +3946,7 @@ function renderDuplicadosInterclub(pairs){
         <div style="display:flex;gap:.3rem;flex-shrink:0;">
           ${yaRegistrado
             ?`<span style="font-size:11px;color:#4caf50;padding:.2rem .5rem;background:rgba(76,175,80,.12);border-radius:4px;white-space:nowrap;">✓ Traspaso registrado</span>`
-            :`<button class="btn btn-secondary btn-sm" style="font-size:11px;white-space:nowrap;" onclick="mostrarOpcionesTraspaso(${a.id},${a.equipo_id||'null'},${b.id},${b.equipo_id||'null'})">📋 Registrar traspaso</button>
-              <button class="btn btn-secondary btn-sm" style="font-size:11px;" onclick="fusionarJugador(${a.id},[${b.id}])" title="Son el mismo jugador, error de carga">🔀 Fusionar</button>`
+            :`<button class="btn btn-secondary btn-sm" style="font-size:11px;white-space:nowrap;" onclick="mostrarOpcionesTraspaso(${a.id},${a.equipo_id||'null'},${b.id},${b.equipo_id||'null'})">📋 Registrar traspaso</button>`
           }
         </div>
       </div>
@@ -3984,6 +3984,81 @@ async function confirmarTraspaso(origenId,origenEqId,destinoId,destinoEqId,aId,b
   const origin=JUGADORES_CACHE.find(x=>x.id===origenId);
   const dest=JUGADORES_CACHE.find(x=>x.id===destinoId);
   if(cont) cont.innerHTML=`<span style="color:#4caf50;">✓ Registrado: ${origin?.equipos?.nombre||'?'} → ${dest?.equipos?.nombre||'?'}</span>`;
+}
+
+// ── TRASPASO MANUAL (modal) ───────────────────────────────────────────────────
+
+let _traspasoSelJugador = null;
+
+function abrirTraspasoManual(){
+  _traspasoSelJugador = null;
+  document.getElementById("traspaso-buscar").value = "";
+  document.getElementById("traspaso-resultados").style.display = "none";
+  document.getElementById("traspaso-resultados").innerHTML = "";
+  document.getElementById("traspaso-seleccionado").style.display = "none";
+  document.getElementById("traspaso-origen").innerHTML =
+    '<option value="">— Seleccionar —</option>' +
+    ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
+  document.getElementById("traspaso-fecha").value = new Date().toISOString().slice(0,10);
+  document.getElementById("modal-traspaso-manual").style.display = "flex";
+}
+
+function cerrarTraspasoManual(){
+  document.getElementById("modal-traspaso-manual").style.display = "none";
+}
+
+function buscarJugadorTraspaso(){
+  const q=(document.getElementById("traspaso-buscar").value||"").toLowerCase().trim();
+  const res=document.getElementById("traspaso-resultados");
+  if(!q){ res.style.display="none"; return; }
+  const matches=JUGADORES_CACHE.filter(j=>
+    (j.nombre_display||"").toLowerCase().includes(q)||(j.nombre||"").toLowerCase().includes(q)
+  ).slice(0,8);
+  if(!matches.length){ res.style.display="none"; return; }
+  res.innerHTML=matches.map(j=>`
+    <div style="padding:.4rem .65rem;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05);"
+      onmouseenter="this.style.background='rgba(255,255,255,.07)'"
+      onmouseleave="this.style.background=''"
+      onclick="seleccionarJugadorTraspaso(${j.id})">
+      <strong>${j.nombre_display||j.nombre}</strong>
+      <span style="font-size:11px;color:#999;margin-left:.4rem;">${j.equipos?.nombre||'Sin club'}</span>
+    </div>`).join("");
+  res.style.display="block";
+}
+
+function seleccionarJugadorTraspaso(id){
+  const j=JUGADORES_CACHE.find(x=>x.id===id);
+  if(!j) return;
+  _traspasoSelJugador=j;
+  document.getElementById("traspaso-buscar").value=j.nombre_display||j.nombre;
+  document.getElementById("traspaso-resultados").style.display="none";
+  document.getElementById("traspaso-sel-nombre").textContent=j.nombre_display||j.nombre;
+  document.getElementById("traspaso-sel-club").textContent=j.equipos?.nombre||"Sin club";
+  document.getElementById("traspaso-seleccionado").style.display="block";
+  // Pre-excluir club actual del dropdown de origen
+  [...document.getElementById("traspaso-origen").options].forEach(o=>{
+    o.disabled = o.value && o.value===j.equipos?.nombre;
+  });
+}
+
+async function guardarTraspasoManual(){
+  if(!_traspasoSelJugador){ alert("Seleccioná un jugador primero."); return; }
+  const origenNombre=document.getElementById("traspaso-origen").value;
+  if(!origenNombre){ alert("Seleccioná el club de origen."); return; }
+  const fecha=document.getElementById("traspaso-fecha").value;
+  const origenEqId=EQUIPOS_ID_MAP[origenNombre]||null;
+  const destinoEqId=_traspasoSelJugador.equipo_id||null;
+  const {error}=await sb.from("transferencias").insert({
+    jugador_origen_id: _traspasoSelJugador.id,
+    equipo_origen_id: origenEqId,
+    jugador_destino_id: _traspasoSelJugador.id,
+    equipo_destino_id: destinoEqId,
+    fecha: fecha||new Date().toISOString().slice(0,10),
+    origen: 'manual',
+  });
+  if(error){ alert("Error al registrar: "+error.message); return; }
+  cerrarTraspasoManual();
+  alert(`✓ Traspaso registrado: ${origenNombre} → ${_traspasoSelJugador.equipos?.nombre||'destino'}`);
 }
 
 // ── LISTA DE TRASPASOS ────────────────────────────────────────────────────────
@@ -4841,6 +4916,34 @@ async function eliminarSancion(id){
   cargarSancionados();
 }
 </script>
+
+<!-- Modal traspaso manual -->
+<div id="modal-traspaso-manual" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:480px;max-width:95vw;max-height:85vh;overflow-y:auto;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#74b9ff;margin-bottom:1rem;">📋 Registrar traspaso manual</div>
+    <div style="margin-bottom:.75rem;">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Jugador</label>
+      <input type="text" id="traspaso-buscar" placeholder="Buscar por nombre..." style="width:100%;" oninput="buscarJugadorTraspaso()">
+      <div id="traspaso-resultados" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;background:var(--surface);"></div>
+    </div>
+    <div id="traspaso-seleccionado" style="display:none;background:var(--bg);border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:13px;line-height:1.5;">
+      <div><span id="traspaso-sel-nombre" style="font-weight:600;color:#f0f0f0;"></span></div>
+      <div style="font-size:11px;color:#999;">Club actual (destino): <span id="traspaso-sel-club" style="color:#74b9ff;"></span></div>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Club de origen (de dónde viene)</label>
+      <select id="traspaso-origen" style="width:100%;"><option value="">— Seleccionar —</option></select>
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Fecha del traspaso</label>
+      <input type="date" id="traspaso-fecha" style="width:100%;">
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="cerrarTraspasoManual()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarTraspasoManual()">✓ Registrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal transferencia - permanente en el DOM, controlado por JS -->
 <div id="modal-transfer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center;">
