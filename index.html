@@ -233,6 +233,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-zona-d{order:4;}
   #col-izq{order:5;}
   #col-der{order:6;}
+  #cont-descenso{order:7;}
+  #cont-descenso > div{grid-template-columns:1fr!important;}
   #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr 1fr!important;gap:.5rem!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
   /* Zona tables scoped - no global tabla-mini changes */
@@ -615,6 +617,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="col-der" style="align-self:start;">
           <div id="cont-2dafase"></div>
         </div>
+        <div id="cont-descenso" style="grid-column:1/-1;align-self:start;"></div>
       </div>
     </div>
   </div>
@@ -2250,7 +2253,7 @@ function renderTablas(){
   const qEl=document.getElementById('cont-quintos');
   if(qEl && quintosRows.length>0){
     quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
-    qEl.innerHTML=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin:1.5rem 0 .28rem;">Tabla de quintos</p>
+    qEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">🧮 Tabla de quintos</p>
     <div class="tabla-mini"><table><thead><tr>
       <th style="width:18px">#</th><th style="width:150px;text-align:left">Equipo</th><th>Zona</th>
       <th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>
@@ -3653,16 +3656,42 @@ async function renderGoleadoresResumen(){
       if(!map[nombre]) map[nombre]={nombre,equipo:eq,goles:0};
       map[nombre].goles++;
     });
-    const top=Object.values(map).sort((a,b)=>b.goles-a.goles).slice(0,6);
-    if(!top.length){gEl.innerHTML='';return;}
-    gEl.innerHTML=`<p style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin:1.5rem 0 .28rem;">⚽ Goleadores</p>
+    const sorted=Object.values(map).sort((a,b)=>b.goles-a.goles);
+    if(!sorted.length){gEl.innerHTML='';return;}
+    // Armar top 3 posiciones
+    const rows=[];
+    let rank=0, lastG=-1;
+    for(const j of sorted){
+      if(j.goles!==lastG){rank++;lastG=j.goles;}
+      if(rank>3) break;
+      rows.push({...j,rank});
+    }
+    // Agrupar por rank para detectar empates en 3°
+    const byRank={};
+    rows.forEach(j=>{if(!byRank[j.rank])byRank[j.rank]=[];byRank[j.rank].push(j);});
+    let tableRows='';
+    for(let r=1;r<=3;r++){
+      const pl=byRank[r];
+      if(!pl) break;
+      if(r===3 && pl.length>1){
+        tableRows+=`<tr>
+          <td><span class="pos">${r}</span></td>
+          <td><div class="tr-eq"><span style="font-size:13px;">${pl.length} jugadores</span></div></td>
+          <td><strong class="pts">${pl[0].goles}</strong></td>
+        </tr>`;
+      } else {
+        pl.forEach(j=>{tableRows+=`<tr>
+          <td><span class="pos">${r}</span></td>
+          <td><div class="tr-eq">${escudoHTML(j.equipo,'me')}<span style="font-size:13px">${j.nombre}</span></div></td>
+          <td><strong class="pts">${j.goles}</strong></td>
+        </tr>`;});
+      }
+    }
+    if(!tableRows){gEl.innerHTML='';return;}
+    gEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">⚽ Goleadores</p>
     <div class="tabla-mini"><table><thead><tr>
       <th style="width:24px">#</th><th style="text-align:left">Jugador</th><th>⚽</th>
-    </tr></thead><tbody>${top.map((j,i)=>`<tr>
-      <td><span class="pos">${i+1}</span></td>
-      <td><div class="tr-eq">${escudoHTML(j.equipo,'me')}<span style="font-size:13px">${j.nombre}</span></div></td>
-      <td><strong class="pts">${j.goles}</strong></td>
-    </tr>`).join('')}</tbody></table></div>`;
+    </tr></thead><tbody>${tableRows}</tbody></table></div>`;
   } catch(e){ console.error(e); }
 }
 
@@ -3737,7 +3766,124 @@ function renderSegundaFase(){
     </div>`;
   }).join('') + `</div>`;
 
-    const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
+  const renderNonagonalTabla = (equipos, titulo, color) => {
+    const rows = equipos.map(r => ({n:r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
+    rows.sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||(b.gf-a.gf));
+    const tableRows = rows.map((r,i)=>{
+      const dif=r.gf-r.gc;
+      const isQuinto=r._quinto||r._topQuinto;
+      const isTied=r._tied;
+      return `<tr>
+        <td><span class="pos" style="color:${isTied?'#3b82f6':'#aaa'}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${isTied?'&nbsp;<span style="font-size:9px;color:#3b82f6;" title="Empate — sorteo">⚖️</span>':''}</div></td>
+        <td><strong class="pts">${r.pts}</strong></td>
+        <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.gc}</td>
+        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${color};margin:.5rem 0 .4rem;">${titulo}</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Ganados">G</th>
+        <th title="Empatados">E</th>
+        <th title="Perdidos">P</th>
+        <th title="Goles a favor">GF</th>
+        <th title="Goles en contra">GC</th>
+        <th title="Diferencia de gol">+/-</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+  };
+
+  const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
+
+  // Devuelve 'red', 'orange' o null según posición y empates en el límite
+  const calcDangerColor = (rows, idx, criterion) => {
+    const N = rows.length;
+    if (N < 2 || idx < N - 2) {
+      // Fuera de los últimos 2 — naranja solo si empata con el anteúltimo
+      if (idx >= N - 2) return null; // no llega aquí, pero por claridad
+      const valAnteultimo = criterion(rows[N-2]);
+      const outsideTied = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+      return (criterion(rows[idx]) === valAnteultimo && outsideTied > 0) ? 'orange' : null;
+    }
+    const valAnteultimo = criterion(rows[N-2]);
+    const valUltimo    = criterion(rows[N-1]);
+    const outsideTied  = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+    const tiedAtUltimo = rows.filter(r => criterion(r) === valUltimo).length;
+    if (idx === N-2) return outsideTied > 0 ? 'orange' : 'red';
+    // idx === N-1
+    const tiedWithAnteultimoOutside = criterion(rows[idx]) === valAnteultimo && outsideTied > 0;
+    return (tiedAtUltimo > 2 || tiedWithAnteultimoOutside) ? 'orange' : 'red';
+  };
+
+  const renderRevATabla = (equipos) => {
+    const rows = equipos.map(r => ({...r}));
+    rows.sort((a,b)=>{
+      const pa = a.pj>0 ? a.pts/a.pj : 0;
+      const pb = b.pj>0 ? b.pts/b.pj : 0;
+      return pb-pa || b.pts-a.pts;
+    });
+    const criterion = r => r.pj > 0 ? Math.trunc(r.pts/r.pj*1000) : -1;
+    const fmtProm = (pts,pj) => {
+      if(!pj) return '—';
+      return (Math.trunc(pts/pj*1000)/1000).toFixed(3).replace('.',',');
+    };
+    const tableRows = rows.map((r,i)=>{
+      const dc = calcDangerColor(rows, i, criterion);
+      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
+      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
+      const promSty = dc ? dataSty : 'color:var(--accent);';
+      const isQuinto=r._quinto||r._topQuinto;
+      return `<tr>
+        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
+        <td style="${dataSty}">${r.pj}</td>
+        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r.pts,r.pj)}</td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso A</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+        <th title="Promedio de puntos por partido">Prom.</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+  };
+
+  const renderRevBTabla = (equipos) => {
+    const rows = [...equipos].sort((a,b)=>b.pts-a.pts||(b.pj-a.pj));
+    const criterion = r => r.pts;
+    const tableRows = rows.map((r,i)=>{
+      const dc = calcDangerColor(rows, i, criterion);
+      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
+      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
+      const isQuinto=r._quinto||r._topQuinto;
+      return `<tr>
+        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
+        <td style="${dataSty}">${r.pj}</td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso B</p>
+    <div class="tabla-mini"><table>
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;min-width:150px;">Equipo</th>
+        <th title="Puntos">Pts</th>
+        <th title="Partidos jugados">PJ</th>
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table></div>`;
+  };
 
   // Quintos mini table
   const quintosOrdenados = [...quintos].sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf);
@@ -3757,7 +3903,7 @@ function renderSegundaFase(){
     </tr>`;
   }).join('');
   return `<div style="margin-bottom:2.5rem;">
-    <p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin:.5rem 0 .4rem;">Tabla de quintos</p>
+    <p class="sec-2dafase" style="margin:.5rem 0 .4rem;">Tabla de quintos</p>
     <div class="tabla-mini"><table>
       <thead><tr>
         <th style="width:30px">#</th>
@@ -3779,7 +3925,7 @@ function renderSegundaFase(){
 
   el.innerHTML = `
     <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
       <div>
         <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
         ${renderLista(nonA,'#2ea043')}
@@ -3788,16 +3934,12 @@ function renderSegundaFase(){
         <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
         ${renderLista(nonB,'#2ea043')}
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-      <div>
-        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida A</p>
-        ${renderLista(revA,'#e07040')}
-      </div>
-      <div>
-        <p style="${secSize}color:#e07040;margin:.5rem 0 .35rem;font-size:15px;">Reválida B</p>
-        ${renderLista(revB,'#e07040')}
-      </div>
+    </div>`;
+
+  const elD = document.getElementById('cont-descenso');
+  if(elD) elD.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;margin-top:1rem;">
+      <div>${renderRevATabla(revA)}</div>
+      <div>${renderRevBTabla(revB)}</div>
     </div>`;
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
