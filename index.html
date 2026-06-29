@@ -440,6 +440,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .calc-input{width:28px;height:28px;text-align:center;font-size:14px;font-weight:700;background:#f0f0f0;color:#111;border:1.5px solid #bbb;border-radius:4px;padding:0;appearance:textfield;-moz-appearance:textfield;}
 .calc-input:focus{outline:none;border-color:#4a9eff;background:#fff;}
 .calc-input::-webkit-inner-spin-button,.calc-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.calc-match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;}
 .calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
 </style>
@@ -2116,9 +2117,10 @@ function showH2HTooltip(event, matchesEncoded, isTouch=false){
     matches.map(m=>{
       const escL = ESCUDOS[m.local] ? `<img src="${ESCUDOS[m.local]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.local.charAt(0)}</span>`;
       const escV = ESCUDOS[m.visitante] ? `<img src="${ESCUDOS[m.visitante]}" style="width:20px;height:20px;object-fit:contain;">` : `<span style="font-size:11px;">${m.visitante.charAt(0)}</span>`;
+      const scoreClr = m._hypo ? '#ffffff' : 'var(--accent)';
       return `<div style="display:flex;align-items:center;gap:.4rem;padding:.15rem 0;">
         <span style="display:flex;justify-content:flex-end;width:24px;">${escL}</span>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);white-space:nowrap;min-width:40px;text-align:center;">${m.gl} — ${m.gv}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:${scoreClr};white-space:nowrap;min-width:40px;text-align:center;">${m.gl} — ${m.gv}</span>
         <span style="display:flex;width:24px;">${escV}</span>
       </div>`;
     }).join("");
@@ -4671,7 +4673,7 @@ function cargarCalculadora(){
   let html='';
   pares.forEach(par=>{
     const blocks=par.map(makeZonaBlock).filter(Boolean);
-    if(blocks.length) html+=`<div class="calc-form-grid">${blocks.join('')}</div>`;
+    if(blocks.length) html+=`<div class="calc-match-grid">${blocks.join('')}</div>`;
   });
 
   if(!hasPending){
@@ -4759,7 +4761,7 @@ function calcularProyeccion(){
     const glV=row.querySelector('.calc-gl').value.trim(),gvV=row.querySelector('.calc-gv').value.trim();
     if(glV!==''&&gvV!==''){
       const gl=parseInt(glV),gv=parseInt(gvV);
-      if(!isNaN(gl)&&!isNaN(gv)&&gl>=0&&gv>=0){fx[zona][fecha][idx].gl=gl;fx[zona][fecha][idx].gv=gv;}
+      if(!isNaN(gl)&&!isNaN(gv)&&gl>=0&&gv>=0){fx[zona][fecha][idx].gl=gl;fx[zona][fecha][idx].gv=gv;fx[zona][fecha][idx]._hypo=true;}
     }
   });
   const tabA=calcTablaFx('Zona A',fx),tabB=calcTablaFx('Zona B',fx);
@@ -4792,7 +4794,7 @@ function calcularProyeccion(){
 }
 
 function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,bestZona,tiedZonas){
-  const VB='rgba(74,222,128,.14)',RB='rgba(252,165,165,.11)',OB='rgba(251,191,36,.13)';
+  const VB='rgba(74,222,128,.06)',RB='rgba(252,165,165,.05)',OB='rgba(251,191,36,.06)';
   const VT='#4ade80',RT='#fca5a5',OT='#fbbf24';
 
   const rowClr=(z,i)=>{
@@ -4810,6 +4812,8 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,b
     const trs=rows.map((r,i)=>{
       const{bg,t}=rowClr(z,i);
       const ptColor=(i===0)?'#ffd700':(i<4)?'var(--accent)':'#ccc';
+      const h2hEnc=r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):'';
+      const h2hClr=r.h2h==='—'?'#555':'var(--accent)';
       return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:${bg};">
         <td style="padding:.26rem .28rem;font-size:11px;font-weight:700;color:${t};text-align:center;">${i+1}</td>
         <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;max-width:145px;">
@@ -4817,7 +4821,8 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,b
         </div></td>
         <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${r.pj}</td>
         <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${r.pts}</td>
-        <td style="padding:.26rem .28rem;font-size:10px;color:#777;text-align:center;">${r.h2h}</td>
+        <td class="h2h-cell" data-matches="${h2hEnc}" onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)"
+          style="padding:.26rem .28rem;font-size:10px;font-weight:${r.h2h==='—'?'400':'600'};color:${h2hClr};text-align:center;${h2hEnc?'cursor:pointer;':''}">${r.h2h}</td>
       </tr>`;
     }).join('');
     return `<div style="flex:1;min-width:0;">
@@ -4893,8 +4898,8 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,b
     <div class="calc-form-grid" style="margin-bottom:1.2rem;">${zonaTable(tabC,'Zona C')}${zonaTable(tabD,'Zona D')}</div>
     ${quintosSection}
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">CLASIFICACIÓN PROYECTADA</div>
-    <div class="calc-form-grid">${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}</div>
-    <div class="calc-form-grid" style="margin-bottom:0;">${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}</div>
+    <div class="calc-match-grid">${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}</div>
+    <div class="calc-match-grid" style="margin-bottom:0;">${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}</div>
   </div>`;
 }
 
