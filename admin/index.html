@@ -574,8 +574,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               <div><label>Peso (kg)</label><input type="number" id="jug-edit-peso" placeholder="75" step="1" min="40" max="120"></div>
             </div>
           </div>
-          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+          <div id="jug-edit-traspaso-info" style="display:none;font-size:11px;color:#74b9ff;margin-top:.75rem;padding:.4rem .6rem;background:rgba(74,158,255,.08);border-radius:4px;"></div>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm" onclick="cerrarEditJugador()">Cancelar</button>
+            <button class="btn btn-secondary btn-sm" id="btn-sincronizar-traspaso" style="display:none;" onclick="sincronizarConTraspaso()">🔗 Sincronizar datos</button>
             <button class="btn btn-danger btn-sm" onclick="eliminarJugador()">Eliminar</button>
             <button class="btn btn-primary btn-sm" onclick="guardarJugador()">Guardar</button>
           </div>
@@ -3600,7 +3602,8 @@ async function vincularEquipo(nombre, campo, valor){
 // ── JUGADORES ──
 let JUGADORES_CACHE = [];
 let EQUIPOS_ID_MAP = {}; // nombre -> id
-let _jugadorEditData = null; // datos originales del jugador abierto en el modal
+let _jugadorEditData = null;
+let _traspasoLinkedIds = [];
 
 function normalizarTexto(s){
   // Quita tildes, pasa a mayúsculas, colapsa espacios. Para comparar nombres sin importar acentos/case.
@@ -4300,10 +4303,66 @@ async function abrirEditJugador(id){
   sel.innerHTML = '<option value="">— Sin club —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}" ${j.equipos?.nombre===t?"selected":""}>${t}</option>`).join("");
   document.querySelector("#jug-modal div div:first-child").textContent = "Editar jugador";
+
+  // Verificar si tiene traspaso → mostrar botón sincronizar
+  _traspasoLinkedIds = [];
+  document.getElementById("btn-sincronizar-traspaso").style.display = "none";
+  document.getElementById("jug-edit-traspaso-info").style.display = "none";
+  const {data:transfers} = await sb.from("transferencias")
+    .select("jugador_origen_id,jugador_destino_id,eq_origen:equipos!equipo_origen_id(nombre),eq_destino:equipos!equipo_destino_id(nombre)")
+    .or(`jugador_origen_id.eq.${id},jugador_destino_id.eq.${id}`);
+  if(transfers?.length){
+    const linked = new Map();
+    transfers.forEach(t=>{
+      if(t.jugador_origen_id!==id) linked.set(t.jugador_origen_id, t.eq_origen?.nombre||'?');
+      if(t.jugador_destino_id!==id && t.jugador_destino_id!==t.jugador_origen_id) linked.set(t.jugador_destino_id, t.eq_destino?.nombre||'?');
+    });
+    _traspasoLinkedIds = [...linked.keys()];
+    if(_traspasoLinkedIds.length){
+      const clubes = [...linked.values()].join(", ");
+      document.getElementById("jug-edit-traspaso-info").textContent = `🔗 Tiene traspaso vinculado con: ${clubes}`;
+      document.getElementById("jug-edit-traspaso-info").style.display = "block";
+      document.getElementById("btn-sincronizar-traspaso").style.display = "inline-flex";
+    }
+  }
 }
 
 function cerrarEditJugador(){
   document.getElementById("jug-modal").style.display = "none";
+}
+
+async function sincronizarConTraspaso(){
+  if(!_traspasoLinkedIds.length){ alert("No hay jugadores vinculados para sincronizar."); return; }
+
+  // Leer campos biográficos del form actual
+  const campos = {
+    posicion:          document.getElementById("jug-edit-posicion")?.value||null,
+    pierna_habil:      document.getElementById("jug-edit-pierna")?.value||null,
+    fecha_nacimiento:  document.getElementById("jug-edit-fnac")?.value||null,
+    lugar_nacimiento:  document.getElementById("jug-edit-lugar")?.value.trim()||null,
+    altura_m:          parseFloat(document.getElementById("jug-edit-altura")?.value)||null,
+    peso_kg:           parseFloat(document.getElementById("jug-edit-peso")?.value)||null,
+  };
+  // Quitar los vacíos
+  const payload = Object.fromEntries(Object.entries(campos).filter(([,v])=>v));
+  if(!Object.keys(payload).length){ alert("No hay datos biográficos para copiar (todos los campos están vacíos)."); return; }
+
+  // Obtener info de los jugadores vinculados para mostrar en el confirm
+  const {data:linked} = await sb.from("jugadores")
+    .select("id,nombre_display,nombre,equipos(nombre)")
+    .in("id", _traspasoLinkedIds);
+  if(!linked?.length){ alert("No se encontraron los jugadores vinculados."); return; }
+
+  const nombres = linked.map(j=>`• ${j.nombre_display||j.nombre} (${j.equipos?.nombre||'Sin club'})`).join("\n");
+  const camposStr = Object.keys(payload).join(", ");
+  if(!confirm(`Copiar ${camposStr} a:\n${nombres}\n\n¿Confirmar?`)) return;
+
+  for(const j of linked){
+    const {error} = await sb.from("jugadores").update(payload).eq("id", j.id);
+    if(error){ alert(`Error actualizando ${j.nombre_display||j.nombre}: ${error.message}`); return; }
+  }
+  await cargarJugadores();
+  alert("✓ Datos sincronizados correctamente.");
 }
 
 async function guardarJugador(){
