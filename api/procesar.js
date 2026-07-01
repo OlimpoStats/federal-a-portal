@@ -150,28 +150,9 @@ export default async function handler(req, res) {
     const { image, prompt } = req.body;
     if (!image || !prompt) return res.status(400).json({ error: "Faltan image o prompt." });
 
-    const errors = [];
-
-    // 1. Groq primero (probar variantes de nombre en Vercel)
-    const groqKey = process.env.Groq_Planillas_1 || process.env.GROQ_Planillas_1 || process.env.GROQ_PLANILLAS_1;
-    if (groqKey) {
-      try {
-        const result = await callGroq(groqKey, image, prompt);
-        return res.status(200).json({
-          content: [{ type: "text", text: result.text }],
-          finishReason: result.finishReason,
-          provider: result.provider
-        });
-      } catch(err) {
-        errors.push(`Groq: ${err.message}`);
-        // Cuota o error → caer a Gemini
-      }
-    }
-
-    // 2. Gemini como fallback
     const geminiKeys = getGeminiKeys();
     if (!geminiKeys.length) {
-      return res.status(500).json({ error: "No hay API keys configuradas. Errores: " + errors.join(" | ") });
+      return res.status(500).json({ error: "No hay API keys de Gemini configuradas." });
     }
 
     let lastError;
@@ -185,12 +166,11 @@ export default async function handler(req, res) {
         });
       } catch(err) {
         lastError = err;
-        errors.push(`Gemini: ${err.message}`);
         if (!err.isQuota) break;
       }
     }
 
-    res.status(500).json({ error: lastError?.message || "Error procesando imagen.", detail: errors.join(" | ") });
+    res.status(500).json({ error: lastError?.message || "Error procesando imagen." });
 
   } catch(err) {
     res.status(500).json({ error: err.message });
