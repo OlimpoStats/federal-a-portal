@@ -1629,35 +1629,42 @@ async function procesarImagenes(){
   const prompt=`Sos un extractor de datos de planillas del torneo Federal A de fútbol argentino.
 
 La imagen muestra UNA MITAD de una planilla en espejo (equipo local o visitante).
-- Si el número de camiseta aparece a la IZQUIERDA de la foto → equipo LOCAL. Eventos en orden cronológico de IZQUIERDA a DERECHA (el más temprano primero).
-- Si el número de camiseta aparece a la DERECHA de la foto → equipo VISITANTE. Eventos en orden cronológico de DERECHA a IZQUIERDA (el más temprano está más a la derecha; leé los eventos al revés).
+- Si el número de camiseta aparece a la IZQUIERDA de la foto → equipo LOCAL. Los eventos de cada fila se leen de IZQUIERDA a DERECHA en orden cronológico.
+- Si el número de camiseta aparece a la DERECHA de la foto → equipo VISITANTE. Los eventos de cada fila se leen de DERECHA a IZQUIERDA en orden cronológico (el evento más temprano está más a la derecha).
+
+LECTURA DE MINUTOS — CRÍTICO:
+- Los minutos son números de 1 a 2 dígitos seguidos de apóstrofe: 7', 33', 71', 86'.
+- Leé cada dígito de izquierda a derecha: si ves "7" luego "1" → es 71, NO 17. Si ves "8" luego "6" → es 86, NO 68.
+- Tiempo adicional: aparece como 90+N' donde N es 1-6. Registrar como el entero 90+N (ej: 90+4 → minuto 94).
+- Validación: un minuto debe estar entre 1 y 96. Si el número que obtenés no entra en ese rango, releer.
+
+BANDERAS DE NACIONALIDAD — IGNORAR:
+- Junto a cada jugador aparece una pequeña bandera rectangular de país (Argentina u otra). NO es un evento. Ignorarla completamente. NO confundir con tarjetas amarillas o rojas.
 
 ESTRUCTURA DE CADA FILA:
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Foto del jugador.
 - Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolver EXACTAMENTE como aparece, mayúsculas, con la coma.
-- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero). AR siempre en camiseta #1 y #12. CP puede ser cualquier camiseta.
-- NO hay columna de ID numérico. Ignorar la bandera de nacionalidad.
-- Los eventos aparecen debajo o junto al nombre.
+- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero, siempre camiseta #1 y #12).
+- Los eventos aparecen como íconos pequeños debajo o junto al nombre, seguidos por el minuto'.
 
-ÍCONOS DE EVENTOS — identificar con precisión:
+ÍCONOS DE EVENTOS:
+1. BALÓN DE FÚTBOL (esfera con hexágonos, color normal/azulado) seguido de minuto' → tipo "gol".
+2. BALÓN DE FÚTBOL ROJO (esfera con hexágonos, color rojo) seguido de minuto' → tipo "gol_contra". NO suma a goles_equipo.
+3. Letra P dentro de CÍRCULO, borde BLANCO o del mismo color que el fondo → tipo "gol_penal".
+4. Letra P dentro de CÍRCULO con BORDE EXPLÍCITAMENTE ROJO → IGNORAR. No registrar nada.
+5. RECTÁNGULO VERTICAL AMARILLO seguido de minuto' → tipo "amarilla".
+6. RECTÁNGULO VERTICAL ROJO seguido de minuto' → tipo "roja".
+7. DOS RECTÁNGULOS SUPERPUESTOS (amarillo delante + rojo detrás) seguido de minuto' → tipo "doble_amarilla".
+8. FLECHA VERDE apuntando ARRIBA seguido de minuto'(N) → tipo "cambio_entra", extra="N". N es el número de camiseta (1-20) del jugador que sale.
+9. FLECHA ROJA apuntando ABAJO seguido de minuto'(N) → tipo "cambio_sale", extra="N". N es el número de camiseta (1-20) del jugador que entra.
+   IMPORTANTE: extra siempre es un número entre 1 y 20, nunca un nombre.
 
-1. BALÓN AZUL/CELESTE seguido de minuto' → tipo "gol".
-2. BALÓN ROJO seguido de minuto' → tipo "gol_contra" (gol en propia puerta). NO suma a goles_equipo.
-3. Letra P dentro de CÍRCULO con borde BLANCO/NORMAL seguido de minuto' → tipo "gol_penal".
-4. Letra P dentro de CÍRCULO con BORDE ROJO seguido de minuto' → IGNORAR completamente. No registrar nada.
-5. RECTÁNGULO AMARILLO seguido de minuto' → tipo "amarilla".
-6. RECTÁNGULO ROJO seguido de minuto' → tipo "roja" (expulsión directa).
-7. RECTÁNGULO AMARILLO + RECTÁNGULO ROJO superpuestos seguido de minuto' → tipo "doble_amarilla". Siempre precedido de una amarilla previa del mismo jugador en ese partido.
-8. FLECHA sólida VERDE apuntando HACIA ARRIBA seguido de minuto'(N) → tipo "cambio_entra", extra="N". Jugador ingresa al minuto indicado, reemplaza al camiseta N.
-9. FLECHA sólida ROJA apuntando HACIA ABAJO seguido de minuto'(N) → tipo "cambio_sale", extra="N". Jugador sale al minuto indicado, lo reemplaza el camiseta N.
-
-REGLAS CRÍTICAS:
-- cambio_entra aparece principalmente en suplentes (12-20). Si ves flecha verde en un titular es un error visual — ignorar.
-- cambio_sale aparece principalmente en titulares (1-11). Un suplente puede tener cambio_sale SOLO si ese mismo jugador ya tiene un cambio_entra en un minuto anterior.
-- Si un mismo jugador tiene flecha ARRIBA y flecha ABAJO en el MISMO minuto → error de lectura del ícono gráfico. Registrar SOLO cambio_sale, descartar la flecha arriba.
-- El balón ROJO (gol_contra) y la P con BORDE ROJO (penal errado) son eventos distintos. El penal errado SIEMPRE se ignora.
-- Solo suman a goles_equipo los tipos "gol" y "gol_penal". "gol_contra" nunca suma.
+REGLAS:
+- cambio_entra: solo en suplentes (12-20).
+- cambio_sale: en titulares, o en suplentes solo si ya tienen cambio_entra en minuto anterior.
+- Flecha arriba y abajo en el MISMO minuto para el mismo jugador → registrar SOLO cambio_sale.
+- Solo suman a goles_equipo: "gol" y "gol_penal".
 - Un jugador puede tener múltiples eventos.
 
 Respondé ÚNICAMENTE con JSON válido, sin markdown ni explicaciones:
@@ -1724,44 +1731,58 @@ async function procesarImagenUnificada(){
   const promptUni=`Sos un extractor de datos de planillas del torneo Federal A de fútbol argentino.
 
 La imagen muestra la planilla COMPLETA de ambos equipos en espejo:
-- LADO IZQUIERDO = equipo local. Número de camiseta a la IZQUIERDA. Eventos cronológicos de izquierda a derecha.
-- LADO DERECHO = equipo visitante. Número de camiseta a la DERECHA. Eventos cronológicos de derecha a izquierda (el más temprano está más a la derecha).
+- LADO IZQUIERDO = equipo local. Número de camiseta a la IZQUIERDA. Eventos de cada fila en orden cronológico de izquierda a derecha.
+- LADO DERECHO = equipo visitante. Número de camiseta a la DERECHA. Eventos de cada fila en orden cronológico de derecha a izquierda (el más temprano está más a la derecha).
 
-ESTRUCTURA DE CADA FILA (igual para ambos equipos):
+LECTURA DE MINUTOS — CRÍTICO:
+- Los minutos son números seguidos de apóstrofe: 7', 33', 71', 86'.
+- Leé dígito a dígito de izquierda a derecha: "7" luego "1" = 71 (NO 17). "8" luego "6" = 86 (NO 68).
+- Tiempo adicional: 90+N' donde N es 1-6. Registrar como entero: 90+4' → minuto 94.
+- Validación: todo minuto debe estar entre 1 y 96. Si el resultado no entra en ese rango, releer.
+
+BANDERAS DE NACIONALIDAD — IGNORAR:
+- Junto a cada jugador hay una pequeña bandera rectangular de país. NO es un evento. Ignorar completamente. NO confundir con tarjetas.
+
+ESTRUCTURA DE CADA FILA (igual para ambos lados):
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
-- Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Exactamente como aparece, mayúsculas, con la coma.
-- Junto al nombre: "CP" (capitán) o "AR" (arquero, siempre #1 y #12). Ignorar bandera de nacionalidad.
+- Nombre: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" en mayúsculas, exactamente como aparece.
+- Junto al nombre: "CP" (capitán) o "AR" (arquero, siempre #1 y #12).
+- Eventos: íconos pequeños con minuto', debajo o al lado del nombre.
 
 ÍCONOS DE EVENTOS:
-1. BALÓN AZUL/CELESTE seguido de minuto' → tipo "gol".
-2. BALÓN ROJO seguido de minuto' → tipo "gol_contra". NO suma a goles_equipo.
-3. Letra P en CÍRCULO borde NORMAL seguido de minuto' → tipo "gol_penal".
-4. Letra P en CÍRCULO borde ROJO seguido de minuto' → IGNORAR completamente.
-5. RECTÁNGULO AMARILLO seguido de minuto' → tipo "amarilla".
-6. RECTÁNGULO ROJO seguido de minuto' → tipo "roja".
-7. RECTÁNGULO AMARILLO + ROJO superpuestos seguido de minuto' → tipo "doble_amarilla".
-8. FLECHA sólida VERDE hacia ARRIBA seguido de minuto'(N) → tipo "cambio_entra", extra="N".
-9. FLECHA sólida ROJA hacia ABAJO seguido de minuto'(N) → tipo "cambio_sale", extra="N".
+1. BALÓN DE FÚTBOL (esfera con hexágonos, color normal/azulado) seguido de minuto' → "gol".
+2. BALÓN DE FÚTBOL ROJO (esfera, color rojo) seguido de minuto' → "gol_contra". NO suma.
+3. Letra P en CÍRCULO borde BLANCO/NORMAL seguido de minuto' → "gol_penal".
+4. Letra P en CÍRCULO borde ROJO → IGNORAR completamente.
+5. RECTÁNGULO VERTICAL AMARILLO seguido de minuto' → "amarilla".
+6. RECTÁNGULO VERTICAL ROJO seguido de minuto' → "roja".
+7. DOS RECTÁNGULOS SUPERPUESTOS (amarillo + rojo) seguido de minuto' → "doble_amarilla".
+8. FLECHA VERDE hacia ARRIBA seguido de minuto'(N) → "cambio_entra", extra="N". N = camiseta del que sale (número 1-20).
+9. FLECHA ROJA hacia ABAJO seguido de minuto'(N) → "cambio_sale", extra="N". N = camiseta del que entra (número 1-20).
+   IMPORTANTE: extra siempre es un número entre 1 y 20, nunca un nombre.
 
-REGLAS CRÍTICAS:
-- cambio_entra solo en suplentes (12-20). cambio_sale solo en titulares o en suplentes que ya entraron.
-- Si misma flecha ARRIBA y ABAJO en el mismo minuto → registrar SOLO cambio_sale.
-- Solo suman a goles_equipo: "gol" y "gol_penal". "gol_contra" nunca suma.
+REGLAS:
+- cambio_entra: solo en suplentes (12-20).
+- cambio_sale: en titulares; en suplentes solo si ya tienen cambio_entra previo.
+- Flecha arriba y abajo en el MISMO minuto → solo cambio_sale.
+- Solo suman a goles_equipo: "gol" y "gol_penal".
 
-Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves obligatorias: "local" y "visitante":
+Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves: "local" y "visitante":
 {
   "local": {
     "goles_equipo": 2,
     "jugadores": [
       {"numero": 1, "nota": "AR", "nombre": "LUNGARZO, JUAN PABLO", "titular": true, "eventos": []},
-      {"numero": 6, "nota": "CP", "nombre": "FERREYRA, MARTIN", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""}]}
+      {"numero": 7, "nota": "", "nombre": "ALONSO, CLAUDIO MARIANO", "titular": true, "eventos": [{"tipo":"gol","minuto":28,"extra":""},{"tipo":"amarilla","minuto":40,"extra":""},{"tipo":"cambio_sale","minuto":52,"extra":"17"}]},
+      {"numero": 17, "nota": "", "nombre": "GOMEZ, LEANDRO DAVID", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":52,"extra":"7"},{"tipo":"cambio_sale","minuto":67,"extra":"18"}]}
     ]
   },
   "visitante": {
     "goles_equipo": 1,
     "jugadores": [
-      {"numero": 1, "nota": "AR", "nombre": "GOMEZ, RODRIGO", "titular": true, "eventos": []},
-      {"numero": 9, "nota": "", "nombre": "SILVA, MARIO", "titular": true, "eventos": [{"tipo":"gol","minuto":38,"extra":""}]}
+      {"numero": 1, "nota": "AR", "nombre": "MORICHI, PATRICIO", "titular": true, "eventos": []},
+      {"numero": 7, "nota": "", "nombre": "CERATTO, LAUTARO ANIBAL", "titular": true, "eventos": [{"tipo":"amarilla","minuto":74,"extra":""},{"tipo":"cambio_sale","minuto":86,"extra":"17"}]},
+      {"numero": 17, "nota": "", "nombre": "AQUINO, ALEJANDRO ARIEL", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":86,"extra":"7"}]}
     ]
   }
 }`;
