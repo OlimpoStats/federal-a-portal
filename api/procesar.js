@@ -8,10 +8,22 @@ function detectMime(base64) {
   return "image/jpeg";
 }
 
+function withTimeout(promise, ms, label) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return promise.finally(() => clearTimeout(timer)).catch(e => {
+    if (e.name === "AbortError") throw Object.assign(new Error(`${label} timeout (${ms/1000}s)`), { isQuota: false });
+    throw e;
+  });
+}
+
 // ── GROQ ─────────────────────────────────────────────────────────────────────
 async function callGroq(key, image, prompt) {
   const mime = detectMime(image);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    signal: controller.signal,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -32,6 +44,7 @@ async function callGroq(key, image, prompt) {
     })
   });
 
+  clearTimeout(timer);
   let data;
   try { data = await response.json(); }
   catch(e) { throw new Error("Groq: respuesta no válida"); }
@@ -60,9 +73,12 @@ function getGeminiKeys() {
 
 async function callGeminiWithKey(key, image, prompt) {
   const mime = detectMime(image);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25000);
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
     {
+      signal: controller.signal,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -81,6 +97,7 @@ async function callGeminiWithKey(key, image, prompt) {
     }
   );
 
+  clearTimeout(timer);
   let data;
   try { data = await response.json(); }
   catch(e) { throw new Error("Gemini: respuesta no válida (posible timeout)"); }
@@ -135,8 +152,8 @@ export default async function handler(req, res) {
 
     const errors = [];
 
-    // 1. Groq primero
-    const groqKey = process.env.GROQ_Planillas_1;
+    // 1. Groq primero (probar variantes de nombre en Vercel)
+    const groqKey = process.env.Groq_Planillas_1 || process.env.GROQ_Planillas_1 || process.env.GROQ_PLANILLAS_1;
     if (groqKey) {
       try {
         const result = await callGroq(groqKey, image, prompt);

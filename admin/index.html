@@ -1524,16 +1524,31 @@ function dropFile(e,side){
 }
 function fileSelected(e,side){if(e.target.files[0])handleFile(e.target.files[0],side);}
 
+function comprimirImagen(dataUrl, maxW=1280, quality=0.82){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const canvas=document.createElement("canvas");
+      canvas.width=w; canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL("image/jpeg",quality));
+    };
+    img.src=dataUrl;
+  });
+}
+
 function handleFile(file,side){
   const reader=new FileReader();
-  reader.onload=ev=>{
-    const b64=ev.target.result;
+  reader.onload=async ev=>{
+    const b64raw=ev.target.result;
+    const b64=await comprimirImagen(b64raw);
     const previewId=side==="local"?"preview-local":"preview-visit";
     const zoneId=side==="local"?"zone-local":"zone-visit";
     document.getElementById(previewId).src=b64;
     document.getElementById(previewId).style.display="block";
     document.getElementById(zoneId).classList.add("has-img");
-    // Actualizar texto de la zona para confirmar que se cargó
     const lbl=zoneId==="zone-local"?"label-local":"label-visit";
     if(side==="local") imgLocalB64=b64.split(",")[1];
     else imgVisitB64=b64.split(",")[1];
@@ -1544,8 +1559,8 @@ function handleFile(file,side){
 
 function handleFileUnificada(file){
   const reader=new FileReader();
-  reader.onload=ev=>{
-    const b64=ev.target.result;
+  reader.onload=async ev=>{
+    const b64=await comprimirImagen(ev.target.result, 1600);
     document.getElementById("preview-uni").src=b64;
     document.getElementById("preview-uni").style.display="block";
     document.getElementById("zone-uni").classList.add("has-img");
