@@ -74,7 +74,7 @@ function getGeminiKeys() {
 async function callGeminiWithKey(key, image, prompt) {
   const mime = detectMime(image);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 25000);
+  const timer = setTimeout(() => controller.abort(), 55000);
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
     {
