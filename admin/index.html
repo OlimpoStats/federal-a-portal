@@ -1526,44 +1526,50 @@ async function procesarImagenes(){
   document.getElementById("title-plan-visit").textContent="Planilla — "+partidoActual.visit;
   document.getElementById("loading-overlay").classList.add("on");
 
-  const prompt=`Sos un extractor de datos de planillas oficiales del torneo Federal A de fútbol argentino.
+  const prompt=`Sos un extractor de datos de planillas del torneo Federal A de fútbol argentino.
 
-La imagen muestra una tabla de alineación con estas columnas de izquierda a derecha:
-- "Núm." (primera columna): número de orden del 1 al 20. Jugadores 1-11 son TITULARES, 12-20 son SUPLENTES.
-- "Núm" (segunda columna): ID numérico del jugador, siempre 6-7 dígitos. Es el identificador único. NO confundas con el número de orden.
-- Badge de color (tercera columna, opcional): badge naranja con texto "AR" = arquero, badge verde con texto "CP" = capitán. Cada equipo tiene exactamente UN capitán. Leé con cuidado esta columna para todos los jugadores. Si no hay badge visible, nota = "". El capitán (CP) puede ser titular o suplente.
-- "Jugador": nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolvé el nombre EXACTAMENTE como aparece en la planilla, con la coma, en mayúsculas. NO lo conviertas. Ej: si la planilla dice "LOPEZ PEREZ, TOMAS JUAN", devolvé "LOPEZ PEREZ, TOMAS JUAN". El sistema lo formateará solo.
-- Columna de eventos (derecha del nombre).
+La imagen muestra UNA MITAD de una planilla en espejo (equipo local o visitante).
+- Si el número de camiseta aparece a la IZQUIERDA de la foto → equipo LOCAL. Eventos en orden cronológico de IZQUIERDA a DERECHA (el más temprano primero).
+- Si el número de camiseta aparece a la DERECHA de la foto → equipo VISITANTE. Eventos en orden cronológico de DERECHA a IZQUIERDA (el más temprano está más a la derecha; leé los eventos al revés).
 
-ÍCONOS DE EVENTOS:
+ESTRUCTURA DE CADA FILA:
+- Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
+- Foto del jugador.
+- Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolver EXACTAMENTE como aparece, mayúsculas, con la coma.
+- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero). AR siempre en camiseta #1 y #12. CP puede ser cualquier camiseta.
+- NO hay columna de ID numérico. Ignorar la bandera de nacionalidad.
+- Los eventos aparecen debajo o junto al nombre.
 
-1. RUEDA DENTADA / ENGRANAJE (ícono circular con dientes) seguido de minuto → tipo "gol". ESTE ES EL ÍCONO DE GOL. NUNCA lo llames cambio_sale ni ningún otro tipo.
+ÍCONOS DE EVENTOS — identificar con precisión:
 
-2. RECTÁNGULO AMARILLO VERTICAL seguido de minuto → tipo "amarilla".
-
-3. RECTÁNGULO ROJO VERTICAL seguido de minuto → tipo "roja".
-
-4. DOS RECTÁNGULOS superpuestos (amarillo+rojo) → tipo "doble_amarilla".
-
-5. FLECHAS CIRCULARES VERDES (ícono refresh verde) seguido de minuto'(número) → tipo "cambio_entra". SOLO en suplentes (filas 12-20). El número entre paréntesis es el número de camiseta del que SALE. Ej: 63'(5) = entra en el 63, sale el #5.
+1. BALÓN AZUL/CELESTE seguido de minuto' → tipo "gol".
+2. BALÓN ROJO seguido de minuto' → tipo "gol_contra" (gol en propia puerta). NO suma a goles_equipo.
+3. Letra P dentro de CÍRCULO con borde BLANCO/NORMAL seguido de minuto' → tipo "gol_penal".
+4. Letra P dentro de CÍRCULO con BORDE ROJO seguido de minuto' → IGNORAR completamente. No registrar nada.
+5. RECTÁNGULO AMARILLO seguido de minuto' → tipo "amarilla".
+6. RECTÁNGULO ROJO seguido de minuto' → tipo "roja" (expulsión directa).
+7. RECTÁNGULO AMARILLO + RECTÁNGULO ROJO superpuestos seguido de minuto' → tipo "doble_amarilla". Siempre precedido de una amarilla previa del mismo jugador en ese partido.
+8. FLECHA sólida VERDE apuntando HACIA ARRIBA seguido de minuto'(N) → tipo "cambio_entra", extra="N". Jugador ingresa al minuto indicado, reemplaza al camiseta N.
+9. FLECHA sólida ROJA apuntando HACIA ABAJO seguido de minuto'(N) → tipo "cambio_sale", extra="N". Jugador sale al minuto indicado, lo reemplaza el camiseta N.
 
 REGLAS CRÍTICAS:
-- RUEDA DENTADA = GOL siempre. Nunca cambio_sale.
-- FLECHAS VERDES = cambio_entra siempre. Solo en suplentes.
-- NO uses "cambio_sale". Nunca. Ese tipo no existe en la planilla.
-- Un jugador puede tener múltiples eventos separados.
-- Contá "gol" y "gol_penal" para goles_equipo. "gol_contra" no suma.
+- cambio_entra aparece principalmente en suplentes (12-20). Si ves flecha verde en un titular es un error visual — ignorar.
+- cambio_sale aparece principalmente en titulares (1-11). Un suplente puede tener cambio_sale SOLO si ese mismo jugador ya tiene un cambio_entra en un minuto anterior.
+- Si un mismo jugador tiene flecha ARRIBA y flecha ABAJO en el MISMO minuto → error de lectura del ícono gráfico. Registrar SOLO cambio_sale, descartar la flecha arriba.
+- El balón ROJO (gol_contra) y la P con BORDE ROJO (penal errado) son eventos distintos. El penal errado SIEMPRE se ignora.
+- Solo suman a goles_equipo los tipos "gol" y "gol_penal". "gol_contra" nunca suma.
+- Un jugador puede tener múltiples eventos.
 
-Respondé ÚNICAMENTE con JSON válido, sin markdown:
+Respondé ÚNICAMENTE con JSON válido, sin markdown ni explicaciones:
 {
   "goles_equipo": 2,
   "jugadores": [
-    {"numero": 1, "id": 3177974, "nota": "AR", "nombre": "LUNGARZO, JUAN PABLO", "titular": true, "eventos": []},
-    {"numero": 6, "id": 3670942, "nota": "CP", "nombre": "FERREYRA, MARTIN IGNACIO", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
-    {"numero": 11, "id": 3185627, "nota": "", "nombre": "RAMIREZ, DIEGO IGNACIO", "titular": true, "eventos": [{"tipo":"gol","minuto":70,"extra":""}]},
-    {"numero": 5, "id": 3807010, "nota": "", "nombre": "STANCATO, AGUSTIN", "titular": true, "eventos": [{"tipo":"amarilla","minuto":5,"extra":""}]},
-    {"numero": 15, "id": 3685794, "nota": "", "nombre": "FERNANDEZ, TOBIAS SEBASTIAN", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":63,"extra":"5"}]},
-    {"numero": 17, "id": 4794394, "nota": "", "nombre": "LLANOS, SANTIAGO GABRIEL", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":71,"extra":"8"}]}
+    {"numero": 1, "nota": "AR", "nombre": "LUNGARZO, JUAN PABLO", "titular": true, "eventos": []},
+    {"numero": 6, "nota": "CP", "nombre": "FERREYRA, MARTIN IGNACIO", "titular": true, "eventos": [{"tipo":"gol","minuto":67,"extra":""},{"tipo":"amarilla","minuto":83,"extra":""}]},
+    {"numero": 10, "nota": "", "nombre": "RODRIGUEZ, JUAN MANUEL", "titular": true, "eventos": [{"tipo":"amarilla","minuto":65,"extra":""},{"tipo":"cambio_sale","minuto":65,"extra":"13"}]},
+    {"numero": 3, "nota": "", "nombre": "CUPOLO, NICOLAS PABLO", "titular": true, "eventos": [{"tipo":"gol","minuto":2,"extra":""},{"tipo":"gol_contra","minuto":51,"extra":""}]},
+    {"numero": 13, "nota": "", "nombre": "BENITEZ, JONATHAN", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":65,"extra":"10"},{"tipo":"gol_penal","minuto":69,"extra":""}]},
+    {"numero": 15, "nota": "", "nombre": "FERNANDEZ, TOBIAS SEBASTIAN", "titular": false, "eventos": [{"tipo":"cambio_entra","minuto":46,"extra":"3"}]}
   ]
 }`;
 
