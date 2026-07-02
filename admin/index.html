@@ -1505,7 +1505,7 @@ function poblarImgStrip(){
   if(imgUnificadaB64) imgs.push({src:"data:image/jpeg;base64,"+imgUnificadaB64, label:"Planilla unificada"});
   if(!imgs.length){ strip.style.display="none"; return; }
   inner.innerHTML = imgs.map(img=>`<img class="img-strip-thumb" src="${img.src}" title="${img.label}" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'180px':'none'">`).join("");
-  strip.style.display = "";
+  strip.style.display = "block";
 }
 
 function resetTodo(){
