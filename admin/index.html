@@ -3117,7 +3117,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
         const mejorPropio = candidatosPropio?.[0] || null;
         if(mejorPropio && mejorPropio.score >= 30){
           // Zona gris: candidato cercano pero inseguro → diferir para revisión
-          pendientesRevision.push({ tipo:"gris", nombrePlanilla:nombreRaw, camiseta:j.numero, candidato:mejorPropio.jugador, score:mejorPropio.score, jugadorDatos:j });
+          pendientesRevision.push({ tipo:"gris", nombrePlanilla:nombreRaw, camiseta:j.numero, candidato:mejorPropio.jugador, candidatos:candidatosPropio, score:mejorPropio.score, jugadorDatos:j });
         } else {
           // Score muy bajo en plantel propio → buscar en otros equipos (posible transferencia)
           const { jugador: jugOtro, score: scoreOtro } = buscarEnPlantel(nombreRaw, plantelOtros);
@@ -3246,21 +3246,35 @@ function mostrarRevisionJugadores(pendientes, equipoNombre){
     _revisionResolve = resolve;
     _revisionItems = pendientes;
     document.getElementById("revision-subtitulo").textContent =
-      `Algunos jugadores de ${equipoNombre} necesitan confirmación antes de guardar.`;
+      `Algunos jugadores de ${equipoNombre} no pudieron identificarse con certeza. Elegí quién es cada uno.`;
     document.getElementById("revision-lista").innerHTML = pendientes.map((item,i) => {
-      const esGris = item.tipo === "gris";
-      const candidatoHTML = esGris
-        ? `<div style="font-size:12px;color:var(--muted);margin:.2rem 0;">Candidato en plantel: <strong style="color:#5daadd;">${item.candidato.nombre_display||item.candidato.nombre}</strong> <span style="color:#888;">(similitud ${item.score}/100)</span></div>`
-        : `<div style="font-size:12px;color:#e57373;margin:.2rem 0;">No encontrado en el plantel de este equipo.</div>`;
-      const chkMismo = esGris && item.score >= 50 ? "checked" : "";
-      const chkNuevo = chkMismo ? "" : "checked";
-      return `<div style="border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;background:var(--bg);">
-        <div style="font-size:13px;font-weight:600;">#${item.camiseta} · ${item.nombrePlanilla}</div>
-        ${candidatoHTML}
-        <div style="display:flex;gap:1rem;margin-top:.4rem;flex-wrap:wrap;">
-          ${esGris?`<label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-size:13px;"><input type="radio" name="rev-${i}" value="mismo" ${chkMismo} style="accent-color:var(--accent);"> Es el mismo jugador</label>`:""}
-          <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-size:13px;"><input type="radio" name="rev-${i}" value="nuevo" ${chkNuevo} style="accent-color:var(--accent);"> ${esGris?"Crear nuevo":"Crear jugador nuevo"}</label>
-        </div>
+      const candidatos = item.candidatos || (item.candidato ? [{jugador:item.candidato, score:item.score}] : []);
+      // Pre-seleccionar el mejor candidato si score >= 60, sino "nuevo"
+      const preselIdx = (candidatos.length && candidatos[0].score >= 60) ? 0 : -1;
+
+      const candidatosHTML = candidatos.map((c, ci) => {
+        const checked = ci === preselIdx ? "checked" : "";
+        const scoreColor = c.score >= 60 ? "#5dba7d" : c.score >= 40 ? "#e8c44a" : "#e57373";
+        return `<label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:5px;border:1px solid ${checked?"var(--accent)":"var(--border)"};margin-bottom:.25rem;" id="rev-label-${i}-${ci}">
+          <input type="radio" name="rev-${i}" value="candidato-${ci}" ${checked} style="accent-color:var(--accent);"
+            onchange="document.querySelectorAll('[id^=rev-label-${i}-]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'">
+          <span style="flex:1;font-size:13px;">${c.jugador.nombre_display||c.jugador.nombre}</span>
+          <span style="font-size:11px;color:${scoreColor};font-family:'Barlow Condensed',sans-serif;">${c.score}/100</span>
+        </label>`;
+      }).join("");
+
+      const nuevoChecked = preselIdx === -1 ? "checked" : "";
+      return `<div style="border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.6rem;background:var(--bg);">
+        <div style="font-size:14px;font-weight:700;margin-bottom:.5rem;">#${item.camiseta} &nbsp;·&nbsp; <span style="color:var(--accent);">${item.nombrePlanilla}</span></div>
+        ${candidatos.length
+          ? `<div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Posibles coincidencias en el plantel:</div>${candidatosHTML}`
+          : `<div style="font-size:12px;color:#e57373;margin-bottom:.4rem;">No se encontró ningún candidato en el plantel.</div>`
+        }
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:5px;border:1px solid ${nuevoChecked?"var(--accent)":"var(--border)"};margin-top:${candidatos.length?".35rem":"0"};" id="rev-label-${i}-nuevo">
+          <input type="radio" name="rev-${i}" value="nuevo" ${nuevoChecked} style="accent-color:var(--accent);"
+            onchange="document.querySelectorAll('[id^=rev-label-${i}-]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'">
+          <span style="font-size:13px;color:var(--muted);">Crear jugador nuevo (no está en el plantel)</span>
+        </label>
       </div>`;
     }).join('');
     document.getElementById("modal-revision").style.display = "flex";
@@ -3272,7 +3286,14 @@ function resolverRevisionTodo(confirmar){
   if(!confirmar){ if(_revisionResolve){_revisionResolve(null);_revisionResolve=null;} return; }
   const decisiones = _revisionItems.map((item,i)=>{
     const sel = document.querySelector(`input[name="rev-${i}"]:checked`);
-    return {item, decision: sel?.value||"nuevo"};
+    const val = sel?.value || "nuevo";
+    if(val.startsWith("candidato-")){
+      const ci = parseInt(val.replace("candidato-",""));
+      const candidatos = item.candidatos || (item.candidato ? [{jugador:item.candidato, score:item.score}] : []);
+      const jugadorElegido = candidatos[ci]?.jugador || item.candidato;
+      return { item: {...item, candidato: jugadorElegido}, decision: "mismo" };
+    }
+    return { item, decision: "nuevo" };
   });
   if(_revisionResolve){_revisionResolve(decisiones);_revisionResolve=null;}
 }
@@ -4270,6 +4291,21 @@ let EQUIPOS_ID_MAP = {}; // nombre -> id
 let _jugadorEditData = null;
 let _traspasoLinkedIds = [];
 
+function levenshtein(a, b){
+  const m=a.length, n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+  return dp[m][n];
+}
+function esFuzzyMatch(a, b){
+  const maxLen=Math.max(a.length,b.length);
+  const dist=levenshtein(a,b);
+  if(maxLen>=8) return dist<=2;
+  if(maxLen>=5) return dist<=1;
+  return false;
+}
+
 function normalizarTexto(s){
   // Quita tildes, pasa a mayúsculas, colapsa espacios. Para comparar nombres sin importar acentos/case.
   return String(s||"")
@@ -4304,14 +4340,21 @@ function scoreMatchJugador(rawPlanilla, jugadorDB){
   if(!p.apellidos.length || !d.apellidos.length) return 0;
 
   let score = 0;
-  // Primer apellido coincide → peso fuerte
+  // Primer apellido exacto → peso máximo
   if(p.apellidos[0] === d.apellidos[0]) score += 60;
-  // Algún apellido adicional coincide
+  // Primer apellido fuzzy (typo) → casi igual
+  else if(esFuzzyMatch(p.apellidos[0], d.apellidos[0])) score += 52;
+  // Algún otro apellido exacto
   else if(p.apellidos.some(a=>d.apellidos.includes(a))) score += 35;
+  // Algún otro apellido fuzzy
+  else if(p.apellidos.some(a=>d.apellidos.some(b=>esFuzzyMatch(a,b)))) score += 28;
 
-  // Primer nombre coincide → peso fuerte
+  // Primer nombre exacto
   if(p.nombres[0] && d.nombres[0] && p.nombres[0] === d.nombres[0]) score += 40;
+  // Algún nombre exacto
   else if(p.nombres.some(n=>d.nombres.includes(n))) score += 20;
+  // Primer nombre fuzzy
+  else if(p.nombres[0] && d.nombres[0] && esFuzzyMatch(p.nombres[0], d.nombres[0])) score += 15;
 
   return score;
 }
