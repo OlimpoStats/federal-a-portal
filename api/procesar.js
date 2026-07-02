@@ -129,11 +129,7 @@ export default async function handler(req, res) {
     const keys = getGeminiKeys();
     if (!keys.length) return res.status(500).json({ error: "No hay API keys de Gemini configuradas." });
 
-    // Intentar: gemini-2.5-flash con cada key, luego gemini-1.5-flash como fallback
-    const attempts = [
-      ...keys.map(k => ({ key: k, model: "gemini-2.5-flash" })),
-      ...keys.map(k => ({ key: k, model: "gemini-1.5-flash" })),
-    ];
+    const attempts = keys.map(k => ({ key: k, model: "gemini-2.5-flash" }));
 
     let lastError;
     for (const { key, model } of attempts) {
