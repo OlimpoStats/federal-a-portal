@@ -1632,54 +1632,57 @@ La imagen muestra UNA MITAD de una planilla en espejo (equipo local o visitante)
 - Si el número de camiseta aparece a la IZQUIERDA de la foto → equipo LOCAL. Los eventos de cada fila se leen de IZQUIERDA a DERECHA en orden cronológico.
 - Si el número de camiseta aparece a la DERECHA de la foto → equipo VISITANTE. Los eventos de cada fila se leen de DERECHA a IZQUIERDA en orden cronológico (el evento más temprano está más a la derecha).
 
-LECTURA DE MINUTOS — CRÍTICO:
-- Los minutos son números de 1 a 2 dígitos seguidos de apóstrofe: 7', 33', 71', 86'.
-- Leé cada dígito de izquierda a derecha: si ves "7" luego "1" → es 71, NO 17. Si ves "8" luego "6" → es 86, NO 68.
-- Tiempo adicional: aparece como 90+N' (ej: 90+4'). Registrar SOLO el número base como entero: 90+4' → minuto 90. 45+2' → minuto 45.
-- Validación: un minuto debe estar entre 1 y 90.
-
-BANDERAS DE NACIONALIDAD — IGNORAR:
-- Junto a cada jugador aparece una pequeña bandera rectangular de país (Argentina u otra). NO es un evento. Ignorarla completamente. NO confundir con tarjetas amarillas o rojas.
-
 ESTRUCTURA DE CADA FILA:
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
-- Foto del jugador.
 - Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolver EXACTAMENTE como aparece, mayúsculas, con la coma.
-- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero, siempre camiseta #1 y #12).
-- Los eventos aparecen como íconos pequeños debajo o junto al nombre, seguidos por el minuto'.
+- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero, #1 y #12). Puede haber una pequeña bandera de país — IGNORAR, no es un evento.
+- Los eventos aparecen como íconos pequeños debajo o junto al nombre, en el orden cronológico indicado arriba.
 
-ÍCONOS DE EVENTOS — IDENTIFICACIÓN POR FORMA (leer esto antes de catalogar):
+══════════════════════════════════════════
+PASO 1 — DETECTAR PARÉNTESIS (hacé esto ANTES de identificar el ícono):
 
-FORMA A — ESFERA CIRCULAR (pelota de fútbol con hexágonos, claramente redonda):
-  → color normal/azulado: tipo "gol"
-  → color ROJO: tipo "gol_contra" (NO suma a goles_equipo)
-  → JAMÁS confundir con tarjeta. La pelota es REDONDA, sin ángulos.
+Para cada evento, mirá si después del minuto' hay un número entre paréntesis:
 
-FORMA B — RECTÁNGULO VERTICAL FINO (más alto que ancho, ángulos rectos, sin curvatura):
-  → AMARILLO solo → tipo "amarilla"
-  → ROJO solo → tipo "roja"
-  → DOS RECTÁNGULOS superpuestos (amarillo adelante + rojo detrás) → tipo "doble_amarilla"
-  → JAMÁS es un gol. JAMÁS es una flecha. NUNCA lleva número entre paréntesis.
-  → ATENCIÓN: la bandera de país (también rectangular) es más ancha que alta y va pegada al nombre — IGNORAR.
+  SÍ hay (N) → ej: 61'(19) o 90+4'(13) → el evento ES UN CAMBIO, sin importar el ícono.
+    - Jugador TITULAR (1-11): tipo "cambio_sale", extra=N
+    - Jugador SUPLENTE (12-20) sin cambio_entra previo: tipo "cambio_entra", extra=N
+    - Jugador SUPLENTE (12-20) con cambio_entra previo: tipo "cambio_sale", extra=N
+    - N es el número de camiseta del otro jugador involucrado (entre 1 y 20).
+    - SOLO registrar N si está CLARAMENTE visible. Si no se ve bien, dejar extra="".
 
-FORMA C — FLECHA TRIANGULAR:
-  → Verde apuntando ARRIBA + minuto'(N) → tipo "cambio_entra", extra=N (camiseta del que sale, 1-20)
-  → Roja apuntando ABAJO + minuto'(N) → tipo "cambio_sale", extra=N (camiseta del que entra, 1-20)
-  → SOLO las flechas de cambio tienen número entre paréntesis. Las tarjetas NUNCA.
+  NO hay (N) → el evento NO ES un cambio. Ir al PASO 2.
 
-FORMA D — Letra P en CÍRCULO:
-  → Borde blanco o del color del fondo → tipo "gol_penal"
-  → Borde ROJO → IGNORAR completamente
+══════════════════════════════════════════
+PASO 2 — IDENTIFICAR EL ÍCONO (solo para eventos SIN paréntesis):
 
-REGLA ANTI-ERROR: Si un ícono tiene ángulos rectos → es tarjeta (B). Si es redondo → es pelota (A). Si es flecha → es cambio (C). Nunca mezclar.
+  ESFERA CIRCULAR (pelota de fútbol, claramente redonda):
+    → color normal/azulado → "gol"
+    → color ROJO → "gol_contra" (NO suma a goles_equipo)
 
-REGLAS:
-- cambio_entra: solo en suplentes (12-20).
-- cambio_sale: en titulares; en suplentes solo si ya tienen cambio_entra previo.
-- Flecha arriba y abajo en el MISMO minuto para el mismo jugador → registrar SOLO cambio_sale.
-- Un jugador con doble_amarilla o roja (EXPULSADO) NO puede tener cambio_sale — son excluyentes.
-- Solo suman a goles_equipo: "gol" y "gol_penal". Al terminar verificar: goles_equipo = cantidad de esos eventos.
-- Un jugador puede tener múltiples eventos.
+  RECTÁNGULO VERTICAL FINO (más alto que ancho, ángulos rectos):
+    → AMARILLO solo → "amarilla"
+    → ROJO solo → "roja"
+    → DOS RECTÁNGULOS superpuestos (amarillo adelante + rojo detrás) → "doble_amarilla"
+
+  Letra P en CÍRCULO:
+    → Borde blanco o normal → "gol_penal"
+    → Borde ROJO → IGNORAR (penal fallado)
+
+══════════════════════════════════════════
+LECTURA DE MINUTOS:
+- Leé dígito a dígito de izquierda a derecha: "7" "1" = 71, NO 17.
+- Tiempo adicional (90+4', 45+2'): registrar SOLO el número base. 90+4' → minuto 90. 45+2' → minuto 45.
+- Rango válido: 1 a 90.
+
+COHERENCIA TEMPORAL (verificar antes de responder):
+- Si un jugador tiene cambio_sale a los X', no puede tener ningún evento en minuto > X'.
+- Si un jugador tiene roja o doble_amarilla a los X', no puede tener eventos en minuto > X'.
+- Un titular sin cambio_sale estuvo en cancha todo el partido.
+- Un suplente sin cambio_entra no participó del partido.
+
+VALIDACIÓN FINAL:
+- goles_equipo debe ser igual al número de eventos tipo "gol" + "gol_penal" de todos los jugadores.
+- Si no coincide, hay un ícono mal identificado — corregirlo.
 
 Respondé ÚNICAMENTE con JSON válido, sin markdown ni explicaciones:
 {
@@ -1749,49 +1752,55 @@ La imagen muestra la planilla COMPLETA de ambos equipos en espejo:
 - LADO IZQUIERDO = equipo local. Número de camiseta a la IZQUIERDA. Eventos de cada fila en orden cronológico de izquierda a derecha.
 - LADO DERECHO = equipo visitante. Número de camiseta a la DERECHA. Eventos de cada fila en orden cronológico de derecha a izquierda (el más temprano está más a la derecha).
 
-LECTURA DE MINUTOS — CRÍTICO:
-- Los minutos son números seguidos de apóstrofe: 7', 33', 71', 86'.
-- Leé dígito a dígito de izquierda a derecha: "7" luego "1" = 71 (NO 17). "8" luego "6" = 86 (NO 68).
-- Tiempo adicional: aparece como 90+N' o 45+N'. Registrar SOLO el número base: 90+4' → minuto 90. 45+2' → minuto 45.
-- Validación: todo minuto debe estar entre 1 y 90.
-
 ESTRUCTURA DE CADA FILA (igual para ambos lados):
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Nombre: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" en mayúsculas, exactamente como aparece.
 - Junto al nombre: "CP" (capitán) o "AR" (arquero, siempre #1 y #12). Puede haber una bandera de país — IGNORAR.
 - Eventos: íconos pequeños con minuto', debajo o al lado del nombre.
 
-ÍCONOS DE EVENTOS — IDENTIFICACIÓN POR FORMA:
+══════════════════════════════════════════
+PASO 1 — DETECTAR PARÉNTESIS (hacé esto ANTES de identificar el ícono):
 
-FORMA A — ESFERA CIRCULAR (pelota de fútbol con hexágonos, claramente redonda):
-  → color normal/azulado: "gol"
-  → color ROJO: "gol_contra" (NO suma a goles_equipo)
-  → La pelota es REDONDA, sin ángulos. JAMÁS confundir con tarjeta.
+Para cada evento, mirá si después del minuto' hay un número entre paréntesis:
 
-FORMA B — RECTÁNGULO VERTICAL FINO (más alto que ancho, ángulos rectos, sin curvatura):
-  → AMARILLO solo → "amarilla"
-  → ROJO solo → "roja"
-  → DOS RECTÁNGULOS superpuestos (amarillo adelante + rojo detrás) → "doble_amarilla"
-  → JAMÁS es un gol. JAMÁS es una flecha. NUNCA lleva número entre paréntesis.
-  → Bandera de país (rectangular, más ancha que alta, pegada al nombre) → IGNORAR.
+  SÍ hay (N) → ej: 61'(19) o 90+4'(13) → el evento ES UN CAMBIO, sin importar el ícono.
+    - Jugador TITULAR (1-11): tipo "cambio_sale", extra=N
+    - Jugador SUPLENTE (12-20) sin cambio_entra previo: tipo "cambio_entra", extra=N
+    - Jugador SUPLENTE (12-20) con cambio_entra previo: tipo "cambio_sale", extra=N
+    - N es el número de camiseta del otro jugador involucrado (entre 1 y 20).
+    - SOLO registrar N si está CLARAMENTE visible. Si no se ve bien, dejar extra="".
 
-FORMA C — FLECHA TRIANGULAR:
-  → Verde apuntando ARRIBA + minuto'(N) → "cambio_entra", extra=N (camiseta del que sale, 1-20)
-  → Roja apuntando ABAJO + minuto'(N) → "cambio_sale", extra=N (camiseta del que entra, 1-20)
-  → SOLO los cambios tienen número entre paréntesis. Las tarjetas NUNCA.
+  NO hay (N) → el evento NO ES un cambio. Ir al PASO 2.
 
-FORMA D — Letra P en CÍRCULO:
-  → Borde blanco/normal → "gol_penal"
-  → Borde ROJO → IGNORAR
+══════════════════════════════════════════
+PASO 2 — IDENTIFICAR EL ÍCONO (solo para eventos SIN paréntesis):
 
-REGLA ANTI-ERROR: ¿Tiene ángulos rectos? → tarjeta (B). ¿Es redondo? → pelota (A). ¿Es flecha? → cambio (C).
+  ESFERA CIRCULAR (pelota de fútbol, claramente redonda):
+    → color normal/azulado → "gol"
+    → color ROJO → "gol_contra" (NO suma a goles_equipo)
 
-REGLAS:
-- cambio_entra: solo en suplentes (12-20).
-- cambio_sale: en titulares; en suplentes solo si ya tienen cambio_entra previo.
-- Flecha arriba y abajo en el MISMO minuto → solo cambio_sale.
-- Un jugador con doble_amarilla o roja (EXPULSADO) NO puede tener cambio_sale — son excluyentes.
-- Solo suman a goles_equipo: "gol" y "gol_penal". Verificar: goles_equipo = cantidad de esos eventos en el equipo.
+  RECTÁNGULO VERTICAL FINO (más alto que ancho, ángulos rectos):
+    → AMARILLO solo → "amarilla"
+    → ROJO solo → "roja"
+    → DOS RECTÁNGULOS superpuestos (amarillo adelante + rojo detrás) → "doble_amarilla"
+
+  Letra P en CÍRCULO:
+    → Borde blanco o normal → "gol_penal"
+    → Borde ROJO → IGNORAR (penal fallado)
+
+══════════════════════════════════════════
+LECTURA DE MINUTOS:
+- Leé dígito a dígito de izquierda a derecha: "7" "1" = 71, NO 17.
+- Tiempo adicional (90+4', 45+2'): registrar SOLO el número base. 90+4' → minuto 90. 45+2' → minuto 45.
+- Rango válido: 1 a 90.
+
+COHERENCIA TEMPORAL (verificar antes de responder):
+- Si un jugador tiene cambio_sale a los X', no puede tener ningún evento en minuto > X'.
+- Si un jugador tiene roja o doble_amarilla a los X', no puede tener eventos en minuto > X'.
+
+VALIDACIÓN FINAL:
+- goles_equipo de cada equipo debe ser igual al número de eventos tipo "gol" + "gol_penal" de ese equipo.
+- Si no coincide, hay un ícono mal identificado — corregirlo.
 
 Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves: "local" y "visitante":
 {
