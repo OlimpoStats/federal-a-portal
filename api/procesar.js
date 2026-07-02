@@ -8,59 +8,6 @@ function detectMime(base64) {
   return "image/jpeg";
 }
 
-function withTimeout(promise, ms, label) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return promise.finally(() => clearTimeout(timer)).catch(e => {
-    if (e.name === "AbortError") throw Object.assign(new Error(`${label} timeout (${ms/1000}s)`), { isQuota: false });
-    throw e;
-  });
-}
-
-// ── GROQ ─────────────────────────────────────────────────────────────────────
-async function callGroq(key, image, prompt) {
-  const mime = detectMime(image);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    signal: controller.signal,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${key}`
-    },
-    body: JSON.stringify({
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image_url", image_url: { url: `data:${mime};base64,${image}` } },
-          { type: "text", text: prompt }
-        ]
-      }],
-      temperature: 0.1,
-      max_tokens: 8192,
-      response_format: { type: "json_object" }
-    })
-  });
-
-  clearTimeout(timer);
-  let data;
-  try { data = await response.json(); }
-  catch(e) { throw new Error("Groq: respuesta no válida"); }
-
-  if (!response.ok) {
-    const msg = data.error?.message || `Groq HTTP ${response.status}`;
-    const err = new Error(msg);
-    err.isQuota = response.status === 429;
-    throw err;
-  }
-
-  const text = data.choices?.[0]?.message?.content || "{}";
-  return { text, finishReason: data.choices?.[0]?.finish_reason || "", provider: "groq" };
-}
-
-// ── GEMINI ────────────────────────────────────────────────────────────────────
 function getGeminiKeys() {
   return [
     process.env.GEMINI_API_KEY_1,
@@ -71,47 +18,77 @@ function getGeminiKeys() {
   ].filter(Boolean);
 }
 
-async function callGeminiWithKey(key, image, prompt) {
+async function callGemini(key, model, image, prompt) {
   const mime = detectMime(image);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 55000);
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-    {
-      signal: controller.signal,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: mime, data: image } },
-            { text: prompt }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 8192,
-          responseMimeType: "application/json"
-        }
-      })
-    }
-  );
 
-  clearTimeout(timer);
+  let response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        signal: controller.signal,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mime, data: image } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 16384,
+            responseMimeType: "application/json"
+          }
+        })
+      }
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
   let data;
   try { data = await response.json(); }
-  catch(e) { throw new Error("Gemini: respuesta no válida (posible timeout)"); }
+  catch(e) { throw new Error(`${model}: respuesta no válida`); }
 
   if (!response.ok) {
-    const msg = data.error?.message || `Gemini HTTP ${response.status}`;
-    const isQuota = response.status === 429 || msg.toLowerCase().includes("quota");
+    const msg = data.error?.message || `${model} HTTP ${response.status}`;
+    const isRetryable = response.status === 429 || response.status === 503
+      || msg.toLowerCase().includes("quota")
+      || msg.toLowerCase().includes("overload")
+      || msg.toLowerCase().includes("unavailable");
     const err = new Error(msg);
-    err.isQuota = isQuota;
+    err.isRetryable = isRetryable;
     throw err;
   }
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-  return { text, finishReason: data.candidates?.[0]?.finishReason || "", provider: "gemini" };
+  // Si el candidato fue bloqueado, no hay texto útil
+  const blockReason = data.promptFeedback?.blockReason;
+  if (blockReason) {
+    const err = new Error(`Respuesta bloqueada por Gemini: ${blockReason}`);
+    err.isRetryable = false;
+    throw err;
+  }
+
+  const finishReason = data.candidates?.[0]?.finishReason || "";
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  // Si el texto no empieza con '{', Gemini devolvió un mensaje de error en lugar de JSON
+  if (!text || !text.trimStart().startsWith("{")) {
+    const isRetryable = finishReason === "OTHER" || finishReason === "" || !text;
+    const err = new Error(
+      text
+        ? `${model} devolvió texto no-JSON (sobrecarga o filtro): ${text.slice(0, 120)}`
+        : `${model} devolvió respuesta vacía (motivo: ${finishReason || "desconocido"})`
+    );
+    err.isRetryable = isRetryable;
+    throw err;
+  }
+
+  return { text, finishReason, provider: model };
 }
 
 // ── HANDLER ───────────────────────────────────────────────────────────────────
@@ -122,7 +99,6 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).end();
 
-  // Verificar usuario autenticado con rol=dueno
   const authHeader = req.headers["authorization"] || "";
   const userJwt = authHeader.replace("Bearer ", "").trim();
   if (!userJwt) return res.status(401).json({ error: "Unauthorized" });
@@ -150,15 +126,19 @@ export default async function handler(req, res) {
     const { image, prompt } = req.body;
     if (!image || !prompt) return res.status(400).json({ error: "Faltan image o prompt." });
 
-    const geminiKeys = getGeminiKeys();
-    if (!geminiKeys.length) {
-      return res.status(500).json({ error: "No hay API keys de Gemini configuradas." });
-    }
+    const keys = getGeminiKeys();
+    if (!keys.length) return res.status(500).json({ error: "No hay API keys de Gemini configuradas." });
+
+    // Intentar: gemini-2.5-flash con cada key, luego gemini-1.5-flash como fallback
+    const attempts = [
+      ...keys.map(k => ({ key: k, model: "gemini-2.5-flash" })),
+      ...keys.map(k => ({ key: k, model: "gemini-1.5-flash" })),
+    ];
 
     let lastError;
-    for (const key of geminiKeys) {
+    for (const { key, model } of attempts) {
       try {
-        const result = await callGeminiWithKey(key, image, prompt);
+        const result = await callGemini(key, model, image, prompt);
         return res.status(200).json({
           content: [{ type: "text", text: result.text }],
           finishReason: result.finishReason,
@@ -166,7 +146,8 @@ export default async function handler(req, res) {
         });
       } catch(err) {
         lastError = err;
-        if (!err.isQuota) break;
+        if (!err.isRetryable) break; // error definitivo (bloqueo, auth, etc) → no rotar
+        // retryable (cuota, sobrecarga) → probar siguiente
       }
     }
 
