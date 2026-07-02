@@ -1524,7 +1524,7 @@ function dropFile(e,side){
 }
 function fileSelected(e,side){if(e.target.files[0])handleFile(e.target.files[0],side);}
 
-function comprimirImagen(dataUrl, maxW=1280, quality=0.82){
+function comprimirImagen(dataUrl, maxW=3200, quality=0.95){
   return new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{
@@ -1560,7 +1560,7 @@ function handleFile(file,side){
 function handleFileUnificada(file){
   const reader=new FileReader();
   reader.onload=async ev=>{
-    const b64=await comprimirImagen(ev.target.result, 1600);
+    const b64=await comprimirImagen(ev.target.result, 3200);
     document.getElementById("preview-uni").src=b64;
     document.getElementById("preview-uni").style.display="block";
     document.getElementById("zone-uni").classList.add("has-img");
@@ -1680,6 +1680,10 @@ COHERENCIA TEMPORAL (verificar antes de responder):
 - Un titular sin cambio_sale estuvo en cancha todo el partido.
 - Un suplente sin cambio_entra no participó del partido.
 
+AISLAMIENTO DE FILAS:
+- Cada fila es independiente. Un número que aparece en la fila del jugador A no puede usarse como dato del jugador B.
+- Si no ves paréntesis con número en los eventos de un jugador, el campo extra debe ser "" (vacío). No tomar números de otras filas.
+
 VALIDACIÓN FINAL:
 - goles_equipo debe ser igual al número de eventos tipo "gol" + "gol_penal" de todos los jugadores.
 - Si no coincide, hay un ícono mal identificado — corregirlo.
@@ -1797,6 +1801,10 @@ LECTURA DE MINUTOS:
 COHERENCIA TEMPORAL (verificar antes de responder):
 - Si un jugador tiene cambio_sale a los X', no puede tener ningún evento en minuto > X'.
 - Si un jugador tiene roja o doble_amarilla a los X', no puede tener eventos en minuto > X'.
+
+AISLAMIENTO DE FILAS:
+- Cada fila es independiente. Un número que aparece en la fila del jugador A no puede usarse como dato del jugador B.
+- Si no ves paréntesis con número en los eventos de un jugador, el campo extra debe ser "" (vacío). No tomar números de otras filas.
 
 VALIDACIÓN FINAL:
 - goles_equipo de cada equipo debe ser igual al número de eventos tipo "gol" + "gol_penal" de ese equipo.
