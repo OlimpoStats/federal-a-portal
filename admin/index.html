@@ -2491,9 +2491,12 @@ function abrirCambioVinculado(containerId, jIdx, direccion){
   }
 
   const opts = candidatos.map((c,ci)=>
-    `<div onclick="selCambioVinc(${ci})" id="cv-opt-${ci}" style="padding:.4rem .65rem;border-radius:5px;cursor:pointer;border:1px solid var(--border);margin-bottom:.3rem;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
-      <span><strong>${c.nombre||"?"}</strong></span>
-      <span style="font-family:'Barlow Condensed',sans-serif;color:var(--muted);font-size:11px;">#${c.numero||"?"} ${c.titular?"T":"S"}</span>
+    `<div onclick="selCambioVinc(${ci})" id="cv-opt-${ci}" style="padding:.4rem .65rem;border-radius:5px;cursor:pointer;border:1px solid var(--border);margin-bottom:.3rem;display:flex;align-items:center;gap:.65rem;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--accent);min-width:28px;text-align:center;line-height:1;">${c.numero||"?"}</span>
+      <span style="flex:1;">
+        <span style="font-size:13px;font-weight:600;">${c.nombre||"?"}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:.35rem;">${c.titular?"Titular":"Suplente"}</span>
+      </span>
     </div>`
   ).join("");
 
@@ -4333,45 +4336,35 @@ function extraerApellidosNombres(raw){
 }
 
 function scoreMatchJugador(rawPlanilla, jugadorDB){
-  // Compara el nombre de planilla contra un jugador ya cargado en ESE equipo.
-  // Devuelve un score 0-100. Compara por primer apellido + primer nombre, no por ID.
   const p = extraerApellidosNombres(rawPlanilla);
   const d = extraerApellidosNombres(jugadorDB.nombre_display || jugadorDB.nombre || "");
-  if(!p.apellidos.length || !d.apellidos.length) return 0;
+  if(!p.apellidos.length || !d.apellidos.length) return {score:0, fuzzy:false};
 
-  let score = 0;
-  // Primer apellido exacto → peso máximo
+  let score = 0, fuzzy = false;
   if(p.apellidos[0] === d.apellidos[0]) score += 60;
-  // Primer apellido fuzzy (typo) → casi igual
-  else if(esFuzzyMatch(p.apellidos[0], d.apellidos[0])) score += 52;
-  // Algún otro apellido exacto
+  else if(esFuzzyMatch(p.apellidos[0], d.apellidos[0])){ score += 52; fuzzy = true; }
   else if(p.apellidos.some(a=>d.apellidos.includes(a))) score += 35;
-  // Algún otro apellido fuzzy
-  else if(p.apellidos.some(a=>d.apellidos.some(b=>esFuzzyMatch(a,b)))) score += 28;
+  else if(p.apellidos.some(a=>d.apellidos.some(b=>esFuzzyMatch(a,b)))){ score += 28; fuzzy = true; }
 
-  // Primer nombre exacto
   if(p.nombres[0] && d.nombres[0] && p.nombres[0] === d.nombres[0]) score += 40;
-  // Algún nombre exacto
   else if(p.nombres.some(n=>d.nombres.includes(n))) score += 20;
-  // Primer nombre fuzzy
-  else if(p.nombres[0] && d.nombres[0] && esFuzzyMatch(p.nombres[0], d.nombres[0])) score += 15;
+  else if(p.nombres[0] && d.nombres[0] && esFuzzyMatch(p.nombres[0], d.nombres[0])){ score += 15; fuzzy = true; }
 
-  return score;
+  return {score, fuzzy};
 }
 
 function buscarEnPlantel(rawNombre, plantel){
-  // Busca el mejor match dentro de un plantel ya cargado en memoria.
   if(!plantel?.length) return { jugador:null, score:0, candidatos:[] };
-  let mejor = null, mejorScore = 0;
+  let mejor = null, mejorScore = 0, mejorFuzzy = false;
   const candidatos = [];
   for(const j of plantel){
-    const sc = scoreMatchJugador(rawNombre, j);
-    if(sc > 0) candidatos.push({jugador:j, score:sc});
-    if(sc > mejorScore){ mejorScore = sc; mejor = j; }
+    const {score:sc, fuzzy:fz} = scoreMatchJugador(rawNombre, j);
+    if(sc > 0) candidatos.push({jugador:j, score:sc, fuzzy:fz});
+    if(sc > mejorScore){ mejorScore = sc; mejor = j; mejorFuzzy = fz; }
   }
   candidatos.sort((a,b)=>b.score-a.score);
-  // Umbral: 60+ = match confiable (al menos primer apellido exacto)
-  return { jugador: mejorScore>=60 ? mejor : null, score: mejorScore, candidatos };
+  // Auto-asignar solo cuando hay match exacto (sin fuzzy) y score alto
+  return { jugador: mejorScore>=60 && !mejorFuzzy ? mejor : null, score: mejorScore, candidatos };
 }
 
 async function buscarJugadorEnEquipo(rawNombre, equipoId){
