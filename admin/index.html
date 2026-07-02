@@ -138,6 +138,25 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-tag .del-ev:hover{color:#ff5252;}
 .add-ev-btn{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer;}
 .add-ev-btn:hover{border-color:var(--accent);}
+/* ── INLINE EVENT BUTTON BAR ── */
+.ev-btn-bar{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);}
+.ev-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0;transition:background .12s,border-color .12s;flex-shrink:0;}
+.ev-btn:hover{background:var(--surface3);border-color:var(--accent);}
+.ev-btn-gol{border-color:#1e5c35;}
+.ev-btn-tl{background:radial-gradient(circle at 35% 35%,#6abf69,#2e7d32);border-color:#1b5e20;}
+.ev-btn-gc{background:radial-gradient(circle at 35% 35%,#ef5350,#b71c1c);border-color:#7f0000;}
+.ev-btn-pen{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--accent);border-color:var(--accent);}
+.ev-btn-entra{color:#4caf50;border-color:#2e7d32;font-size:14px;font-weight:700;}
+.ev-btn-sale{color:#e57373;border-color:#c62828;font-size:14px;font-weight:700;}
+.ev-btn-asist{font-size:13px;}
+.ev-tl{border-color:#1b5e20;background:#0a150a;color:#6abf69;}
+/* image preview strip */
+#img-strip{display:none;margin-bottom:.75rem;}
+#img-strip-inner{display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;}
+.img-strip-thumb{max-height:180px;max-width:48%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;object-fit:contain;background:var(--surface2);}
+.img-strip-toggle{font-size:12px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;margin-bottom:.4rem;background:none;border:none;padding:0;}
+/* live score highlight */
+.score-input.score-changed{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,196,74,.25);}
 /* autocomplete */
 .autocomplete-wrap{position:relative;}
 .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
@@ -353,6 +372,14 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <!-- PASO 3: revisar -->
       <div id="paso3" style="display:none;">
         <div id="flash-msg" class="flash"></div>
+
+        <!-- Image preview strip -->
+        <div id="img-strip">
+          <button class="img-strip-toggle" onclick="toggleImgStrip()">
+            <span id="img-strip-icon">▼</span> Ver imagen de la planilla
+          </button>
+          <div id="img-strip-inner" style="display:none;"></div>
+        </div>
 
         <div class="card" style="position:relative;">
           <div class="loading-overlay" id="loading-overlay">
@@ -1301,6 +1328,7 @@ async function irPaso2Manual(){
   document.getElementById("paso1").style.display="none";
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso3").style.display="";
+  poblarImgStrip();
   document.getElementById("steps-bar").style.display="";
   setStep(3);
   const tl=document.getElementById("tabla-local");
@@ -1434,6 +1462,7 @@ async function editarPlanillaExistente(){
   document.getElementById("paso1").style.display="none";
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso3").style.display="";
+  poblarImgStrip();
   document.getElementById("paso4").style.display="none";
   setStep(3);
 }
@@ -1456,7 +1485,28 @@ function showFlash(msg, type){
   setTimeout(()=>{ f.className = "flash"; }, 5000);
 }
 
-  
+function toggleImgStrip(){
+  const inner = document.getElementById("img-strip-inner");
+  const icon = document.getElementById("img-strip-icon");
+  if(!inner) return;
+  const visible = inner.style.display !== "none";
+  inner.style.display = visible ? "none" : "";
+  if(icon) icon.textContent = visible ? "▼" : "▲";
+}
+
+function poblarImgStrip(){
+  const strip = document.getElementById("img-strip");
+  const inner = document.getElementById("img-strip-inner");
+  if(!strip || !inner) return;
+  const imgs = [];
+  if(imgLocalB64) imgs.push({src:"data:image/jpeg;base64,"+imgLocalB64, label:"Local"});
+  if(imgVisitB64) imgs.push({src:"data:image/jpeg;base64,"+imgVisitB64, label:"Visitante"});
+  if(imgUnificadaB64) imgs.push({src:"data:image/jpeg;base64,"+imgUnificadaB64, label:"Planilla unificada"});
+  if(!imgs.length){ strip.style.display="none"; return; }
+  inner.innerHTML = imgs.map(img=>`<img class="img-strip-thumb" src="${img.src}" title="${img.label}" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'180px':'none'">`).join("");
+  strip.style.display = "";
+}
+
 function resetTodo(){
   imgLocalB64=null;
   imgVisitB64=null;
@@ -1619,6 +1669,7 @@ async function procesarImagenes(){
 
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso3").style.display="";
+  poblarImgStrip();
   setStep(3);
   document.getElementById("res-local").textContent=partidoActual.local;
   document.getElementById("res-visit").textContent=partidoActual.visit;
@@ -1742,6 +1793,7 @@ async function procesarImagenUnificada(){
   document.getElementById("tabla-visit").innerHTML="";
   document.getElementById("paso2u").style.display="none";
   document.getElementById("paso3").style.display="";
+  poblarImgStrip();
   setStep(3);
   document.getElementById("res-local").textContent=partidoActual.local;
   document.getElementById("res-visit").textContent=partidoActual.visit;
@@ -1975,8 +2027,31 @@ function normalizarPlanilla(planilla, equipo){
 function contarGoles(jugadores, side){
   if(!jugadores)return 0;
   return jugadores.reduce((acc,j)=>{
-    return acc + (j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal").length;
+    return acc + (j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_tiro_libre").length;
   },0);
+}
+
+function calcScoreLocal(){
+  const propios = (planillaLocal.jugadores||[]).reduce((a,j)=>
+    a+(j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_tiro_libre").length,0);
+  const contra = (planillaVisit.jugadores||[]).reduce((a,j)=>
+    a+(j.eventos||[]).filter(e=>e.tipo==="gol_contra").length,0);
+  return propios+contra;
+}
+function calcScoreVisit(){
+  const propios = (planillaVisit.jugadores||[]).reduce((a,j)=>
+    a+(j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_tiro_libre").length,0);
+  const contra = (planillaLocal.jugadores||[]).reduce((a,j)=>
+    a+(j.eventos||[]).filter(e=>e.tipo==="gol_contra").length,0);
+  return propios+contra;
+}
+function actualizarMarcadorLive(){
+  const sl = document.getElementById("score-local");
+  const sv = document.getElementById("score-visit");
+  if(!sl||!sv) return;
+  sl.value = calcScoreLocal();
+  sv.value = calcScoreVisit();
+  [sl,sv].forEach(el=>{ el.classList.add("score-changed"); setTimeout(()=>el.classList.remove("score-changed"),600); });
 }
 
 // ── RENDER PLANILLA ──
@@ -1991,7 +2066,7 @@ function renderEvento(e, containerId, jIdx, eIdx){
   const minStr = `${e.minuto}'`;
   let inner = "";
   if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"||e.tipo==="gol_tiro_libre"){
-    const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":e.tipo==="gol_tiro_libre"?"⚽🔵":"⚽";
+    const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":e.tipo==="gol_tiro_libre"?'<span style="filter:hue-rotate(100deg) saturate(1.5);">⚽</span>':"⚽";
     const cls = e.tipo==="gol_contra"?"ev-gc":e.tipo==="gol_penal"?"ev-pen":e.tipo==="gol_tiro_libre"?"ev-tl":"ev-gol";
     inner=`<span class="evento-chip ${cls}">${icon} ${minStr}</span>`;
   } else if(e.tipo==="penal_atajado"){
@@ -2073,64 +2148,62 @@ function renderPlanilla(containerId, jugadores){
 
   function renderRow(j){
     const i = jugadores.indexOf(j);
-    const eventosHtml=(j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("")||"—";
+    const chips = (j.eventos||[]).map((e,ei)=>renderEvento(e,containerId,i,ei)).join("");
     const trBg = j.titular ? "" : "background:rgba(255,255,255,0.015);";
-    const cpBadge = j.es_capitan ? '<span style="font-size:9px;background:#2a2a0a;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px;margin-right:4px;vertical-align:middle;font-family:Barlow,sans-serif;font-weight:700;">CP</span>' : "";
+    const cpBadge = j.es_capitan ? '<span class="badge-cap">CP</span> ' : "";
+
+    const btnBar = `<div class="ev-btn-bar">
+      <button class="ev-btn ev-btn-gol" onclick="abrirEventoRapido('${containerId}',${i},'gol')" title="Gol">⚽</button>
+      <button class="ev-btn ev-btn-tl" onclick="abrirEventoRapido('${containerId}',${i},'gol_tiro_libre')" title="Tiro libre"></button>
+      <button class="ev-btn ev-btn-gc" onclick="abrirEventoRapido('${containerId}',${i},'gol_contra')" title="Gol en contra"></button>
+      <button class="ev-btn ev-btn-pen" onclick="abrirModalPenalNuevo('${containerId}',${i})" title="Penal">P</button>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'amarilla')" title="Amarilla"><span class="ev-am-sq" style="width:8px;height:12px;border-radius:1px;"></span></button>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'roja')" title="Roja"><span class="ev-ro-sq" style="width:8px;height:12px;border-radius:1px;"></span></button>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'doble_amarilla')" title="Doble amarilla"><span style="display:inline-flex;gap:1px;"><span class="ev-am-sq" style="width:6px;height:11px;border-radius:1px;"></span><span class="ev-ro-sq" style="width:6px;height:11px;border-radius:1px;"></span></span></button>
+      <button class="ev-btn ev-btn-entra" onclick="abrirCambioVinculado('${containerId}',${i},'entra')" title="Entra (cambio)">↑</button>
+      <button class="ev-btn ev-btn-sale" onclick="abrirCambioVinculado('${containerId}',${i},'sale')" title="Sale (cambio)">↓</button>
+      <button class="ev-btn ev-btn-asist" onclick="abrirAsistencia('${containerId}',${i})" title="Asistencia">👟</button>
+    </div>`;
+
     return `<tr style="${trBg}">
-      <td style="width:34px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:32px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
-      <td style="width:68px;"><input type="text" inputmode="numeric" value="${j.id||""}" style="width:64px;font-size:11px;font-family:'Barlow',sans-serif;color:var(--muted);padding:2px 3px;background:transparent;border:1px solid transparent;border-radius:3px;" title="ID Federal" onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'" onblur="this.style.borderColor='transparent';this.style.background='transparent'" onchange="actualizarJugadorPorId('${containerId}',${i},this.value)"></td>
-      <td style="min-width:140px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
-      <td style="width:24px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
-      <td style="overflow:hidden;max-width:220px;">${eventosHtml}</td>
-      <td style="width:56px;white-space:nowrap;text-align:center;">
-        <button class="add-ev-btn" onclick="abrirAgregarEvento('${containerId}',${i})" title="Agregar evento">+</button>
-        <button class="add-ev-btn" style="color:#5dba7d;border-color:#1e5c35;" onclick="abrirAsistencia('${containerId}',${i})" title="Agregar asistencia">👟</button>
+      <td style="width:30px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:28px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="min-width:130px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="width:22px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
+      <td>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;min-height:18px;">${chips||""}</div>
+        ${btnBar}
       </td>
     </tr>`;
   }
 
   function emptyRow(bg){
-    return `<tr style="${bg||""}"><td colspan="6" style="height:28px;border-bottom:1px solid rgba(255,255,255,0.04);"></td></tr>`;
+    return `<tr style="${bg||""}"><td colspan="4" style="height:28px;border-bottom:1px solid rgba(255,255,255,0.04);"></td></tr>`;
   }
-
   function separator(){
-    return `<tr><td colspan="6" style="padding:0;background:rgba(255,255,255,0.07);height:2px;"></td></tr>`;
+    return `<tr><td colspan="4" style="padding:0;background:rgba(255,255,255,0.07);height:2px;"></td></tr>`;
   }
 
   let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
     <thead><tr>
-      <th style="width:32px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
-      <th style="width:62px">ID</th>
-      <th style="width:150px">Nombre</th>
-      <th style="width:24px">T</th>
-      <th style="width:220px">Eventos</th>
-      <th style="width:56px"></th>
+      <th style="width:30px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
+      <th>Nombre</th>
+      <th style="width:22px;">T</th>
+      <th>Eventos</th>
     </tr></thead><tbody>`;
 
-  // Titulares: siempre 11 filas
   titulares.forEach(j => { html += renderRow(j); });
   for(let p = titulares.length; p < 11; p++) html += emptyRow();
-
-  // Separador fijo entre titulares y suplentes
   html += separator();
-
-  // Suplentes: siempre 9 filas
   suplentes.forEach(j => { html += renderRow(j); });
   for(let p = suplentes.length; p < 9; p++) html += emptyRow("background:rgba(255,255,255,0.015);");
+  if(ncs.length){ html += separator(); ncs.forEach(j => { html += renderRow(j); }); }
 
-  // NC (si hay)
-  if(ncs.length){
-    html += separator();
-    ncs.forEach(j => { html += renderRow(j); });
-  }
-
-  // Aviso si faltan jugadores
   const faltanTitulares = Math.max(0, 11 - titulares.length);
   const faltanSuplentes = Math.max(0, 9 - suplentes.length);
   const faltan = faltanTitulares + faltanSuplentes;
   if(faltan > 0){
     html+=`<tr style="background:rgba(232,196,74,0.05);">
-      <td colspan="6" style="padding:.5rem .6rem;">
+      <td colspan="4" style="padding:.5rem .6rem;">
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
           <span style="font-size:12px;color:var(--accent);">⚠️ Faltan ${faltan} jugador${faltan!==1?"es":""} (${faltanTitulares} titular${faltanTitulares!==1?"es":""}, ${faltanSuplentes} suplente${faltanSuplentes!==1?"s":""})</span>
           <button class="add-ev-btn" style="color:var(--accent);border-color:var(--accent);" onclick="abrirAgregarJugadorPlanilla('${containerId}')">+ Agregar jugador</button>
@@ -2148,6 +2221,7 @@ function eliminarEvento(containerId, jIdx, eIdx){
   if(!arr||!arr[jIdx]) return;
   arr[jIdx].eventos.splice(eIdx,1);
   renderPlanilla(containerId, arr);
+  actualizarMarcadorLive();
 }
 
 function abrirAgregarEvento(containerId, jIdx, prefill=null){
@@ -2204,6 +2278,47 @@ function abrirAgregarEvento(containerId, jIdx, prefill=null){
     if(btnLabel) btnLabel.textContent = "Guardar cambios";
   }
   toggleExtras();
+}
+
+function abrirEventoRapido(containerId, jIdx, tipo){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  const nombres = {
+    gol:"⚽ Gol", gol_tiro_libre:"🟢 Tiro libre", gol_contra:"🔴 Gol en contra",
+    amarilla:"Amarilla", roja:"Roja", doble_amarilla:"Doble amarilla"
+  };
+  const label = nombres[tipo] || tipo;
+  const html=`<div id="modal-rapido" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;" onclick="if(event.target.id==='modal-rapido')cerrarModalRapido()">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;width:280px;max-width:92vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:.9rem;">${label} — ${arr[jIdx].nombre||"Jugador"}</div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Minuto (ej: 45 o 90+3)</label>
+      <input type="text" id="rapido-min" placeholder="ej: 61" style="width:100%;margin-bottom:.9rem;" autofocus>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarModalRapido()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmarEventoRapido('${containerId}',${jIdx},'${tipo}')">Agregar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  setTimeout(()=>document.getElementById("rapido-min")?.focus(),50);
+  document.getElementById("rapido-min").addEventListener("keydown", e=>{
+    if(e.key==="Enter") confirmarEventoRapido(containerId,jIdx,tipo);
+    if(e.key==="Escape") cerrarModalRapido();
+  });
+}
+function cerrarModalRapido(){ document.getElementById("modal-rapido")?.remove(); }
+function confirmarEventoRapido(containerId, jIdx, tipo){
+  const minVal = document.getElementById("rapido-min")?.value||"";
+  if(!minVal){ document.getElementById("rapido-min")?.focus(); return; }
+  const minuto = parsearMinuto(minVal);
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
+  arr[jIdx].eventos.push({tipo, minuto, extra:""});
+  arr[jIdx].eventos.sort((a,b)=>(minuteToNumber(a.minuto)||0)-(minuteToNumber(b.minuto)||0));
+  cerrarModalRapido();
+  renderPlanilla(containerId, arr);
+  actualizarMarcadorLive();
 }
 
 function toggleExtras(){
@@ -2339,6 +2454,110 @@ function confirmarAgregarJugadorPlanilla(containerId){
 
   document.getElementById("modal-add-jug")?.remove();
   renderPlanilla(containerId, arr);
+}
+
+function abrirCambioVinculado(containerId, jIdx, direccion){
+  // direccion: 'entra' (this player comes in, need to pick who goes out)
+  //            'sale'  (this player goes out, need to pick who comes in)
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  const jugador = arr[jIdx];
+
+  function puedeLeave(j){
+    if(j.nc) return false;
+    const evs = j.eventos||[];
+    const saleYa = evs.some(e=>e.tipo==="cambio_sale");
+    if(saleYa) return false;
+    if(j.titular) return true;
+    return evs.some(e=>e.tipo==="cambio_entra");
+  }
+  function puedeEnter(j){
+    if(j.nc||j.titular) return false;
+    const evs = j.eventos||[];
+    return !evs.some(e=>e.tipo==="cambio_entra");
+  }
+
+  let candidatos, titulo, labelOtro;
+  if(direccion==="entra"){
+    candidatos = arr.filter((j,idx)=>idx!==jIdx && puedeLeave(j));
+    titulo = `↑ Entra: <strong>${jugador.nombre||"?"}</strong>`;
+    labelOtro = "¿Quién sale?";
+  } else {
+    candidatos = arr.filter((j,idx)=>idx!==jIdx && puedeEnter(j));
+    titulo = `↓ Sale: <strong>${jugador.nombre||"?"}</strong>`;
+    labelOtro = "¿Quién entra?";
+  }
+
+  const opts = candidatos.map((c,ci)=>
+    `<div onclick="selCambioVinc(${ci})" id="cv-opt-${ci}" style="padding:.4rem .65rem;border-radius:5px;cursor:pointer;border:1px solid var(--border);margin-bottom:.3rem;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+      <span><strong>${c.nombre||"?"}</strong></span>
+      <span style="font-family:'Barlow Condensed',sans-serif;color:var(--muted);font-size:11px;">#${c.numero||"?"} ${c.titular?"T":"S"}</span>
+    </div>`
+  ).join("");
+
+  const html=`<div id="modal-cambio-vinc" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;width:360px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:.75rem;">${titulo}</div>
+      <div style="margin-bottom:.65rem;">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Minuto</label>
+        <input type="text" id="cv-min" placeholder="ej: 65" style="width:100%;" autofocus>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:.35rem;">${labelOtro}</div>
+      <div style="overflow-y:auto;flex:1;margin-bottom:.75rem;" id="cv-lista">
+        ${opts || '<p style="color:var(--muted);font-size:12px;">No hay jugadores disponibles.</p>'}
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-cambio-vinc').remove()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" id="cv-confirmar" disabled onclick="confirmarCambioVinculado('${containerId}',${jIdx},'${direccion}')">✓ Confirmar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  setTimeout(()=>document.getElementById("cv-min")?.focus(),50);
+  document.getElementById("cv-min").addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("modal-cambio-vinc")?.remove();});
+  window._cvCandidatos = candidatos;
+  window._cvSelected = null;
+}
+
+function selCambioVinc(ci){
+  document.querySelectorAll("[id^=cv-opt-]").forEach(el=>{
+    el.style.background=""; el.style.borderColor="var(--border)";
+  });
+  const el = document.getElementById("cv-opt-"+ci);
+  if(el){ el.style.background="rgba(232,196,74,0.1)"; el.style.borderColor="var(--accent)"; }
+  window._cvSelected = ci;
+  const btn = document.getElementById("cv-confirmar");
+  if(btn) btn.disabled = false;
+}
+
+function confirmarCambioVinculado(containerId, jIdx, direccion){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  const minVal = document.getElementById("cv-min")?.value||"";
+  if(!minVal){ document.getElementById("cv-min")?.focus(); return; }
+  if(window._cvSelected===null||window._cvSelected===undefined){ return; }
+  const minuto = parsearMinuto(minVal);
+  const otro = window._cvCandidatos[window._cvSelected];
+  const otroIdx = arr.indexOf(otro);
+  if(otroIdx===-1) return;
+
+  let tipoEste, tipoOtro;
+  if(direccion==="entra"){ tipoEste="cambio_entra"; tipoOtro="cambio_sale"; }
+  else { tipoEste="cambio_sale"; tipoOtro="cambio_entra"; }
+
+  if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
+  if(!arr[jIdx].eventos.some(e=>e.tipo===tipoEste)){
+    arr[jIdx].eventos.push({tipo:tipoEste, minuto, extra:String(arr[otroIdx].numero||"")});
+    arr[jIdx].eventos.sort((a,b)=>(minuteToNumber(a.minuto)||0)-(minuteToNumber(b.minuto)||0));
+  }
+  if(!arr[otroIdx].eventos) arr[otroIdx].eventos=[];
+  if(!arr[otroIdx].eventos.some(e=>e.tipo===tipoOtro)){
+    arr[otroIdx].eventos.push({tipo:tipoOtro, minuto, extra:String(arr[jIdx].numero||"")});
+    arr[otroIdx].eventos.sort((a,b)=>(minuteToNumber(a.minuto)||0)-(minuteToNumber(b.minuto)||0));
+  }
+
+  document.getElementById("modal-cambio-vinc")?.remove();
+  renderPlanilla(containerId, arr);
+  actualizarMarcadorLive();
 }
 
 function abrirModalPenal(containerId, jIdx, tipo, minuto){
@@ -2503,11 +2722,97 @@ async function guardarPenal(){
       arqJug.eventos.push({tipo:"penal_atajado", minuto, extra: "arquero"});
       arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
       renderPlanilla(rivalContId, rivalPlan.jugadores);
+      actualizarMarcadorLive();
     }
   }
 
   document.getElementById("modal-penal")?.remove();
   showFlash("✓ Penal registrado correctamente.", "ok");
+}
+
+function abrirModalPenalNuevo(containerId, jIdx){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+  const jugador = arr[jIdx];
+  const arrOtro = containerId==="tabla-local"?planillaVisit.jugadores:planillaLocal.jugadores;
+  const arqueros = (arrOtro||[]).filter(j=>j.numero==1||j.numero==12||(j.nota||"").includes("AR"));
+  const todosOtro = (arrOtro||[]);
+  const arqueroOpts = (arqueros.length?arqueros:todosOtro).map(j=>
+    `<option value="${j.id_federal||j.id}">${j.numero} - ${j.nombre||"?"}</option>`
+  ).join("");
+
+  const html=`<div id="modal-penal-nuevo" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:360px;max-width:95vw;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:.25rem;">P Penal</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Ejecutante: ${jugador.nombre||"?"}</div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Minuto</label>
+      <input type="text" id="pn-min" placeholder="ej: 78" style="width:100%;margin-bottom:.9rem;" autofocus>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.4rem;">Resultado</label>
+      <div style="display:flex;gap:.5rem;margin-bottom:.9rem;">
+        <button id="pn-gol" class="btn btn-sm" style="flex:1;background:#0a1a0d;border:1px solid #1e5c35;color:#5dba7d;" onclick="selPenalResult('gol_penal')">⚽ Gol</button>
+        <button id="pn-atajado" class="btn btn-sm" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:#aaa;" onclick="selPenalResult('penal_atajado')">🧤 Atajado</button>
+        <button id="pn-desviado" class="btn btn-sm" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:#aaa;" onclick="selPenalResult('penal_desviado')">❌ Desviado</button>
+      </div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Portero rival</label>
+      <select id="pn-arquero" style="width:100%;margin-bottom:.9rem;">
+        <option value="">— Seleccionar —</option>
+        ${arqueroOpts}
+      </select>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-penal-nuevo').remove()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmarPenalNuevo('${containerId}',${jIdx})">Guardar penal</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+  window._penTipoSelected = null;
+  setTimeout(()=>document.getElementById("pn-min")?.focus(),50);
+  document.getElementById("pn-min").addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("modal-penal-nuevo")?.remove();});
+}
+
+function selPenalResult(tipo){
+  window._penTipoSelected = tipo;
+  const ids = {gol_penal:"pn-gol", penal_atajado:"pn-atajado", penal_desviado:"pn-desviado"};
+  Object.entries(ids).forEach(([t,id])=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    if(t===tipo){
+      btn.style.borderColor = t==="gol_penal"?"#1e5c35":t==="penal_atajado"?"#5dba7d":"#e57373";
+      btn.style.background = t==="gol_penal"?"#0a1a0d":t==="penal_atajado"?"rgba(93,186,125,0.15)":"rgba(229,115,115,0.15)";
+      btn.style.color = t==="gol_penal"?"#5dba7d":t==="penal_atajado"?"#5dba7d":"#e57373";
+    } else {
+      btn.style.borderColor = "var(--border)";
+      btn.style.background = "var(--surface2)";
+      btn.style.color = "#aaa";
+    }
+  });
+}
+
+async function confirmarPenalNuevo(containerId, jIdx){
+  const tipo = window._penTipoSelected;
+  if(!tipo){ showFlash("Seleccioná el resultado del penal.","err"); return; }
+  const minVal = document.getElementById("pn-min")?.value||"";
+  if(!minVal){ document.getElementById("pn-min")?.focus(); return; }
+  const minuto = parsearMinuto(minVal);
+  const arqueroId = document.getElementById("pn-arquero")?.value||"";
+
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  if(!arr||!arr[jIdx]) return;
+
+  if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
+  arr[jIdx].eventos.push({tipo, minuto, extra:""});
+  arr[jIdx].eventos.sort((a,b)=>(minuteToNumber(a.minuto)||0)-(minuteToNumber(b.minuto)||0));
+  renderPlanilla(containerId, arr);
+  actualizarMarcadorLive();
+
+  document.getElementById("modal-penal-nuevo")?.remove();
+  abrirModalPenal(containerId, jIdx, tipo, minuto);
+  if(arqueroId){
+    setTimeout(()=>{
+      const sel = document.getElementById("pen-arquero");
+      if(sel) sel.value = arqueroId;
+    }, 100);
+  }
 }
 
 function abrirAsistencia(containerId, jIdx){
@@ -2518,7 +2823,7 @@ function abrirAsistencia(containerId, jIdx){
     const equipo = side==="local" ? (partidoActual?.local||"Local") : (partidoActual?.visit||"Visitante");
     (pl.jugadores||[]).forEach(j => {
       (j.eventos||[]).forEach(ev => {
-        if(ev.tipo==="gol"||ev.tipo==="gol_penal"){
+        if(ev.tipo==="gol"||ev.tipo==="gol_penal"||ev.tipo==="gol_tiro_libre"){
           todos.push({nombre:j.nombre, equipo, minuto:ev.minuto, side});
         }
       });
@@ -2575,6 +2880,7 @@ function confirmarAsistencia(containerId, jIdx){
   arr[jIdx].eventos.sort((a,b)=>(a.minuto||0)-(b.minuto||0));
   document.getElementById("modal-asist").remove();
   renderPlanilla(containerId, arr);
+  actualizarMarcadorLive();
 }
 
 function parsearMinuto(val){
@@ -3180,6 +3486,7 @@ function cargarBorrador(){
   document.getElementById("paso1").style.display = "none";
   document.getElementById("paso2").style.display = "none";
   document.getElementById("paso3").style.display = "";
+  poblarImgStrip();
   document.getElementById("steps-bar").style.display = "";
   setStep(3);
   const f = draft.form;
@@ -3209,6 +3516,60 @@ async function confirmarCarga(publicar=true){
   const cuarto = document.getElementById("partido-cuarto").value || null;
   const dia = document.getElementById("partido-dia").value || null;
   const hora = document.getElementById("partido-hora").value || null;
+
+  // Validate calculated score vs registered fixture score
+  const calcL = calcScoreLocal();
+  const calcV = calcScoreVisit();
+  const inputL = parseInt(document.getElementById("score-local").value)||0;
+  const inputV = parseInt(document.getElementById("score-visit").value)||0;
+  const fixtureL = partidoActual?.goles_local;
+  const fixtureV = partidoActual?.goles_visitante;
+
+  // Check 1: calculated score vs score inputs
+  if(calcL !== inputL || calcV !== inputV){
+    const ok = await new Promise(resolve=>{
+      const m=document.createElement("div");
+      m.id="modal-score-warn";
+      m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:flex;align-items:center;justify-content:center;";
+      m.innerHTML=`<div style="background:var(--surface);border:1px solid #e8c44a;border-radius:12px;padding:1.5rem;width:380px;max-width:95vw;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#e8c44a;margin-bottom:.5rem;">⚠️ Diferencia en el marcador</div>
+        <p style="font-size:13px;margin-bottom:1rem;">Los goles registrados en los eventos suman <strong>${calcL}–${calcV}</strong>, pero el marcador ingresado es <strong>${inputL}–${inputV}</strong>.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">¿Guardar de todas formas con el marcador <strong>${inputL}–${inputV}</strong>?</p>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-score-warn').remove();window._scoreWarnResolve(false)">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-score-warn').remove();window._scoreWarnResolve(true)">Guardar de todas formas</button>
+        </div>
+      </div>`;
+      document.body.appendChild(m);
+      window._scoreWarnResolve = resolve;
+    });
+    if(!ok) return;
+  }
+
+  // Check 2: score vs previously registered fixture result (if already recorded)
+  if(publicar && fixtureL != null && fixtureV != null){
+    const inputLf = parseInt(document.getElementById("score-local").value)||0;
+    const inputVf = parseInt(document.getElementById("score-visit").value)||0;
+    if(Number(fixtureL) !== inputLf || Number(fixtureV) !== inputVf){
+      const ok2 = await new Promise(resolve=>{
+        const m=document.createElement("div");
+        m.id="modal-score-warn2";
+        m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:flex;align-items:center;justify-content:center;";
+        m.innerHTML=`<div style="background:var(--surface);border:1px solid #e8c44a;border-radius:12px;padding:1.5rem;width:380px;max-width:95vw;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#e8c44a;margin-bottom:.5rem;">⚠️ Resultado distinto al registrado</div>
+          <p style="font-size:13px;margin-bottom:1rem;">El resultado registrado en el fixture es <strong>${fixtureL}–${fixtureV}</strong>, pero estás guardando <strong>${inputLf}–${inputVf}</strong>.</p>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">¿Actualizar el resultado?</p>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-score-warn2').remove();window._scoreWarnResolve2(false)">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-score-warn2').remove();window._scoreWarnResolve2(true)">Sí, actualizar</button>
+          </div>
+        </div>`;
+        document.body.appendChild(m);
+        window._scoreWarnResolve2 = resolve;
+      });
+      if(!ok2) return;
+    }
+  }
 
   try {
     let fixtureId = partidoActual?.fixtureId || null;
@@ -3416,6 +3777,7 @@ async function erAbrirEditorCompleto(){
   document.getElementById("paso1").style.display = "none";
   document.getElementById("paso2").style.display = "none";
   document.getElementById("paso3").style.display = "";
+  poblarImgStrip();
   document.getElementById("paso4").style.display = "none";
   setStep(3);
 }
