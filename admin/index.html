@@ -138,17 +138,18 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-tag .del-ev:hover{color:#ff5252;}
 .add-ev-btn{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer;}
 .add-ev-btn:hover{border-color:var(--accent);}
-/* ── INLINE EVENT BUTTON BAR ── */
-.ev-btn-bar{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);}
-.ev-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;padding:0;transition:background .12s,border-color .12s;flex-shrink:0;}
+/* ── EVENT ACTION BAR ── */
+.ev-btn{width:20px;height:20px;border-radius:3px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px;padding:0;transition:background .12s,border-color .12s;flex-shrink:0;}
 .ev-btn:hover{background:var(--surface3);border-color:var(--accent);}
-.ev-btn-gol{border-color:#1e5c35;}
-.ev-btn-tl{background:radial-gradient(circle at 35% 35%,#6abf69,#2e7d32);border-color:#1b5e20;}
-.ev-btn-gc{background:radial-gradient(circle at 35% 35%,#ef5350,#b71c1c);border-color:#7f0000;}
-.ev-btn-pen{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--accent);border-color:var(--accent);}
-.ev-btn-entra{color:#4caf50;border-color:#2e7d32;font-size:14px;font-weight:700;}
-.ev-btn-sale{color:#e57373;border-color:#c62828;font-size:14px;font-weight:700;}
-.ev-btn-asist{font-size:13px;}
+.ev-btn-tl{border-color:#2e7d32;}
+.ev-btn-gc{border-color:#7f0000;}
+.ev-btn-pen{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;color:var(--accent);border-color:var(--accent);}
+.ev-btn-entra{color:#4caf50;border-color:#2e7d32;font-size:13px;font-weight:700;}
+.ev-btn-sale{color:#e57373;border-color:#c62828;font-size:13px;font-weight:700;}
+.ball-tl{filter:sepia(1) saturate(5) hue-rotate(80deg);font-size:11px;}
+.ball-gc{filter:sepia(1) saturate(5) hue-rotate(310deg);font-size:11px;}
+.ev-action-bar{display:flex;gap:4px;align-items:center;}
+.ev-action-sep{width:1px;height:12px;background:rgba(255,255,255,0.15);flex-shrink:0;margin:0 3px;}
 .ev-tl{border-color:#1b5e20;background:#0a150a;color:#6abf69;}
 /* image preview strip */
 #img-strip{display:none;margin-bottom:.75rem;}
@@ -1989,7 +1990,7 @@ function normalizarPlanilla(planilla, equipo){
     nombre: formatearNombre(j?.nombre ?? ""),
     titular: !!j?.titular,
     es_capitan: j?.nota === "CP",
-    eventos: Array.isArray(j?.eventos) ? j.eventos : [],
+    eventos: [],
   }));
   // Enriquecer con datos de DB: si el jugador ya existe, usar su nombre_display
   for(const j of normalizados){
@@ -2152,42 +2153,43 @@ function renderPlanilla(containerId, jugadores){
     const trBg = j.titular ? "" : "background:rgba(255,255,255,0.015);";
     const cpBadge = j.es_capitan ? '<span class="badge-cap">CP</span> ' : "";
 
-    const btnBar = `<div class="ev-btn-bar">
-      <button class="ev-btn ev-btn-gol" onclick="abrirEventoRapido('${containerId}',${i},'gol')" title="Gol">⚽</button>
-      <button class="ev-btn ev-btn-tl" onclick="abrirEventoRapido('${containerId}',${i},'gol_tiro_libre')" title="Tiro libre"></button>
-      <button class="ev-btn ev-btn-gc" onclick="abrirEventoRapido('${containerId}',${i},'gol_contra')" title="Gol en contra"></button>
+    const actionBar = `<div class="ev-action-bar">
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'gol')" title="Gol">⚽</button>
+      <button class="ev-btn ev-btn-tl" onclick="abrirEventoRapido('${containerId}',${i},'gol_tiro_libre')" title="Gol de tiro libre"><span class="ball-tl">⚽</span></button>
+      <button class="ev-btn ev-btn-gc" onclick="abrirEventoRapido('${containerId}',${i},'gol_contra')" title="Gol en contra"><span class="ball-gc">⚽</span></button>
       <button class="ev-btn ev-btn-pen" onclick="abrirModalPenalNuevo('${containerId}',${i})" title="Penal">P</button>
-      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'amarilla')" title="Amarilla"><span class="ev-am-sq" style="width:8px;height:12px;border-radius:1px;"></span></button>
-      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'roja')" title="Roja"><span class="ev-ro-sq" style="width:8px;height:12px;border-radius:1px;"></span></button>
-      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'doble_amarilla')" title="Doble amarilla"><span style="display:inline-flex;gap:1px;"><span class="ev-am-sq" style="width:6px;height:11px;border-radius:1px;"></span><span class="ev-ro-sq" style="width:6px;height:11px;border-radius:1px;"></span></span></button>
+      <span class="ev-action-sep"></span>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'amarilla')" title="Amarilla"><span class="ev-am-sq" style="width:7px;height:11px;border-radius:1px;"></span></button>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'roja')" title="Roja"><span class="ev-ro-sq" style="width:7px;height:11px;border-radius:1px;"></span></button>
+      <button class="ev-btn" onclick="abrirEventoRapido('${containerId}',${i},'doble_amarilla')" title="Doble amarilla"><span style="display:inline-flex;gap:1px;align-items:center;"><span class="ev-am-sq" style="width:5px;height:9px;border-radius:1px;"></span><span class="ev-ro-sq" style="width:5px;height:9px;border-radius:1px;"></span></span></button>
+      <span class="ev-action-sep"></span>
       <button class="ev-btn ev-btn-entra" onclick="abrirCambioVinculado('${containerId}',${i},'entra')" title="Entra (cambio)">↑</button>
       <button class="ev-btn ev-btn-sale" onclick="abrirCambioVinculado('${containerId}',${i},'sale')" title="Sale (cambio)">↓</button>
-      <button class="ev-btn ev-btn-asist" onclick="abrirAsistencia('${containerId}',${i})" title="Asistencia">👟</button>
+      <button class="ev-btn" onclick="abrirAsistencia('${containerId}',${i})" title="Asistencia" style="font-size:12px;">👟</button>
     </div>`;
 
     return `<tr style="${trBg}">
-      <td style="width:30px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:28px;padding:2px 3px;text-align:left;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
-      <td style="min-width:130px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"38px":"4px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 4px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
-      <td style="width:22px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
-      <td>
-        <div style="display:flex;flex-wrap:wrap;gap:2px;min-height:18px;">${chips||""}</div>
-        ${btnBar}
-      </td>
+      <td style="width:28px;padding:3px 3px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:26px;padding:1px 2px;text-align:center;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="padding:3px 5px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"34px":"2px"});font-size:12px;font-weight:500;font-family:'Barlow',sans-serif;padding:1px 3px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="width:20px;text-align:center;font-size:10px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
+      <td style="padding:3px 6px;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.05);">${actionBar}</td>
+      <td style="padding:3px 6px;"><div style="display:flex;flex-wrap:wrap;gap:2px;">${chips||""}</div></td>
     </tr>`;
   }
 
   function emptyRow(bg){
-    return `<tr style="${bg||""}"><td colspan="4" style="height:28px;border-bottom:1px solid rgba(255,255,255,0.04);"></td></tr>`;
+    return `<tr style="${bg||""}"><td colspan="5" style="height:8px;"></td></tr>`;
   }
   function separator(){
-    return `<tr><td colspan="4" style="padding:0;background:rgba(255,255,255,0.07);height:2px;"></td></tr>`;
+    return `<tr><td colspan="5" style="padding:0;background:rgba(255,255,255,0.07);height:2px;"></td></tr>`;
   }
 
-  let html=`<table class="planilla" style="table-layout:fixed;width:100%;">
+  let html=`<table class="planilla" style="width:100%;">
     <thead><tr>
-      <th style="width:30px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
+      <th style="width:28px;cursor:pointer;" title="Ordenar por número" onclick="sortPlanillaPorNumero('${containerId}')">#</th>
       <th>Nombre</th>
-      <th style="width:22px;">T</th>
+      <th style="width:20px;">T</th>
+      <th>Acciones</th>
       <th>Eventos</th>
     </tr></thead><tbody>`;
 
@@ -2203,7 +2205,7 @@ function renderPlanilla(containerId, jugadores){
   const faltan = faltanTitulares + faltanSuplentes;
   if(faltan > 0){
     html+=`<tr style="background:rgba(232,196,74,0.05);">
-      <td colspan="4" style="padding:.5rem .6rem;">
+      <td colspan="5" style="padding:.5rem .6rem;">
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
           <span style="font-size:12px;color:var(--accent);">⚠️ Faltan ${faltan} jugador${faltan!==1?"es":""} (${faltanTitulares} titular${faltanTitulares!==1?"es":""}, ${faltanSuplentes} suplente${faltanSuplentes!==1?"s":""})</span>
           <button class="add-ev-btn" style="color:var(--accent);border-color:var(--accent);" onclick="abrirAgregarJugadorPlanilla('${containerId}')">+ Agregar jugador</button>
