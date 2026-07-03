@@ -264,10 +264,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             </select>
             <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
               <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
-              <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;">
+              <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;flex-wrap:wrap;">
                 <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
                 <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar planilla</button>
                 <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
+              </div>
+              <div id="sel-resultado-actions" style="display:none;margin-top:.4rem;">
+                <button class="btn btn-danger btn-sm" onclick="borrarResultado()">🗑️ Borrar resultado completo</button>
               </div>
             </div>
 
@@ -1229,6 +1232,7 @@ function actualizarEstadoPlanillaSeleccion(){
   const nextWrap = document.getElementById("btn-sel-siguiente-wrap");
   const borradoreIndicator = document.getElementById("borrador-indicator");
   const btnContinuarBorrador = document.getElementById("btn-continuar-borrador");
+  const resultActions = document.getElementById("sel-resultado-actions");
   const hasBorrador = !!localStorage.getItem(borradorKey({fixtureId: p?.id, zona: sel.zona, fecha: sel.fecha, local: p?.local}));
   if(tienePlanilla){
     txt.textContent = "✅ Planilla cargada.";
@@ -1238,13 +1242,14 @@ function actualizarEstadoPlanillaSeleccion(){
     if(borradoreIndicator) borradoreIndicator.style.display = "none";
     if(btnContinuarBorrador) btnContinuarBorrador.style.display = "none";
   } else {
-    txt.textContent = "Sin planilla. Podés cargarla con IA o editar manualmente.";
-    txt.style.color = "var(--muted)";
+    txt.textContent = tieneResultado ? `Resultado cargado: ${p.goles_local}–${p.goles_visitante}. Sin planilla detallada.` : "Sin planilla. Podés cargarla con IA o editar manualmente.";
+    txt.style.color = tieneResultado ? "#5daadd" : "var(--muted)";
     actions.style.display = "none";
     if(nextWrap) nextWrap.style.display = "";
     if(borradoreIndicator) borradoreIndicator.style.display = hasBorrador ? "" : "none";
     if(btnContinuarBorrador) btnContinuarBorrador.style.display = hasBorrador ? "" : "none";
   }
+  if(resultActions) resultActions.style.display = tieneResultado ? "" : "none";
 
   // Show inline result editor
   if(erFormInline){
@@ -1446,6 +1451,54 @@ async function borrarPlanilla(){
     alert("✓ Planilla borrada correctamente.");
   } catch(e){
     alert("Error: " + e.message);
+  }
+}
+
+async function borrarResultado(){
+  const sel = obtenerPartidoSeleccionado();
+  if(!sel){ alert("Seleccioná un partido primero."); return; }
+  const p = sel.p;
+  const fixtureId = p?.id;
+  const estadoDestino = (p.dia || p.hora) ? "programado" : "sin programar";
+  if(!confirm(`¿Borrar el resultado completo de ${p.local} vs ${p.visitante}?\n\nSe eliminarán planillas, eventos, penales y el resultado. El partido quedará como "${estadoDestino}".`)) return;
+
+  try {
+    let partidoId = null;
+    if(fixtureId){
+      const {data:partidoDB} = await sb.from("partidos").select("id").eq("fixture_id", fixtureId).maybeSingle();
+      partidoId = partidoDB?.id || null;
+    }
+
+    if(partidoId){
+      const {data:planillas} = await sb.from("planillas").select("id").eq("partido_id", partidoId);
+      if(planillas?.length){
+        const ids = planillas.map(pl=>pl.id);
+        await sb.from("eventos").delete().in("planilla_id", ids);
+        await sb.from("planillas").delete().eq("partido_id", partidoId);
+      }
+      await sb.from("penales").delete().eq("partido_id", partidoId);
+      await sb.from("partidos").delete().eq("id", partidoId);
+    }
+
+    if(fixtureId){
+      const nuevoEstado = (p.dia || p.hora) ? "programado" : null;
+      await sb.from("fixture").update({
+        goles_local: null,
+        goles_visitante: null,
+        estado: nuevoEstado,
+        minuto_actual: null,
+      }).eq("id", fixtureId);
+    }
+
+    // Actualizar en memoria
+    p.goles_local = null;
+    p.goles_visitante = null;
+    if(fixtureId) FIXTURE_CON_PLANILLA.delete(String(fixtureId));
+    actualizarEstadoPlanillaSeleccion();
+    actualizarPartidos();
+    alert(`✓ Resultado borrado. El partido quedó como "${estadoDestino}".`);
+  } catch(e){
+    alert("Error al borrar: " + e.message);
   }
 }
 
