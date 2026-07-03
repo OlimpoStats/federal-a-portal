@@ -3102,13 +3102,21 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
       const jExist = plantelLocal.find(p => p.id_federal === idFederal);
       if(jExist){
         resoluciones.push({ accion: "actualizar_equipo", jExistente: jExist, jugadorDatos: j });
-      } else {
-        const datosInsert = {
-          id_federal: idFederal, nombre: nombreRaw,
-          nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
-        };
-        resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
-        plantelLocal.push({ id: "_p_"+idFederal, id_federal: idFederal, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+      } else if(nombreRaw){
+        // id_federal no encontrado → intentar por nombre antes de crear uno nuevo
+        const { jugador: jugNombre, candidatos: candsNombre } = buscarEnPlantel(nombreRaw, plantelLocal);
+        if(jugNombre){
+          resoluciones.push({ accion: "existente", jExistente: jugNombre, jugadorDatos: j });
+        } else if(candsNombre.length && candsNombre[0].score >= 30){
+          pendientesRevision.push({ tipo:"gris", nombrePlanilla:nombreRaw, camiseta:j.numero, candidato:candsNombre[0].jugador, candidatos:candsNombre, score:candsNombre[0].score, jugadorDatos:j });
+        } else {
+          const datosInsert = {
+            id_federal: idFederal, nombre: nombreRaw,
+            nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
+          };
+          resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
+          plantelLocal.push({ id: "_p_"+idFederal, id_federal: idFederal, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+        }
       }
     } else if(nombreRaw){
       const { jugador: jugPropio, candidatos: candidatosPropio } = buscarEnPlantel(nombreRaw, plantelLocal);
