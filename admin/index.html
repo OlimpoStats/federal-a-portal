@@ -3158,7 +3158,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
 
   // ── REVISIÓN: casos en zona gris o sin match → mostrar pantalla de confirmación ──
   if(pendientesRevision.length > 0){
-    const decisiones = await mostrarRevisionJugadores(pendientesRevision, equipoNombre);
+    const decisiones = await mostrarRevisionJugadores(pendientesRevision, equipoNombre, plantelLocal);
     if(decisiones === null) return false; // usuario canceló
     for(const {item, decision} of decisiones){
       if(decision === "mismo" && item.candidato){
@@ -3252,7 +3252,10 @@ function resolverTransfer(decision){
   if(_resolveTransfer){ _resolveTransfer(decision); _resolveTransfer = null; }
 }
 
-function mostrarRevisionJugadores(pendientes, equipoNombre){
+function mostrarRevisionJugadores(pendientes, equipoNombre, plantelCompleto){
+  window._revisionPlantel = plantelCompleto || [];
+  window._revisionManualSel = {};
+  window._revisionBusqueda = {};
   return new Promise(resolve => {
     _revisionResolve = resolve;
     _revisionItems = pendientes;
@@ -3260,15 +3263,15 @@ function mostrarRevisionJugadores(pendientes, equipoNombre){
       `Algunos jugadores de ${equipoNombre} no pudieron identificarse con certeza. Elegí quién es cada uno.`;
     document.getElementById("revision-lista").innerHTML = pendientes.map((item,i) => {
       const candidatos = item.candidatos || (item.candidato ? [{jugador:item.candidato, score:item.score}] : []);
-      // Pre-seleccionar el mejor candidato si score >= 60, sino "nuevo"
       const preselIdx = (candidatos.length && candidatos[0].score >= 60) ? 0 : -1;
+
+      const onchangeRadio = `limpiarManualSel(${i});document.querySelectorAll('[id^="rev-label-${i}-"]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'`;
 
       const candidatosHTML = candidatos.map((c, ci) => {
         const checked = ci === preselIdx ? "checked" : "";
         const scoreColor = c.score >= 60 ? "#5dba7d" : c.score >= 40 ? "#e8c44a" : "#e57373";
         return `<label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:5px;border:1px solid ${checked?"var(--accent)":"var(--border)"};margin-bottom:.25rem;" id="rev-label-${i}-${ci}">
-          <input type="radio" name="rev-${i}" value="candidato-${ci}" ${checked} style="accent-color:var(--accent);"
-            onchange="document.querySelectorAll('[id^=rev-label-${i}-]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'">
+          <input type="radio" name="rev-${i}" value="candidato-${ci}" ${checked} style="accent-color:var(--accent);" onchange="${onchangeRadio}">
           <span style="flex:1;font-size:13px;">${c.jugador.nombre_display||c.jugador.nombre}</span>
           <span style="font-size:11px;color:${scoreColor};font-family:'Barlow Condensed',sans-serif;">${c.score}/100</span>
         </label>`;
@@ -3278,24 +3281,85 @@ function mostrarRevisionJugadores(pendientes, equipoNombre){
       return `<div style="border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-bottom:.6rem;background:var(--bg);">
         <div style="font-size:14px;font-weight:700;margin-bottom:.5rem;">#${item.camiseta} &nbsp;·&nbsp; <span style="color:var(--accent);">${item.nombrePlanilla}</span></div>
         ${candidatos.length
-          ? `<div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Posibles coincidencias en el plantel:</div>${candidatosHTML}`
-          : `<div style="font-size:12px;color:#e57373;margin-bottom:.4rem;">No se encontró ningún candidato en el plantel.</div>`
+          ? `<div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Posibles coincidencias:</div>${candidatosHTML}`
+          : `<div style="font-size:12px;color:#e57373;margin-bottom:.4rem;">No se encontró ningún candidato automáticamente.</div>`
         }
-        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:5px;border:1px solid ${nuevoChecked?"var(--accent)":"var(--border)"};margin-top:${candidatos.length?".35rem":"0"};" id="rev-label-${i}-nuevo">
-          <input type="radio" name="rev-${i}" value="nuevo" ${nuevoChecked} style="accent-color:var(--accent);"
-            onchange="document.querySelectorAll('[id^=rev-label-${i}-]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'">
-          <span style="font-size:13px;color:var(--muted);">Crear jugador nuevo (no está en el plantel)</span>
+        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:5px;border:1px solid ${nuevoChecked?"var(--accent)":"var(--border)"};margin-top:${candidatos.length?".3rem":"0"};" id="rev-label-${i}-nuevo">
+          <input type="radio" name="rev-${i}" value="nuevo" ${nuevoChecked} style="accent-color:var(--accent);" onchange="${onchangeRadio}">
+          <span style="font-size:13px;color:var(--muted);">Crear jugador nuevo</span>
         </label>
+        <div style="margin-top:.6rem;border-top:1px solid rgba(255,255,255,0.06);padding-top:.5rem;">
+          <div id="rev-manual-${i}"></div>
+          <input type="text" placeholder="🔍 Buscar en el plantel registrado..." oninput="buscarEnRevision(${i},this.value)"
+            style="width:100%;font-size:12px;padding:.35rem .5rem;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text);box-sizing:border-box;">
+          <div id="rev-search-${i}" style="margin-top:.3rem;display:none;"></div>
+        </div>
       </div>`;
     }).join('');
     document.getElementById("modal-revision").style.display = "flex";
   });
 }
 
+function buscarEnRevision(idx, query){
+  const container = document.getElementById("rev-search-"+idx);
+  if(!container) return;
+  const q = normalizarTexto(query);
+  if(!q){ container.style.display="none"; container.innerHTML=""; return; }
+  const plantel = window._revisionPlantel||[];
+  const resultados = plantel.filter(j=>{
+    return normalizarTexto(j.nombre_display||j.nombre||"").includes(q);
+  }).slice(0,7);
+  if(!resultados.length){
+    container.style.display="block";
+    container.innerHTML='<div style="font-size:12px;color:var(--muted);padding:.25rem .4rem;">Sin resultados</div>';
+    return;
+  }
+  container.style.display="block";
+  container.innerHTML = resultados.map((j,ri)=>
+    `<div onclick="seleccionarDeBusqueda(${idx},${ri})" style="padding:.35rem .6rem;cursor:pointer;border:1px solid var(--border);border-radius:4px;margin-bottom:.2rem;font-size:13px;display:flex;align-items:center;gap:.5rem;background:var(--bg);">
+      <span style="flex:1;">${j.nombre_display||j.nombre}</span>
+      <span style="font-size:10px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;">Seleccionar →</span>
+    </div>`
+  ).join("");
+  if(!window._revisionBusqueda) window._revisionBusqueda={};
+  window._revisionBusqueda[idx] = resultados;
+}
+
+function seleccionarDeBusqueda(idx, ri){
+  if(!window._revisionBusqueda||!window._revisionBusqueda[idx]) return;
+  const jugador = window._revisionBusqueda[idx][ri];
+  if(!jugador) return;
+  document.querySelectorAll('input[name="rev-'+idx+'"]').forEach(r=>r.checked=false);
+  document.querySelectorAll('[id^="rev-label-'+idx+'-"]').forEach(el=>el.style.borderColor="var(--border)");
+  const searchContainer = document.getElementById("rev-search-"+idx);
+  if(searchContainer){ searchContainer.style.display="none"; searchContainer.innerHTML=""; }
+  const searchInput = searchContainer?.previousElementSibling;
+  if(searchInput && searchInput.tagName==="INPUT") searchInput.value="";
+  if(!window._revisionManualSel) window._revisionManualSel={};
+  window._revisionManualSel[idx] = jugador;
+  const manualDiv = document.getElementById("rev-manual-"+idx);
+  if(manualDiv){
+    manualDiv.innerHTML=`<div style="border:1px solid var(--accent);border-radius:5px;padding:.35rem .6rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;background:rgba(232,196,74,.07);">
+      <span style="flex:1;font-size:13px;font-weight:600;color:var(--accent);">✓ ${jugador.nombre_display||jugador.nombre}</span>
+      <button onclick="limpiarManualSel(${idx})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;">×</button>
+    </div>`;
+  }
+}
+
+function limpiarManualSel(idx){
+  if(window._revisionManualSel) window._revisionManualSel[idx]=null;
+  const d=document.getElementById("rev-manual-"+idx);
+  if(d) d.innerHTML="";
+}
+
 function resolverRevisionTodo(confirmar){
   document.getElementById("modal-revision").style.display = "none";
   if(!confirmar){ if(_revisionResolve){_revisionResolve(null);_revisionResolve=null;} return; }
+  const manualSel = window._revisionManualSel||{};
   const decisiones = _revisionItems.map((item,i)=>{
+    if(manualSel[i]){
+      return { item: {...item, candidato: manualSel[i]}, decision: "mismo" };
+    }
     const sel = document.querySelector(`input[name="rev-${i}"]:checked`);
     const val = sel?.value || "nuevo";
     if(val.startsWith("candidato-")){
@@ -3306,6 +3370,8 @@ function resolverRevisionTodo(confirmar){
     }
     return { item, decision: "nuevo" };
   });
+  window._revisionManualSel={};
+  window._revisionBusqueda={};
   if(_revisionResolve){_revisionResolve(decisiones);_revisionResolve=null;}
 }
 
