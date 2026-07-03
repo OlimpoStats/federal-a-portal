@@ -431,6 +431,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 <input type="text" id="partido-estadio" placeholder="Nombre del estadio" oninput="acInput(this,'estadios','partido-estadio')" autocomplete="off">
                 <div class="autocomplete-list" id="ac-partido-estadio"></div>
               </div>
+              <div>
+                <label>Link de streaming</label>
+                <input type="url" id="partido-streaming" placeholder="https://..." style="width:100%;">
+              </div>
               <div class="autocomplete-wrap">
                 <label>DT Local</label>
                 <input type="text" id="partido-dt-local" placeholder="Director técnico local" oninput="acInput(this,'tecnicos','partido-dt-local')" autocomplete="off">
@@ -1304,6 +1308,7 @@ function cargarDatosPartidoSeleccionadoEnUI(sel){
     const info = EQUIPOS_INFO[p.local]||{};
     document.getElementById("partido-estadio").value=info.estadio_nombre||"";
   }
+  document.getElementById("partido-streaming").value = p.stream_url || "";
   document.getElementById("partido-arbitro").value = p.arbitro || "";
   document.getElementById("partido-juez1").value = p.juez1 || "";
   document.getElementById("partido-juez2").value = p.juez2 || "";
@@ -1580,7 +1585,7 @@ function resetTodo(){
   // Reset score inputs
   ["score-local","score-visit"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=0; });
   // Reset partido form fields
-  ["partido-estadio","partido-arbitro","partido-juez1","partido-juez2","partido-cuarto","partido-dt-local","partido-dt-visit","partido-dia","partido-hora"].forEach(id=>{
+  ["partido-estadio","partido-streaming","partido-arbitro","partido-juez1","partido-juez2","partido-cuarto","partido-dt-local","partido-dt-visit","partido-dia","partido-hora"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value="";
   });
   // Reset flash
@@ -3305,6 +3310,12 @@ function resolverTransfer(decision){
   if(_resolveTransfer){ _resolveTransfer(decision); _resolveTransfer = null; }
 }
 
+function _revSelChange(i, el){
+  limpiarManualSel(i);
+  document.querySelectorAll('[id^="rev-label-'+i+'-"]').forEach(e=>e.style.borderColor='var(--border)');
+  el.closest('label').style.borderColor='var(--accent)';
+}
+
 function mostrarRevisionJugadores(pendientes, equipoNombre, plantelCompleto){
   window._revisionPlantel = plantelCompleto || [];
   window._revisionManualSel = {};
@@ -3318,7 +3329,7 @@ function mostrarRevisionJugadores(pendientes, equipoNombre, plantelCompleto){
       const candidatos = item.candidatos || (item.candidato ? [{jugador:item.candidato, score:item.score}] : []);
       const preselIdx = (candidatos.length && candidatos[0].score >= 60) ? 0 : -1;
 
-      const onchangeRadio = `limpiarManualSel(${i});document.querySelectorAll('[id^="rev-label-${i}-"]').forEach(el=>el.style.borderColor='var(--border)');this.closest('label').style.borderColor='var(--accent)'`;
+      const onchangeRadio = `_revSelChange(${i},this)`;
 
       const candidatosHTML = candidatos.map((c, ci) => {
         const checked = ci === preselIdx ? "checked" : "";
@@ -3607,6 +3618,7 @@ function guardarBorrador(){
       glLocal: document.getElementById("score-local")?.value || "0",
       glVisit: document.getElementById("score-visit")?.value || "0",
       estadio: document.getElementById("partido-estadio")?.value || "",
+      streaming: document.getElementById("partido-streaming")?.value || "",
       arbitro: document.getElementById("partido-arbitro")?.value || "",
       juez1: document.getElementById("partido-juez1")?.value || "",
       juez2: document.getElementById("partido-juez2")?.value || "",
@@ -3646,6 +3658,7 @@ function cargarBorrador(){
   document.getElementById("score-local").value = f.glLocal;
   document.getElementById("score-visit").value = f.glVisit;
   document.getElementById("partido-estadio").value = f.estadio;
+  document.getElementById("partido-streaming").value = f.streaming || "";
   document.getElementById("partido-arbitro").value = f.arbitro;
   document.getElementById("partido-juez1").value = f.juez1;
   document.getElementById("partido-juez2").value = f.juez2;
@@ -3663,6 +3676,7 @@ async function confirmarCarga(publicar=true){
   const glLocal = parseInt(document.getElementById("score-local").value) || 0;
   const glVisit = parseInt(document.getElementById("score-visit").value) || 0;
   const estadio = document.getElementById("partido-estadio").value || null;
+  const streamUrl = document.getElementById("partido-streaming").value || null;
   const arbitro = document.getElementById("partido-arbitro").value || null;
   const juez1 = document.getElementById("partido-juez1").value || null;
   const juez2 = document.getElementById("partido-juez2").value || null;
@@ -3737,7 +3751,7 @@ async function confirmarCarga(publicar=true){
       const {error:fxErr} = await sb.from("fixture").update({
         goles_local: glLocal,
         goles_visitante: glVisit,
-        estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
+        estadio, stream_url: streamUrl, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
         dt_local: _dtLocal, dt_visitante: _dtVisit,
         dia, hora,
         ...(publicar ? { estado: 'jugado', minuto_actual: null } : {}),
@@ -3756,7 +3770,7 @@ async function confirmarCarga(publicar=true){
       goles_local: glLocal,
       goles_visitante: glVisit,
       jugado: publicar,
-      estadio, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
+      estadio, stream_url: streamUrl, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
       dt_local: dtLocal, dt_visitante: dtVisit,
       fixture_id: fixtureId,
     };
