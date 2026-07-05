@@ -160,9 +160,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .score-input.score-changed{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,196,74,.25);}
 /* autocomplete */
 .autocomplete-wrap{position:relative;}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+.autocomplete-list{position:fixed;background:var(--surface2);border:1px solid var(--border);border-radius:6px;z-index:9999;max-height:160px;overflow-y:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.5);}
 .autocomplete-list.open{display:block;}
-.autocomplete-list.above{top:auto;bottom:100%;}
 .ac-item{padding:.4rem .75rem;font-size:13px;cursor:pointer;}
 .ac-item:hover{background:var(--surface3);color:var(--accent);}
 /* abm */
@@ -265,13 +264,15 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             </select>
             <div id="sel-planilla-status" style="display:none;margin-top:.25rem;padding:.65rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);">
               <div id="sel-planilla-status-text" style="font-size:12px;color:var(--muted);"></div>
-              <div id="sel-planilla-status-actions" style="display:none;gap:.5rem;margin-top:.55rem;flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar planilla</button>
-                <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
-              </div>
-              <div id="sel-resultado-actions" style="display:none;margin-top:.4rem;">
-                <button class="btn btn-danger btn-sm" onclick="borrarResultado()">🗑️ Borrar resultado completo</button>
+              <div id="sel-actions-row" style="display:none;margin-top:.55rem;display:flex;gap:.75rem;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;">
+                <div id="sel-planilla-status-actions" style="display:none;gap:.4rem;flex-wrap:wrap;">
+                  <button class="btn btn-secondary btn-sm" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
+                  <button class="btn btn-secondary btn-sm" onclick="irPaso2()">🔄 Reemplazar</button>
+                  <button class="btn btn-danger btn-sm" onclick="borrarPlanilla()">🗑️ Borrar planilla</button>
+                </div>
+                <div id="sel-resultado-actions" style="display:none;">
+                  <button class="btn btn-danger btn-sm" onclick="borrarResultado()">🗑️ Borrar resultado</button>
+                </div>
               </div>
             </div>
 
@@ -285,10 +286,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
                 <input type="number" id="er-gv-inline" min="0" value="0" style="width:60px;text-align:center;font-weight:700;">
                 <span id="er-visit-inline" style="font-size:14px;font-weight:600;flex:1;">—</span>
               </div>
-              <div style="text-align:right;display:flex;gap:.5rem;justify-content:flex-end;">
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2Manual()">✏️ Cargar manual</button>
-                <button class="btn btn-secondary btn-sm" onclick="irPaso2()">📋 Cargar planilla</button>
-                <button class="btn btn-secondary btn-sm" onclick="irPasoUnificado()">🖼️ Unificada</button>
+              <div style="text-align:right;">
                 <button class="btn btn-primary btn-sm" onclick="erGuardarInline()">Guardar resultado</button>
               </div>
             </div>
@@ -298,7 +296,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               <button class="btn btn-secondary" id="btn-continuar-borrador" onclick="cargarBorrador()" style="display:none;">📂 Continuar borrador</button>
               <button class="btn btn-secondary" onclick="irPaso2Manual()">✏️ Cargar manual</button>
               <button class="btn btn-secondary" onclick="irPasoUnificado()">🖼️ Unificada</button>
-              <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar planilla →</button>
+              <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar separadas →</button>
             </div>
           </div>
         </div>
@@ -500,6 +498,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <div style="font-size:14px;color:var(--muted);margin-bottom:2rem;" id="confirmado-txt">Los datos fueron guardados y las posiciones actualizadas.</div>
           <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="volverAlInicio()">Cambiar fecha / zona</button>
+            <button class="btn btn-secondary" onclick="editarPlanillaExistente()">✏️ Editar planilla</button>
             <button class="btn btn-primary" onclick="volverMismaFecha()">Siguiente partido →</button>
           </div>
         </div>
@@ -1238,36 +1237,34 @@ function actualizarEstadoPlanillaSeleccion(){
   const borradoreIndicator = document.getElementById("borrador-indicator");
   const btnContinuarBorrador = document.getElementById("btn-continuar-borrador");
   const resultActions = document.getElementById("sel-resultado-actions");
+  const actionsRow = document.getElementById("sel-actions-row");
   const hasBorrador = !!localStorage.getItem(borradorKey({fixtureId: p?.id, zona: sel.zona, fecha: sel.fecha, local: p?.local}));
   if(tienePlanilla){
     txt.textContent = "✅ Planilla cargada.";
     txt.style.color = "#5dba7d";
     actions.style.display = "flex";
+    if(actionsRow) actionsRow.style.display = "flex";
     if(nextWrap) nextWrap.style.display = "none";
     if(borradoreIndicator) borradoreIndicator.style.display = "none";
     if(btnContinuarBorrador) btnContinuarBorrador.style.display = "none";
+    if(erFormInline) erFormInline.style.display = "none";
   } else {
     txt.textContent = tieneResultado ? `Resultado cargado: ${p.goles_local}–${p.goles_visitante}. Sin planilla detallada.` : "Sin planilla. Podés cargarla con IA o editar manualmente.";
     txt.style.color = tieneResultado ? "#5daadd" : "var(--muted)";
     actions.style.display = "none";
+    if(actionsRow) actionsRow.style.display = tieneResultado ? "flex" : "none";
     if(nextWrap) nextWrap.style.display = "";
     if(borradoreIndicator) borradoreIndicator.style.display = hasBorrador ? "" : "none";
     if(btnContinuarBorrador) btnContinuarBorrador.style.display = hasBorrador ? "" : "none";
+    if(erFormInline){
+      erFormInline.style.display = "";
+      document.getElementById("er-local-inline").textContent = p.local;
+      document.getElementById("er-visit-inline").textContent = p.visitante;
+      document.getElementById("er-gl-inline").value = p.goles_local ?? 0;
+      document.getElementById("er-gv-inline").value = p.goles_visitante ?? 0;
+    }
   }
   if(resultActions) resultActions.style.display = tieneResultado ? "" : "none";
-
-  // Show inline result editor
-  if(erFormInline){
-    erFormInline.style.display = "";
-    const erLocal = document.getElementById("er-local-inline");
-    const erVisit = document.getElementById("er-visit-inline");
-    const erGl = document.getElementById("er-gl-inline");
-    const erGv = document.getElementById("er-gv-inline");
-    if(erLocal) erLocal.textContent = p.local;
-    if(erVisit) erVisit.textContent = p.visitante;
-    if(erGl) erGl.value = p.goles_local ?? 0;
-    if(erGv) erGv.value = p.goles_visitante ?? 0;
-  }
 }
 
 async function erGuardarInline(){
@@ -4337,11 +4334,18 @@ function acInput(input, tabla, fieldId){
       ${i.nombre}
     </div>`
   ).join("");
-  listEl.classList.remove("above");
   listEl.classList.add("open");
   listEl._activeIdx = -1;
-  const rect = listEl.getBoundingClientRect();
-  if(rect.bottom > window.innerHeight - 8) listEl.classList.add("above");
+  const ir = input.getBoundingClientRect();
+  listEl.style.width = ir.width + "px";
+  listEl.style.left = ir.left + "px";
+  if(window.innerHeight - ir.bottom < 170){
+    listEl.style.top = "";
+    listEl.style.bottom = (window.innerHeight - ir.top) + "px";
+  } else {
+    listEl.style.top = ir.bottom + "px";
+    listEl.style.bottom = "";
+  }
 }
 
 function acSelect(fieldId, nombre){
@@ -4359,6 +4363,9 @@ document.addEventListener("click", e=>{
     document.querySelectorAll(".autocomplete-list").forEach(l=>l.classList.remove("open"));
   }
 });
+document.addEventListener("scroll", ()=>{
+  document.querySelectorAll(".autocomplete-list.open").forEach(l=>l.classList.remove("open"));
+}, true);
 
 document.addEventListener("keydown", e=>{
   const openList = document.querySelector(".autocomplete-list.open");
