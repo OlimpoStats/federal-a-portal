@@ -146,6 +146,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-btn-pen{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;color:var(--accent);border-color:var(--accent);}
 .ev-btn-entra{color:#4caf50;border-color:#2e7d32;font-size:13px;font-weight:700;}
 .ev-btn-sale{color:#e57373;border-color:#c62828;font-size:13px;font-weight:700;}
+.ev-btn-cap-on{color:#ffd700;border-color:#ffd700;background:rgba(255,215,0,.08);}
 .ball-tl{filter:sepia(1) saturate(5) hue-rotate(80deg);font-size:11px;}
 .ball-gc{filter:sepia(1) saturate(5) hue-rotate(310deg);font-size:11px;}
 .ev-action-bar{display:flex;gap:4px;align-items:center;}
@@ -2222,6 +2223,8 @@ function renderPlanilla(containerId, jugadores){
       <button class="ev-btn ev-btn-entra" onclick="abrirCambioVinculado('${containerId}',${i},'entra')" title="Entra (cambio)">↑</button>
       <button class="ev-btn ev-btn-sale" onclick="abrirCambioVinculado('${containerId}',${i},'sale')" title="Sale (cambio)">↓</button>
       <button class="ev-btn" onclick="abrirAsistencia('${containerId}',${i})" title="Asistencia" style="font-size:12px;">👟</button>
+      <span class="ev-action-sep"></span>
+      <button class="ev-btn ${j.es_capitan?'ev-btn-cap-on':''}" onclick="toggleCapitan('${containerId}',${i})" title="${j.es_capitan?'Quitar capitán':'Asignar capitán'}" style="font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;">CP</button>
     </div>`;
 
     return `<tr style="${trBg}">
@@ -2336,6 +2339,15 @@ function abrirAgregarEvento(containerId, jIdx, prefill=null){
     if(btnLabel) btnLabel.textContent = "Guardar cambios";
   }
   toggleExtras();
+}
+
+function toggleCapitan(containerId, jIdx){
+  const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+  if(!arr) return;
+  const yaEsCap = !!arr[jIdx]?.es_capitan;
+  arr.forEach(j=>{ j.es_capitan=false; });
+  if(!yaEsCap) arr[jIdx].es_capitan=true;
+  renderPlanilla(containerId, arr);
 }
 
 function abrirEventoRapido(containerId, jIdx, tipo){
