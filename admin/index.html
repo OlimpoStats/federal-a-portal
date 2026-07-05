@@ -153,10 +153,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .ev-action-sep{width:1px;height:12px;background:rgba(255,255,255,0.15);flex-shrink:0;margin:0 3px;}
 .ev-tl{border-color:#1b5e20;background:#0a150a;color:#6abf69;}
 /* image preview strip */
-#img-strip{display:none;margin-bottom:.75rem;}
-#img-strip-inner{display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;}
-.img-strip-thumb{max-height:180px;max-width:48%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;object-fit:contain;background:var(--surface2);}
-.img-strip-toggle{font-size:12px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;margin-bottom:.4rem;background:none;border:none;padding:0;}
+#img-strip{display:none;padding:.5rem .4rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border);}
+#img-strip-inner{display:flex;flex-direction:column;gap:.5rem;}
+.img-strip-thumb{width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;object-fit:contain;background:var(--surface);max-height:none;}
+.img-strip-toggle{font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:.3rem;background:none;border:none;padding:0;}
 /* live score highlight */
 .score-input.score-changed{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,196,74,.25);}
 /* autocomplete */
@@ -376,14 +376,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <!-- PASO 3: revisar -->
       <div id="paso3" style="display:none;">
         <div id="flash-msg" class="flash"></div>
-
-        <!-- Image preview strip -->
-        <div id="img-strip">
-          <button class="img-strip-toggle" onclick="toggleImgStrip()">
-            <span id="img-strip-icon">▼</span> Ver imagen de la planilla
-          </button>
-          <div id="img-strip-inner" style="display:none;"></div>
-        </div>
+        <div style="display:flex;gap:1rem;align-items:flex-start;">
+          <!-- columna principal -->
+          <div style="flex:1;min-width:0;">
 
         <div class="card" style="position:relative;">
           <div class="loading-overlay" id="loading-overlay">
@@ -489,6 +484,16 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <button class="btn btn-primary" onclick="confirmarCarga()">✓ Publicar planilla</button>
           </div>
         </div>
+          </div><!-- fin columna principal -->
+
+          <!-- panel lateral imagen -->
+          <div id="img-strip" style="width:220px;flex-shrink:0;position:sticky;top:0;max-height:calc(100vh - 80px);overflow-y:auto;display:none;">
+            <button class="img-strip-toggle" onclick="toggleImgStrip()" style="width:100%;text-align:left;margin-bottom:.5rem;">
+              <span id="img-strip-icon">✕</span> Cerrar imagen
+            </button>
+            <div id="img-strip-inner"></div>
+          </div>
+        </div><!-- fin flex row -->
       </div>
 
       <!-- PASO 4: confirmado -->
@@ -1544,12 +1549,12 @@ function showFlash(msg, type){
 }
 
 function toggleImgStrip(){
-  const inner = document.getElementById("img-strip-inner");
+  const strip = document.getElementById("img-strip");
   const icon = document.getElementById("img-strip-icon");
-  if(!inner) return;
-  const visible = inner.style.display !== "none";
-  inner.style.display = visible ? "none" : "";
-  if(icon) icon.textContent = visible ? "▼" : "▲";
+  if(!strip) return;
+  const visible = strip.style.display !== "none";
+  strip.style.display = visible ? "none" : "block";
+  if(icon) icon.textContent = visible ? "✕" : "✕";
 }
 
 function poblarImgStrip(){
@@ -2228,11 +2233,11 @@ function renderPlanilla(containerId, jugadores){
     </div>`;
 
     return `<tr style="${trBg}">
-      <td style="width:28px;padding:3px 3px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:26px;padding:1px 2px;text-align:center;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
-      <td style="padding:3px 5px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"34px":"2px"});font-size:12px;font-weight:500;font-family:'Barlow',sans-serif;padding:1px 3px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
-      <td style="width:20px;text-align:center;font-size:10px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
-      <td style="padding:3px 6px;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.05);">${actionBar}</td>
-      <td style="padding:3px 6px;"><div style="display:flex;flex-wrap:wrap;gap:2px;">${chips||""}</div></td>
+      <td style="width:30px;padding:5px 3px;"><input type="text" inputmode="numeric" pattern="[0-9]*" value="${j.numero||""}" style="width:28px;padding:2px 2px;text-align:center;font-size:13px;font-weight:600;font-family:'Barlow',sans-serif;" onchange="updateJugador('${containerId}',${i},'numero',this.value)"></td>
+      <td style="padding:5px 6px;">${cpBadge}<input type="text" value="${j.nombre||""}" style="width:calc(100% - ${j.es_capitan?"34px":"2px"});font-size:13px;font-weight:500;font-family:'Barlow',sans-serif;padding:2px 3px;" onchange="editarNombre('${containerId}',${i},this.value)"></td>
+      <td style="width:22px;text-align:center;font-size:11px;font-family:'Barlow',sans-serif;color:${j.nc?"#e53935":j.titular?"#5dba7d":"var(--muted)"};">${j.nc?"NC":j.titular?"T":"S"}</td>
+      <td style="padding:5px 6px;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.05);">${actionBar}</td>
+      <td style="padding:5px 6px;"><div style="display:flex;flex-wrap:wrap;gap:2px;">${chips||""}</div></td>
     </tr>`;
   }
 
@@ -2879,13 +2884,72 @@ async function confirmarPenalNuevo(containerId, jIdx){
   actualizarMarcadorLive();
 
   document.getElementById("modal-penal-nuevo")?.remove();
-  abrirModalPenal(containerId, jIdx, tipo, minuto);
-  if(arqueroId){
-    setTimeout(()=>{
-      const sel = document.getElementById("pen-arquero");
-      if(sel) sel.value = arqueroId;
-    }, 100);
+  await _guardarPenalDB(containerId, jIdx, tipo, minuto, arqueroId);
+}
+
+async function _guardarPenalDB(containerId, jIdx, tipo, minuto, arqueroId){
+  const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
+  const jugador = arr?.[jIdx];
+  const esFavor = containerId==="tabla-local" ? partidoActual?.local : partidoActual?.visit;
+  const esContra = containerId==="tabla-local" ? partidoActual?.visit : partidoActual?.local;
+  const ejecutanteNombre = jugador?.nombre||"";
+  const ejecutanteId = jugador?.id_federal||jugador?.id||"";
+  const arbitro = document.getElementById("partido-arbitro")?.value||"";
+  const resultado = tipo==="gol_penal"?"gol":tipo==="penal_atajado"?"atajado":"desviado";
+
+  let ejecutanteDBId=null, arqueroDBId=null;
+  if(ejecutanteId){
+    const cached=JUGADORES_CACHE.find(j=>String(j.id_federal)===String(ejecutanteId)||String(j.id)===String(ejecutanteId));
+    if(cached) ejecutanteDBId=cached.id;
+    else {
+      const {data:jF}=await sb.from("jugadores").select("id").eq("id_federal",ejecutanteId).maybeSingle();
+      ejecutanteDBId=jF?.id||(parseInt(ejecutanteId)||null);
+    }
   }
+  if(arqueroId){
+    const cachedArq=JUGADORES_CACHE.find(j=>String(j.id_federal)===String(arqueroId)||String(j.id)===String(arqueroId));
+    if(cachedArq) arqueroDBId=cachedArq.id;
+    else {
+      const {data:aF}=await sb.from("jugadores").select("id").eq("id_federal",arqueroId).maybeSingle();
+      arqueroDBId=aF?.id||(parseInt(arqueroId)||null);
+    }
+  }
+  const sel=obtenerPartidoSeleccionado();
+  const fixtureId=sel?.p?.id||null;
+  let partidoId=null;
+  if(fixtureId){
+    const {data}=await sb.from("partidos").select("id").eq("fixture_id",fixtureId).maybeSingle();
+    partidoId=data?.id||null;
+  }
+  const {error}=await sb.from("penales").insert({
+    partido_id:partidoId, fixture_id:fixtureId,
+    equipo_favor:esFavor, equipo_contra:esContra,
+    ejecutante_id:ejecutanteDBId||null, arquero_id:arqueroDBId||null,
+    resultado, minuto, arbitro,
+  });
+  if(error){ showFlash("Error al guardar penal: "+error.message,"err"); return; }
+  if(!partidoId&&fixtureId){
+    const {data:pM}=await sb.from("partidos").select("id").eq("fixture_id",fixtureId).maybeSingle();
+    if(pM?.id) await sb.from("penales").update({partido_id:pM.id}).eq("fixture_id",fixtureId).is("partido_id",null);
+  }
+  if(resultado==="atajado"&&arqueroDBId&&partidoId){
+    const {data:arqPlan}=await sb.from("planillas").select("id").eq("partido_id",partidoId).eq("jugador_id",arqueroDBId).maybeSingle();
+    if(arqPlan?.id) await sb.from("eventos").insert({planilla_id:arqPlan.id,tipo:"penal_atajado",minuto:String(minuto),extra:"arquero"});
+  }
+  if(resultado==="atajado"){
+    const rivalSide=esFavor===(partidoActual?.local||"")?"visit":"local";
+    const rivalPlan=rivalSide==="local"?planillaLocal:planillaVisit;
+    const rivalContId=rivalSide==="local"?"tabla-local":"tabla-visit";
+    const arqJug=(rivalPlan.jugadores||[]).find(j=>j.numero==1||j.numero==12);
+    if(arqJug){
+      if(!arqJug.eventos)arqJug.eventos=[];
+      arqJug.eventos.push({tipo:"penal_atajado",minuto,extra:"arquero"});
+      arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+      renderPlanilla(rivalContId,rivalPlan.jugadores);
+      actualizarMarcadorLive();
+    }
+  }
+  showFlash("✓ Penal registrado.","ok");
 }
 
 function abrirAsistencia(containerId, jIdx){
