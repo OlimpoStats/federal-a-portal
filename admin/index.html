@@ -157,6 +157,9 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 #img-strip-inner{display:flex;flex-direction:column;gap:.5rem;}
 .img-strip-thumb{width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;object-fit:contain;background:var(--surface);max-height:none;}
 .img-strip-toggle{font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:.3rem;background:none;border:none;padding:0;}
+/* lightbox */
+#img-lightbox-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:zoom-out;}
+#img-lightbox-overlay img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.7);object-fit:contain;cursor:default;}
 /* live score highlight */
 .score-input.score-changed{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,196,74,.25);}
 /* autocomplete */
@@ -1298,7 +1301,7 @@ async function erGuardarInline(){
 
 function cargarDatosPartidoSeleccionadoEnUI(sel){
   const {zona,fecha,idx,p} = sel;
-  partidoActual={zona,fecha,idx,local:p.local,visit:p.visitante,fixtureId:p.id};
+  partidoActual={zona,fecha,idx,local:p.local,visit:p.visitante,fixtureId:p.id,goles_local:p.goles_local,goles_visitante:p.goles_visitante};
   document.getElementById("label-local").textContent="Planilla — "+p.local;
   document.getElementById("label-visit").textContent="Planilla — "+p.visitante;
   document.getElementById("paso2-titulo").textContent=p.local+" vs "+p.visitante;
@@ -1548,6 +1551,18 @@ function showFlash(msg, type){
   setTimeout(()=>{ f.className = "flash"; }, 5000);
 }
 
+function abrirLightbox(src){
+  let ov = document.getElementById("img-lightbox-overlay");
+  if(ov) ov.remove();
+  ov = document.createElement("div");
+  ov.id = "img-lightbox-overlay";
+  ov.onclick = e => { if(e.target === ov) ov.remove(); };
+  const img = document.createElement("img");
+  img.src = src;
+  ov.appendChild(img);
+  document.body.appendChild(ov);
+}
+
 function toggleImgStrip(){
   const strip = document.getElementById("img-strip");
   const icon = document.getElementById("img-strip-icon");
@@ -1566,7 +1581,7 @@ function poblarImgStrip(){
   if(imgVisitB64) imgs.push({src:"data:image/jpeg;base64,"+imgVisitB64, label:"Visitante"});
   if(imgUnificadaB64) imgs.push({src:"data:image/jpeg;base64,"+imgUnificadaB64, label:"Planilla unificada"});
   if(!imgs.length){ strip.style.display="none"; return; }
-  inner.innerHTML = imgs.map(img=>`<img class="img-strip-thumb" src="${img.src}" title="${img.label}" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'180px':'none'">`).join("");
+  inner.innerHTML = imgs.map(img=>`<img class="img-strip-thumb" src="${img.src}" title="${img.label}" onclick="abrirLightbox(this.src)">`).join("");
   strip.style.display = "block";
 }
 
@@ -3994,7 +4009,7 @@ async function erAbrirEditorCompleto(){
     return;
   }
 
-  partidoActual = { zona, fecha, idx: parseInt(idx, 10), local: p.local, visit: p.visitante, fixtureId: p.id };
+  partidoActual = { zona, fecha, idx: parseInt(idx, 10), local: p.local, visit: p.visitante, fixtureId: p.id, goles_local: p.goles_local, goles_visitante: p.goles_visitante };
 
   document.getElementById("res-local").textContent = p.local;
   document.getElementById("res-visit").textContent = p.visitante;
