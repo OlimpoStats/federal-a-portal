@@ -4949,7 +4949,7 @@ function abrirTraspasoManual(){
   document.getElementById("traspaso-origen-resultados").style.display = "none";
   document.getElementById("traspaso-origen-resultados").innerHTML = "";
   document.getElementById("traspaso-origen-sel").style.display = "none";
-  document.getElementById("traspaso-origen").innerHTML =
+  document.getElementById("traspaso-destino").innerHTML =
     '<option value="">— Seleccionar —</option>' +
     ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
   document.getElementById("traspaso-fecha").value = new Date().toISOString().slice(0,10);
@@ -4988,8 +4988,8 @@ function seleccionarJugadorTraspaso(id){
   document.getElementById("traspaso-sel-nombre").textContent=j.nombre_display||j.nombre;
   document.getElementById("traspaso-sel-club").textContent=j.equipos?.nombre||"Sin club";
   document.getElementById("traspaso-seleccionado").style.display="block";
-  // Pre-excluir club actual del dropdown de origen
-  [...document.getElementById("traspaso-origen").options].forEach(o=>{
+  // Excluir club actual del dropdown de destino (no puede ir al mismo)
+  [...document.getElementById("traspaso-destino").options].forEach(o=>{
     o.disabled = o.value && o.value===j.equipos?.nombre;
   });
 }
@@ -5023,31 +5023,31 @@ function seleccionarOrigenTraspaso(id){
   document.getElementById("traspaso-origen-resultados").style.display="none";
   document.getElementById("traspaso-origen-sel").textContent=`✓ ${j.nombre_display||j.nombre} — ${j.equipos?.nombre||'Sin club'}`;
   document.getElementById("traspaso-origen-sel").style.display="block";
-  // Sincronizar dropdown con el club del jugador origen seleccionado
-  const sel=document.getElementById("traspaso-origen");
-  [...sel.options].forEach(o=>{ o.selected=o.value===j.equipos?.nombre; o.disabled=false; });
 }
 
 async function guardarTraspasoManual(){
   if(!_traspasoSelJugador){ alert("Seleccioná un jugador primero."); return; }
-  const origenNombre=document.getElementById("traspaso-origen").value;
-  if(!origenNombre){ alert("Seleccioná el club de origen."); return; }
+  const destinoNombre=document.getElementById("traspaso-destino").value;
+  if(!destinoNombre){ alert("Seleccioná el club de destino."); return; }
   const fecha=document.getElementById("traspaso-fecha").value;
-  const origenEqId=EQUIPOS_ID_MAP[origenNombre]||null;
-  const destinoEqId=_traspasoSelJugador.equipo_id||null;
-  // Si hay registro de origen separado, usarlo; si no, mismo jugador para los dos lados
-  const origenJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : _traspasoSelJugador.id;
+  const origenNombre=_traspasoSelJugador.equipos?.nombre||"";
+  const origenEqId=_traspasoSelJugador.equipo_id||null;
+  const destinoEqId=EQUIPOS_ID_MAP[destinoNombre]||null;
+  // jugador_origen = el jugador buscado (registro en club de origen)
+  // jugador_destino = registro en el club de destino si ya existe (opcional)
+  const origenJugId=_traspasoSelJugador.id;
+  const destinoJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : null;
   const {error}=await sb.from("transferencias").insert({
     jugador_origen_id: origenJugId,
     equipo_origen_id: origenEqId,
-    jugador_destino_id: _traspasoSelJugador.id,
+    jugador_destino_id: destinoJugId,
     equipo_destino_id: destinoEqId,
     fecha: fecha||new Date().toISOString().slice(0,10),
     origen: 'manual',
   });
   if(error){ alert("Error al registrar: "+error.message); return; }
   cerrarTraspasoManual();
-  alert(`✓ Traspaso registrado: ${origenNombre} → ${_traspasoSelJugador.equipos?.nombre||'destino'}`);
+  alert(`✓ Traspaso registrado: ${origenNombre} → ${destinoNombre}`);
 }
 
 // ── LISTA DE TRASPASOS ────────────────────────────────────────────────────────
@@ -5973,15 +5973,15 @@ async function eliminarSancion(id){
     </div>
     <div id="traspaso-seleccionado" style="display:none;background:var(--bg);border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:13px;line-height:1.5;">
       <div><span id="traspaso-sel-nombre" style="font-weight:600;color:#f0f0f0;"></span></div>
-      <div style="font-size:11px;color:#999;">Club actual (destino): <span id="traspaso-sel-club" style="color:#74b9ff;"></span></div>
+      <div style="font-size:11px;color:#999;">Club de origen: <span id="traspaso-sel-club" style="color:#74b9ff;"></span></div>
     </div>
     <div style="margin-bottom:.75rem;">
-      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Club de origen (de dónde viene)</label>
-      <select id="traspaso-origen" style="width:100%;"><option value="">— Seleccionar —</option></select>
+      <label style="font-size:12px;color:#aaa;display:block;margin-bottom:.3rem;">Club de destino (a dónde va)</label>
+      <select id="traspaso-destino" style="width:100%;"><option value="">— Seleccionar —</option></select>
     </div>
     <div style="margin-bottom:.75rem;padding:.6rem .75rem;border:1px solid rgba(255,255,255,.08);border-radius:6px;">
-      <div style="font-size:11px;color:#888;margin-bottom:.4rem;">Registro separado en el club de origen <span style="color:#555;">(opcional — solo si el jugador figura como entrada distinta en ese club)</span></div>
-      <input type="text" id="traspaso-origen-buscar" placeholder="Buscar el registro del jugador en el club anterior..." style="width:100%;margin-bottom:.3rem;" oninput="buscarOrigenTraspaso()">
+      <div style="font-size:11px;color:#888;margin-bottom:.4rem;">Registro en el club de destino <span style="color:#555;">(opcional — solo si el jugador ya figura en ese club con otra entrada)</span></div>
+      <input type="text" id="traspaso-origen-buscar" placeholder="Buscar el registro del jugador en el club destino..." style="width:100%;margin-bottom:.3rem;" oninput="buscarOrigenTraspaso()">
       <div id="traspaso-origen-resultados" style="display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:130px;overflow-y:auto;background:var(--surface);"></div>
       <div id="traspaso-origen-sel" style="display:none;font-size:12px;color:#4caf50;margin-top:.3rem;"></div>
     </div>
