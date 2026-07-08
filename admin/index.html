@@ -3237,7 +3237,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     .select("id, id_federal, nombre, nombre_display")
     .eq("equipo_id", equipoId);
   const {data: plantelOtros} = await sb.from("jugadores")
-    .select("id, nombre, nombre_display, equipo_id, equipos(nombre)")
+    .select("id, nombre, nombre_display, equipo_id, equipos!left(nombre)")
     .neq("equipo_id", equipoId);
 
   // Copia mutable local para detectar dupes dentro del mismo batch
@@ -4800,7 +4800,7 @@ async function resetearCommonNamesIncorrectos(){
 async function cargarJugadoresCache(){
   try {
     const [{data:jData, error:jErr}, {data:eqData}] = await Promise.all([
-      sb.from("jugadores").select("id, id_federal, nombre, nombre_display, equipo_id, posicion, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, pierna_habil, equipos(id,nombre)").order("nombre", {ascending:true, nullsFirst:true}).limit(20000),
+      sb.from("jugadores").select("id, id_federal, nombre, nombre_display, equipo_id, posicion, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, pierna_habil, equipos!left(id,nombre)").order("nombre", {ascending:true, nullsFirst:true}).limit(20000),
       sb.from("equipos").select("id, nombre"),
     ]);
     if(jErr) throw jErr;
@@ -5350,7 +5350,7 @@ async function abrirEditJugador(id){
   document.querySelector("#jug-modal div div:first-child").textContent = "Cargando...";
 
   const {data: j, error} = await sb.from("jugadores")
-    .select("id, id_federal, nombre, nombre_display, equipo_id, posicion, pierna_habil, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, equipos(id,nombre)")
+    .select("id, id_federal, nombre, nombre_display, equipo_id, posicion, pierna_habil, fecha_nacimiento, lugar_nacimiento, altura_m, peso_kg, equipos!left(id,nombre)")
     .eq("id", id)
     .single();
 
@@ -5422,7 +5422,7 @@ async function sincronizarConTraspaso(){
 
   // Obtener info de los jugadores vinculados para mostrar en el confirm
   const {data:linked} = await sb.from("jugadores")
-    .select("id,nombre_display,nombre,equipos(nombre)")
+    .select("id,nombre_display,nombre,equipos!left(nombre)")
     .in("id", _traspasoLinkedIds);
   if(!linked?.length){ alert("No se encontraron los jugadores vinculados."); return; }
 
