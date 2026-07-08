@@ -3120,8 +3120,22 @@ async function cargarEstadisticas(){
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // SUSPENSIONES PENDIENTES
+    // Build per-club fechas jugadas (only matches with planillas, i.e. partidosDB which has non-null score)
+    const clubFechasJug = {};
+    (partidosDB||[]).forEach(p => {
+      if(!p.fecha) return;
+      [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
+        if(!club) return;
+        if(!clubFechasJug[club]) clubFechasJug[club] = [];
+        if(!clubFechasJug[club].includes(p.fecha)) clubFechasJug[club].push(p.fecha);
+      });
+    });
+    const isSancServed = s => {
+      if(!s.fecha_origen || !s.equipo) return false;
+      return (clubFechasJug[s.equipo]||[]).filter(f => f > s.fecha_origen).length >= (s.partidos_sancion || 1);
+    };
     // Incluye: sanciones de DB con partidos_sancion > 0 + jugadores con 5 amarillas acumuladas sin sanción registrada
-    const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0)
+    const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0 && !isSancServed(s))
       .sort((a,b) => b.partidos_sancion - a.partidos_sancion || (a.zona||'Z').localeCompare(b.zona||'Z'));
     // Jugadores con 5+ amarillas que NO tienen sanción de acumulación pendiente en DB
     const pendingAcumIds = new Set((sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado==='pendiente').map(s=>s.jugador_id).filter(Boolean));

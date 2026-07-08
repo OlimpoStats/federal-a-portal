@@ -4736,6 +4736,17 @@ async function cargarSancionados(){
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
+  // Build per-club map of fechas played (from planillas data)
+  const clubFechasJugadas = {};
+  Object.values(partidoMap).forEach(p => {
+    if(!p.fecha) return;
+    [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
+      if(!club) return;
+      if(!clubFechasJugadas[club]) clubFechasJugadas[club] = [];
+      if(!clubFechasJugadas[club].includes(p.fecha)) clubFechasJugadas[club].push(p.fecha);
+    });
+  });
+
   // Build jugador_id lookup from expEvs: "nombre|equipo" -> jugador.id
   const jugIdByKey = {};
   for(const ev of (expEvs||[])){
@@ -4807,8 +4818,8 @@ async function cargarSancionados(){
     amCountMap[m.jId].count++;
     if((m.fo||0) > (amCountMap[m.jId].lastFo||0)) amCountMap[m.jId].lastFo = m.fo;
   });
-  // Restar 5 por cada sanción de acumulación no-eliminada ya registrada en DB
-  const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas' && s.estado !== 'eliminada');
+  // Restar 5 por cada sanción de acumulación ya registrada (incluyendo eliminadas, para que borrar no retrigger)
+  const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas');
   accumSancExist.forEach(s => {
     if(s.jugador_id && amCountMap[s.jugador_id]) amCountMap[s.jugador_id].count -= 5;
   });
@@ -4835,7 +4846,22 @@ async function cargarSancionados(){
   const {data: activeSanc} = await sb.from('sanciones')
     .select('*').in('estado', ['pendiente','recien_cumplida']).order('created_at', {ascending: false});
 
-  renderSancActivas(activeSanc || [], partidoMap);
+  // Auto-serve: detect sanctions where club has played enough matches after fecha_origen
+  const isServed = s => {
+    if(!s.fecha_origen || !s.equipo) return false;
+    const fechasPost = (clubFechasJugadas[s.equipo]||[]).filter(f => f > s.fecha_origen);
+    return fechasPost.length >= (s.partidos_sancion || 1);
+  };
+  const toMarkCumplida = (activeSanc||[])
+    .filter(s => s.estado === 'recien_cumplida' || (s.estado === 'pendiente' && isServed(s)))
+    .map(s => s.id);
+  if(toMarkCumplida.length){
+    sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida);
+  }
+  const sancToRender = (activeSanc||[]).filter(s =>
+    s.estado !== 'recien_cumplida' && !(s.estado === 'pendiente' && isServed(s))
+  );
+  renderSancActivas(sancToRender, partidoMap);
 }
 
 function renderSancActivas(sanciones, partidoMap){
