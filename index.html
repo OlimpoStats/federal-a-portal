@@ -4052,7 +4052,11 @@ async function init(){
   if(equipoMatch){
     goPage('planteles', document.querySelector(".ni[onclick*=\"'planteles'\"]"));
     const nombre = _slugToTeam(equipoMatch[1]);
-    if(nombre) abrirClub(nombre);
+    if(nombre){
+      // EQUIPOS_LIST se llena en cargarEscudos(); si está vacío esperarlo
+      if(!EQUIPOS_LIST.length) await cargarEscudos().catch(()=>{});
+      abrirClub(nombre);
+    }
   } else {
     const startPage = _PATH_MAP[location.pathname];
     if(startPage && startPage !== 'inicio'){
