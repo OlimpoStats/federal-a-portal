@@ -1515,9 +1515,15 @@ async function borrarResultado(){
 }
 
 async function editarPlanillaExistente(){
-  const sel=obtenerPartidoSeleccionado();
+  let sel = obtenerPartidoSeleccionado();
+  // Si los selectores del paso1 se resetearon pero el partido sigue activo, reconstruir desde partidoActual
+  if(!sel && partidoActual){
+    const p = FIXTURE[partidoActual.zona]?.[partidoActual.fecha]?.[partidoActual.idx];
+    if(p) sel = { zona: partidoActual.zona, fecha: partidoActual.fecha, idx: partidoActual.idx, p };
+  }
   if(!sel){alert("Seleccioná zona, fecha y partido primero.");return;}
-  if(!(sel.p?.id && FIXTURE_CON_PLANILLA.has(String(sel.p.id)))){
+  const fixtureId = sel.p?.id ?? partidoActual?.fixtureId;
+  if(!(fixtureId && FIXTURE_CON_PLANILLA.has(String(fixtureId)))){
     alert("Ese partido todavía no tiene planilla cargada.");
     return;
   }
