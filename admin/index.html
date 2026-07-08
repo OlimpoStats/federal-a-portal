@@ -5756,11 +5756,12 @@ async function importarPlantelExcel(){
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
-  const [{data: expEvs, error: evErr}, {data: allSancForCheck}] = await Promise.all([
+  const [{data: expEvs, error: evErr}, {data: allSancForCheck}, {data: playedPartidos}] = await Promise.all([
     sb.from('eventos')
       .select('tipo, planillas!inner(partido_id, jugadores(id,nombre_display,nombre), equipos(nombre))')
       .in('tipo', ['amarilla','doble_amarilla','roja']),
-    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo')
+    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo'),
+    sb.from('partidos').select('fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null)
   ]);
   if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
@@ -5771,6 +5772,17 @@ async function cargarSancionados(){
     : {data: []};
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
+
+  // Build per-club map of fechas played using ALL played matches (not just those with card events)
+  const clubFechasJugadas = {};
+  (playedPartidos||[]).forEach(p => {
+    if(!p.fecha) return;
+    [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
+      if(!club) return;
+      if(!clubFechasJugadas[club]) clubFechasJugadas[club] = [];
+      if(!clubFechasJugadas[club].includes(p.fecha)) clubFechasJugadas[club].push(p.fecha);
+    });
+  });
 
   // Build jugador_id lookup from expEvs: "nombre|equipo" -> jugador.id
   const jugIdByKey = {};
@@ -5843,8 +5855,8 @@ async function cargarSancionados(){
     amCountMap[m.jId].count++;
     if((m.fo||0) > (amCountMap[m.jId].lastFo||0)) amCountMap[m.jId].lastFo = m.fo;
   });
-  // Restar 5 por cada sanción de acumulación no-eliminada ya registrada en DB
-  const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas' && s.estado !== 'eliminada');
+  // Restar 5 por cada sanción de acumulación (incluyendo eliminadas: borrar no recrea)
+  const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas');
   accumSancExist.forEach(s => {
     if(s.jugador_id && amCountMap[s.jugador_id]) amCountMap[s.jugador_id].count -= 5;
   });
@@ -5871,7 +5883,21 @@ async function cargarSancionados(){
   const {data: activeSanc} = await sb.from('sanciones')
     .select('*').in('estado', ['pendiente','recien_cumplida']).order('created_at', {ascending: false});
 
-  renderSancActivas(activeSanc || [], partidoMap);
+  // Auto-serve: mark sanctions as cumplida if club has played enough matches after fecha_origen
+  const isServed = s => {
+    if(!s.fecha_origen || !s.equipo) return false;
+    return (clubFechasJugadas[s.equipo]||[]).filter(f => f > s.fecha_origen).length >= (s.partidos_sancion || 1);
+  };
+  const toMarkCumplida = (activeSanc||[])
+    .filter(s => s.estado === 'recien_cumplida' || (s.estado === 'pendiente' && isServed(s)))
+    .map(s => s.id);
+  if(toMarkCumplida.length){
+    sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida);
+  }
+  const sancToRender = (activeSanc||[]).filter(s =>
+    s.estado !== 'recien_cumplida' && !(s.estado === 'pendiente' && isServed(s))
+  );
+  renderSancActivas(sancToRender, partidoMap);
 }
 
 function renderSancActivas(sanciones, partidoMap){
