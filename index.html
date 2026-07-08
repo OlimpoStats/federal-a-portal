@@ -2801,19 +2801,12 @@ async function cargarEstadisticas(){
       }
     });
 
-    // Build per-club fechas jugadas from ALL played matches (score is set)
-    const clubFechasJug = {};
-    (partidosDB||[]).forEach(p => {
-      if(!p.fecha) return;
-      [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
-        if(!club) return;
-        if(!clubFechasJug[club]) clubFechasJug[club] = [];
-        if(!clubFechasJug[club].includes(p.fecha)) clubFechasJug[club].push(p.fecha);
-      });
-    });
+    // Max fecha jugada en el torneo — base para determinar si una sanción ya fue cumplida
+    const maxFechaJug = Math.max(0, ...(partidosDB||[]).map(p => Number(p.fecha) || 0));
     const isSancServed = s => {
-      if(!s.fecha_origen || !s.equipo) return false;
-      return (clubFechasJug[s.equipo]||[]).filter(f => f > s.fecha_origen).length >= (s.partidos_sancion || 1);
+      const fo = Number(s.fecha_origen);
+      if(!fo) return maxFechaJug > 0; // sin fecha = dato viejo, descartar si hay torneo activo
+      return maxFechaJug >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
     };
 
     // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
