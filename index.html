@@ -2801,6 +2801,21 @@ async function cargarEstadisticas(){
       }
     });
 
+    // Build per-club fechas jugadas from ALL played matches (score is set)
+    const clubFechasJug = {};
+    (partidosDB||[]).forEach(p => {
+      if(!p.fecha) return;
+      [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
+        if(!club) return;
+        if(!clubFechasJug[club]) clubFechasJug[club] = [];
+        if(!clubFechasJug[club].includes(p.fecha)) clubFechasJug[club].push(p.fecha);
+      });
+    });
+    const isSancServed = s => {
+      if(!s.fecha_origen || !s.equipo) return false;
+      return (clubFechasJug[s.equipo]||[]).filter(f => f > s.fecha_origen).length >= (s.partidos_sancion || 1);
+    };
+
     // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
     const _amLimPartido={}; // "jId_partidoId" → {jId, nombre, equipo, amarilla, expulsion}
     (eventos||[]).forEach(ev=>{
@@ -2825,8 +2840,8 @@ async function cargarEstadisticas(){
         amarillasLimiteMap[m.jId].count++;
       }
     });
-    // Restar 5 por cada sanción de acumulación ya cumplida (el jugador "borró" esas amarillas)
-    (sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado!=='pendiente'&&s.estado!=='eliminada').forEach(s=>{
+    // Restar 5 por cada sanción de acumulación ya cumplida, o pendiente pero ya servida según fechas
+    (sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado!=='eliminada'&&(s.estado!=='pendiente'||isSancServed(s))).forEach(s=>{
       if(s.jugador_id && amarillasLimiteMap[s.jugador_id]) amarillasLimiteMap[s.jugador_id].count = Math.max(0, amarillasLimiteMap[s.jugador_id].count - 5);
     });
 
@@ -3120,20 +3135,6 @@ async function cargarEstadisticas(){
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // SUSPENSIONES PENDIENTES
-    // Build per-club fechas jugadas (only matches with planillas, i.e. partidosDB which has non-null score)
-    const clubFechasJug = {};
-    (partidosDB||[]).forEach(p => {
-      if(!p.fecha) return;
-      [p.equipo_local_nombre, p.equipo_visitante_nombre].forEach(club => {
-        if(!club) return;
-        if(!clubFechasJug[club]) clubFechasJug[club] = [];
-        if(!clubFechasJug[club].includes(p.fecha)) clubFechasJug[club].push(p.fecha);
-      });
-    });
-    const isSancServed = s => {
-      if(!s.fecha_origen || !s.equipo) return false;
-      return (clubFechasJug[s.equipo]||[]).filter(f => f > s.fecha_origen).length >= (s.partidos_sancion || 1);
-    };
     // Incluye: sanciones de DB con partidos_sancion > 0 + jugadores con 5 amarillas acumuladas sin sanción registrada
     const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0 && !isSancServed(s))
       .sort((a,b) => b.partidos_sancion - a.partidos_sancion || (a.zona||'Z').localeCompare(b.zona||'Z'));
