@@ -3960,7 +3960,7 @@ window.scrollTo(0, 0);
 
 // ── CACHÉ LOCAL (stale-while-revalidate) ──
 const _CACHE_KEY = 'fa_v3';
-const _CACHE_TTL = 10 * 60 * 1000; // 10 min
+const _CACHE_TTL = 30 * 60 * 1000; // 30 min
 
 function _guardarCache(){
   try {
@@ -4035,23 +4035,16 @@ async function _refrescarSilencioso(){
 }
 
 async function init(){
+  // Render immediately from hardcoded data — no loading spinners
+  try { await _renderTodo(); } catch(e){}
   const cached = _leerCache();
   if(cached){
     _aplicarCache(cached);
     try { await _renderTodo(); } catch(e){}
     _refrescarSilencioso();
   } else {
-    ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.innerHTML = _loadingHTML;
-    });
-    const _escPromise = cargarEscudos().catch(()=>{});
-    try { await cargarPartidosDesdeDB(); } catch(e){ console.error("[init] partidos:", e); }
-    await _escPromise;
-    try { await diagnosticoIntegridad(); } catch(e){}
-    try { await _renderTodo(); } catch(e){ console.error("[init] render:", e); }
-    _guardarCache();
-    try { iniciarPollingEnVivo(); } catch(e){}
+    // Fetch DB in background, re-render silently when done
+    _refrescarSilencioso();
   }
 
   // Navigate to URL path after data is ready
@@ -4490,7 +4483,7 @@ function pltSort(col){
     _pltSort.dir=c?.defaultDir||'asc';
   }
   if(_pltData){
-    _renderPlantelTable(document.getElementById('plt-squad-cont'),_pltData.jugadores,_pltData.stats,_pltData.clubColor);
+    _renderPlantelTable(document.getElementById('plt-squad-cont'),_pltData.jugadores,_pltData.stats,_pltData.clubColor,_pltData.transferMap||{});
     window.scrollTo(0,sy);
     const w2=document.querySelector('.plt-table-wrap');
     if(w2) w2.scrollLeft=sx;
@@ -4503,7 +4496,7 @@ function _fnToISO(fn){ // DD.MM.YYYY → YYYY-MM-DD for proper sort
   return p.length===3 ? `${p[2]}-${p[1]}-${p[0]}` : '0000-00-00';
 }
 
-function _renderPlantelTable(cont, jugadores, stats, clubColor){
+function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
   const STAT_KEYS=['pj','tit','bnc','gol','ast','ent','sal','min','c90'];
   const sorted=[...jugadores].sort((a,b)=>{
     const k=_pltSort.col; const isStat=STAT_KEYS.includes(k);
@@ -4542,9 +4535,12 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor){
     const nacFmt=j.fecha_nacimiento?`${_pltFmtFecha(j.fecha_nacimiento)}${edad?` <span style="color:#555;font-size:10px;">(${edad})</span>`:''}`: '—';
     const alt=j.altura_m?parseFloat(j.altura_m).toFixed(2).replace('.',','):'—';
     const sv=(v,cls='')=>v>0?`<span class="plt-stat-hi ${cls}">${v}</span>`:`<span class="plt-stat-0">0</span>`;
+    const destClub=transferMap[j.id];
+    const destColor=destClub?(TEAM_COLORS[destClub]||'#aaa'):'';
+    const ahoraEnBadge=destClub?`<span style="font-size:10px;color:${destColor};margin-left:.35rem;font-weight:400;">(Ahora en ${destClub})</span>`:'';
     const nameCell=primerNombre
-      ?`<span class="plt-name-desk">${name}${cumpleHtml}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b><br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
-      :`${name}${cumpleHtml}`;
+      ?`<span class="plt-name-desk">${name}${cumpleHtml}${ahoraEnBadge}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b>${ahoraEnBadge}<br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
+      :`${name}${cumpleHtml}${ahoraEnBadge}`;
     return `<tr style="border-bottom:1px solid ${rowColor}">
       <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
       <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
@@ -4576,10 +4572,15 @@ async function cargarPlantelClub(equipoId, clubColor){
   cont.innerHTML = '<div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando plantel…</div>';
   try {
     const jugFields='id,id_federal,nombre,nombre_display,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil';
-    const [{data:jugActuales,error:jErr},{data:planillas}] = await Promise.all([
+    const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut}] = await Promise.all([
       sb.from('jugadores').select(jugFields).eq('equipo_id',equipoId),
-      sb.from('planillas').select(`jugador_id,titular,eventos(tipo,minuto),jug:jugadores(${jugFields})`).eq('equipo_id',equipoId)
+      sb.from('planillas').select(`jugador_id,titular,eventos(tipo,minuto),jug:jugadores(${jugFields})`).eq('equipo_id',equipoId),
+      sb.from('transferencias').select('jugador_origen_id,eq_dest:equipos!left(nombre)').eq('equipo_origen_id',equipoId),
     ]);
+    const transferMap={};
+    (transfersOut||[]).forEach(t=>{
+      if(t.jugador_origen_id && t.eq_dest?.nombre) transferMap[t.jugador_origen_id]=t.eq_dest.nombre;
+    });
     // Merge: jugadores actuales del club + ex-jugadores con planillas aquí (equipo_id ya cambió)
     const jugMap=new Map();
     (jugActuales||[]).forEach(j=>jugMap.set(j.id,j));
@@ -4619,9 +4620,9 @@ async function cargarPlantelClub(equipoId, clubColor){
         if(e.tipo==='asistencia') s.ast++;
       });
     });
-    _pltData={jugadores,stats,clubColor:clubColor||null};
+    _pltData={jugadores,stats,clubColor:clubColor||null,transferMap};
     _pltSort={col:'nombre',dir:'asc'};
-    _renderPlantelTable(cont,jugadores,stats,_pltData.clubColor);
+    _renderPlantelTable(cont,jugadores,stats,_pltData.clubColor,transferMap);
     if(_pltCurrentClub) renderPartidosClub(_pltCurrentClub);
   } catch(e){
     cont.innerHTML='<div class="plt-sec-title" style="margin-top:1.5rem;">Plantel</div><div style="color:#888;font-size:13px;">Error al cargar.</div>';
