@@ -4575,7 +4575,7 @@ async function cargarPlantelClub(equipoId, clubColor){
     const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut}] = await Promise.all([
       sb.from('jugadores').select(jugFields).eq('equipo_id',equipoId),
       sb.from('planillas').select(`jugador_id,titular,eventos(tipo,minuto),jug:jugadores(${jugFields})`).eq('equipo_id',equipoId),
-      sb.from('transferencias').select('jugador_origen_id,eq_dest:equipos!left(nombre)').eq('equipo_origen_id',equipoId),
+      sb.from('transferencias').select('jugador_origen_id,eq_dest:equipos!equipo_destino_id(nombre)').eq('equipo_origen_id',equipoId),
     ]);
     const transferMap={};
     (transfersOut||[]).forEach(t=>{
