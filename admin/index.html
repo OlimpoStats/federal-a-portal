@@ -5756,13 +5756,33 @@ async function importarPlantelExcel(){
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
-  const [{data: expEvs, error: evErr}, {data: allSancForCheck}, {data: playedPartidos}] = await Promise.all([
-    sb.from('eventos')
+  // Paginar eventos de tarjeta (pueden superar 1000)
+  let expEvs = [], evPage = 0, evErr = null;
+  while(true){
+    const {data, error} = await sb.from('eventos')
       .select('tipo, planillas!inner(partido_id, jugadores(id,nombre_display,nombre), equipos(nombre))')
-      .in('tipo', ['amarilla','doble_amarilla','roja']),
-    sb.from('sanciones').select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo'),
-    sb.from('partidos').select('fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null)
-  ]);
+      .in('tipo', ['amarilla','doble_amarilla','roja'])
+      .range(evPage * 1000, (evPage + 1) * 1000 - 1);
+    if(error){ evErr = error; break; }
+    if(!data || data.length === 0) break;
+    expEvs = expEvs.concat(data);
+    if(data.length < 1000) break;
+    evPage++;
+  }
+  // Paginar sanciones (pueden superar 1000 por duplicados históricos)
+  let allSancForCheck = [], sancPage = 0;
+  while(true){
+    const {data} = await sb.from('sanciones')
+      .select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo')
+      .range(sancPage * 1000, (sancPage + 1) * 1000 - 1);
+    if(!data || data.length === 0) break;
+    allSancForCheck = allSancForCheck.concat(data);
+    if(data.length < 1000) break;
+    sancPage++;
+  }
+  const {data: playedPartidos} = await sb.from('partidos')
+    .select('fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null);
+
   if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
   // Load partido info
@@ -5773,7 +5793,8 @@ async function cargarSancionados(){
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
-  // Max fecha jugada — tres fuentes de fallback para garantizar valor no-cero
+  // Max fecha jugada — usa tres fuentes como fallback para garantizar valor no-cero
+  // 1. partidos jugados (goles_local no nulo), 2. partidos con eventos de tarjeta, 3. fecha_origen de sanciones
   const maxFechaJugada = Math.max(
     0,
     ...(playedPartidos||[]).map(p => Number(p.fecha) || 0),
@@ -5782,9 +5803,14 @@ async function cargarSancionados(){
   );
   const isServed = s => {
     const fo = Number(s.fecha_origen);
-    if(!fo) return maxFechaJugada > 0;
+    if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo
     return maxFechaJugada >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
   };
+  console.log('[DEBUG sancionados] maxFechaJugada:', maxFechaJugada,
+    '| playedPartidos:', (playedPartidos||[]).length,
+    '| allSanc:', (allSancForCheck||[]).length,
+    '| expEvs:', (expEvs||[]).length,
+    '| muestra fecha_origen:', (allSancForCheck||[]).slice(0,5).map(s=>s.fecha_origen));
 
   // Build jugador_id lookup from expEvs: "nombre|equipo" -> jugador.id
   const jugIdByKey = {};
@@ -5885,15 +5911,33 @@ async function cargarSancionados(){
   if(toCreateAccum.length) await sb.from('sanciones').insert(toCreateAccum);
 
   // Fetch only active sanciones for rendering
-  const {data: activeSanc} = await sb.from('sanciones')
-    .select('*').in('estado', ['pendiente','recien_cumplida']).order('created_at', {ascending: false});
+  // Paginar sanciones activas (pueden ser muchas por duplicados históricos)
+  let activeSanc = [], activePage = 0;
+  while(true){
+    const {data} = await sb.from('sanciones')
+      .select('*').in('estado', ['pendiente','recien_cumplida'])
+      .order('created_at', {ascending: false})
+      .range(activePage * 1000, (activePage + 1) * 1000 - 1);
+    if(!data || data.length === 0) break;
+    activeSanc = activeSanc.concat(data);
+    if(data.length < 1000) break;
+    activePage++;
+  }
 
-  // Marcar como cumplidas en DB las que ya se sirvieron (fire-and-forget)
-  const toMarkCumplida = (activeSanc||[]).filter(s => isServed(s)).map(s => s.id);
-  if(toMarkCumplida.length) sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida);
+  console.log('[DEBUG v3] activeSanc total:', activeSanc.length,
+    '| toServe:', activeSanc.filter(s=>isServed(s)).length,
+    '| sample:', activeSanc.slice(0,5).map(s=>({fo:s.fecha_origen,tipo:s.tipo,ps:s.partidos_sancion,served:isServed(s)})));
+
+  // Marcar cumplidas en lotes de 200 (evita URLs largas con miles de IDs)
+  const toMarkCumplida = activeSanc.filter(s => isServed(s)).map(s => s.id);
+  for(let i = 0; i < toMarkCumplida.length; i += 200){
+    sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida.slice(i, i + 200));
+  }
 
   // Solo mostrar las genuinamente pendientes para el próximo partido
-  const sancToRender = (activeSanc||[]).filter(s => !isServed(s));
+  const sancToRender = activeSanc.filter(s => !isServed(s));
+  console.log('[DEBUG v3] sancToRender:', sancToRender.length,
+    sancToRender.slice(0,8).map(s=>({fo:s.fecha_origen,tipo:s.tipo,ps:s.partidos_sancion})));
   renderSancActivas(sancToRender, partidoMap);
 }
 
