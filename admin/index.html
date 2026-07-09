@@ -5773,11 +5773,17 @@ async function cargarSancionados(){
   const partidoMap = {};
   (partidosExp||[]).forEach(p => partidoMap[p.id] = p);
 
-  // Max fecha jugada en todo el torneo — base robusta para determinar si una sanción fue cumplida
-  const maxFechaJugada = Math.max(0, ...(playedPartidos||[]).map(p => Number(p.fecha) || 0));
+  // Max fecha jugada — usa tres fuentes como fallback para garantizar valor no-cero
+  // 1. partidos jugados (goles_local no nulo), 2. partidos con eventos de tarjeta, 3. fecha_origen de sanciones
+  const maxFechaJugada = Math.max(
+    0,
+    ...(playedPartidos||[]).map(p => Number(p.fecha) || 0),
+    ...Object.values(partidoMap).map(p => Number(p.fecha) || 0),
+    ...(allSancForCheck||[]).map(s => Number(s.fecha_origen) || 0)
+  );
   const isServed = s => {
     const fo = Number(s.fecha_origen);
-    if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo, descartar si hay torneo activo
+    if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo
     return maxFechaJugada >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
   };
 
