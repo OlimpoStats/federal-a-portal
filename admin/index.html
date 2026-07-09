@@ -5877,22 +5877,26 @@ async function cargarSancionados(){
     if(ev.tipo==='doble_amarilla'){ _amPartido[mk].amarilla = true; _amPartido[mk].expulsion = true; }
     if(ev.tipo==='roja') _amPartido[mk].expulsion = true;
   }
-  // Contar amarillas netas (sin expulsión) por jugador y detectar cuántas acumulaciones ya tiene en DB
-  const amCountMap = {}; // jId → {jNom, eq, count, matchFo}
+  // Contar amarillas netas (sin expulsión) por jugador — guardar fechas ordenadas
+  const amCountMap = {}; // jId → {jNom, eq, count, fechas:[]}
   Object.values(_amPartido).forEach(m => {
     if(!m.amarilla || m.expulsion) return;
-    if(!amCountMap[m.jId]) amCountMap[m.jId] = {jNom:m.jNom, eq:m.eq, count:0, lastFo:m.fo};
+    if(!m.fo) return; // sin fecha no se puede determinar el umbral
+    if(!amCountMap[m.jId]) amCountMap[m.jId] = {jNom:m.jNom, eq:m.eq, count:0, fechas:[]};
     amCountMap[m.jId].count++;
-    if((m.fo||0) > (amCountMap[m.jId].lastFo||0)) amCountMap[m.jId].lastFo = m.fo;
+    amCountMap[m.jId].fechas.push(m.fo);
   });
-  // Restar 5 por cada sanción de acumulación (incluyendo eliminadas: borrar no recrea)
+  Object.values(amCountMap).forEach(d => d.fechas.sort((a,b) => a - b));
+
+  // Restar 5 por cada sanción de acumulación existente (incluyendo eliminadas: borrar no recrea)
   const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas');
+  // Contar sanciones por jugador para saber en qué índice de fecha está el umbral actual
+  const accumSancCount = {}; // jId → total sanciones amarillas
   accumSancExist.forEach(s => {
+    if(s.jugador_id) accumSancCount[s.jugador_id] = (accumSancCount[s.jugador_id]||0) + 1;
     if(s.jugador_id && amCountMap[s.jugador_id]) amCountMap[s.jugador_id].count -= 5;
   });
-  // Construir set de claves ya existentes para acumulación (incluyendo eliminadas, para no recrear)
-  const accumKeys = new Set((allSancForCheck||[]).filter(s=>s.tipo==='amarillas').map(s=>s.jugador_id).filter(Boolean));
-  // Detectar cuántas acumulaciones pendientes tiene cada jugador para saber cuándo crear la siguiente
+  // Detectar cuántas acumulaciones pendientes tiene cada jugador
   const accumPendCount = {}; // jId → cantidad de sanciones pendientes tipo amarillas
   (allSancForCheck||[]).filter(s=>s.tipo==='amarillas'&&s.estado==='pendiente').forEach(s=>{ if(s.jugador_id) accumPendCount[s.jugador_id]=(accumPendCount[s.jugador_id]||0)+1; });
 
@@ -5900,11 +5904,16 @@ async function cargarSancionados(){
   Object.entries(amCountMap).forEach(([jId, d]) => {
     if(d.count < 5) return;
     if((accumPendCount[jId]||0) > 0) return; // ya tiene una pendiente activa
-    const estadoInicial = isServed({fecha_origen: d.lastFo, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
+    // Usar la fecha de la amarilla que CRUZA el umbral actual (no la última amarilla)
+    // Umbral actual = (sanciones existentes + 1) × 5 → índice 0-based = sancExist×5 + 4
+    const sancExist = accumSancCount[Number(jId)] || 0;
+    const umbralIdx = sancExist * 5 + 4; // 0-indexed
+    const umbralFo = d.fechas[umbralIdx] ?? d.fechas[d.fechas.length - 1];
+    const estadoInicial = isServed({fecha_origen: umbralFo, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
     toCreateAccum.push({
       jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: d.eq,
       tipo: 'amarillas', partidos_sancion: 1,
-      motivo: 'Acumulación de amarillas', fecha_origen: d.lastFo,
+      motivo: 'Acumulación de amarillas', fecha_origen: umbralFo,
       estado: estadoInicial,
     });
   });
