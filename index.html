@@ -2801,11 +2801,15 @@ async function cargarEstadisticas(){
       }
     });
 
-    // Max fecha jugada en el torneo — base para determinar si una sanción ya fue cumplida
-    const maxFechaJug = Math.max(0, ...(partidosDB||[]).map(p => Number(p.fecha) || 0));
+    // Max fecha jugada — usa partidos con resultado + fecha_origen de sanciones como fallback
+    const maxFechaJug = Math.max(
+      0,
+      ...(partidosDB||[]).map(p => Number(p.fecha) || 0),
+      ...(sancionesDB||[]).map(s => Number(s.fecha_origen) || 0)
+    );
     const isSancServed = s => {
       const fo = Number(s.fecha_origen);
-      if(!fo) return maxFechaJug > 0; // sin fecha = dato viejo, descartar si hay torneo activo
+      if(!fo) return maxFechaJug > 0;
       return maxFechaJug >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
     };
 
