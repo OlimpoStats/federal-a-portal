@@ -5786,6 +5786,11 @@ async function cargarSancionados(){
     if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo
     return maxFechaJugada >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
   };
+  console.log('[DEBUG sancionados] maxFechaJugada:', maxFechaJugada,
+    '| playedPartidos:', (playedPartidos||[]).length,
+    '| allSanc:', (allSancForCheck||[]).length,
+    '| expEvs:', (expEvs||[]).length,
+    '| muestra fecha_origen:', (allSancForCheck||[]).slice(0,5).map(s=>s.fecha_origen));
 
   // Build jugador_id lookup from expEvs: "nombre|equipo" -> jugador.id
   const jugIdByKey = {};
