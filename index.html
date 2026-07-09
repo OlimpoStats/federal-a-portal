@@ -2825,7 +2825,7 @@ async function cargarEstadisticas(){
     };
 
     // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
-    const _amLimPartido={}; // "jId_partidoId" → {jId, nombre, equipo, amarilla, expulsion}
+    const _amLimPartido={}; // "jId_partidoId" → {jId, nombre, equipo, fo, amarilla, expulsion}
     (eventos||[]).forEach(ev=>{
       if(!['amarilla','doble_amarilla','roja'].includes(ev.tipo)) return;
       const pl=ev.planillas; if(!pl) return;
@@ -2835,22 +2835,34 @@ async function cargarEstadisticas(){
       const nombre=jug.nombre_display||jug.nombre||'?';
       const equipo=pl.equipos?.nombre;
       const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
+      const fo=Number(partidosById[partidoId]?.fecha)||null;
       const mk=`${canonId}_${partidoId}`;
-      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,amarilla:false,expulsion:false};
+      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,amarilla:false,expulsion:false};
       if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
       if(ev.tipo==='doble_amarilla'){ _amLimPartido[mk].amarilla=true; _amLimPartido[mk].expulsion=true; }
       if(ev.tipo==='roja') _amLimPartido[mk].expulsion=true;
     });
-    const amarillasLimiteMap={}; // jId → {nombre, equipo, count}
+    // Simulación de ciclos: por jugador, ordenar fechas y detectar si está suspendido actualmente
+    const _amFechas={}; // canonId → {nombre, equipo, fechas:[]}
     Object.values(_amLimPartido).forEach(m=>{
-      if(m.amarilla&&!m.expulsion){
-        if(!amarillasLimiteMap[m.jId]) amarillasLimiteMap[m.jId]={key:m.jId,nombre:m.nombre,equipo:m.equipo,count:0};
-        amarillasLimiteMap[m.jId].count++;
-      }
+      if(!m.amarilla||m.expulsion||!m.fo) return;
+      if(!_amFechas[m.jId]) _amFechas[m.jId]={nombre:m.nombre,equipo:m.equipo,fechas:[]};
+      _amFechas[m.jId].fechas.push(m.fo);
     });
-    // Restar 5 por cada sanción de acumulación ya cumplida, o pendiente pero ya servida según fechas
-    (sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado!=='eliminada'&&(s.estado!=='pendiente'||isSancServed(s))).forEach(s=>{
-      if(s.jugador_id && amarillasLimiteMap[s.jugador_id]) amarillasLimiteMap[s.jugador_id].count = Math.max(0, amarillasLimiteMap[s.jugador_id].count - 5);
+    Object.values(_amFechas).forEach(d=>d.fechas.sort((a,b)=>a-b));
+    const amarillasLimiteMap={}; // jId → {key, nombre, equipo, count}
+    Object.entries(_amFechas).forEach(([jId,d])=>{
+      let cc=0, suspended=false;
+      for(const fo of d.fechas){
+        cc++;
+        if(cc===5){
+          if(maxFechaJug>fo){ cc=0; } // ciclo servido, resetear
+          else{ suspended=true; break; } // suspensión activa
+        }
+      }
+      if(cc>=3||suspended){
+        amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:cc};
+      }
     });
 
     // GOLES DE TIRO LIBRE
@@ -3144,11 +3156,11 @@ async function cargarEstadisticas(){
 
     // SUSPENSIONES PENDIENTES
     // Incluye: sanciones de DB con partidos_sancion > 0 + jugadores con 5 amarillas acumuladas sin sanción registrada
-    const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0 && !isSancServed(s))
+    // Sanciones DB: solo rojas/doble-amarillas (amarillas se calculan desde eventos)
+    const sancPend = (sancionesDB||[]).filter(s => s.estado==='pendiente' && s.partidos_sancion > 0 && !isSancServed(s) && s.tipo!=='amarillas')
       .sort((a,b) => b.partidos_sancion - a.partidos_sancion || (a.zona||'Z').localeCompare(b.zona||'Z'));
-    // Jugadores con 5+ amarillas que NO tienen sanción de acumulación pendiente en DB
-    const pendingAcumIds = new Set((sancionesDB||[]).filter(s=>s.tipo==='amarillas'&&s.estado==='pendiente').map(s=>s.jugador_id).filter(Boolean));
-    const cincoAmarillas = Object.values(amarillasLimiteMap).filter(j => j.count >= 5 && !pendingAcumIds.has(j.key));
+    // Jugadores con suspensión amarilla activa (calculado desde eventos, independiente de DB)
+    const cincoAmarillas = Object.values(amarillasLimiteMap).filter(j => j.count >= 5);
     const sancWrap = document.getElementById('sanc-pendientes-pub-wrap');
     if(sancPend.length || cincoAmarillas.length){
       sancWrap.style.display = '';
