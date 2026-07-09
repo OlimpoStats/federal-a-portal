@@ -5943,10 +5943,43 @@ async function cargarSancionados(){
     sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida.slice(i, i + 200));
   }
 
-  // Solo mostrar las genuinamente pendientes para el próximo partido
-  const sancToRender = activeSanc.filter(s => !isServed(s));
+  // AMARILLAS: calcular suspensiones directamente desde eventos (simulación de ciclos)
+  // Independiente del estado en DB — evita mostrar sanciones con fecha_origen incorrecta
+  const amarillasSuspAhora = [];
+  Object.entries(amCountMap).forEach(([jId, d]) => {
+    // Simular ciclos de 5 amarillas en orden cronológico
+    let cicloCount = 0;
+    let umbralFoCurrent = null;
+    for(const fo of d.fechas) {
+      cicloCount++;
+      if(cicloCount === 5) {
+        umbralFoCurrent = fo;
+        if(maxFechaJugada > fo) {
+          // Suspensión de este ciclo ya fue cumplida (el club jugó después)
+          cicloCount = 0; umbralFoCurrent = null;
+        } else {
+          // Suspensión activa
+          break;
+        }
+      }
+    }
+    if(cicloCount < 5 || !umbralFoCurrent) return; // no llegó al umbral o ya sirvió
+    // Buscar registro DB para el botón eliminar (por jugador + tipo)
+    const dbSanc = activeSanc.find(s => s.jugador_id === Number(jId) && s.tipo === 'amarillas');
+    amarillasSuspAhora.push({
+      id: dbSanc?.id ?? null, jugador_id: Number(jId),
+      jugador_nombre: d.jNom, equipo: d.eq,
+      fecha_origen: umbralFoCurrent, tipo: 'amarillas',
+      partidos_sancion: 1, estado: 'pendiente', motivo: 'Acumulación de amarillas',
+    });
+  });
+
+  // ROJAS: usar DB (correctas después de la paginación)
+  const rojasSuspAhora = activeSanc.filter(s => s.tipo === 'roja' && !isServed(s));
+
+  const sancToRender = [...amarillasSuspAhora, ...rojasSuspAhora];
   console.log('[DEBUG v3] sancToRender:', sancToRender.length,
-    sancToRender.slice(0,8).map(s=>({fo:s.fecha_origen,tipo:s.tipo,ps:s.partidos_sancion})));
+    '| amarillas:', amarillasSuspAhora.length, '| rojas:', rojasSuspAhora.length);
   renderSancActivas(sancToRender, partidoMap);
 }
 
