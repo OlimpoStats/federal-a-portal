@@ -5924,12 +5924,20 @@ async function cargarSancionados(){
     activePage++;
   }
 
-  // Marcar como cumplidas en DB las que ya se sirvieron (fire-and-forget)
+  console.log('[DEBUG v3] activeSanc total:', activeSanc.length,
+    '| toServe:', activeSanc.filter(s=>isServed(s)).length,
+    '| sample:', activeSanc.slice(0,5).map(s=>({fo:s.fecha_origen,tipo:s.tipo,ps:s.partidos_sancion,served:isServed(s)})));
+
+  // Marcar cumplidas en lotes de 200 (evita URLs largas con miles de IDs)
   const toMarkCumplida = activeSanc.filter(s => isServed(s)).map(s => s.id);
-  if(toMarkCumplida.length) sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida);
+  for(let i = 0; i < toMarkCumplida.length; i += 200){
+    sb.from('sanciones').update({estado:'cumplida'}).in('id', toMarkCumplida.slice(i, i + 200));
+  }
 
   // Solo mostrar las genuinamente pendientes para el próximo partido
-  const sancToRender = (activeSanc||[]).filter(s => !isServed(s));
+  const sancToRender = activeSanc.filter(s => !isServed(s));
+  console.log('[DEBUG v3] sancToRender:', sancToRender.length,
+    sancToRender.slice(0,8).map(s=>({fo:s.fecha_origen,tipo:s.tipo,ps:s.partidos_sancion})));
   renderSancActivas(sancToRender, partidoMap);
 }
 
