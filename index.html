@@ -2691,7 +2691,7 @@ async function cargarEstadisticas(){
       {data:planillasDB},
       {data:penalesDB, error:penErr},
       {data:dtDB},
-      {data:sancionesDB},
+      sancionesRes0,
       {data:transfersDB}
     ] = await Promise.all([
       sb.from('eventos').select(evSelect).range(0, 999),
@@ -2708,7 +2708,7 @@ async function cargarEstadisticas(){
     if(pErr) throw pErr;
     if(penErr) console.warn('Penales error:', penErr.message);
 
-    // Paginate eventos and jugadores sequentially if needed
+    // Paginate eventos, jugadores y sanciones
     let eventos = evRes0.data || [];
     let evFrom = 1000;
     while(eventos.length % 1000 === 0 && eventos.length > 0){
@@ -2727,6 +2727,17 @@ async function cargarEstadisticas(){
       jugsDB = jugsDB.concat(jugsBatch);
       if(jugsBatch.length < 1000) break;
       jugsFrom += 1000;
+    }
+    let sancionesDB = sancionesRes0?.data || [];
+    let sancFrom = 1000;
+    while(sancionesDB.length % 1000 === 0 && sancionesDB.length > 0){
+      const {data:sancBatch} = await sb.from('sanciones').select('*')
+        .or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)')
+        .order('created_at',{ascending:false}).range(sancFrom, sancFrom+999);
+      if(!sancBatch?.length) break;
+      sancionesDB = sancionesDB.concat(sancBatch);
+      if(sancBatch.length < 1000) break;
+      sancFrom += 1000;
     }
 
     const partidosById = {};
