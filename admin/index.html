@@ -5974,8 +5974,23 @@ async function cargarSancionados(){
     });
   });
 
-  // ROJAS: usar DB (correctas después de la paginación)
-  const rojasSuspAhora = activeSanc.filter(s => s.tipo === 'roja' && !isServed(s));
+  // ROJAS: usar DB, deduplicar por jugador+fecha (puede haber duplicados históricos en DB)
+  const _rojasVistas = new Set();
+  const rojasSuspAhora = activeSanc.filter(s => {
+    if(s.tipo !== 'roja' || isServed(s)) return false;
+    const key = `${s.jugador_id || s.jugador_nombre}|${s.fecha_origen}`;
+    if(_rojasVistas.has(key)) return false;
+    _rojasVistas.add(key);
+    return true;
+  });
+  // Marcar duplicados de rojas como 'eliminada' en DB (limpieza en background)
+  const _rojasIdsAMantener = new Set(rojasSuspAhora.map(s => s.id).filter(Boolean));
+  const _rojasDuplicadas = activeSanc
+    .filter(s => s.tipo === 'roja' && !isServed(s) && !_rojasIdsAMantener.has(s.id))
+    .map(s => s.id);
+  for(let i = 0; i < _rojasDuplicadas.length; i += 200){
+    sb.from('sanciones').update({estado:'eliminada'}).in('id', _rojasDuplicadas.slice(i, i + 200));
+  }
 
   const sancToRender = [...amarillasSuspAhora, ...rojasSuspAhora];
   console.log('[DEBUG v3] sancToRender:', sancToRender.length,
