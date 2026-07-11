@@ -5974,22 +5974,28 @@ async function cargarSancionados(){
     });
   });
 
-  // ROJAS: usar DB, deduplicar por jugador+fecha (puede haber duplicados históricos en DB)
+  // ROJAS: calcular desde eventos (igual que amarillas) — ignora DB que puede tener datos erróneos
+  const rojaEvs = expEvs.filter(ev => ev.tipo === 'roja' || ev.tipo === 'doble_amarilla');
   const _rojasVistas = new Set();
-  const rojasSuspAhora = activeSanc.filter(s => {
-    if(s.tipo !== 'roja' || isServed(s)) return false;
-    const key = `${s.jugador_id || s.jugador_nombre}|${s.fecha_origen}`;
-    if(_rojasVistas.has(key)) return false;
+  const rojasSuspAhora = [];
+  for(const ev of rojaEvs){
+    const pl = ev.planillas;
+    if(!pl?.jugadores?.id || !pl?.equipos) continue;
+    const jId = pl.jugadores.id;
+    const fo = partidoMap[pl.partido_id]?.fecha;
+    if(!fo || isServed({fecha_origen: fo, partidos_sancion: 0})) continue;
+    const key = `${jId}|${fo}`;
+    if(_rojasVistas.has(key)) continue;
     _rojasVistas.add(key);
-    return true;
-  });
-  // Marcar duplicados de rojas como 'eliminada' en DB (limpieza en background)
-  const _rojasIdsAMantener = new Set(rojasSuspAhora.map(s => s.id).filter(Boolean));
-  const _rojasDuplicadas = activeSanc
-    .filter(s => s.tipo === 'roja' && !isServed(s) && !_rojasIdsAMantener.has(s.id))
-    .map(s => s.id);
-  for(let i = 0; i < _rojasDuplicadas.length; i += 200){
-    sb.from('sanciones').update({estado:'eliminada'}).in('id', _rojasDuplicadas.slice(i, i + 200));
+    const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '?';
+    const eq = pl.equipos.nombre || '?';
+    const dbSanc = activeSanc.find(s => s.tipo==='roja' && s.jugador_id===jId && Number(s.fecha_origen)===fo);
+    rojasSuspAhora.push({
+      id: dbSanc?.id ?? null, jugador_id: jId,
+      jugador_nombre: jNom, equipo: eq, fecha_origen: fo,
+      tipo: 'roja', partidos_sancion: dbSanc?.partidos_sancion ?? 0,
+      estado: 'pendiente', motivo: ev.tipo==='doble_amarilla' ? 'Doble amarilla' : 'Roja directa',
+    });
   }
 
   const sancToRender = [...amarillasSuspAhora, ...rojasSuspAhora];
