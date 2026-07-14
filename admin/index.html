@@ -3336,6 +3336,8 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
 
   const savedJugIds = new Set();
 
+  const fallosJugadores = [];
+
   for(const res of resoluciones){
     const { accion, jExistente, datosInsert, transferInfo, jugadorDatos: j } = res;
     let jDB = null;
@@ -3343,10 +3345,12 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     if(accion === "existente"){
       jDB = { id: jExistente.id };
     } else if(accion === "actualizar_equipo"){
-      const {data} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExistente.id).select("id").single();
+      const {data, error} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExistente.id).select("id").single();
+      if(error){ fallosJugadores.push(`${j.nombre || "?"} (actualizar club): ${error.message}`); continue; }
       jDB = data;
     } else if(accion === "insertar" || accion === "transferencia"){
-      const {data} = await sb.from("jugadores").insert(datosInsert).select("id").single();
+      const {data, error} = await sb.from("jugadores").insert(datosInsert).select("id").single();
+      if(error){ fallosJugadores.push(`${j.nombre || "?"} (crear jugador): ${error.message}`); continue; }
       jDB = data;
       if(data && accion === "transferencia"){
         await registrarTransferencia(transferInfo.jugOrigenId, transferInfo.equipoOrigenId, data.id, equipoId);
@@ -3378,6 +3382,12 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
   }
 
   await verificarSuspensiones(equipoId, savedJugIds);
+  await cargarJugadoresCache();
+
+  if(fallosJugadores.length){
+    alert(`⚠️ Algunos jugadores NO se pudieron guardar en la planilla:\n\n${fallosJugadores.join("\n")}\n\nRevisalos manualmente (puede ser un ID federal duplicado u otro conflicto).`);
+  }
+
   return true;
 }
 
@@ -5023,6 +5033,7 @@ function mostrarOpcionesTraspaso(aId,aEqId,bId,bEqId){
 
 async function confirmarTraspaso(origenId,origenEqId,destinoId,destinoEqId,aId,bId){
   await registrarTransferencia(origenId,origenEqId,destinoId,destinoEqId);
+  await cargarJugadoresCache();
   const cont=document.getElementById(`dir-${aId}-${bId}`);
   const origin=JUGADORES_CACHE.find(x=>x.id===origenId);
   const dest=JUGADORES_CACHE.find(x=>x.id===destinoId);
@@ -5132,9 +5143,22 @@ async function guardarTraspasoManual(){
   const origenEqId=_traspasoSelJugador.equipo_id||null;
   const destinoEqId=EQUIPOS_ID_MAP[destinoNombre]||null;
   // jugador_origen = el jugador buscado (registro en club de origen)
-  // jugador_destino = registro en el club de destino si ya existe (opcional)
+  // jugador_destino = registro en el club de destino: si ya existe se usa ese;
+  // si no existe se crea ahora, para que el jugador quede matcheable en la próxima planilla del club destino.
   const origenJugId=_traspasoSelJugador.id;
-  const destinoJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : null;
+  let destinoJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : null;
+
+  if(!destinoJugId){
+    const {data:nuevoJug, error:insErr} = await sb.from("jugadores").insert({
+      nombre: _traspasoSelJugador.nombre,
+      nombre_display: _traspasoSelJugador.nombre_display,
+      equipo_id: destinoEqId,
+      id_federal: "TRANS_" + Date.now(),
+    }).select("id").single();
+    if(insErr){ alert("Error creando el registro en el club destino: "+insErr.message); return; }
+    destinoJugId = nuevoJug.id;
+  }
+
   const {error}=await sb.from("transferencias").insert({
     jugador_origen_id: origenJugId,
     equipo_origen_id: origenEqId,
@@ -5144,6 +5168,7 @@ async function guardarTraspasoManual(){
     origen: 'manual',
   });
   if(error){ alert("Error al registrar: "+error.message); return; }
+  await cargarJugadoresCache();
   cerrarTraspasoManual();
   alert(`✓ Traspaso registrado: ${origenNombre} → ${destinoNombre}`);
 }
