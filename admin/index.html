@@ -1770,7 +1770,7 @@ La imagen muestra UNA MITAD de una planilla en espejo (equipo local o visitante)
 ESTRUCTURA DE CADA FILA:
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolver EXACTAMENTE como aparece, mayúsculas, con la coma.
-- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero, #1 y #12). Puede haber una pequeña bandera de país — IGNORAR, no es un evento.
+- Junto al nombre puede aparecer "CP" (capitán) y/o "AR" (arquero, #1 y #12). Si el jugador es AMBOS (el arquero es el capitán), devolver nota:"CP AR" con las dos marcas juntas, separadas por un espacio — NUNCA devolver solo una de las dos en ese caso. Puede haber una pequeña bandera de país — IGNORAR, no es un evento.
 - Los eventos aparecen como íconos pequeños debajo o junto al nombre, en el orden cronológico indicado arriba.
 
 ══════════════════════════════════════════
@@ -1895,7 +1895,7 @@ La imagen muestra la planilla COMPLETA de ambos equipos en espejo:
 ESTRUCTURA DE CADA FILA (igual para ambos lados):
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Nombre: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" en mayúsculas, exactamente como aparece.
-- Junto al nombre: "CP" (capitán) o "AR" (arquero, siempre #1 y #12). Puede haber una bandera de país — IGNORAR.
+- Junto al nombre: "CP" (capitán) y/o "AR" (arquero, siempre #1 y #12). Si el jugador es AMBOS (el arquero es el capitán), devolver nota:"CP AR" con las dos marcas juntas — NUNCA devolver solo una de las dos en ese caso. Puede haber una bandera de país — IGNORAR.
 - Eventos: íconos pequeños con minuto', debajo o al lado del nombre.
 
 ══════════════════════════════════════════
@@ -2072,7 +2072,7 @@ function normalizarPlanilla(planilla, equipo){
     nota: j?.nota ?? "",
     nombre: formatearNombre(j?.nombre ?? ""),
     titular: !!j?.titular,
-    es_capitan: j?.nota === "CP",
+    es_capitan: (j?.nota||"").includes("CP"),
     eventos: [],
   }));
   // Enriquecer con datos de DB: si el jugador ya existe, usar su nombre_display
