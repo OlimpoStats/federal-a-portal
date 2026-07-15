@@ -3364,9 +3364,12 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
       jDB = data;
     } else if(accion === "insertar" || accion === "transferencia"){
       const {data, error} = await sb.from("jugadores").insert(datosInsert).select("id").single();
-      if(error){ fallosJugadores.push(`${j.nombre || "?"} (crear jugador): ${error.message}`); continue; }
+      if(error || !data?.id){
+        fallosJugadores.push(`${j.nombre || "?"} (crear jugador): ${error?.message || "el insert no devolvió el registro creado"}`);
+        continue;
+      }
       jDB = data;
-      if(data && accion === "transferencia"){
+      if(accion === "transferencia"){
         await registrarTransferencia(transferInfo.jugOrigenId, transferInfo.equipoOrigenId, data.id, equipoId);
       }
     }
@@ -3661,6 +3664,10 @@ async function cargarHistorialTransfer(){
 }
 
 async function registrarTransferencia(jugOrigenId, equipoOrigenId, jugDestinoId, equipoDestinoId){
+  if(!jugOrigenId || !jugDestinoId){
+    console.error("[registrarTransferencia] Abortado: falta jugador origen o destino", {jugOrigenId, jugDestinoId});
+    return;
+  }
   const {error} = await sb.from("transferencias").insert({
     jugador_origen_id: jugOrigenId,
     equipo_origen_id: equipoOrigenId,
