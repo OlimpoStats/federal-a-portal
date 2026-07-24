@@ -98,6 +98,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
 .pos.noclasif{color:#c0504d;}
+.pos.verde{color:#4caf50;}
+.pos.azul{color:#42a5f5;}
+.pos.ocre{color:#cc9933;}
+.pos.rosa{color:#f48fb1;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -181,9 +185,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* ── MOBILE ── */
 @media(min-width:701px){
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table{table-layout:fixed;min-width:520px;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,
+  #tablas-nonagonal-a table,#tablas-nonagonal-b table,#tablas-revalida-a table,#tablas-revalida-b table{table-layout:fixed;min-width:520px;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:190px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),
+  #tablas-nonagonal-a thead th:nth-child(2),#tablas-nonagonal-b thead th:nth-child(2),
+  #tablas-revalida-a thead th:nth-child(2),#tablas-revalida-b thead th:nth-child(2){width:190px;}
   #cont-quintos thead th:nth-child(2){width:160px;}
   #hdr-mob-wrap{display:none!important;}
 }
@@ -191,13 +198,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(max-width:1700px) and (min-width:901px){
   .inicio-grid{gap:1.5rem;}
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,
+  #tablas-nonagonal-a table,#tablas-nonagonal-b table,#tablas-revalida-a table,#tablas-revalida-b table,
   #cont-quintos table,#cont-goleadores-resumen table{width:100%;min-width:0;}
   #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,
+  #tablas-nonagonal-a thead th,#tablas-nonagonal-b thead th,#tablas-revalida-a thead th,#tablas-revalida-b thead th,
   #cont-quintos thead th{padding:.3rem .18rem;}
   #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,
+  #tablas-nonagonal-a tbody td,#tablas-nonagonal-b tbody td,#tablas-revalida-a tbody td,#tablas-revalida-b tbody td,
   #cont-quintos tbody td{padding:.4rem .18rem;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),
-  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2){width:155px;}
+  #tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),
+  #tablas-nonagonal-a thead th:nth-child(2),#tablas-nonagonal-b thead th:nth-child(2),
+  #tablas-revalida-a thead th:nth-child(2),#tablas-revalida-b thead th:nth-child(2){width:155px;}
 }
 @media(max-width:1450px) and (min-width:901px){
   .inicio-grid{gap:1rem;}
@@ -227,25 +239,32 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
   /* Zone ordering on mobile */
   #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
-  #tablas-zona-a{order:1;}
-  #tablas-zona-b{order:2;}
-  #tablas-zona-c{order:3;}
-  #tablas-zona-d{order:4;}
-  #col-izq{order:5;}
-  #col-der{order:6;}
-  #cont-descenso{order:7;}
+  #tablas-nonagonal-a{order:1;}
+  #tablas-nonagonal-b{order:2;}
+  #tablas-revalida-a{order:3;}
+  #tablas-revalida-b{order:4;}
+  #cont-goleadores-resumen{order:5;}
+  #cont-descenso{order:6;}
   #cont-descenso > div{grid-template-columns:1fr!important;}
-  #cont-2dafase > div[style*="grid"]{grid-template-columns:1fr 1fr!important;gap:.5rem!important;}
+  #archivo-fase1-panel > div[style*="grid"]{grid-template-columns:1fr!important;gap:.75rem!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
   /* Zona tables scoped - no global tabla-mini changes */
-  #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table{width:100%;border-collapse:collapse;table-layout:fixed;}
-  #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,#cont-quintos thead th,#cont-goleadores-resumen thead th{font-size:8px;padding:.18rem .1rem;white-space:nowrap;}
-  #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),#tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),#cont-quintos thead th:nth-child(2){width:150px;}
-  #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
-  #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2){white-space:nowrap;}
-  #tablas-zona-a .tr-eq,#tablas-zona-b .tr-eq,#tablas-zona-c .tr-eq,#tablas-zona-d .tr-eq,#cont-quintos .tr-eq{gap:.1rem;}
-  #tablas-zona-a .me,#tablas-zona-b .me,#tablas-zona-c .me,#tablas-zona-d .me,#cont-quintos .me{width:13px!important;height:13px!important;}
+  #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini,
+  #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini,#tablas-revalida-b .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table,
+  #tablas-nonagonal-a table,#tablas-nonagonal-b table,#tablas-revalida-a table,#tablas-revalida-b table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,#cont-quintos thead th,#cont-goleadores-resumen thead th,
+  #tablas-nonagonal-a thead th,#tablas-nonagonal-b thead th,#tablas-revalida-a thead th,#tablas-revalida-b thead th{font-size:8px;padding:.18rem .1rem;white-space:nowrap;}
+  #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),#tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),#cont-quintos thead th:nth-child(2),
+  #tablas-nonagonal-a thead th:nth-child(2),#tablas-nonagonal-b thead th:nth-child(2),#tablas-revalida-a thead th:nth-child(2),#tablas-revalida-b thead th:nth-child(2){width:150px;}
+  #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td,
+  #tablas-nonagonal-a tbody td,#tablas-nonagonal-b tbody td,#tablas-revalida-a tbody td,#tablas-revalida-b tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
+  #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2),
+  #tablas-nonagonal-a tbody td:nth-child(2),#tablas-nonagonal-b tbody td:nth-child(2),#tablas-revalida-a tbody td:nth-child(2),#tablas-revalida-b tbody td:nth-child(2){white-space:nowrap;}
+  #tablas-zona-a .tr-eq,#tablas-zona-b .tr-eq,#tablas-zona-c .tr-eq,#tablas-zona-d .tr-eq,#cont-quintos .tr-eq,
+  #tablas-nonagonal-a .tr-eq,#tablas-nonagonal-b .tr-eq,#tablas-revalida-a .tr-eq,#tablas-revalida-b .tr-eq{gap:.1rem;}
+  #tablas-zona-a .me,#tablas-zona-b .me,#tablas-zona-c .me,#tablas-zona-d .me,#cont-quintos .me,
+  #tablas-nonagonal-a .me,#tablas-nonagonal-b .me,#tablas-revalida-a .me,#tablas-revalida-b .me{width:13px!important;height:13px!important;}
   /* Stats grids 1 col */
   #jugcont-goles > div[style*="grid"],
   #jugcont-disciplina > div[style*="grid"],
@@ -591,44 +610,59 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div class="fecha-hdr" style="flex:1;">
-        <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
-        <div class="fi" style="position:relative;">
-          <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-            <span id="fnum-txt">Fecha 1</span>
-            <span style="font-size:11px;color:var(--muted);">▼</span>
-          </div>
-          <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-            <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
-          </div>
-          <div class="fsub">Primera Fase — 2026</div>
-        </div>
-
-        <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
+      <div id="fixture-placeholder" class="placeholder">
+        <div class="ph-icon">🗓️</div>
+        <div class="ph-title">FIXTURE A SORTEARSE</div>
+        <div class="ph-sub">El fixture de la Segunda Fase se publicará próximamente.</div>
       </div>
-      <div style="width:32px;flex-shrink:0;"></div>
-    </div>
-    <div id="partidos-cont"></div>
     </div>
     <div>
       <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-        <!-- Row 1: A and B -->
-        <div id="tablas-zona-a" style="align-self:start;"></div>
-        <div id="tablas-zona-b" style="align-self:start;"></div>
-        <!-- Row 2: C and D -->
-        <div id="tablas-zona-c" style="align-self:start;"></div>
-        <div id="tablas-zona-d" style="align-self:start;"></div>
-        <!-- Row 3: quintos and 2dafase -->
-        <div id="col-izq" style="align-self:start;">
-          <div id="cont-quintos"></div>
-          <div id="cont-goleadores-resumen" style="margin-top:1rem;"></div>
-        </div>
-        <div id="col-der" style="align-self:start;">
-          <div id="cont-2dafase"></div>
-        </div>
+        <!-- Row 1: Nonagonales -->
+        <div id="tablas-nonagonal-a" style="align-self:start;"></div>
+        <div id="tablas-nonagonal-b" style="align-self:start;"></div>
+        <!-- Row 2: Revalidas -->
+        <div id="tablas-revalida-a" style="align-self:start;"></div>
+        <div id="tablas-revalida-b" style="align-self:start;"></div>
+        <div id="cont-goleadores-resumen" style="grid-column:1/-1;align-self:start;"></div>
         <div id="cont-descenso" style="grid-column:1/-1;align-self:start;"></div>
       </div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem;">
+    <div class="ztabs">
+      <div class="ztab" id="ztab-primera-fase" onclick="togglePrimeraFaseArchivo(this)">Primera Fase</div>
+    </div>
+    <div id="archivo-fase1-panel" style="display:none;">
+      <p class="sec" style="color:#fff;">Resultados</p>
+      <div style="display:flex;align-items:stretch;gap:.4rem;">
+        <div class="fecha-hdr" style="flex:1;">
+          <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
+          <div class="fi" style="position:relative;">
+            <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
+              <span id="fnum-txt">Fecha 1</span>
+              <span style="font-size:11px;color:var(--muted);">▼</span>
+            </div>
+            <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+              <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+            </div>
+            <div class="fsub">Primera Fase — 2026</div>
+          </div>
+
+          <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
+        </div>
+        <div style="width:32px;flex-shrink:0;"></div>
+      </div>
+      <div id="partidos-cont" style="margin-bottom:1.5rem;"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <div id="tablas-zona-a" style="align-self:start;"></div>
+        <div id="tablas-zona-b" style="align-self:start;"></div>
+        <div id="tablas-zona-c" style="align-self:start;"></div>
+        <div id="tablas-zona-d" style="align-self:start;"></div>
+      </div>
+      <div id="cont-quintos"></div>
     </div>
   </div>
 </div>
@@ -2290,6 +2324,45 @@ function renderTablas(){
 
 }
 
+// ── GRUPOS SEGUNDA FASE (Nonagonal A/B, Revalida A/B) ──
+function posClassNonagonal(pos){ return pos<=4 ? 'verde' : pos===5 ? 'azul' : 'ocre'; }
+function posClassRevalida(pos, total){ return pos<=Math.ceil(total/2) ? 'ocre' : 'rosa'; }
+
+function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  let h = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${colorTitulo};margin:0 0 .28rem;">${titulo}</p>`;
+  h += `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
+      <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
+      <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
+      <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
+      <th title="GC">GC</th><th title="+/-">+/-</th>
+    </tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    const pos=i+1, dif=r.gf-r.gc;
+    const posClass = colorFn(pos, rows.length);
+    h += `<tr>
+      <td><span class="pos ${posClass}">${pos}</span></td>
+      <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span></div></td>
+      <td><strong class="pts">${r.pts}</strong></td>
+      <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
+      <td>${r.gf}</td><td>${r.gc}</td>
+      <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+    </tr>`;
+  });
+  h += `</tbody></table></div>`;
+  el.innerHTML = h;
+}
+
+function renderGruposSegundaFase(grupos){
+  const datos = grupos || calcularGruposSegundaFase();
+  const zerar = arr => arr.map(r => ({n:r.n, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
+  renderTablaGrupo('tablas-nonagonal-a', zerar(datos.nonA), 'Nonagonal A', '#4caf50', posClassNonagonal);
+  renderTablaGrupo('tablas-nonagonal-b', zerar(datos.nonB), 'Nonagonal B', '#4caf50', posClassNonagonal);
+  renderTablaGrupo('tablas-revalida-a', zerar(datos.revA), 'Reválida A', '#cc9933', posClassRevalida);
+  renderTablaGrupo('tablas-revalida-b', zerar(datos.revB), 'Reválida B', '#cc9933', posClassRevalida);
+}
+
 function toggleFechaPicker(){
   const picker = document.getElementById("fecha-picker");
   if(!picker) return;
@@ -2676,6 +2749,14 @@ function showJugSubTab(tab, el){
     const c=document.getElementById('jugcont-'+t);
     if(c) c.style.display=t===tab?'':'none';
   });
+}
+
+function togglePrimeraFaseArchivo(el){
+  const panel = document.getElementById('archivo-fase1-panel');
+  if(!panel) return;
+  const abierto = panel.style.display !== 'none';
+  panel.style.display = abierto ? 'none' : '';
+  el.classList.toggle('active', !abierto);
 }
 
 async function cargarEstadisticas(){
@@ -3745,10 +3826,10 @@ async function renderGoleadoresResumen(){
   } catch(e){ console.error(e); }
 }
 
-function renderSegundaFase(){
-  const el = document.getElementById('cont-2dafase');
-  if(!el) return;
-
+// Calcula los planteles de Nonagonal A/B y Revalida A/B a partir de las
+// tablas finales de Primera Fase. Usado tanto por renderSegundaFase() (tabla
+// de descenso) como por renderGruposSegundaFase() (tablas en vivo del inicio).
+function calcularGruposSegundaFase(){
   // Get sorted tables for each zona
   const tabA = calcTabla("Zona A");
   const tabB = calcTabla("Zona B");
@@ -3803,18 +3884,12 @@ function renderSegundaFase(){
     restQuintos.forEach(q=>revB.push({...q, _quinto:true}));
   }
 
-  const renderLista = (equipos, color) => `<div style="width:100%;border:1px solid var(--border);border-radius:6px;overflow:hidden;">` +
-    equipos.map((r,i)=>{
-    const isQuinto = r._quinto || r._topQuinto;
-    const isTied = r._tied;
-    const posColor = isTied ? '#3b82f6' : '#aaa';
-    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.35rem .6rem;border-bottom:1px solid var(--border);background:${i%2===0?'var(--surface)':'var(--surface2)'};">
-      <span style="font-size:11px;font-weight:700;color:${posColor};width:16px;text-align:center;flex-shrink:0;">${i+1}</span>
-      ${escudoHTML(r.n,'me')}
-      <span style="font-size:13px;${isQuinto?'color:#f5e99a;':'color:#e8e8e8;'}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>
-      ${isTied ? '&nbsp;<span style="font-size:9px;color:#3b82f6;flex-shrink:0;" title="Empate — sorteo">⚖️</span>' : ''}
-    </div>`;
-  }).join('') + `</div>`;
+  return {tabA,tabB,tabC,tabD,quintos,topQ,tied,topQTied,bestQuintoZona,nonA,nonB,revA,revB};
+}
+
+function renderSegundaFase(grupos){
+  const datos = grupos || calcularGruposSegundaFase();
+  const {quintos, topQ, tied, topQTied, revA, revB} = datos;
 
   const renderNonagonalTabla = (equipos, titulo, color) => {
     const rows = equipos.map(r => ({n:r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
@@ -3848,8 +3923,6 @@ function renderSegundaFase(){
       </tr></thead><tbody>${tableRows}</tbody>
     </table></div>`;
   };
-
-  const secSize = `font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;`;
 
   // Devuelve 'red', 'orange' o null según posición y empates en el límite
   const calcDangerColor = (rows, idx, criterion) => {
@@ -3973,19 +4046,6 @@ function renderSegundaFase(){
 })();
 
 
-  el.innerHTML = `
-    <p class="sec-2dafase" style="margin:.5rem 0 .5rem;">📊 2DA FASE: PARCIAL</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
-      <div>
-        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal A</p>
-        ${renderLista(nonA,'#2ea043')}
-      </div>
-      <div>
-        <p style="${secSize}color:#2ea043;margin:.5rem 0 .35rem;font-size:15px;">Nonagonal B</p>
-        ${renderLista(nonB,'#2ea043')}
-      </div>
-    </div>`;
-
   const elD = document.getElementById('cont-descenso');
   if(elD) elD.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;margin-top:1rem;">
       <div>${renderRevATabla(revA)}</div>
@@ -4055,7 +4115,9 @@ async function _renderTodo(){
   fechaActual = f;
   renderPartidos(f);
   renderTablas();
-  renderSegundaFase();
+  const grupos = calcularGruposSegundaFase();
+  renderSegundaFase(grupos);
+  renderGruposSegundaFase(grupos);
   renderGoleadoresResumen();
 }
 
@@ -4078,7 +4140,7 @@ async function init(){
     try { await _renderTodo(); } catch(e){}
     _refrescarSilencioso();
   } else {
-    ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d'].forEach(id=>{
+    ['partidos-cont','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d','tablas-nonagonal-a','tablas-nonagonal-b','tablas-revalida-a','tablas-revalida-b'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.innerHTML = _loadingHTML;
     });
