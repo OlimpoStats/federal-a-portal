@@ -115,7 +115,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #archivo-fase1-toggle.active{background:var(--accent);color:#111;}
 #archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
 /* leyenda de colores */
-.leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.15rem 0 1rem;}
+.leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.4rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
@@ -222,7 +222,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 }
 @media(max-width:1450px) and (min-width:901px){
   .inicio-grid{gap:1rem;}
-  #inner-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:1250px) and (min-width:701px){
   .ni{padding:0 .65rem;}
@@ -246,16 +245,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   /* Inicio grid */
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
-  /* Zone ordering on mobile */
-  #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
-  #tablas-nonagonal-a{order:1;}
-  #tablas-nonagonal-b{order:2;}
-  #leyenda-nonagonal{order:3;}
-  #tablas-revalida-a{order:4;}
-  #tablas-revalida-b{order:5;}
-  #leyenda-revalida{order:6;}
-  #cont-goleadores-resumen{order:7;}
-  #cont-descenso{order:8;}
+  /* Nonagonal/Revalida pairs stack to 1 col on mobile */
+  #nonagonales-wrap > div[style*="grid"],#revalidas-wrap > div[style*="grid"]{grid-template-columns:1fr!important;gap:.75rem!important;}
   #cont-descenso > div{grid-template-columns:1fr!important;}
   #cont-quintos{max-width:100%!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
@@ -628,24 +619,30 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
     </div>
     <div>
-      <div id="inner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-        <!-- Row 1: Nonagonales -->
-        <div id="tablas-nonagonal-a" style="align-self:start;"></div>
-        <div id="tablas-nonagonal-b" style="align-self:start;"></div>
-        <div id="leyenda-nonagonal" class="leyenda-colores" style="grid-column:1/-1;">
-          <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
-          <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
-          <span><b style="color:#cc9933;">●</b> Copa Argentina</span>
+      <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
+        <div id="nonagonales-wrap">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+            <div id="tablas-nonagonal-a" style="align-self:start;"></div>
+            <div id="tablas-nonagonal-b" style="align-self:start;"></div>
+          </div>
+          <div id="leyenda-nonagonal" class="leyenda-colores">
+            <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
+            <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
+            <span><b style="color:#cc9933;">●</b> Copa Argentina</span>
+          </div>
         </div>
-        <!-- Row 2: Revalidas -->
-        <div id="tablas-revalida-a" style="align-self:start;"></div>
-        <div id="tablas-revalida-b" style="align-self:start;"></div>
-        <div id="leyenda-revalida" class="leyenda-colores" style="grid-column:1/-1;">
-          <span><b style="color:#cc9933;">●</b> Reválida</span>
-          <span><b style="color:#f48fb1;">●</b> Eliminado</span>
+        <div id="revalidas-wrap">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+            <div id="tablas-revalida-a" style="align-self:start;"></div>
+            <div id="tablas-revalida-b" style="align-self:start;"></div>
+          </div>
+          <div id="leyenda-revalida" class="leyenda-colores">
+            <span><b style="color:#cc9933;">●</b> Reválida</span>
+            <span><b style="color:#f48fb1;">●</b> Eliminado</span>
+          </div>
         </div>
-        <div id="cont-goleadores-resumen" style="grid-column:1/-1;align-self:start;"></div>
-        <div id="cont-descenso" style="grid-column:1/-1;align-self:start;"></div>
+        <div id="cont-goleadores-resumen"></div>
+        <div id="cont-descenso"></div>
       </div>
     </div>
   </div>
