@@ -750,17 +750,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
 
       <div id="jugcont-disciplina" style="display:none;">
-        <div id="disc-top-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div><p class="sec">🟨 Próximos a la suspensión</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
-          <div id="sanc-pendientes-pub-wrap"><p class="sec">⛔ Suspensiones pendientes</p><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div>
-            <p class="sec">🟨 Amarillas totales</p>
-            <div style="font-size:11px;color:#999;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:.4rem;"><span>📝</span><span>Se suman las amarillas vistas como primera y como segunda, sean o no computables para el límite.</span></div>
-            <div class="tabla-mini" id="tbl-amarillas"></div>
+        <div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:14px;border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;">🔧 Reconstruyendo la sección.</div>
+        <div style="display:none;">
+          <div id="disc-top-grid">
+            <div><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
+            <div id="sanc-pendientes-pub-wrap"><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
           </div>
-          <div><p class="sec">🟥 Expulsiones totales</p><div class="tabla-mini" id="tbl-rojas"></div></div>
+          <div><div class="tabla-mini" id="tbl-amarillas"></div></div>
+          <div><div class="tabla-mini" id="tbl-rojas"></div></div>
         </div>
       </div>
 
@@ -3160,12 +3157,12 @@ async function cargarEstadisticas(){
       sancWrap.style.display = 'none';
     }
 
-    // AMARILLAS PARA LÍMITE (próximos a la suspensión: 4 y 5 computables)
-    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=4).sort((a,b)=>b.count-a.count);
+    // AMARILLAS PARA LÍMITE
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=3).sort((a,b)=>b.count-a.count);
     document.getElementById('tbl-amarillas-limite').innerHTML=amLimRows.length?tblHead(
       ['28px','','#'],['','Jugador','Jugador'],['50px','Amarillas','🟨'],['50px','Límite','Límite']
     )+amLimRows.map((j,i)=>{
-      const color=j.count>=5?'#e57373':'#ffa726';
+      const color=j.count>=5?'#e57373':j.count>=4?'#ffa726':j.count>=3?'#fff176':'var(--muted)';
       const badge = j.count>=5 ? `<span style="font-size:9px;background:#e57373;color:#fff;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:4px;">SANCIONADO</span>` : `<span style="font-size:10px;color:${color};">${j.count}/5</span>`;
       return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
     }).join('')+'</tbody></table>'
