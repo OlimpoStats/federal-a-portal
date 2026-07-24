@@ -115,8 +115,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #archivo-fase1-toggle.active{background:var(--accent);color:#111;}
 #archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
 /* leyenda de colores */
-.leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.4rem 0 0;}
+.leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
+#tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -633,12 +634,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         </div>
         <div id="revalidas-wrap">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div id="tablas-revalida-a" style="align-self:start;"></div>
+            <div style="align-self:start;">
+              <div id="tablas-revalida-a"></div>
+              <div id="leyenda-revalida" class="leyenda-colores">
+                <span><b style="color:#cc9933;">●</b> Reválida</span>
+                <span><b style="color:#f48fb1;">●</b> Eliminado</span>
+              </div>
+            </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
-          </div>
-          <div id="leyenda-revalida" class="leyenda-colores">
-            <span><b style="color:#cc9933;">●</b> Reválida</span>
-            <span><b style="color:#f48fb1;">●</b> Eliminado</span>
           </div>
         </div>
         <div id="cont-goleadores-resumen"></div>
@@ -1495,8 +1498,9 @@ function fechaInteligente(){
 function escudoHTML(nombre, size='esc'){
   const url = ESCUDOS[nombre];
   const i = ini(nombre);
+  const px = size==='me' ? 22 : 32;
   return url
-    ? `<div class="${size}"><img src="${url}" alt="${nombre}"></div>`
+    ? `<div class="${size}"><img src="${url}" alt="${nombre}" width="${px}" height="${px}" loading="eager"></div>`
     : `<div class="${size}">${i}</div>`;
 }
 
