@@ -99,7 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.quinto{color:#e8c44a;}
 .pos.noclasif{color:#c0504d;}
 .pos.verde{color:#4caf50;}
-.pos.azul{color:#42a5f5;}
+.pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f48fb1;}
 .pts{font-weight:700;font-size:14px;}
@@ -109,6 +109,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .me img{width:100%;height:100%;object-fit:contain;}
 .tabla-quintos-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:.9rem 0 .3rem;border-top:1px solid var(--border);padding-top:.75rem;}
 
+/* archivo primera fase toggle */
+#archivo-fase1-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem 1.1rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;}
+#archivo-fase1-toggle:hover{opacity:.85;}
+#archivo-fase1-toggle.active{background:var(--accent);color:#111;}
+#archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
+/* leyenda de colores */
+.leyenda-colores{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-size:12px;color:#ccc;padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin:-.25rem 0 .25rem;}
+.leyenda-colores b{font-size:14px;margin-right:.2rem;}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -241,12 +249,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #inner-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
   #tablas-nonagonal-a{order:1;}
   #tablas-nonagonal-b{order:2;}
-  #tablas-revalida-a{order:3;}
-  #tablas-revalida-b{order:4;}
-  #cont-goleadores-resumen{order:5;}
-  #cont-descenso{order:6;}
+  #leyenda-nonagonal{order:3;}
+  #tablas-revalida-a{order:4;}
+  #tablas-revalida-b{order:5;}
+  #leyenda-revalida{order:6;}
+  #cont-goleadores-resumen{order:7;}
+  #cont-descenso{order:8;}
   #cont-descenso > div{grid-template-columns:1fr!important;}
-  #archivo-fase1-panel > div[style*="grid"]{grid-template-columns:1fr!important;gap:.75rem!important;}
+  #archivo-fase1-grid{grid-template-columns:1fr!important;gap:.75rem!important;}
+  #archivo-fase1-grid > div:last-child > div[style*="grid"]{grid-template-columns:1fr!important;gap:.75rem!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
   /* Zona tables scoped - no global tabla-mini changes */
   #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini,
@@ -621,9 +632,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <!-- Row 1: Nonagonales -->
         <div id="tablas-nonagonal-a" style="align-self:start;"></div>
         <div id="tablas-nonagonal-b" style="align-self:start;"></div>
+        <div id="leyenda-nonagonal" class="leyenda-colores" style="grid-column:1/-1;">
+          <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
+          <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
+          <span><b style="color:#cc9933;">●</b> Copa Argentina</span>
+        </div>
         <!-- Row 2: Revalidas -->
         <div id="tablas-revalida-a" style="align-self:start;"></div>
         <div id="tablas-revalida-b" style="align-self:start;"></div>
+        <div id="leyenda-revalida" class="leyenda-colores" style="grid-column:1/-1;">
+          <span><b style="color:#cc9933;">●</b> Reválida</span>
+          <span><b style="color:#f48fb1;">●</b> Eliminado</span>
+        </div>
         <div id="cont-goleadores-resumen" style="grid-column:1/-1;align-self:start;"></div>
         <div id="cont-descenso" style="grid-column:1/-1;align-self:start;"></div>
       </div>
@@ -631,38 +651,44 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   </div>
 
   <div style="margin-top:1.5rem;">
-    <div class="ztabs">
-      <div class="ztab" id="ztab-primera-fase" onclick="togglePrimeraFaseArchivo(this)">Primera Fase</div>
+    <div id="archivo-fase1-toggle" onclick="togglePrimeraFaseArchivo(this)">
+      <span>📁 Primera Fase</span>
+      <span id="archivo-fase1-chevron" style="transition:transform .2s;">▾</span>
     </div>
     <div id="archivo-fase1-panel" style="display:none;">
-      <p class="sec" style="color:#fff;">Resultados</p>
-      <div style="display:flex;align-items:stretch;gap:.4rem;">
-        <div class="fecha-hdr" style="flex:1;">
-          <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
-          <div class="fi" style="position:relative;">
-            <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-              <span id="fnum-txt">Fecha 1</span>
-              <span style="font-size:11px;color:var(--muted);">▼</span>
+      <div id="archivo-fase1-grid" style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:1.5rem;align-items:start;">
+        <div>
+          <p class="sec" style="color:#fff;">Resultados</p>
+          <div style="display:flex;align-items:stretch;gap:.4rem;">
+            <div class="fecha-hdr" style="flex:1;">
+              <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
+              <div class="fi" style="position:relative;">
+                <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
+                  <span id="fnum-txt">Fecha 1</span>
+                  <span style="font-size:11px;color:var(--muted);">▼</span>
+                </div>
+                <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+                  <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+                </div>
+                <div class="fsub">Primera Fase — 2026</div>
+              </div>
+
+              <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
             </div>
-            <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-              <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
-            </div>
-            <div class="fsub">Primera Fase — 2026</div>
+            <div style="width:32px;flex-shrink:0;"></div>
           </div>
-
-          <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
+          <div id="partidos-cont"></div>
         </div>
-        <div style="width:32px;flex-shrink:0;"></div>
+        <div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+            <div id="tablas-zona-a" style="align-self:start;"></div>
+            <div id="tablas-zona-b" style="align-self:start;"></div>
+            <div id="tablas-zona-c" style="align-self:start;"></div>
+            <div id="tablas-zona-d" style="align-self:start;"></div>
+          </div>
+          <div id="cont-quintos" style="margin-top:1rem;"></div>
+        </div>
       </div>
-      <div id="partidos-cont" style="margin-bottom:1.5rem;"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-        <div id="tablas-zona-a" style="align-self:start;"></div>
-        <div id="tablas-zona-b" style="align-self:start;"></div>
-        <div id="tablas-zona-c" style="align-self:start;"></div>
-        <div id="tablas-zona-d" style="align-self:start;"></div>
-      </div>
-      <div id="cont-quintos"></div>
     </div>
   </div>
 </div>
@@ -2757,6 +2783,8 @@ function togglePrimeraFaseArchivo(el){
   const abierto = panel.style.display !== 'none';
   panel.style.display = abierto ? 'none' : '';
   el.classList.toggle('active', !abierto);
+  const chev = document.getElementById('archivo-fase1-chevron');
+  if(chev) chev.classList.toggle('rot', !abierto);
 }
 
 async function cargarEstadisticas(){
