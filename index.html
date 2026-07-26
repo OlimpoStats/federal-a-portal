@@ -2890,9 +2890,17 @@ async function cargarEstadisticas(){
     // We need a richer query - let's use eventos to find cambio_entra/sale for #12
 
     // Simpler approach: query planillas with numero_camiseta filter
-    const {data:arquerosPlanilla} = await sb.from('planillas')
-      .select('id,partido_id,equipo_id,numero_camiseta,titular,jugadores(id,nombre,nombre_display),equipos(nombre)')
-      .in('numero_camiseta',[1,12]);
+    const arqSelect = 'id,partido_id,equipo_id,numero_camiseta,titular,jugadores(id,nombre,nombre_display),equipos(nombre)';
+    const {data:arqRes0} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(0,999);
+    let arquerosPlanilla = arqRes0 || [];
+    let arqFrom = 1000;
+    while(arquerosPlanilla.length % 1000 === 0 && arquerosPlanilla.length > 0){
+      const {data:arqBatch} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(arqFrom, arqFrom+999);
+      if(!arqBatch?.length) break;
+      arquerosPlanilla = arquerosPlanilla.concat(arqBatch);
+      if(arqBatch.length < 1000) break;
+      arqFrom += 1000;
+    }
 
     // Build set of partido_ids where keeper #12 entered (cambio_entra)
     const arqSustitutos = new Set(); // planilla ids where #12 has cambio_entra
