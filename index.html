@@ -810,7 +810,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div id="jugcont-disciplina" style="display:none;">
         <div id="disc-top-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
           <div><p class="sec">🟨 Próximos a la suspensión</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
-          <div id="sanc-pendientes-pub-wrap"><p class="sec">⛔ Suspensiones pendientes</p><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
+          <div>
+            <div id="sanc-pendientes-pub-wrap"><p class="sec">⛔ Suspensiones pendientes</p><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
+            <p class="sec" style="margin-top:1rem;">🟨🟥 Disciplina por equipo</p>
+            <div class="tabla-mini" id="tbl-disciplina-clubes"></div>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
           <div>
@@ -3326,6 +3330,32 @@ async function cargarEstadisticas(){
     } else {
       sancWrap.style.display = 'none';
     }
+
+    // DISCIPLINA POR EQUIPO (los 37 clubes, amarillas y rojas totales)
+    const clubDisciplina = {}; // equipo → {amarillas, rojas}
+    (eventos||[]).forEach(ev=>{
+      if(!['amarilla','doble_amarilla','roja'].includes(ev.tipo)) return;
+      const pl = ev.planillas; if(!pl) return;
+      const equipo = pl.equipos?.nombre; if(!equipo) return;
+      if(!clubDisciplina[equipo]) clubDisciplina[equipo] = {amarillas:0, rojas:0};
+      if(ev.tipo==='amarilla') clubDisciplina[equipo].amarillas++;
+      if(ev.tipo==='doble_amarilla'){ clubDisciplina[equipo].amarillas++; clubDisciplina[equipo].rojas++; }
+      if(ev.tipo==='roja') clubDisciplina[equipo].rojas++;
+    });
+    const clubDisciplinaRows = EQUIPOS_LIST.map(eq => ({
+      n: eq.nombre,
+      amarillas: clubDisciplina[eq.nombre]?.amarillas || 0,
+      rojas: clubDisciplina[eq.nombre]?.rojas || 0,
+    })).sort((a,b) => b.rojas-a.rojas || b.amarillas-a.amarillas || a.n.localeCompare(b.n));
+    document.getElementById('tbl-disciplina-clubes').innerHTML = clubDisciplinaRows.length ? tblHead(
+      ['28px','','#'],['','Equipo','Equipo'],['44px','Amarillas','🟨'],['44px','Expulsiones','🟥']
+    ) + clubDisciplinaRows.map((r,i)=>`<tr>
+        <td><span class="pos">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span></div></td>
+        <td><strong class="pts">${r.amarillas}</strong></td>
+        <td><strong class="pts" style="color:#e57373;">${r.rojas}</strong></td>
+      </tr>`).join('') + '</tbody></table>'
+    : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
     // AMARILLAS PARA LÍMITE (próximos a la suspensión: 4 y 5 computables)
     const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=4).sort((a,b)=>
