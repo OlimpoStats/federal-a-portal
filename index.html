@@ -209,7 +209,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid{gap:1.5rem;}
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,
   #tablas-nonagonal-a table,#tablas-nonagonal-b table,#tablas-revalida-a table,#tablas-revalida-b table,
-  #cont-quintos table,#cont-goleadores-resumen table{width:100%;min-width:0;}
+  #cont-quintos table,#cont-goleadores-resumen table,#cont-asistentes-resumen table{width:100%;min-width:0;}
   #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,
   #tablas-nonagonal-a thead th,#tablas-nonagonal-b thead th,#tablas-revalida-a thead th,#tablas-revalida-b thead th,
   #cont-quintos thead th{padding:.3rem .18rem;}
@@ -252,15 +252,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #cont-quintos{max-width:100%!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
   /* Zona tables scoped - no global tabla-mini changes */
-  #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini,
+  #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini,#cont-asistentes-resumen .tabla-mini,
   #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini,#tablas-revalida-b .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table,
+  #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table,#cont-asistentes-resumen table,
   #tablas-nonagonal-a table,#tablas-nonagonal-b table,#tablas-revalida-a table,#tablas-revalida-b table{width:100%;border-collapse:collapse;table-layout:fixed;}
-  #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,#cont-quintos thead th,#cont-goleadores-resumen thead th,
+  #tablas-zona-a thead th,#tablas-zona-b thead th,#tablas-zona-c thead th,#tablas-zona-d thead th,#cont-quintos thead th,#cont-goleadores-resumen thead th,#cont-asistentes-resumen thead th,
   #tablas-nonagonal-a thead th,#tablas-nonagonal-b thead th,#tablas-revalida-a thead th,#tablas-revalida-b thead th{font-size:8px;padding:.18rem .1rem;white-space:nowrap;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),#tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),#cont-quintos thead th:nth-child(2),
   #tablas-nonagonal-a thead th:nth-child(2),#tablas-nonagonal-b thead th:nth-child(2),#tablas-revalida-a thead th:nth-child(2),#tablas-revalida-b thead th:nth-child(2){width:150px;}
-  #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td,
+  #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td,#cont-asistentes-resumen tbody td,
   #tablas-nonagonal-a tbody td,#tablas-nonagonal-b tbody td,#tablas-revalida-a tbody td,#tablas-revalida-b tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
   #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2),
   #tablas-nonagonal-a tbody td:nth-child(2),#tablas-nonagonal-b tbody td:nth-child(2),#tablas-revalida-a tbody td:nth-child(2),#tablas-revalida-b tbody td:nth-child(2){white-space:nowrap;}
@@ -625,7 +625,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
               <div id="fecha-picker2-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
             </div>
             <div class="fsub">Segunda Fase — 2026</div>
-            <div id="fecha2-date" style="font-size:11px;color:var(--muted);margin-top:2px;"></div>
           </div>
           <div class="fnav" id="btn-next2" onclick="cambiar2(1)">&#8594;</div>
         </div>
@@ -658,7 +657,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
             <div id="tablas-revalida-b" style="align-self:start;"></div>
           </div>
         </div>
-        <div id="cont-goleadores-resumen"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+          <div id="cont-goleadores-resumen" style="align-self:start;"></div>
+          <div id="cont-asistentes-resumen" style="align-self:start;"></div>
+        </div>
         <div id="cont-descenso"></div>
       </div>
     </div>
@@ -1373,7 +1375,6 @@ let fechaActual=1,fxZona="Zona A";
 const GRUPOS2 = ["Nonagonal A","Nonagonal B","Reválida A","Reválida B"];
 const ZONAS_TODAS = [...ZONAS, ...GRUPOS2];
 const LIBRES2 = {"Nonagonal A":{"1":"Sarmiento (LB)","2":"Gimnasia (Ch)","3":"Bartolomé Mitre","4":"9 de Julio (Rafaela)","5":"Sol de América (F)","6":"San Martín (F)","7":"Douglas Haig","8":"Defensores (VR)","9":"Sp. Belgrano"},"Nonagonal B":{"1":"Alvarado","2":"Kimberley","3":"Juv. Antoniana","4":"Atenas (RC)","5":"Huracán LH","6":"Cipolletti","7":"Villa Mitre","8":"Olimpo","9":"Argentino (MM)"},"Reválida A":{"1":"Independiente (Ch)","2":"Gimnasia (CDU)","3":"Boca Unidos","4":"El Linqueño","5":"Sarmiento (R)","6":"Defensores (PV)","7":"Sp. Las Parejas","8":"Atlético Escobar","9":"Tucumán Central"},"Reválida B":{}};
-const FECHAS2_DATES = {"1":"02.08.26","2":"08.08.26","3":"12.08.26","4":"16.08.26","5":"23.08.26","6":"30.08.26","7":"06.09.26","8":"13.09.26","9":"20.09.26"};
 function faseRank(z){ return ZONAS.includes(z) ? 0 : 1; }
 function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? `${code} F${f}` : `F${f}`; }
 let fechaActual2 = 1;
@@ -1490,10 +1491,10 @@ const ZONA_COLORES = {
   "Zona B": { color: "#e87aaa", text: "#111111", code: "B" },
   "Zona C": { color: "#ffff33", text: "#111111", code: "C" },
   "Zona D": { color: "#3366cc", text: "#ffffff", code: "D" },
-  "Nonagonal A": { color: "#4caf50", text: "#0a1f0a", code: "NA" },
-  "Nonagonal B": { color: "#4caf50", text: "#0a1f0a", code: "NB" },
-  "Reválida A": { color: "#cc9933", text: "#241a02", code: "RA" },
-  "Reválida B": { color: "#cc9933", text: "#241a02", code: "RB" },
+  "Nonagonal A": { color: "#66bb6a", text: "#0a1f0a", code: "NA", pillLabel: "NONA. A" },
+  "Nonagonal B": { color: "#2e7d32", text: "#f1f8f1", code: "NB", pillLabel: "NONA. B" },
+  "Reválida A": { color: "#f06292", text: "#2a0714", code: "RA", pillLabel: "REV. A" },
+  "Reválida B": { color: "#ad1457", text: "#fce4ec", code: "RB", pillLabel: "REV. B" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -2480,9 +2481,6 @@ function renderPartidos2(f){
   document.getElementById("btn-prev2").classList.toggle("dis", f<=1);
   document.getElementById("btn-next2").classList.toggle("dis", f>=9);
 
-  const dateEl = document.getElementById("fecha2-date");
-  if(dateEl) dateEl.textContent = FECHAS2_DATES[String(f)] ? `📅 ${FECHAS2_DATES[String(f)]}` : '';
-
   let html = "";
   GRUPOS2.forEach(g=>{
     const partidos = FIXTURE[g]?.[String(f)] || [];
@@ -2491,9 +2489,13 @@ function renderPartidos2(f){
       html += `<div class="partido-wrap">
         <div style="display:flex;align-items:stretch;gap:.4rem">
           <div class="partido topo-dia" style="flex:1;border-left-color:${gc.color};">
-            <div class="eq"><span class="grp-pill" style="background:${gc.color};border-color:${gc.color};color:${gc.text};">${gc.code}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
+            <div class="eq"><span class="grp-pill" style="background:${gc.color};border-color:${gc.color};color:${gc.text};">${gc.pillLabel||gc.code}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
             <div class="res"><div class="vs">VS</div></div>
             <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
+          </div>
+          <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
+            <div style="width:26px;flex-shrink:0;"></div>
+            <div style="width:26px;flex-shrink:0;"></div>
           </div>
         </div>
       </div>`;
@@ -3971,57 +3973,71 @@ async function cargarEstadisticas(){
   }
 }
 // ── INIT ──
+function _top3ResumenHTML(map, valueKey, icon){
+  const sorted=Object.values(map).sort((a,b)=>b[valueKey]-a[valueKey]);
+  if(!sorted.length) return '';
+  const rows=[];
+  let rank=0, lastV=-1;
+  for(const j of sorted){
+    if(j[valueKey]!==lastV){rank++;lastV=j[valueKey];}
+    if(rank>3) break;
+    rows.push({...j,rank});
+  }
+  const byRank={};
+  rows.forEach(j=>{if(!byRank[j.rank])byRank[j.rank]=[];byRank[j.rank].push(j);});
+  let tableRows='';
+  for(let r=1;r<=3;r++){
+    const pl=byRank[r];
+    if(!pl) break;
+    if(r===3 && pl.length>1){
+      tableRows+=`<tr>
+        <td><span class="pos">${r}</span></td>
+        <td><div class="tr-eq"><span style="font-size:13px;">${pl.length} jugadores</span></div></td>
+        <td><strong class="pts">${pl[0][valueKey]}</strong></td>
+      </tr>`;
+    } else {
+      pl.forEach(j=>{tableRows+=`<tr>
+        <td><span class="pos">${r}</span></td>
+        <td><div class="tr-eq">${escudoHTML(j.equipo,'me')}<span style="font-size:13px">${j.nombre}</span></div></td>
+        <td><strong class="pts">${j[valueKey]}</strong></td>
+      </tr>`;});
+    }
+  }
+  if(!tableRows) return '';
+  return `<table><thead><tr>
+    <th style="width:24px">#</th><th style="text-align:left">Jugador</th><th>${icon}</th>
+  </tr></thead><tbody>${tableRows}</tbody></table>`;
+}
+
 async function renderGoleadoresResumen(){
   const gEl = document.getElementById('cont-goleadores-resumen');
-  if(!gEl) return;
+  const aEl = document.getElementById('cont-asistentes-resumen');
+  if(!gEl && !aEl) return;
   try {
     const {data} = await sb.from('eventos')
       .select('tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))')
-      .in('tipo',['gol','gol_penal','gol_tiro_libre']);
-    const map = {};
+      .in('tipo',['gol','gol_penal','gol_tiro_libre','asistencia']);
+    const golMap = {}, asistMap = {};
     (data||[]).forEach(ev=>{
       const j=ev.planillas?.jugadores, eq=ev.planillas?.equipos?.nombre||'';
       if(!j) return;
       const nombre=j.nombre_display||j.nombre||'?';
-      if(!map[nombre]) map[nombre]={nombre,equipo:eq,goles:0};
-      map[nombre].goles++;
-    });
-    const sorted=Object.values(map).sort((a,b)=>b.goles-a.goles);
-    if(!sorted.length){gEl.innerHTML='';return;}
-    // Armar top 3 posiciones
-    const rows=[];
-    let rank=0, lastG=-1;
-    for(const j of sorted){
-      if(j.goles!==lastG){rank++;lastG=j.goles;}
-      if(rank>3) break;
-      rows.push({...j,rank});
-    }
-    // Agrupar por rank para detectar empates en 3°
-    const byRank={};
-    rows.forEach(j=>{if(!byRank[j.rank])byRank[j.rank]=[];byRank[j.rank].push(j);});
-    let tableRows='';
-    for(let r=1;r<=3;r++){
-      const pl=byRank[r];
-      if(!pl) break;
-      if(r===3 && pl.length>1){
-        tableRows+=`<tr>
-          <td><span class="pos">${r}</span></td>
-          <td><div class="tr-eq"><span style="font-size:13px;">${pl.length} jugadores</span></div></td>
-          <td><strong class="pts">${pl[0].goles}</strong></td>
-        </tr>`;
+      if(ev.tipo==='asistencia'){
+        if(!asistMap[nombre]) asistMap[nombre]={nombre,equipo:eq,asist:0};
+        asistMap[nombre].asist++;
       } else {
-        pl.forEach(j=>{tableRows+=`<tr>
-          <td><span class="pos">${r}</span></td>
-          <td><div class="tr-eq">${escudoHTML(j.equipo,'me')}<span style="font-size:13px">${j.nombre}</span></div></td>
-          <td><strong class="pts">${j.goles}</strong></td>
-        </tr>`;});
+        if(!golMap[nombre]) golMap[nombre]={nombre,equipo:eq,goles:0};
+        golMap[nombre].goles++;
       }
+    });
+    if(gEl){
+      const golHTML = _top3ResumenHTML(golMap,'goles','⚽');
+      gEl.innerHTML = golHTML ? `<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">⚽ Goleadores</p><div class="tabla-mini">${golHTML}</div>` : '';
     }
-    if(!tableRows){gEl.innerHTML='';return;}
-    gEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">⚽ Goleadores</p>
-    <div class="tabla-mini"><table><thead><tr>
-      <th style="width:24px">#</th><th style="text-align:left">Jugador</th><th>⚽</th>
-    </tr></thead><tbody>${tableRows}</tbody></table></div>`;
+    if(aEl){
+      const asistHTML = _top3ResumenHTML(asistMap,'asist','👟');
+      aEl.innerHTML = asistHTML ? `<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">👟 Asistentes</p><div class="tabla-mini">${asistHTML}</div>` : '';
+    }
   } catch(e){ console.error(e); }
 }
 
