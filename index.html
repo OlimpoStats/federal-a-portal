@@ -654,6 +654,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
               <div id="leyenda-revalida" class="leyenda-colores">
                 <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
                 <span><b style="color:#f48fb1;">●</b> Eliminado</span>
+                <span><b style="color:#c0504d;">●</b> En descenso</span>
               </div>
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
@@ -2423,6 +2424,61 @@ function calcTablaGrupo(grupo){
   return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts} }
 }
 
+// Combina el plantel (con su Pts/PJ de Primera Fase ya cargados por calcularGruposSegundaFase)
+// con lo jugado hasta ahora en el grupo de Segunda Fase. _tempPts/_tempPj = temporada completa
+// (Primera Fase + Segunda Fase), usados para desempates y para la tabla de descenso.
+function armarFilasTemporada(roster, grupo){
+  const stats = calcTablaGrupo(grupo);
+  return roster.map(r => {
+    const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+    return {
+      n: r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false,
+      pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts,
+      _tempPts: (r.pts||0) + s.pts,
+      _tempPj: (r.pj||0) + s.pj,
+    };
+  });
+}
+
+// Devuelve 'red', 'orange' o null según posición y empates en el límite (últimos 2 puestos de descenso)
+function calcDangerColor(rows, idx, criterion){
+  const N = rows.length;
+  if (N < 2 || idx < N - 2) {
+    if (idx >= N - 2) return null;
+    const valAnteultimo = criterion(rows[N-2]);
+    const outsideTied = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+    return (criterion(rows[idx]) === valAnteultimo && outsideTied > 0) ? 'orange' : null;
+  }
+  const valAnteultimo = criterion(rows[N-2]);
+  const valUltimo    = criterion(rows[N-1]);
+  const outsideTied  = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
+  const tiedAtUltimo = rows.filter(r => criterion(r) === valUltimo).length;
+  if (idx === N-2) return outsideTied > 0 ? 'orange' : 'red';
+  const tiedWithAnteultimoOutside = criterion(rows[idx]) === valAnteultimo && outsideTied > 0;
+  return (tiedAtUltimo > 2 || tiedWithAnteultimoOutside) ? 'orange' : 'red';
+}
+
+// Arma la tabla de descenso (temporada completa) de un grupo de Reválida y marca, por equipo,
+// si está en zona de descenso ('red'/'orange'/null) — mismo criterio con el que se ordena esa
+// tabla (promedio de pts/pj para Reválida A, suma total de pts para Reválida B).
+function calcDescensoInfo(equipos, grupo, criterioTipo){
+  const rows = armarFilasTemporada(equipos, grupo);
+  if(criterioTipo === 'promedio'){
+    rows.sort((a,b)=>{
+      const pa = a._tempPj>0 ? a._tempPts/a._tempPj : 0;
+      const pb = b._tempPj>0 ? b._tempPts/b._tempPj : 0;
+      return pb-pa || b._tempPts-a._tempPts;
+    });
+  } else {
+    rows.sort((a,b)=>b._tempPts-a._tempPts||(b._tempPj-a._tempPj));
+  }
+  const criterion = criterioTipo==='promedio'
+    ? r => r._tempPj>0 ? Math.trunc(r._tempPts/r._tempPj*1000) : -1
+    : r => r._tempPts;
+  rows.forEach((r,i)=>{ r._danger = calcDangerColor(rows, i, criterion); });
+  return rows; // ordenadas por criterio de descenso, cada fila con r._danger
+}
+
 function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
   const el = document.getElementById(elId);
   if(!el) return;
@@ -2435,7 +2491,7 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
     </tr></thead><tbody>`;
   rows.forEach((r,i)=>{
     const pos=i+1, dif=r.gf-r.gc;
-    const posClass = colorFn(pos, rows.length);
+    const posClass = r._posClass || colorFn(pos, rows.length);
     h += `<tr>
       <td><span class="pos ${posClass}">${pos}</span></td>
       <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span></div></td>
@@ -2449,33 +2505,48 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
   el.innerHTML = h;
 }
 
+// Un equipo entre los que clasificarían de Reválida (mitad superior de la tabla del grupo) pero
+// que está en zona de descenso (temporada completa) pierde ese lugar: se marca en rojo/noclasif
+// y el cupo pasa al siguiente equipo no comprometido con el descenso. Un equipo en descenso se
+// marca igual aunque ya estuviera fuera de la zona de clasificación (para que se vea siempre).
+function aplicarDescensoAGrupo(rows, descensoMap){
+  const target = Math.ceil(rows.length/2);
+  let clasificados = 0;
+  rows.forEach(r=>{
+    if(descensoMap[r.n]){
+      r._posClass = 'noclasif';
+    } else if(clasificados < target){
+      r._posClass = 'ocre';
+      clasificados++;
+    } else {
+      r._posClass = 'rosa';
+    }
+  });
+}
+
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
 
-  // Combina el plantel (con su Pts/PJ de Primera Fase ya cargados por calcularGruposSegundaFase)
-  // con lo jugado hasta ahora en el grupo de Segunda Fase. _tempPts/_tempPj = temporada completa
-  // (Primera Fase + Segunda Fase), usados solo como criterio de desempate.
-  const armarFilas = (roster, grupo) => {
-    const stats = calcTablaGrupo(grupo);
-    return roster.map(r => {
-      const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
-      return {
-        n: r.n, pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts,
-        _tempPts: (r.pts||0) + s.pts,
-        _tempPj: (r.pj||0) + s.pj,
-      };
-    });
-  };
   const baseSort = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
   // Desempate 4° por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
   const sortPorPromedio = (a,b) => baseSort(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
   // Desempate 4° por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
   const sortPorSumaTotal = (a,b) => baseSort(a,b) || (b._tempPts-a._tempPts);
 
-  const nonARows = armarFilas(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
-  const nonBRows = armarFilas(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
-  const revARows = armarFilas(datos.revA, 'Reválida A').sort(sortPorPromedio);
-  const revBRows = armarFilas(datos.revB, 'Reválida B').sort(sortPorSumaTotal);
+  const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
+  const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const revARows = armarFilasTemporada(datos.revA, 'Reválida A').sort(sortPorPromedio);
+  const revBRows = armarFilasTemporada(datos.revB, 'Reválida B').sort(sortPorSumaTotal);
+
+  // Cruce con la tabla de descenso (temporada completa) — un equipo en zona de descenso no
+  // clasifica de Reválida aunque su posición en el grupo diga lo contrario.
+  const descensoARows = calcDescensoInfo(datos.revA, 'Reválida A', 'promedio');
+  const descensoAMap = {}; descensoARows.forEach(r=>{ descensoAMap[r.n] = r._danger; });
+  aplicarDescensoAGrupo(revARows, descensoAMap);
+
+  const descensoBRows = calcDescensoInfo(datos.revB, 'Reválida B', 'suma');
+  const descensoBMap = {}; descensoBRows.forEach(r=>{ descensoBMap[r.n] = r._danger; });
+  aplicarDescensoAGrupo(revBRows, descensoBMap);
 
   renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
@@ -4196,40 +4267,17 @@ function renderSegundaFase(grupos){
     </table></div>`;
   };
 
-  // Devuelve 'red', 'orange' o null según posición y empates en el límite
-  const calcDangerColor = (rows, idx, criterion) => {
-    const N = rows.length;
-    if (N < 2 || idx < N - 2) {
-      // Fuera de los últimos 2 — naranja solo si empata con el anteúltimo
-      if (idx >= N - 2) return null; // no llega aquí, pero por claridad
-      const valAnteultimo = criterion(rows[N-2]);
-      const outsideTied = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
-      return (criterion(rows[idx]) === valAnteultimo && outsideTied > 0) ? 'orange' : null;
-    }
-    const valAnteultimo = criterion(rows[N-2]);
-    const valUltimo    = criterion(rows[N-1]);
-    const outsideTied  = rows.slice(0, N-2).filter(r => criterion(r) === valAnteultimo).length;
-    const tiedAtUltimo = rows.filter(r => criterion(r) === valUltimo).length;
-    if (idx === N-2) return outsideTied > 0 ? 'orange' : 'red';
-    // idx === N-1
-    const tiedWithAnteultimoOutside = criterion(rows[idx]) === valAnteultimo && outsideTied > 0;
-    return (tiedAtUltimo > 2 || tiedWithAnteultimoOutside) ? 'orange' : 'red';
-  };
+  const notaDesempate = `<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`;
 
   const renderRevATabla = (equipos) => {
-    const rows = equipos.map(r => ({...r}));
-    rows.sort((a,b)=>{
-      const pa = a.pj>0 ? a.pts/a.pj : 0;
-      const pb = b.pj>0 ? b.pts/b.pj : 0;
-      return pb-pa || b.pts-a.pts;
-    });
-    const criterion = r => r.pj > 0 ? Math.trunc(r.pts/r.pj*1000) : -1;
+    const rows = calcDescensoInfo(equipos, 'Reválida A', 'promedio');
     const fmtProm = (pts,pj) => {
       if(!pj) return '—';
       return (Math.trunc(pts/pj*1000)/1000).toFixed(3).replace('.',',');
     };
+    const hayNaranja = rows.some(r=>r._danger==='orange');
     const tableRows = rows.map((r,i)=>{
-      const dc = calcDangerColor(rows, i, criterion);
+      const dc = r._danger;
       const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
       const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
       const promSty = dc ? dataSty : 'color:var(--accent);';
@@ -4237,9 +4285,9 @@ function renderSegundaFase(grupos){
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
-        <td style="${dataSty}">${r.pj}</td>
-        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r.pts,r.pj)}</td>
+        <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
+        <td style="${dataSty}">${r._tempPj}</td>
+        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r._tempPts,r._tempPj)}</td>
       </tr>`;
     }).join('');
     return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso A</p>
@@ -4247,26 +4295,26 @@ function renderSegundaFase(grupos){
       <thead><tr>
         <th style="width:30px">#</th>
         <th style="text-align:left;min-width:150px;">Equipo</th>
-        <th title="Puntos">Pts</th>
-        <th title="Partidos jugados">PJ</th>
+        <th title="Puntos de toda la temporada">Pts</th>
+        <th title="Partidos jugados en toda la temporada">PJ</th>
         <th title="Promedio de puntos por partido">Prom.</th>
       </tr></thead><tbody>${tableRows}</tbody>
-    </table></div>`;
+    </table>${hayNaranja?notaDesempate:''}</div>`;
   };
 
   const renderRevBTabla = (equipos) => {
-    const rows = [...equipos].sort((a,b)=>b.pts-a.pts||(b.pj-a.pj));
-    const criterion = r => r.pts;
+    const rows = calcDescensoInfo(equipos, 'Reválida B', 'suma');
+    const hayNaranja = rows.some(r=>r._danger==='orange');
     const tableRows = rows.map((r,i)=>{
-      const dc = calcDangerColor(rows, i, criterion);
+      const dc = r._danger;
       const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
       const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
-        <td><strong class="pts" style="${dataSty}">${r.pts}</strong></td>
-        <td style="${dataSty}">${r.pj}</td>
+        <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
+        <td style="${dataSty}">${r._tempPj}</td>
       </tr>`;
     }).join('');
     return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso B</p>
@@ -4274,10 +4322,10 @@ function renderSegundaFase(grupos){
       <thead><tr>
         <th style="width:30px">#</th>
         <th style="text-align:left;min-width:150px;">Equipo</th>
-        <th title="Puntos">Pts</th>
-        <th title="Partidos jugados">PJ</th>
+        <th title="Puntos de toda la temporada">Pts</th>
+        <th title="Partidos jugados en toda la temporada">PJ</th>
       </tr></thead><tbody>${tableRows}</tbody>
-    </table></div>`;
+    </table>${hayNaranja?notaDesempate:''}</div>`;
   };
 
   // Quintos mini table
