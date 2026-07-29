@@ -97,11 +97,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos{font-size:14px;font-weight:700;color:#bbb;}
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
-.pos.noclasif{color:#c0504d;}
+.pos.noclasif{color:#e53935;}
 .pos.verde{color:#4caf50;}
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
-.pos.rosa{color:#f48fb1;}
+.pos.rosa{color:#f8bbd0;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -653,8 +653,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
               <div id="tablas-revalida-a"></div>
               <div id="leyenda-revalida" class="leyenda-colores">
                 <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
-                <span><b style="color:#f48fb1;">●</b> Eliminado</span>
-                <span><b style="color:#c0504d;">●</b> En descenso</span>
+                <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
+                <span><b style="color:#e53935;">●</b> En descenso</span>
               </div>
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
@@ -1497,7 +1497,7 @@ const ZONA_COLORES = {
   "Nonagonal A": { color: "#8bc34a", text: "#0a1f0a", code: "NA", pillLabel: "NONA. A" },
   "Nonagonal B": { color: "#1b5e20", text: "#e8f5e9", code: "NB", pillLabel: "NONA. B" },
   "Reválida A": { color: "#e0507a", text: "#2a0714", code: "RA", pillLabel: "REV. A" },
-  "Reválida B": { color: "#e53935", text: "#2a0000", code: "RB", pillLabel: "REV. B" },
+  "Reválida B": { color: "#c0504d", text: "#fbe4e4", code: "RB", pillLabel: "REV. B" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
