@@ -2467,17 +2467,15 @@ function renderGruposSegundaFase(grupos){
     });
   };
   const baseSort = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
+  // Desempate 4° por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
+  const sortPorPromedio = (a,b) => baseSort(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
+  // Desempate 4° por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
+  const sortPorSumaTotal = (a,b) => baseSort(a,b) || (b._tempPts-a._tempPts);
 
-  // Nonagonal A: desempate 4° por promedio de puntos por partido de toda la temporada
-  const nonARows = armarFilas(datos.nonA, 'Nonagonal A').sort((a,b)=>
-    baseSort(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0))
-  );
-  // Nonagonal B: desempate 4° por suma total de puntos de toda la temporada
-  const nonBRows = armarFilas(datos.nonB, 'Nonagonal B').sort((a,b)=>
-    baseSort(a,b) || (b._tempPts-a._tempPts)
-  );
-  const revARows = armarFilas(datos.revA, 'Reválida A').sort(baseSort);
-  const revBRows = armarFilas(datos.revB, 'Reválida B').sort(baseSort);
+  const nonARows = armarFilas(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
+  const nonBRows = armarFilas(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const revARows = armarFilas(datos.revA, 'Reválida A').sort(sortPorPromedio);
+  const revBRows = armarFilas(datos.revB, 'Reválida B').sort(sortPorSumaTotal);
 
   renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
