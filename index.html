@@ -2404,6 +2404,25 @@ function renderTablas(){
 function posClassNonagonal(pos){ return pos<=4 ? 'verde' : pos===5 ? 'azul' : 'ocre'; }
 function posClassRevalida(pos, total){ return pos<=Math.ceil(total/2) ? 'ocre' : 'rosa'; }
 
+// Tabla de un grupo de Segunda Fase (Nonagonal/Reválida): PJ/G/E/P/GF/GC/Pts
+// desde los partidos ya jugados en FIXTURE[grupo]. Sin H2H — grupo único, no zonas.
+function calcTablaGrupo(grupo){
+  const eq = {};
+  for(let f=1; f<=9; f++){
+    (FIXTURE[grupo]?.[String(f)]||[]).forEach(m=>{
+      [m.local, m.visitante].forEach(e=>{ if(!eq[e]) eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; });
+      if(m.gl===null) return;
+      eq[m.local].pj++; eq[m.visitante].pj++;
+      eq[m.local].gf+=m.gl; eq[m.local].gc+=m.gv;
+      eq[m.visitante].gf+=m.gv; eq[m.visitante].gc+=m.gl;
+      if(m.gl>m.gv){ eq[m.local].g++; eq[m.local].pts+=3; eq[m.visitante].p++; }
+      else if(m.gl<m.gv){ eq[m.visitante].g++; eq[m.visitante].pts+=3; eq[m.local].p++; }
+      else{ eq[m.local].e++; eq[m.visitante].e++; eq[m.local].pts++; eq[m.visitante].pts++; }
+    });
+  }
+  return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts} }
+}
+
 function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
   const el = document.getElementById(elId);
   if(!el) return;
@@ -2432,11 +2451,38 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
 
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
-  const zerar = arr => arr.map(r => ({n:r.n, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
-  renderTablaGrupo('tablas-nonagonal-a', zerar(datos.nonA), 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
-  renderTablaGrupo('tablas-nonagonal-b', zerar(datos.nonB), 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
-  renderTablaGrupo('tablas-revalida-a', zerar(datos.revA), 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
-  renderTablaGrupo('tablas-revalida-b', zerar(datos.revB), 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
+
+  // Combina el plantel (con su Pts/PJ de Primera Fase ya cargados por calcularGruposSegundaFase)
+  // con lo jugado hasta ahora en el grupo de Segunda Fase. _tempPts/_tempPj = temporada completa
+  // (Primera Fase + Segunda Fase), usados solo como criterio de desempate.
+  const armarFilas = (roster, grupo) => {
+    const stats = calcTablaGrupo(grupo);
+    return roster.map(r => {
+      const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+      return {
+        n: r.n, pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts,
+        _tempPts: (r.pts||0) + s.pts,
+        _tempPj: (r.pj||0) + s.pj,
+      };
+    });
+  };
+  const baseSort = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
+
+  // Nonagonal A: desempate 4° por promedio de puntos por partido de toda la temporada
+  const nonARows = armarFilas(datos.nonA, 'Nonagonal A').sort((a,b)=>
+    baseSort(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0))
+  );
+  // Nonagonal B: desempate 4° por suma total de puntos de toda la temporada
+  const nonBRows = armarFilas(datos.nonB, 'Nonagonal B').sort((a,b)=>
+    baseSort(a,b) || (b._tempPts-a._tempPts)
+  );
+  const revARows = armarFilas(datos.revA, 'Reválida A').sort(baseSort);
+  const revBRows = armarFilas(datos.revB, 'Reválida B').sort(baseSort);
+
+  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
+  renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
+  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
+  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
 }
 
 function toggleFechaPicker(){
