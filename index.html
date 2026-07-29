@@ -70,7 +70,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .esc img{width:100%;height:100%;object-fit:contain;}
 .eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;}
 .eq.vis .eqn{text-align:right;}
-.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:0 6px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;margin-right:.22rem;white-space:nowrap;flex-shrink:0;}
+.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:18px;padding:0 5px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;margin-right:.22rem;white-space:nowrap;flex-shrink:0;}
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
@@ -247,7 +247,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
   .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
   /* Nonagonal/Revalida pairs stack to 1 col on mobile */
-  #nonagonales-wrap > div[style*="grid"],#revalidas-wrap > div[style*="grid"]{grid-template-columns:1fr!important;gap:.75rem!important;}
+  #nonagonales-wrap > div[style*="grid"],#revalidas-wrap > div[style*="grid"],#golasist-wrap{grid-template-columns:1fr!important;gap:.75rem!important;}
   #cont-descenso > div{grid-template-columns:1fr!important;}
   #cont-quintos{max-width:100%!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
@@ -300,6 +300,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .fnav{width:24px;height:24px;font-size:12px;}
   .partido{padding:.4rem .5rem;gap:.2rem;}
   .eqn{font-size:12px;}
+  .grp-pill{min-width:20px;height:15px;padding:0 4px;font-size:9px;margin-right:.12rem;}
   .score{font-size:18px;letter-spacing:1px;}
   .esc{width:20px;height:20px;}
   .ficha-btn,.stream-btn{width:23px;height:23px;font-size:12px;}
@@ -377,6 +378,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .ni{font-size:11px;padding:0 .35rem;}
   .eqn{font-size:12px;}
   .score{font-size:16px;}
+  .grp-pill{min-width:18px;height:14px;padding:0 3px;font-size:8px;margin-right:.1rem;}
 }
 /* ── PLANTELES ──────────────────────────────────────────── */
 .plt-zone-sep{height:1px;background:rgba(255,255,255,.07);margin:1.4rem 0 1.2rem;}
@@ -642,7 +644,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div id="leyenda-nonagonal" class="leyenda-colores">
             <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
             <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
-            <span><b style="color:#cc9933;">●</b> Copa Argentina</span>
+            <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
           </div>
         </div>
         <div id="revalidas-wrap">
@@ -650,14 +652,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
             <div style="align-self:start;">
               <div id="tablas-revalida-a"></div>
               <div id="leyenda-revalida" class="leyenda-colores">
-                <span><b style="color:#cc9933;">●</b> Reválida</span>
+                <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
                 <span><b style="color:#f48fb1;">●</b> Eliminado</span>
               </div>
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
           <div id="cont-goleadores-resumen" style="align-self:start;"></div>
           <div id="cont-asistentes-resumen" style="align-self:start;"></div>
         </div>
@@ -2493,10 +2495,7 @@ function renderPartidos2(f){
             <div class="res"><div class="vs">VS</div></div>
             <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
           </div>
-          <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
-            <div style="width:26px;flex-shrink:0;"></div>
-            <div style="width:26px;flex-shrink:0;"></div>
-          </div>
+          <div style="width:32px;flex-shrink:0;"></div>
         </div>
       </div>`;
     });
@@ -2511,10 +2510,7 @@ function renderPartidos2(f){
         <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
         ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
       </div>
-      <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
-        <div style="width:26px;flex-shrink:0;"></div>
-        <div style="width:26px;flex-shrink:0;"></div>
-      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
     </div>`;
   }
 
