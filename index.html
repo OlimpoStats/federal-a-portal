@@ -70,7 +70,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .esc img{width:100%;height:100%;object-fit:contain;}
 .eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;}
 .eq.vis .eqn{text-align:right;}
-.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:0 6px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;margin-right:.22rem;}
+.grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:20px;padding:0 6px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;margin-right:.22rem;white-space:nowrap;flex-shrink:0;}
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
@@ -1491,10 +1491,10 @@ const ZONA_COLORES = {
   "Zona B": { color: "#e87aaa", text: "#111111", code: "B" },
   "Zona C": { color: "#ffff33", text: "#111111", code: "C" },
   "Zona D": { color: "#3366cc", text: "#ffffff", code: "D" },
-  "Nonagonal A": { color: "#66bb6a", text: "#0a1f0a", code: "NA", pillLabel: "NONA. A" },
-  "Nonagonal B": { color: "#2e7d32", text: "#f1f8f1", code: "NB", pillLabel: "NONA. B" },
-  "Reválida A": { color: "#f06292", text: "#2a0714", code: "RA", pillLabel: "REV. A" },
-  "Reválida B": { color: "#ad1457", text: "#fce4ec", code: "RB", pillLabel: "REV. B" },
+  "Nonagonal A": { color: "#8bc34a", text: "#0a1f0a", code: "NA", pillLabel: "NONA. A" },
+  "Nonagonal B": { color: "#1b5e20", text: "#e8f5e9", code: "NB", pillLabel: "NONA. B" },
+  "Reválida A": { color: "#e53935", text: "#2a0000", code: "RA", pillLabel: "REV. A" },
+  "Reválida B": { color: "#7f0000", text: "#fce4e4", code: "RB", pillLabel: "REV. B" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -2431,10 +2431,10 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
   const zerar = arr => arr.map(r => ({n:r.n, pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
-  renderTablaGrupo('tablas-nonagonal-a', zerar(datos.nonA), 'Nonagonal A', '#4caf50', posClassNonagonal);
-  renderTablaGrupo('tablas-nonagonal-b', zerar(datos.nonB), 'Nonagonal B', '#4caf50', posClassNonagonal);
-  renderTablaGrupo('tablas-revalida-a', zerar(datos.revA), 'Reválida A', '#cc9933', posClassRevalida);
-  renderTablaGrupo('tablas-revalida-b', zerar(datos.revB), 'Reválida B', '#cc9933', posClassRevalida);
+  renderTablaGrupo('tablas-nonagonal-a', zerar(datos.nonA), 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
+  renderTablaGrupo('tablas-nonagonal-b', zerar(datos.nonB), 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
+  renderTablaGrupo('tablas-revalida-a', zerar(datos.revA), 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
+  renderTablaGrupo('tablas-revalida-b', zerar(datos.revB), 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
 }
 
 function toggleFechaPicker(){
@@ -2506,9 +2506,15 @@ function renderPartidos2(f){
     .map(g => LIBRES2[g]?.[String(f)])
     .filter(Boolean);
   if(libresFecha.length){
-    html += `<div style="margin-top:.5rem;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
-      ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
+    html += `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:.5rem;">
+      <div style="flex:1;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
+        ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
+      </div>
+      <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
+        <div style="width:26px;flex-shrink:0;"></div>
+        <div style="width:26px;flex-shrink:0;"></div>
+      </div>
     </div>`;
   }
 
