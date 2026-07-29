@@ -711,7 +711,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <!-- FIXTURE -->
 <div class="page" id="page-fixture">
-  <p class="sec">Fixture completo — Primera Fase 2026</p>
+  <p class="sec" id="fx-fase-lbl">Fixture completo — Segunda Fase 2026</p>
   <div class="ztabs" id="fx-tabs"></div>
   <div id="fx-cont"></div>
 </div>
@@ -1369,7 +1369,7 @@ function zonaDeEquipo(nombre){
   }
   return _equipoZonaCache[nombre] || 'Zona Z';
 }
-let fechaActual=1,fxZona="Zona A";
+let fechaActual=1,fxZona="Nonagonal A",fxFase="segunda";
 
 // ── SEGUNDA FASE: grupos, descansos y helpers de fase ──
 const GRUPOS2 = ["Nonagonal A","Nonagonal B","Reválida A","Reválida B"];
@@ -2553,8 +2553,10 @@ document.addEventListener("click", e=>{
 });
 
 function renderFxTabs(){
-  const fechas=Array.from({length:18},(_,i)=>i+1);
-  const filas=[fechas.slice(0,9),fechas.slice(9)];
+  const maxF = fxFase==='segunda' ? 9 : 18;
+  const gruposFase = fxFase==='segunda' ? GRUPOS2 : ZONAS;
+  const fechas=Array.from({length:maxF},(_,i)=>i+1);
+  const filas = maxF>9 ? [fechas.slice(0,9),fechas.slice(9)] : [fechas];
   const cuadraditos=filas.map(fila=>
     `<div style="display:flex;gap:4px;">${fila.map(f=>{
       const hasResult=(FIXTURE[fxZona]?.[String(f)]||[]).some(m=>m.gl!==null);
@@ -2565,15 +2567,23 @@ function renderFxTabs(){
   document.getElementById("fx-tabs").innerHTML=`
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem;">
       <select class="fx-fase-sel" onchange="selFase(this.value)">
-        <option value="primera">▾ Primera Fase</option>
+        <option value="segunda" ${fxFase==='segunda'?'selected':''}>▾ Segunda Fase</option>
+        <option value="primera" ${fxFase==='primera'?'selected':''}>▾ Primera Fase</option>
       </select>
-      <div class="ztabs" style="margin-bottom:0;justify-content:flex-end;">${ZONAS.map(z=>
+      <div class="ztabs" style="margin-bottom:0;justify-content:flex-end;">${gruposFase.map(z=>
         `<div class="ztab ${z===fxZona?'active':''}" onclick="selFx('${z}')">${z}</div>`
       ).join("")}</div>
     </div>
     <div style="margin-bottom:1rem;">${cuadraditos}</div>`;
 }
-function selFase(v){ /* futuro: seleccionar fase */ }
+function selFase(v){
+  fxFase = v;
+  fxZona = v==='segunda' ? GRUPOS2[0] : ZONAS[0];
+  const lbl = document.getElementById('fx-fase-lbl');
+  if(lbl) lbl.textContent = `Fixture completo — ${v==='segunda'?'Segunda':'Primera'} Fase 2026`;
+  renderFxTabs();
+  renderFxCont();
+}
 function selFx(z){fxZona=z;renderFxTabs();renderFxCont();}
 function irAFechaFx(f){
   const el=document.getElementById('fx-fecha-'+f);
@@ -2582,8 +2592,9 @@ function irAFechaFx(f){
   window.scrollTo({top:y,behavior:'smooth'});
 }
 function renderFxCont(){
+  const maxF = fxFase==='segunda' ? 9 : 18;
   let html="";
-  for(let f=1;f<=18;f++){
+  for(let f=1;f<=maxF;f++){
     const ms=FIXTURE[fxZona][String(f)]||[];
     html+=`<div class="zona-lbl" id="fx-fecha-${f}">Fecha ${f}</div>`;
     ms.forEach(m=>{
