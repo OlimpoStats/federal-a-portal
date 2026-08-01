@@ -4607,11 +4607,15 @@ function _leerCache(){
 
 function _aplicarCache(d){
   try {
+    // Restaurar PARTIDO_META si está en el cache
+    if(d.meta) Object.assign(PARTIDO_META, d.meta);
     (d.fichas||[]).forEach(({z,f,l,v,gl,gv,estado,minuto_actual,goleadores,fotmob_url}) => {
-      const ms = FIXTURE[z]?.[String(f)];
-      if(!ms) return;
-      const m = ms.find(x => x.local===l && x.visitante===v);
-      if(!m) return;
+      // Crear zona dinámicamente si no existe (segunda fase)
+      if(!FIXTURE[z]) FIXTURE[z] = {};
+      if(!FIXTURE[z][String(f)]) FIXTURE[z][String(f)] = [];
+      if(!ZONAS.includes(z)) ZONAS.push(z);
+      let m = FIXTURE[z][String(f)].find(x => x.local===l && x.visitante===v);
+      if(!m){ m = {local:l, visitante:v, gl:null, gv:null}; FIXTURE[z][String(f)].push(m); }
       m.gl = gl; m.gv = gv;
       if(estado) m.estado = estado;
       if(minuto_actual) m.minuto_actual = minuto_actual;
