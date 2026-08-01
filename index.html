@@ -118,6 +118,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
+/* bracket Fase Campeonato (Nonagonal) */
+#bracket-nonagonal-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;}
+.llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
+.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem;margin-bottom:1rem;}
+.llave-id{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.3rem;}
+.llave-tabla{width:100%;border-collapse:collapse;font-size:12px;}
+.llave-tabla th{color:var(--muted);font-weight:600;text-align:center;padding:.15rem;}
+.llave-tabla td{padding:.25rem .15rem;text-align:center;border-top:1px solid var(--border);}
+.llave-eq{display:flex;align-items:center;gap:.3rem;text-align:left!important;white-space:nowrap;overflow:hidden;}
+.llave-seed{font-size:10px;color:var(--muted);font-weight:700;min-width:20px;flex-shrink:0;}
+.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
+.llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
+.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
+.llave-gano td{font-weight:700;}
+td.llave-eq.pend{color:var(--muted);font-style:italic;text-align:center!important;}
+.llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+@media (max-width:900px){ #bracket-nonagonal-cont{grid-template-columns:1fr;} }
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -659,6 +676,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
           </div>
+        </div>
+        <div id="bracket-nonagonal-wrap">
+          <p class="sec" style="color:#fff;">Fase Campeonato — Nonagonal</p>
+          <div id="bracket-nonagonal-cont"></div>
         </div>
         <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
           <div id="cont-goleadores-resumen" style="align-self:start;"></div>
@@ -1381,6 +1402,87 @@ const LIBRES2 = {"Nonagonal A":{"1":"Sarmiento (LB)","2":"Gimnasia (Ch)","3":"Ba
 function faseRank(z){ return ZONAS.includes(z) ? 0 : 1; }
 function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? `${code} F${f}` : `F${f}`; }
 let fechaActual2 = 1;
+
+// ── FASE CAMPEONATO: bracket de playoffs del Nonagonal (cuartos/semis/final) ──
+// Cruces fijos entre Nonagonal A y B. "mejor" = menor número de posición (ventaja deportiva:
+// visitante en ida, local en vuelta, avanza si el global queda empatado en puntos y goles).
+const CRUCES_NONAGONAL = [
+  { id:'QF1', mejor:{zona:'Nonagonal A', pos:1}, peor:{zona:'Nonagonal B', pos:4} },
+  { id:'QF2', mejor:{zona:'Nonagonal A', pos:2}, peor:{zona:'Nonagonal B', pos:3} },
+  { id:'QF3', mejor:{zona:'Nonagonal B', pos:1}, peor:{zona:'Nonagonal A', pos:4} },
+  { id:'QF4', mejor:{zona:'Nonagonal B', pos:2}, peor:{zona:'Nonagonal A', pos:3} },
+];
+// Llave fija de semis: NO se resiembra según cómo caigan los cuartos.
+const CRUCES_SEMIS_NONAGONAL = [
+  { id:'SF1', qfA:'QF1', qfB:'QF2' },
+  { id:'SF2', qfA:'QF3', qfB:'QF4' },
+];
+// Resultados de playoffs — en null hasta que exista un mecanismo de carga (admin, pendiente).
+const PLAYOFF_NONA = {
+  QF1:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  QF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  QF3:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  QF4:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  SF1:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  SF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
+  FINAL:{gl:null, gv:null, penalesA:null, penalesB:null},
+};
+
+// Suma ida+vuelta; en empate global (puntos y goles, es decir el aggregate) avanza el mejor
+// ubicado (ventaja deportiva). Cuartos y semis usan la misma regla.
+function resolverLlaveIdaVuelta(ida, vuelta){
+  if(ida.golMejor==null || ida.golPeor==null || vuelta.golMejor==null || vuelta.golPeor==null){
+    return { resuelto:false };
+  }
+  const globalMejor = ida.golMejor + vuelta.golMejor;
+  const globalPeor  = ida.golPeor  + vuelta.golPeor;
+  return { resuelto:true, globalMejor, globalPeor, ganadorEsMejor: globalMejor>=globalPeor };
+}
+
+// Arma cuartos/semis/final con los equipos reales (según posición actual de Nonagonal A/B) y,
+// si hay resultados cargados en PLAYOFF_NONA, resuelve quién avanza en cada instancia.
+function calcBracketNonagonal(datos){
+  const d = datos || calcularGruposSegundaFase();
+  const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortPorPromedio);
+  const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const rowsPorZona = {'Nonagonal A': nonARows, 'Nonagonal B': nonBRows};
+  const equipoDe = (zona,pos) => {
+    const r = rowsPorZona[zona][pos-1];
+    return r ? { n:r.n, zona, pos } : null;
+  };
+
+  const cuartos = CRUCES_NONAGONAL.map(cr=>{
+    const mejor = equipoDe(cr.mejor.zona, cr.mejor.pos);
+    const peor  = equipoDe(cr.peor.zona, cr.peor.pos);
+    const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[cr.id].ida, PLAYOFF_NONA[cr.id].vuelta);
+    const ganador = resultado.resuelto ? (resultado.ganadorEsMejor ? mejor : peor) : null;
+    return { id:cr.id, mejor, peor, resultado, ganador };
+  });
+  const porId = {}; cuartos.forEach(c=>porId[c.id]=c);
+
+  const semis = CRUCES_SEMIS_NONAGONAL.map(sf=>{
+    const qA = porId[sf.qfA], qB = porId[sf.qfB];
+    const eqA = qA.ganador, eqB = qB.ganador;
+    let mejor=null, peor=null;
+    if(eqA && eqB){ [mejor,peor] = eqA.pos <= eqB.pos ? [eqA,eqB] : [eqB,eqA]; }
+    const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[sf.id].ida, PLAYOFF_NONA[sf.id].vuelta);
+    const ganador = (resultado.resuelto && mejor) ? (resultado.ganadorEsMejor ? mejor : peor) : null;
+    return { id:sf.id, origen:[qA,qB], mejor, peor, resultado, ganador };
+  });
+
+  const [sf1, sf2] = semis;
+  const equipo1 = sf1.ganador, equipo2 = sf2.ganador;
+  const fin = PLAYOFF_NONA.FINAL;
+  let resuelto=false, ganador=null;
+  if(fin.gl!=null && fin.gv!=null){
+    if(fin.gl>fin.gv){ resuelto=true; ganador=equipo1; }
+    else if(fin.gv>fin.gl){ resuelto=true; ganador=equipo2; }
+    else if(fin.penalesA!=null && fin.penalesB!=null){ resuelto=true; ganador = fin.penalesA>fin.penalesB ? equipo1 : equipo2; }
+  }
+  const final = { id:'FINAL', origen:[sf1,sf2], equipo1, equipo2, resultado:fin, resuelto, ganador };
+
+  return { cuartos, semis, final };
+}
 
 function ini(n){return n.split(/\s+/).map(p=>p[0]).join("").substring(0,2).toUpperCase();}
 
@@ -2524,14 +2626,16 @@ function aplicarDescensoAGrupo(rows, descensoMap){
   });
 }
 
+// Orden de las 4 tablas de grupo: 1° puntos del grupo, 2° dif. de gol del grupo, 3° GF del grupo,
+// y recién ahí el criterio de temporada completa que distingue cada Nonagonal/Reválida.
+const baseSortGrupo = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
+// Desempate por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
+const sortPorPromedio = (a,b) => baseSortGrupo(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
+// Desempate por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
+const sortPorSumaTotal = (a,b) => baseSortGrupo(a,b) || (b._tempPts-a._tempPts);
+
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
-
-  const baseSort = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
-  // Desempate 4° por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
-  const sortPorPromedio = (a,b) => baseSort(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
-  // Desempate 4° por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
-  const sortPorSumaTotal = (a,b) => baseSort(a,b) || (b._tempPts-a._tempPts);
 
   const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
   const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
@@ -2552,6 +2656,77 @@ function renderGruposSegundaFase(grupos){
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
   renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
   renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
+
+  renderBracketNonagonal(grupos);
+}
+
+function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
+
+// Una fila = un equipo, con sus goles en ida/vuelta y el global. equipo puede venir null
+// (ronda siguiente todavía no definida porque no se jugó/cargó la anterior).
+function _filaLlave(equipo, golIda, golVuelta, esGanador, ventaja){
+  if(!equipo) return `<tr><td class="llave-eq pend" colspan="4">A definir</td></tr>`;
+  const global = (golIda!=null && golVuelta!=null) ? (golIda+golVuelta) : null;
+  return `<tr class="${esGanador?'llave-gano':''}">
+    <td class="llave-eq">
+      <span class="llave-seed">${_seedLabelLlave(equipo)}</span>
+      ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
+      ${ventaja?'<span class="llave-vent" title="Ventaja deportiva: visitante en ida, local en vuelta, avanza si el global queda empatado">⚡</span>':''}
+    </td>
+    <td>${golIda??'–'}</td>
+    <td>${golVuelta??'–'}</td>
+    <td class="llave-global">${global??'–'}</td>
+  </tr>`;
+}
+
+function _cardLlave(tie){
+  const datosPO = PLAYOFF_NONA[tie.id];
+  const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
+  let h = `<div class="llave-card">
+    <div class="llave-id">${tie.id}</div>
+    <table class="llave-tabla"><thead><tr><th></th><th>Ida</th><th>Vta</th><th>Global</th></tr></thead><tbody>`;
+  h += _filaLlave(tie.mejor, datosPO.ida.golMejor, datosPO.vuelta.golMejor, ganadorEsMejor===true, true);
+  h += _filaLlave(tie.peor,  datosPO.ida.golPeor,  datosPO.vuelta.golPeor,  ganadorEsMejor===false, false);
+  h += `</tbody></table></div>`;
+  return h;
+}
+
+function _cardFinalNonagonal(final){
+  const fin = final.resultado;
+  const penales = (fin.gl!=null && fin.gv!=null && fin.gl===fin.gv);
+  const fila = (equipo, goles, pen, esGanador) => {
+    if(!equipo) return `<tr><td class="llave-eq pend" colspan="${penales?3:2}">A definir</td></tr>`;
+    return `<tr class="${esGanador?'llave-gano':''}">
+      <td class="llave-eq">${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span></td>
+      <td>${goles??'–'}</td>${penales?`<td>${pen??'–'}</td>`:''}
+    </tr>`;
+  };
+  let h = `<div class="llave-card">
+    <div class="llave-id">FINAL</div>
+    <table class="llave-tabla"><thead><tr><th></th><th>90'</th>${penales?"<th>Pen.</th>":""}</tr></thead><tbody>`;
+  h += fila(final.equipo1, fin.gl, fin.penalesA, final.ganador===final.equipo1);
+  h += fila(final.equipo2, fin.gv, fin.penalesB, final.ganador===final.equipo2);
+  h += `</tbody></table><p class="llave-nota">Partido único, cancha neutral. Empate a los 90' → penales.</p></div>`;
+  return h;
+}
+
+function renderBracketNonagonal(grupos){
+  const el = document.getElementById('bracket-nonagonal-cont');
+  if(!el) return;
+  const bracket = calcBracketNonagonal(grupos);
+  let h = `<div class="llave-col">
+      <p class="llave-col-title">Cuartos de Final</p>
+      ${bracket.cuartos.map(_cardLlave).join('')}
+    </div>
+    <div class="llave-col">
+      <p class="llave-col-title">Semifinales</p>
+      ${bracket.semis.map(_cardLlave).join('')}
+    </div>
+    <div class="llave-col">
+      <p class="llave-col-title">Final</p>
+      ${_cardFinalNonagonal(bracket.final)}
+    </div>`;
+  el.innerHTML = h;
 }
 
 function toggleFechaPicker(){
