@@ -1770,7 +1770,7 @@ La imagen muestra UNA MITAD de una planilla en espejo (equipo local o visitante)
 ESTRUCTURA DE CADA FILA:
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Nombre en formato "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2". Devolver EXACTAMENTE como aparece, mayúsculas, con la coma.
-- Junto al nombre puede aparecer "CP" (capitán) o "AR" (arquero, #1 y #12). Puede haber una pequeña bandera de país — IGNORAR, no es un evento.
+- Junto al nombre puede aparecer "CP" (capitán) y/o "AR" (arquero, #1 y #12). Si el jugador es AMBOS (el arquero es el capitán), devolver nota:"CP AR" con las dos marcas juntas, separadas por un espacio — NUNCA devolver solo una de las dos en ese caso. Puede haber una pequeña bandera de país — IGNORAR, no es un evento.
 - Los eventos aparecen como íconos pequeños debajo o junto al nombre, en el orden cronológico indicado arriba.
 
 ══════════════════════════════════════════
@@ -1895,7 +1895,7 @@ La imagen muestra la planilla COMPLETA de ambos equipos en espejo:
 ESTRUCTURA DE CADA FILA (igual para ambos lados):
 - Número de camiseta: 1-11 = TITULAR, 12-20 = SUPLENTE.
 - Nombre: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2" en mayúsculas, exactamente como aparece.
-- Junto al nombre: "CP" (capitán) o "AR" (arquero, siempre #1 y #12). Puede haber una bandera de país — IGNORAR.
+- Junto al nombre: "CP" (capitán) y/o "AR" (arquero, siempre #1 y #12). Si el jugador es AMBOS (el arquero es el capitán), devolver nota:"CP AR" con las dos marcas juntas — NUNCA devolver solo una de las dos en ese caso. Puede haber una bandera de país — IGNORAR.
 - Eventos: íconos pequeños con minuto', debajo o al lado del nombre.
 
 ══════════════════════════════════════════
@@ -2072,7 +2072,7 @@ function normalizarPlanilla(planilla, equipo){
     nota: j?.nota ?? "",
     nombre: formatearNombre(j?.nombre ?? ""),
     titular: !!j?.titular,
-    es_capitan: j?.nota === "CP",
+    es_capitan: (j?.nota||"").includes("CP"),
     eventos: [],
   }));
   // Enriquecer con datos de DB: si el jugador ya existe, usar su nombre_display
@@ -2147,7 +2147,7 @@ function apellido(nombre){
 }
 
 function renderEvento(e, containerId, jIdx, eIdx){
-  const minStr = `${e.minuto}'`;
+  const minStr = (e.minuto===""||e.minuto==null) ? "S/M" : `${e.minuto}'`;
   let inner = "";
   if(e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_contra"||e.tipo==="gol_tiro_libre"){
     const icon = e.tipo==="gol_contra"?'<span style="filter:sepia(1) saturate(5) hue-rotate(310deg);">⚽</span>(GC)':e.tipo==="gol_penal"?"🥅":e.tipo==="gol_tiro_libre"?'<span style="filter:hue-rotate(100deg) saturate(1.5);">⚽</span>':"⚽";
@@ -2335,7 +2335,7 @@ function abrirAgregarEvento(containerId, jIdx, prefill=null){
         ${tipoOpts}
       </select>
       <div id="ev-minuto-wrap">
-        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto (ej: 45 o 90+3)</label>
+        <label id="ev-minuto-lbl" style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem">Minuto (ej: 45 o 90+3)</label>
         <input type="text" id="ev-minuto" placeholder="ej: 45 o 90+3" style="width:100%;margin-bottom:.75rem">
       </div>
       <div id="ev-extra-wrap" style="display:none">
@@ -2384,11 +2384,16 @@ function abrirEventoRapido(containerId, jIdx, tipo){
     amarilla:"Amarilla", roja:"Roja", doble_amarilla:"Doble amarilla"
   };
   const label = nombres[tipo] || tipo;
+  const permiteSinMinuto = tipo==="amarilla" || tipo==="roja" || tipo==="doble_amarilla";
   const html=`<div id="modal-rapido" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;" onclick="if(event.target.id==='modal-rapido')cerrarModalRapido()">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;width:280px;max-width:92vw;">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:.9rem;">${label} — ${arr[jIdx].nombre||"Jugador"}</div>
       <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Minuto (ej: 45 o 90+3)</label>
-      <input type="text" id="rapido-min" placeholder="ej: 61" style="width:100%;margin-bottom:.9rem;" autofocus>
+      <input type="text" id="rapido-min" placeholder="ej: 61" style="width:100%;margin-bottom:.5rem;" autofocus>
+      ${permiteSinMinuto ? `<label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.4rem;margin-bottom:.9rem;cursor:pointer;">
+        <input type="checkbox" id="rapido-sin-min" onchange="document.getElementById('rapido-min').disabled=this.checked; if(this.checked) document.getElementById('rapido-min').value='';">
+        Sin minuto (tarjeta post-partido)
+      </label>` : ""}
       <div style="display:flex;gap:.5rem;justify-content:flex-end;">
         <button class="btn btn-secondary btn-sm" onclick="cerrarModalRapido()">Cancelar</button>
         <button class="btn btn-primary btn-sm" onclick="confirmarEventoRapido('${containerId}',${jIdx},'${tipo}')">Agregar</button>
@@ -2404,14 +2409,15 @@ function abrirEventoRapido(containerId, jIdx, tipo){
 }
 function cerrarModalRapido(){ document.getElementById("modal-rapido")?.remove(); }
 function confirmarEventoRapido(containerId, jIdx, tipo){
+  const sinMinuto = document.getElementById("rapido-sin-min")?.checked || false;
   const minVal = document.getElementById("rapido-min")?.value||"";
-  if(!minVal){ document.getElementById("rapido-min")?.focus(); return; }
-  const minuto = parsearMinuto(minVal);
+  if(!sinMinuto && !minVal){ document.getElementById("rapido-min")?.focus(); return; }
+  const minuto = sinMinuto ? "" : parsearMinuto(minVal);
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
   if(!arr[jIdx].eventos) arr[jIdx].eventos=[];
   arr[jIdx].eventos.push({tipo, minuto, extra:""});
-  arr[jIdx].eventos.sort((a,b)=>(minuteToNumber(a.minuto)||0)-(minuteToNumber(b.minuto)||0));
+  arr[jIdx].eventos.sort((a,b)=>minuteToNumber(a.minuto)-minuteToNumber(b.minuto));
   cerrarModalRapido();
   renderPlanilla(containerId, arr);
   actualizarMarcadorLive();
@@ -2432,6 +2438,11 @@ function toggleExtras(){
     return;
   }
   if(minutoWrap) minutoWrap.style.display="";
+  const minutoLbl=document.getElementById("ev-minuto-lbl");
+  if(minutoLbl){
+    const permiteSinMinuto = tipo==="amarilla" || tipo==="roja" || tipo==="doble_amarilla";
+    minutoLbl.textContent = permiteSinMinuto ? "Minuto (ej: 45 o 90+3) — dejalo vacío si es post-partido" : "Minuto (ej: 45 o 90+3)";
+  }
   if(tipo==="cambio_entra"){
     extraWrap.style.display="";
     if(extraLbl) extraLbl.textContent="Jugador que sale (nro camiseta)";
@@ -2864,7 +2875,7 @@ function abrirModalPenalNuevo(containerId, jIdx){
     </div>
   </div>`;
   document.body.insertAdjacentHTML("beforeend", html);
-  window._penTipoSelected = null;
+  selPenalResult("gol_penal"); // Gol es el resultado por defecto; se cambia con un clic si hizo falta
   setTimeout(()=>document.getElementById("pn-min")?.focus(),50);
   document.getElementById("pn-min").addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("modal-penal-nuevo")?.remove();});
 }
@@ -3049,15 +3060,18 @@ function parsearMinuto(val){
 }
 
 function minuteToNumber(val){
-  // For stats: 90+x counts as 90, others as-is
-  const s = String(val||"");
+  // For stats: 90+x counts as 90, others as-is. Sin minuto (tarjeta post-partido) va al final.
+  if(val===""||val==null) return 9999;
+  const s = String(val);
   if(s.includes("+")) return 90;
   return parseInt(s)||0;
 }
 
 function confirmarEvento(containerId, jIdx){
   const tipo=document.getElementById("ev-tipo").value;
-  const minuto=parsearMinuto(document.getElementById("ev-minuto").value);
+  const minutoRaw=document.getElementById("ev-minuto").value;
+  const permiteSinMinuto = tipo==="amarilla" || tipo==="roja" || tipo==="doble_amarilla";
+  const minuto = (permiteSinMinuto && !minutoRaw.trim()) ? "" : parsearMinuto(minutoRaw);
   const extra=document.getElementById("ev-extra")?.value||"";
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
@@ -3336,6 +3350,8 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
 
   const savedJugIds = new Set();
 
+  const fallosJugadores = [];
+
   for(const res of resoluciones){
     const { accion, jExistente, datosInsert, transferInfo, jugadorDatos: j } = res;
     let jDB = null;
@@ -3343,12 +3359,17 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     if(accion === "existente"){
       jDB = { id: jExistente.id };
     } else if(accion === "actualizar_equipo"){
-      const {data} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExistente.id).select("id").single();
+      const {data, error} = await sb.from("jugadores").update({equipo_id: equipoId}).eq("id", jExistente.id).select("id").single();
+      if(error){ fallosJugadores.push(`${j.nombre || "?"} (actualizar club): ${error.message}`); continue; }
       jDB = data;
     } else if(accion === "insertar" || accion === "transferencia"){
-      const {data} = await sb.from("jugadores").insert(datosInsert).select("id").single();
+      const {data, error} = await sb.from("jugadores").insert(datosInsert).select("id").single();
+      if(error || !data?.id){
+        fallosJugadores.push(`${j.nombre || "?"} (crear jugador): ${error?.message || "el insert no devolvió el registro creado"}`);
+        continue;
+      }
       jDB = data;
-      if(data && accion === "transferencia"){
+      if(accion === "transferencia"){
         await registrarTransferencia(transferInfo.jugOrigenId, transferInfo.equipoOrigenId, data.id, equipoId);
       }
     }
@@ -3371,13 +3392,19 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
       await sb.from("eventos").insert({
         planilla_id: pDB.id,
         tipo: ev.tipo,
-        minuto: ev.minuto || 0,
+        minuto: ev.minuto === "" ? null : (ev.minuto || 0),
         extra: String(ev.extra || ""),
       });
     }
   }
 
   await verificarSuspensiones(equipoId, savedJugIds);
+  await cargarJugadoresCache();
+
+  if(fallosJugadores.length){
+    alert(`⚠️ Algunos jugadores NO se pudieron guardar en la planilla:\n\n${fallosJugadores.join("\n")}\n\nRevisalos manualmente (puede ser un ID federal duplicado u otro conflicto).`);
+  }
+
   return true;
 }
 
@@ -3637,6 +3664,10 @@ async function cargarHistorialTransfer(){
 }
 
 async function registrarTransferencia(jugOrigenId, equipoOrigenId, jugDestinoId, equipoDestinoId){
+  if(!jugOrigenId || !jugDestinoId){
+    console.error("[registrarTransferencia] Abortado: falta jugador origen o destino", {jugOrigenId, jugDestinoId});
+    return;
+  }
   const {error} = await sb.from("transferencias").insert({
     jugador_origen_id: jugOrigenId,
     equipo_origen_id: equipoOrigenId,
@@ -3720,7 +3751,7 @@ async function leerPlanillaEquipo(partidoId, equipoId){
   const evByPlanilla = {};
   (evs || []).forEach(ev => {
     if(!evByPlanilla[ev.planilla_id]) evByPlanilla[ev.planilla_id] = [];
-    evByPlanilla[ev.planilla_id].push({tipo: ev.tipo, minuto: ev.minuto || 0, extra: ev.extra || ""});
+    evByPlanilla[ev.planilla_id].push({tipo: ev.tipo, minuto: ev.minuto==null ? "" : ev.minuto, extra: ev.extra || ""});
   });
 
   const rows = pls.map(pl => {
@@ -3732,7 +3763,7 @@ async function leerPlanillaEquipo(partidoId, equipoId){
       nombre: j.nombre_display || j.nombre || "",
       titular: !!pl.titular,
       es_capitan: !!pl.es_capitan,
-      eventos: (evByPlanilla[pl.id] || []).sort((a,b)=>(a.minuto||0)-(b.minuto||0)),
+      eventos: (evByPlanilla[pl.id] || []).sort((a,b)=>minuteToNumber(a.minuto)-minuteToNumber(b.minuto)),
     };
   });
 
@@ -5023,6 +5054,7 @@ function mostrarOpcionesTraspaso(aId,aEqId,bId,bEqId){
 
 async function confirmarTraspaso(origenId,origenEqId,destinoId,destinoEqId,aId,bId){
   await registrarTransferencia(origenId,origenEqId,destinoId,destinoEqId);
+  await cargarJugadoresCache();
   const cont=document.getElementById(`dir-${aId}-${bId}`);
   const origin=JUGADORES_CACHE.find(x=>x.id===origenId);
   const dest=JUGADORES_CACHE.find(x=>x.id===destinoId);
@@ -5132,9 +5164,22 @@ async function guardarTraspasoManual(){
   const origenEqId=_traspasoSelJugador.equipo_id||null;
   const destinoEqId=EQUIPOS_ID_MAP[destinoNombre]||null;
   // jugador_origen = el jugador buscado (registro en club de origen)
-  // jugador_destino = registro en el club de destino si ya existe (opcional)
+  // jugador_destino = registro en el club de destino: si ya existe se usa ese;
+  // si no existe se crea ahora, para que el jugador quede matcheable en la próxima planilla del club destino.
   const origenJugId=_traspasoSelJugador.id;
-  const destinoJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : null;
+  let destinoJugId=_traspasoOrigenJugador ? _traspasoOrigenJugador.id : null;
+
+  if(!destinoJugId){
+    const {data:nuevoJug, error:insErr} = await sb.from("jugadores").insert({
+      nombre: _traspasoSelJugador.nombre,
+      nombre_display: _traspasoSelJugador.nombre_display,
+      equipo_id: destinoEqId,
+      id_federal: "TRANS_" + Date.now(),
+    }).select("id").single();
+    if(insErr){ alert("Error creando el registro en el club destino: "+insErr.message); return; }
+    destinoJugId = nuevoJug.id;
+  }
+
   const {error}=await sb.from("transferencias").insert({
     jugador_origen_id: origenJugId,
     equipo_origen_id: origenEqId,
@@ -5144,6 +5189,7 @@ async function guardarTraspasoManual(){
     origen: 'manual',
   });
   if(error){ alert("Error al registrar: "+error.message); return; }
+  await cargarJugadoresCache();
   cerrarTraspasoManual();
   alert(`✓ Traspaso registrado: ${origenNombre} → ${destinoNombre}`);
 }
