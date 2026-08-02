@@ -2612,6 +2612,10 @@ function abrirCambioVinculado(containerId, jIdx, direccion){
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">Minuto</label>
         <input type="text" id="cv-min" placeholder="ej: 65" style="width:100%;" autofocus>
       </div>
+      <div style="margin-bottom:.65rem;">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:.3rem;">${labelOtro} (nro. camiseta)</label>
+        <input type="text" id="cv-num" placeholder="ej: 13" inputmode="numeric" style="width:100%;">
+      </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:.35rem;">${labelOtro}</div>
       <div style="overflow-y:auto;flex:1;margin-bottom:.75rem;" id="cv-lista">
         ${opts || '<p style="color:var(--muted);font-size:12px;">No hay jugadores disponibles.</p>'}
@@ -2624,9 +2628,37 @@ function abrirCambioVinculado(containerId, jIdx, direccion){
   </div>`;
   document.body.insertAdjacentHTML("beforeend", html);
   setTimeout(()=>document.getElementById("cv-min")?.focus(),50);
-  document.getElementById("cv-min").addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("modal-cambio-vinc")?.remove();});
+  document.getElementById("cv-min").addEventListener("keydown",e=>{
+    if(e.key==="Escape") document.getElementById("modal-cambio-vinc")?.remove();
+  });
+  const numInput = document.getElementById("cv-num");
+  numInput.addEventListener("input", ()=>seleccionarCambioVincPorNumero(numInput.value));
+  numInput.addEventListener("keydown", e=>{
+    if(e.key==="Escape"){ document.getElementById("modal-cambio-vinc")?.remove(); return; }
+    if(e.key!=="Enter") return;
+    e.preventDefault();
+    if(!seleccionarCambioVincPorNumero(numInput.value)){ numInput.select(); return; }
+    confirmarCambioVinculado(containerId, jIdx, direccion);
+  });
   window._cvCandidatos = candidatos;
   window._cvSelected = null;
+}
+
+// Matchea lo tipeado en #cv-num contra los candidatos por nro. de camiseta y marca la
+// selección (misma UI que un click) — así el flujo minuto→Tab→número→Enter no requiere mouse.
+function seleccionarCambioVincPorNumero(valor){
+  const num = String(valor||"").trim();
+  const candidatos = window._cvCandidatos||[];
+  const ci = num ? candidatos.findIndex(c=>String(c.numero||"")===num) : -1;
+  if(ci===-1){
+    document.querySelectorAll("[id^=cv-opt-]").forEach(el=>{ el.style.background=""; el.style.borderColor="var(--border)"; });
+    window._cvSelected = null;
+    const btn = document.getElementById("cv-confirmar");
+    if(btn) btn.disabled = true;
+    return false;
+  }
+  selCambioVinc(ci);
+  return true;
 }
 
 function selCambioVinc(ci){
@@ -2634,7 +2666,7 @@ function selCambioVinc(ci){
     el.style.background=""; el.style.borderColor="var(--border)";
   });
   const el = document.getElementById("cv-opt-"+ci);
-  if(el){ el.style.background="rgba(232,196,74,0.1)"; el.style.borderColor="var(--accent)"; }
+  if(el){ el.style.background="rgba(232,196,74,0.1)"; el.style.borderColor="var(--accent)"; el.scrollIntoView({block:"nearest"}); }
   window._cvSelected = ci;
   const btn = document.getElementById("cv-confirmar");
   if(btn) btn.disabled = false;
