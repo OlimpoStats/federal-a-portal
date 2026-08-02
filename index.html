@@ -124,9 +124,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 .llave-col>.llave-card{margin-bottom:.4rem;}
 .llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;display:flex;align-items:center;gap:.35rem;}
+.llave-card-mini{padding:.4rem .5rem;}
 .llave-eq-simple{display:flex;align-items:center;gap:.25rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
 .llave-eq-simple.pend{color:var(--muted);font-style:italic;}
 .llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
+.llave-eq-simple.llave-solo-escudo{justify-content:center;}
+.llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
@@ -1695,7 +1698,8 @@ function parseLiveData(raw) {
 // botón de ficha, barra de estadio/árbitro). Compartida entre el widget de Primera Fase
 // (renderPartidos, zonas ZONAS) y el de Segunda Fase (renderPartidos2, grupos GRUPOS2) —
 // antes este último dibujaba siempre "VS" fijo y nunca mostraba resultados/en vivo/streaming.
-function renderFilaPartido(zona, f, m, meta){
+function renderFilaPartido(zona, f, m, meta, conBotones=true){
+  const anchoBotonera = conBotones ? 56 : 32;
   const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
   const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
   const _ld = parseLiveData(m.minuto_actual);
@@ -1763,7 +1767,7 @@ function renderFilaPartido(zona, f, m, meta){
     <div class="partido-infobar-txt" style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
       ${infoItems.join(' &nbsp;')}
     </div>
-    <div style="width:56px;flex-shrink:0;"></div>
+    <div style="width:${anchoBotonera}px;flex-shrink:0;"></div>
   </div>` : "";
 
   const fmtLiveN = n => { if(!n) return "?"; const p=n.trim().split(/\s+/); return p.length===1?p[0]:p[0].charAt(0).toUpperCase()+". "+p[p.length-1]; };
@@ -1784,7 +1788,7 @@ function renderFilaPartido(zona, f, m, meta){
     <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:${_golesCols};gap:.4rem;">
       ${_golesInner}
     </div>
-    <div style="width:56px;flex-shrink:0;"></div>
+    <div style="width:${anchoBotonera}px;flex-shrink:0;"></div>
   </div>`
     : showLiveEvents
       ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
@@ -1792,16 +1796,20 @@ function renderFilaPartido(zona, f, m, meta){
       <span style="text-align:left;word-break:break-word;">${liveLocalParts.join(', ')}</span>
       <span style="text-align:right;word-break:break-word;">${liveVisitParts.join(', ')}</span>
     </div>
-    <div style="width:56px;flex-shrink:0;"></div>
+    <div style="width:${anchoBotonera}px;flex-shrink:0;"></div>
   </div>`
       : "";
 
   const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
   const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
   const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
-  // Always 2 slots: [stream, planilla] — stream left, planilla right
+  // Always 2 slots: [stream, planilla] — stream left, planilla right.
+  // Sin conBotones (Segunda Fase por ahora) va un único hueco angosto, sin iconos.
   let leftBtn, rightBtn;
-  if(m.gl !== null && !esEnVivo){
+  if(!conBotones){
+    leftBtn = `<div style="width:32px;flex-shrink:0;"></div>`;
+    rightBtn = '';
+  } else if(m.gl !== null && !esEnVivo){
     // Finished: planilla icon left (primary), stream right (secondary)
     leftBtn = tienePlanilla
       ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
@@ -2689,10 +2697,13 @@ function renderGruposSegundaFase(grupos){
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
 
-// Un lado de una llave: solo escudo+nombre (+seed), sin marcador — por ahora a esta
-// fase solo le interesa mostrar quién juega contra quién, no hay resultado que cargar.
-function _ladoLlave(equipo, esGanador, conSeed){
+// Un lado de una llave. soloEscudo=true (usado en "Cuartos — Parcial") muestra nada más
+// que el escudo, más grande — los nombres largos quedaban cortados en la fila angosta.
+function _ladoLlave(equipo, esGanador, conSeed, soloEscudo){
   if(!equipo) return `<div class="llave-eq-simple pend">A definir</div>`;
+  if(soloEscudo){
+    return `<div class="llave-eq-simple llave-solo-escudo${esGanador?' llave-gano':''}">${escudoHTML(equipo.n)}</div>`;
+  }
   return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">
     ${conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:''}
     ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
@@ -2701,12 +2712,12 @@ function _ladoLlave(equipo, esGanador, conSeed){
 
 // Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
 // (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
-function _cardLlave(tie){
+function _cardLlave(tie, soloEscudo){
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
-  return `<div class="llave-card">
-    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true)}
+  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
+    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo)}
     <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true)}
+    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo)}
   </div>`;
 }
 
@@ -2730,7 +2741,7 @@ function renderBracketNonagonal(grupos){
   if(!cuartosResueltos){
     if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Parcial';
     el.className = 'llave-grid-cuartos';
-    el.innerHTML = bracket.cuartos.map(_cardLlave).join('');
+    el.innerHTML = bracket.cuartos.map(c => _cardLlave(c, true)).join('');
     return;
   }
 
@@ -2738,11 +2749,11 @@ function renderBracketNonagonal(grupos){
   el.className = '';
   el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
-      ${bracket.cuartos.map(_cardLlave).join('')}
+      ${bracket.cuartos.map(c => _cardLlave(c)).join('')}
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Semifinales</p>
-      ${bracket.semis.map(_cardLlave).join('')}
+      ${bracket.semis.map(c => _cardLlave(c)).join('')}
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Final</p>
@@ -2826,7 +2837,7 @@ function renderPartidos2(f){
         ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
-    html += renderFilaPartido(zona, f, m, meta);
+    html += renderFilaPartido(zona, f, m, meta, false);
   });
 
   const libresFecha = GRUPOS2
@@ -2838,7 +2849,7 @@ function renderPartidos2(f){
         <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
         ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
       </div>
-      <div style="width:56px;flex-shrink:0;"></div>
+      <div style="width:32px;flex-shrink:0;"></div>
     </div>`;
   }
 
