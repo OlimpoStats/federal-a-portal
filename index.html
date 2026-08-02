@@ -2626,7 +2626,7 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
     const posClass = r._posClass || colorFn(pos, rows.length);
     h += `<tr>
       <td><span class="pos ${posClass}">${pos}</span></td>
-      <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span></div></td>
+      <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
       <td><strong class="pts">${r.pts}</strong></td>
       <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
       <td>${r.gf}</td><td>${r.gc}</td>
@@ -4503,7 +4503,7 @@ function renderSegundaFase(grupos){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
         <td style="${dataSty}">${r._tempPj}</td>
         <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r._tempPts,r._tempPj)}</td>
@@ -4531,7 +4531,7 @@ function renderSegundaFase(grupos){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
         <td style="${dataSty}">${r._tempPj}</td>
       </tr>`;
