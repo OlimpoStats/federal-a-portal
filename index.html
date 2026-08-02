@@ -2400,22 +2400,39 @@ function hideH2HTooltip(){
   if(_h2hTimer){ clearTimeout(_h2hTimer); _h2hTimer=null; }
 }
 
-function liveScoreBadge(equipo){
+function _buscarPartidoEnVivo(equipo){
   const allMatches = Object.values(FIXTURE).flatMap(z=>Object.values(z).flatMap(f=>f));
-  const liveM = allMatches.find(m=>{
+  return allMatches.find(m=>{
     if(m.estado!=="en_curso"||m.gl===null) return false;
     if(m.local!==equipo&&m.visitante!==equipo) return false;
     // Same check as esEnVivo: require a real minute in minuto_actual
     const _ld = parseLiveData(m.minuto_actual);
     const _min = _ld && _ld.min ? _ld.min : null;
     return _min !== null;
-  });
+  }) || null;
+}
+
+function liveScoreBadge(equipo){
+  const liveM = _buscarPartidoEnVivo(equipo);
   if(!liveM||liveM.gl===null) return "";
   const esLocal = liveM.local===equipo;
   const myG = esLocal?liveM.gl:liveM.gv;
   const thG = esLocal?liveM.gv:liveM.gl;
   const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
   return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
+}
+
+// Solo para Tabla de descenso: marcador + "vs Rival" para aprovechar el espacio libre de esa
+// columna (tiene menos columnas de datos que el resto de las tablas).
+function liveScoreBadgeConRival(equipo){
+  const liveM = _buscarPartidoEnVivo(equipo);
+  if(!liveM||liveM.gl===null) return "";
+  const esLocal = liveM.local===equipo;
+  const myG = esLocal?liveM.gl:liveM.gv;
+  const thG = esLocal?liveM.gv:liveM.gl;
+  const rival = esLocal?liveM.visitante:liveM.local;
+  const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
+  return `<span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;flex-shrink:0;">${myG}–${thG}</span><span style="margin-left:6px;font-size:12px;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">vs ${rival}</span>`;
 }
 
 function renderTablas(){
@@ -4503,7 +4520,10 @@ function renderSegundaFase(grupos){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div style="display:flex;align-items:center;">
+          <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
+          <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
+        </div></td>
         <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
         <td style="${dataSty}">${r._tempPj}</td>
         <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r._tempPts,r._tempPj)}</td>
@@ -4531,7 +4551,10 @@ function renderSegundaFase(grupos){
       const isQuinto=r._quinto||r._topQuinto;
       return `<tr>
         <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><div style="display:flex;align-items:center;">
+          <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
+          <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
+        </div></td>
         <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
         <td style="${dataSty}">${r._tempPj}</td>
       </tr>`;
