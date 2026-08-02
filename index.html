@@ -947,10 +947,23 @@ async function cargarPartidosDesdeDB(){
       window._FIXTURE_RAW = fixtureData;
       fixtureData.forEach(p => {
         if(!p.zona || !p.fecha) return;
-        const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
-        if(!ms) return;
-        const match = ms.find(m => m.local === p.equipo_local && m.visitante === p.equipo_visitante);
-        if(!match) return;
+
+        // Si la zona no existe en el FIXTURE hardcodeado, crearla dinámicamente
+        if(!FIXTURE[p.zona]) FIXTURE[p.zona] = {};
+        if(!FIXTURE[p.zona][String(p.fecha)]) FIXTURE[p.zona][String(p.fecha)] = [];
+
+        // Agregar zona a ZONAS si es nueva (segunda fase: Nonagonal A/B, Reválida A/B, etc.)
+        if(!ZONAS.includes(p.zona)) ZONAS.push(p.zona);
+
+        const ms = FIXTURE[p.zona][String(p.fecha)];
+        let match = ms.find(m => m.local === p.equipo_local && m.visitante === p.equipo_visitante);
+
+        // Si el partido no existe en el array, crearlo desde Supabase
+        if(!match){
+          match = { local: p.equipo_local, visitante: p.equipo_visitante, gl: null, gv: null };
+          ms.push(match);
+        }
+
         if(p.goles_local !== null && p.goles_visitante !== null){
           match.gl = p.goles_local;
           match.gv = p.goles_visitante;
@@ -4616,11 +4629,15 @@ function _leerCache(){
 
 function _aplicarCache(d){
   try {
+    // Restaurar PARTIDO_META si está en el cache
+    if(d.meta) Object.assign(PARTIDO_META, d.meta);
     (d.fichas||[]).forEach(({z,f,l,v,gl,gv,estado,minuto_actual,goleadores,fotmob_url}) => {
-      const ms = FIXTURE[z]?.[String(f)];
-      if(!ms) return;
-      const m = ms.find(x => x.local===l && x.visitante===v);
-      if(!m) return;
+      // Crear zona dinámicamente si no existe (segunda fase)
+      if(!FIXTURE[z]) FIXTURE[z] = {};
+      if(!FIXTURE[z][String(f)]) FIXTURE[z][String(f)] = [];
+      if(!ZONAS.includes(z)) ZONAS.push(z);
+      let m = FIXTURE[z][String(f)].find(x => x.local===l && x.visitante===v);
+      if(!m){ m = {local:l, visitante:v, gl:null, gv:null}; FIXTURE[z][String(f)].push(m); }
       m.gl = gl; m.gv = gv;
       if(estado) m.estado = estado;
       if(minuto_actual) m.minuto_actual = minuto_actual;
