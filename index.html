@@ -949,11 +949,11 @@ async function cargarPartidosDesdeDB(){
         if(!p.zona || !p.fecha) return;
 
         // Si la zona no existe en el FIXTURE hardcodeado, crearla dinámicamente
+        // (NO se agrega a ZONAS: ese array define específicamente "zonas de Primera Fase"
+        // y lo usan decenas de funciones para separarla de Nonagonal/Reválida — agregar ahí
+        // una zona nueva las mezclaría con lógica que no les corresponde).
         if(!FIXTURE[p.zona]) FIXTURE[p.zona] = {};
         if(!FIXTURE[p.zona][String(p.fecha)]) FIXTURE[p.zona][String(p.fecha)] = [];
-
-        // Agregar zona a ZONAS si es nueva (segunda fase: Nonagonal A/B, Reválida A/B, etc.)
-        if(!ZONAS.includes(p.zona)) ZONAS.push(p.zona);
 
         const ms = FIXTURE[p.zona][String(p.fecha)];
         let match = ms.find(m => m.local === p.equipo_local && m.visitante === p.equipo_visitante);
@@ -4629,13 +4629,10 @@ function _leerCache(){
 
 function _aplicarCache(d){
   try {
-    // Restaurar PARTIDO_META si está en el cache
-    if(d.meta) Object.assign(PARTIDO_META, d.meta);
     (d.fichas||[]).forEach(({z,f,l,v,gl,gv,estado,minuto_actual,goleadores,fotmob_url}) => {
-      // Crear zona dinámicamente si no existe (segunda fase)
+      // Crear zona dinámicamente si no existe (segunda fase) — sin tocar ZONAS (ver nota en cargarPartidosDesdeDB)
       if(!FIXTURE[z]) FIXTURE[z] = {};
       if(!FIXTURE[z][String(f)]) FIXTURE[z][String(f)] = [];
-      if(!ZONAS.includes(z)) ZONAS.push(z);
       let m = FIXTURE[z][String(f)].find(x => x.local===l && x.visitante===v);
       if(!m){ m = {local:l, visitante:v, gl:null, gv:null}; FIXTURE[z][String(f)].push(m); }
       m.gl = gl; m.gv = gv;
