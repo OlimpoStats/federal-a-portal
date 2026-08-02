@@ -120,6 +120,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) */
 #bracket-nonagonal-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;}
+#bracket-nonagonal-cont.solo-cuartos{grid-template-columns:1fr;}
+.llave-grid-cuartos{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 .llave-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem;margin-bottom:1rem;}
 .llave-id{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.3rem;}
@@ -134,7 +136,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-gano td{font-weight:700;}
 td.llave-eq.pend{color:var(--muted);font-style:italic;text-align:center!important;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
-@media (max-width:900px){ #bracket-nonagonal-cont{grid-template-columns:1fr;} }
+@media (max-width:900px){ #bracket-nonagonal-cont{grid-template-columns:1fr;} .llave-grid-cuartos{grid-template-columns:1fr;} }
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -2740,7 +2742,21 @@ function renderBracketNonagonal(grupos){
   const el = document.getElementById('bracket-nonagonal-cont');
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  let h = `<div class="llave-col">
+  // Semis y Final se muestran recién cuando los 4 cuartos ya se jugaron —
+  // hasta entonces solo se ve la llave de Cuartos de Final.
+  const cuartosResueltos = bracket.cuartos.every(c => c.resultado.resuelto);
+
+  if(!cuartosResueltos){
+    el.classList.add('solo-cuartos');
+    el.innerHTML = `<div class="llave-col">
+      <p class="llave-col-title">Cuartos de Final</p>
+      <div class="llave-grid-cuartos">${bracket.cuartos.map(_cardLlave).join('')}</div>
+    </div>`;
+    return;
+  }
+
+  el.classList.remove('solo-cuartos');
+  el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
       ${bracket.cuartos.map(_cardLlave).join('')}
     </div>
@@ -2752,7 +2768,6 @@ function renderBracketNonagonal(grupos){
       <p class="llave-col-title">Final</p>
       ${_cardFinalNonagonal(bracket.final)}
     </div>`;
-  el.innerHTML = h;
 }
 
 function toggleFechaPicker(){
