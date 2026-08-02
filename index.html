@@ -122,16 +122,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #bracket-nonagonal-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;}
 #bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:repeat(4,1fr);gap:.6rem;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
-.llave-col>.llave-card{margin-bottom:.6rem;}
-.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.45rem .55rem;}
-.llave-id{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.2rem;}
-.llave-eq-simple{display:flex;align-items:center;gap:.3rem;font-size:12px;padding:.1rem 0;white-space:nowrap;overflow:hidden;}
+.llave-col>.llave-card{margin-bottom:.4rem;}
+.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;display:flex;align-items:center;gap:.35rem;}
+.llave-eq-simple{display:flex;align-items:center;gap:.25rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
 .llave-eq-simple.pend{color:var(--muted);font-style:italic;}
 .llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
-.llave-seed{font-size:10px;color:var(--muted);font-weight:700;min-width:20px;flex-shrink:0;}
+.llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
-.llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:.05rem 0;padding-left:1.4rem;}
+.llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
 @media (max-width:900px){
   #bracket-nonagonal-cont{grid-template-columns:1fr;}
@@ -2690,9 +2689,9 @@ function renderGruposSegundaFase(grupos){
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
 
-// Fila compacta de un equipo dentro de una llave: solo escudo+nombre (+seed), sin marcador —
-// por ahora a esta fase solo le interesa mostrar quién juega contra quién.
-function _filaLlaveSimple(equipo, esGanador, conSeed){
+// Un lado de una llave: solo escudo+nombre (+seed), sin marcador — por ahora a esta
+// fase solo le interesa mostrar quién juega contra quién, no hay resultado que cargar.
+function _ladoLlave(equipo, esGanador, conSeed){
   if(!equipo) return `<div class="llave-eq-simple pend">A definir</div>`;
   return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">
     ${conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:''}
@@ -2700,22 +2699,22 @@ function _filaLlaveSimple(equipo, esGanador, conSeed){
   </div>`;
 }
 
+// Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
+// (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
 function _cardLlave(tie){
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   return `<div class="llave-card">
-    <div class="llave-id">${tie.id}</div>
-    ${_filaLlaveSimple(tie.mejor, ganadorEsMejor===true, true)}
+    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true)}
     <div class="llave-vs-sep">vs</div>
-    ${_filaLlaveSimple(tie.peor, ganadorEsMejor===false, true)}
+    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true)}
   </div>`;
 }
 
 function _cardFinalNonagonal(final){
   return `<div class="llave-card">
-    <div class="llave-id">FINAL</div>
-    ${_filaLlaveSimple(final.equipo1, final.ganador===final.equipo1, false)}
+    ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false)}
     <div class="llave-vs-sep">vs</div>
-    ${_filaLlaveSimple(final.equipo2, final.ganador===final.equipo2, false)}
+    ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false)}
   </div>`;
 }
 
