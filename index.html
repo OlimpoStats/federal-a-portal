@@ -120,23 +120,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) */
 #bracket-nonagonal-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;}
-#bracket-nonagonal-cont.solo-cuartos{grid-template-columns:1fr;}
-.llave-grid-cuartos{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+#bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:repeat(4,1fr);gap:.6rem;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
-.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem;margin-bottom:1rem;}
-.llave-id{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.3rem;}
-.llave-tabla{width:100%;border-collapse:collapse;font-size:12px;}
-.llave-tabla th{color:var(--muted);font-weight:600;text-align:center;padding:.15rem;}
-.llave-tabla td{padding:.25rem .15rem;text-align:center;border-top:1px solid var(--border);}
-.llave-eq{display:flex;align-items:center;gap:.3rem;text-align:left!important;white-space:nowrap;overflow:hidden;}
+.llave-col>.llave-card{margin-bottom:.6rem;}
+.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.45rem .55rem;}
+.llave-id{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.2rem;}
+.llave-eq-simple{display:flex;align-items:center;gap:.3rem;font-size:12px;padding:.1rem 0;white-space:nowrap;overflow:hidden;}
+.llave-eq-simple.pend{color:var(--muted);font-style:italic;}
+.llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;min-width:20px;flex-shrink:0;}
 .llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
-.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
-.llave-gano td{font-weight:700;}
-td.llave-eq.pend{color:var(--muted);font-style:italic;text-align:center!important;}
+.llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:.05rem 0;padding-left:1.4rem;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
-@media (max-width:900px){ #bracket-nonagonal-cont{grid-template-columns:1fr;} .llave-grid-cuartos{grid-template-columns:1fr;} }
+@media (max-width:900px){
+  #bracket-nonagonal-cont{grid-template-columns:1fr;}
+  #bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:1fr 1fr;}
+}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -674,6 +674,10 @@ td.llave-eq.pend{color:var(--muted);font-style:italic;text-align:center!importan
             <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
           </div>
         </div>
+        <div id="bracket-nonagonal-wrap">
+          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Parcial</p>
+          <div id="bracket-nonagonal-cont"></div>
+        </div>
         <div id="revalidas-wrap">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
             <div style="align-self:start;">
@@ -687,15 +691,11 @@ td.llave-eq.pend{color:var(--muted);font-style:italic;text-align:center!importan
             <div id="tablas-revalida-b" style="align-self:start;"></div>
           </div>
         </div>
-        <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;">Fase Campeonato — Nonagonal</p>
-          <div id="bracket-nonagonal-cont"></div>
-        </div>
+        <div id="cont-descenso"></div>
         <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
           <div id="cont-goleadores-resumen" style="align-self:start;"></div>
           <div id="cont-asistentes-resumen" style="align-self:start;"></div>
         </div>
-        <div id="cont-descenso"></div>
       </div>
     </div>
   </div>
@@ -2690,56 +2690,38 @@ function renderGruposSegundaFase(grupos){
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
 
-// Una fila = un equipo, con sus goles en ida/vuelta y el global. equipo puede venir null
-// (ronda siguiente todavía no definida porque no se jugó/cargó la anterior).
-function _filaLlave(equipo, golIda, golVuelta, esGanador, ventaja){
-  if(!equipo) return `<tr><td class="llave-eq pend" colspan="4">A definir</td></tr>`;
-  const global = (golIda!=null && golVuelta!=null) ? (golIda+golVuelta) : null;
-  return `<tr class="${esGanador?'llave-gano':''}">
-    <td class="llave-eq">
-      <span class="llave-seed">${_seedLabelLlave(equipo)}</span>
-      ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
-      ${ventaja?'<span class="llave-vent" title="Ventaja deportiva: visitante en ida, local en vuelta, avanza si el global queda empatado">⚡</span>':''}
-    </td>
-    <td>${golIda??'–'}</td>
-    <td>${golVuelta??'–'}</td>
-    <td class="llave-global">${global??'–'}</td>
-  </tr>`;
+// Fila compacta de un equipo dentro de una llave: solo escudo+nombre (+seed), sin marcador —
+// por ahora a esta fase solo le interesa mostrar quién juega contra quién.
+function _filaLlaveSimple(equipo, esGanador, conSeed){
+  if(!equipo) return `<div class="llave-eq-simple pend">A definir</div>`;
+  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">
+    ${conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:''}
+    ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
+  </div>`;
 }
 
 function _cardLlave(tie){
-  const datosPO = PLAYOFF_NONA[tie.id];
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
-  let h = `<div class="llave-card">
+  return `<div class="llave-card">
     <div class="llave-id">${tie.id}</div>
-    <table class="llave-tabla"><thead><tr><th></th><th>Ida</th><th>Vta</th><th>Global</th></tr></thead><tbody>`;
-  h += _filaLlave(tie.mejor, datosPO.ida.golMejor, datosPO.vuelta.golMejor, ganadorEsMejor===true, true);
-  h += _filaLlave(tie.peor,  datosPO.ida.golPeor,  datosPO.vuelta.golPeor,  ganadorEsMejor===false, false);
-  h += `</tbody></table></div>`;
-  return h;
+    ${_filaLlaveSimple(tie.mejor, ganadorEsMejor===true, true)}
+    <div class="llave-vs-sep">vs</div>
+    ${_filaLlaveSimple(tie.peor, ganadorEsMejor===false, true)}
+  </div>`;
 }
 
 function _cardFinalNonagonal(final){
-  const fin = final.resultado;
-  const penales = (fin.gl!=null && fin.gv!=null && fin.gl===fin.gv);
-  const fila = (equipo, goles, pen, esGanador) => {
-    if(!equipo) return `<tr><td class="llave-eq pend" colspan="${penales?3:2}">A definir</td></tr>`;
-    return `<tr class="${esGanador?'llave-gano':''}">
-      <td class="llave-eq">${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span></td>
-      <td>${goles??'–'}</td>${penales?`<td>${pen??'–'}</td>`:''}
-    </tr>`;
-  };
-  let h = `<div class="llave-card">
+  return `<div class="llave-card">
     <div class="llave-id">FINAL</div>
-    <table class="llave-tabla"><thead><tr><th></th><th>90'</th>${penales?"<th>Pen.</th>":""}</tr></thead><tbody>`;
-  h += fila(final.equipo1, fin.gl, fin.penalesA, final.ganador===final.equipo1);
-  h += fila(final.equipo2, fin.gv, fin.penalesB, final.ganador===final.equipo2);
-  h += `</tbody></table><p class="llave-nota">Partido único, cancha neutral. Empate a los 90' → penales.</p></div>`;
-  return h;
+    ${_filaLlaveSimple(final.equipo1, final.ganador===final.equipo1, false)}
+    <div class="llave-vs-sep">vs</div>
+    ${_filaLlaveSimple(final.equipo2, final.ganador===final.equipo2, false)}
+  </div>`;
 }
 
 function renderBracketNonagonal(grupos){
   const el = document.getElementById('bracket-nonagonal-cont');
+  const tituloEl = document.getElementById('bracket-nonagonal-title');
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
   // Semis y Final se muestran recién cuando los 4 cuartos ya se jugaron —
@@ -2747,15 +2729,14 @@ function renderBracketNonagonal(grupos){
   const cuartosResueltos = bracket.cuartos.every(c => c.resultado.resuelto);
 
   if(!cuartosResueltos){
-    el.classList.add('solo-cuartos');
-    el.innerHTML = `<div class="llave-col">
-      <p class="llave-col-title">Cuartos de Final</p>
-      <div class="llave-grid-cuartos">${bracket.cuartos.map(_cardLlave).join('')}</div>
-    </div>`;
+    if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Parcial';
+    el.className = 'llave-grid-cuartos';
+    el.innerHTML = bracket.cuartos.map(_cardLlave).join('');
     return;
   }
 
-  el.classList.remove('solo-cuartos');
+  if(tituloEl) tituloEl.textContent = 'Fase Campeonato — Nonagonal';
+  el.className = '';
   el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
       ${bracket.cuartos.map(_cardLlave).join('')}
