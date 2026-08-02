@@ -1677,6 +1677,147 @@ function parseLiveData(raw) {
   return {min:p[0]||null,rl:parseInt(p[1]||'0'),rv:parseInt(p[2]||'0'),gl:[],gv:[],rln:[],rvn:[]};
 }
 
+// Arma la ficha completa de UN partido (resultado/en vivo/hora, goleadores, streaming,
+// botón de ficha, barra de estadio/árbitro). Compartida entre el widget de Primera Fase
+// (renderPartidos, zonas ZONAS) y el de Segunda Fase (renderPartidos2, grupos GRUPOS2) —
+// antes este último dibujaba siempre "VS" fijo y nunca mostraba resultados/en vivo/streaming.
+function renderFilaPartido(zona, f, m, meta){
+  const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
+  const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
+  const _ld = parseLiveData(m.minuto_actual);
+  const _min = _ld.min;
+  // Only treat as live if estado is en_curso AND there's a real minute counter (prevents stuck green bg when sync stored m:null)
+  const esEnVivo = m.estado === "en_curso" && _min !== null;
+  const liveClass = esEnVivo ? " partido-live" : "";
+  const _rl = _ld.rl;
+  const _rv = _ld.rv;
+  const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
+  const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
+  const showRedIcons = (esEnVivo || (!tienePlanilla && m.gl !== null)) && m.minuto_actual;
+  const rojasLocal = showRedIcons && _rl > 0 ? rojaIcon.repeat(_rl) : "";
+  const rojasVisit = showRedIcons && _rv > 0 ? rojaIcon.repeat(_rv) : "";
+
+  let centro;
+  if(m.gl!==null){
+    const scoreClass = esEnVivo ? "score score-live" : "score";
+    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+  } else if(meta.hora){
+    centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
+  } else {
+    centro=`<div class="vs">VS</div>`;
+  }
+
+  // gol_contra: swap sides - counts for the OTHER team
+  const golesLocal = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="visitante":g.equipo==="local");
+  const golesVisit = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="local":g.equipo==="visitante");
+  const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
+  // Format: "N. Apellido" - primera letra del nombre + apellido
+  const fmtMiniNombre = nombre => {
+    if(!nombre) return "?";
+    const parts = nombre.trim().split(/\s+/);
+    if(parts.length === 1) return parts[0];
+    return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
+  };
+  const _zc = zonaConfig(zona);
+  // Group goals by player (same name + type), show combined minutes
+  const groupGoles = (goles) => {
+    if(!goles.length) return '';
+    const byKey = {};
+    goles.forEach(g => {
+      const k = (g.nombre||'?') + '|' + g.tipo;
+      if(!byKey[k]) byKey[k] = {nombre: g.nombre, mins: [], ec: g.tipo==='gol_contra'};
+      byKey[k].mins.push(parseInt(g.minuto)||0);
+    });
+    return Object.values(byKey)
+      .sort((a,b) => (a.mins[0]||0) - (b.mins[0]||0))
+      .map(p => {
+        const minsStr = p.mins.sort((a,b)=>a-b).map(m=>m+"'").join(' y ');
+        const ec = p.ec ? " <span style='font-size:9px;color:#999;'>(EC)</span>" : '';
+        return `<span class='mini-gol-min'>${minsStr}</span> <span class='mini-gol-nombre'>${fmtMiniNombre(p.nombre)}</span>${ec}`;
+      }).join(', ');
+  };
+  const golesLocalFmt = groupGoles(golesLocal);
+  const golesVisitFmt = groupGoles(golesVisit);
+
+  // Info bar: programmed = estadio + arbitro; live = no bar
+  const infoItems = [];
+  if(!esEnVivo){
+    if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
+    if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
+  }
+  const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
+    <div class="partido-infobar-txt" style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
+      ${infoItems.join(' &nbsp;')}
+    </div>
+    <div style="width:56px;flex-shrink:0;"></div>
+  </div>` : "";
+
+  const fmtLiveN = n => { if(!n) return "?"; const p=n.trim().split(/\s+/); return p.length===1?p[0]:p[0].charAt(0).toUpperCase()+". "+p[p.length-1]; };
+  const fmtLiveGol = g => `<span class='mini-gol-min'>${g.t}</span> <span class='mini-gol-nombre'>${fmtLiveN(g.n)}</span>`;
+  const fmtLiveRoja = r => `<span class='mini-gol-min'>${r.t}</span> <span class='mini-gol-nombre'>${fmtLiveN(r.n)}</span>`;
+  const liveLocalParts = [..._ld.gl.map(g=>'⚽ '+fmtLiveGol(g)), ..._ld.rln.map(r=>'🟥 '+fmtLiveRoja(r))];
+  const liveVisitParts = [..._ld.gv.map(g=>fmtLiveGol(g)+' ⚽'), ..._ld.rvn.map(r=>fmtLiveRoja(r)+' 🟥')];
+  const hasLiveEvents = liveLocalParts.length > 0 || liveVisitParts.length > 0;
+  const showLiveEvents = !tienePlanilla && m.gl !== null && hasLiveEvents;
+  const _golesCols = (golesLocalFmt && golesVisitFmt) ? '1fr 1fr' : '1fr';
+  const _golesInner = (golesLocalFmt && golesVisitFmt)
+    ? `<span style="text-align:left;word-break:break-word;">⚽ ${golesLocalFmt}</span><span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`
+    : golesLocalFmt
+      ? `<span style="word-break:break-word;">⚽ ${golesLocalFmt}</span>`
+      : `<span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`;
+  const goleadoresHTML = hayGoles
+    ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
+    <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:${_golesCols};gap:.4rem;">
+      ${_golesInner}
+    </div>
+    <div style="width:56px;flex-shrink:0;"></div>
+  </div>`
+    : showLiveEvents
+      ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
+    <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
+      <span style="text-align:left;word-break:break-word;">${liveLocalParts.join(', ')}</span>
+      <span style="text-align:right;word-break:break-word;">${liveVisitParts.join(', ')}</span>
+    </div>
+    <div style="width:56px;flex-shrink:0;"></div>
+  </div>`
+      : "";
+
+  const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
+  const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
+  const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
+  // Always 2 slots: [stream, planilla] — stream left, planilla right
+  let leftBtn, rightBtn;
+  if(m.gl !== null && !esEnVivo){
+    // Finished: planilla icon left (primary), stream right (secondary)
+    leftBtn = tienePlanilla
+      ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
+      : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
+    rightBtn = _streamLink || _filler26;
+  } else {
+    // Programado o live: stream left, nothing right
+    leftBtn = _streamLink || _filler26;
+    rightBtn = _filler26;
+  }
+  const zc = zonaConfig(zona);
+  const zonaShort = zc.pillLabel || zc.code;
+
+  return `<div class="partido-wrap">
+    <div style="display:flex;align-items:stretch;gap:.4rem">
+      <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
+        <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${showRedIcons&&_rl>0?' '+rojasLocal:''}</div></div>
+        <div class="res">${centro}</div>
+        <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${showRedIcons&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
+        ${leftBtn}
+        ${rightBtn}
+      </div>
+    </div>
+    ${goleadoresHTML}
+    ${infoBarHTML}
+  </div>`;
+}
+
 function renderPartidos(f){
   document.getElementById("fnum-txt").textContent="Fecha "+f;
   // Highlight active fecha in picker
@@ -1685,8 +1826,6 @@ function renderPartidos(f){
     if(el) el.style.color = i===f ? "var(--accent)" : "";
     if(el) el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
   }
-  const todosJugados=ZONAS.every(z=>(FIXTURE[z][String(f)]||[]).every(m=>m.gl!==null));
-  const algunoJugado=ZONAS.some(z=>(FIXTURE[z][String(f)]||[]).some(m=>m.gl!==null));
 
   document.getElementById("btn-prev").classList.toggle("dis",f<=1);
   document.getElementById("btn-next").classList.toggle("dis",f>=18);
@@ -1714,14 +1853,6 @@ function renderPartidos(f){
   let html="";
   let diaActual = null;
   rows.forEach(({zona, m, meta}) => {
-    const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
-    const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
-    const _ld = parseLiveData(m.minuto_actual);
-    const _min = _ld.min;
-    // Only treat as live if estado is en_curso AND there's a real minute counter (prevents stuck green bg when sync stored m:null)
-    const esEnVivo = m.estado === "en_curso" && _min !== null;
-    const esFuturo = m.gl === null && !esEnVivo;
-    const liveClass = esEnVivo ? " partido-live" : "";
     const dKey = diaKey(meta.dia);
     if(dKey !== diaActual){
       diaActual = dKey;
@@ -1730,133 +1861,7 @@ function renderPartidos(f){
         ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
-    const _rl = _ld.rl;
-    const _rv = _ld.rv;
-    const minDiv = esEnVivo && _min ? `<div class="minuto-live">${_min}</div>` : "";
-    const rojaIcon = '<span style="display:inline-block;width:9px;height:12px;background:#e8453a;border-radius:1px;margin:0 1px;vertical-align:middle;"></span>';
-    const showRedIcons = (esEnVivo || (!tienePlanilla && m.gl !== null)) && m.minuto_actual;
-    const rojasLocal = showRedIcons && _rl > 0 ? rojaIcon.repeat(_rl) : "";
-    const rojasVisit = showRedIcons && _rv > 0 ? rojaIcon.repeat(_rv) : "";
-
-    let centro;
-    if(m.gl!==null){
-      const scoreClass = esEnVivo ? "score score-live" : "score";
-      centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
-    } else if(meta.hora){
-      centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
-    } else {
-      centro=`<div class="vs">VS</div>`;
-    }
-
-    // gol_contra: swap sides - counts for the OTHER team
-    const golesLocal = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="visitante":g.equipo==="local");
-    const golesVisit = (m.goleadores||[]).filter(g=>g.tipo==="gol_contra"?g.equipo==="local":g.equipo==="visitante");
-    const hayGoles = m.gl!==null && (golesLocal.length||golesVisit.length);
-    // Format: "N. Apellido" - primera letra del nombre + apellido
-    const fmtMiniNombre = nombre => {
-      if(!nombre) return "?";
-      const parts = nombre.trim().split(/\s+/);
-      if(parts.length === 1) return parts[0];
-      return parts[0].charAt(0).toUpperCase() + ". " + parts[parts.length-1];
-    };
-    const _zc = zonaConfig(zona);
-    // Group goals by player (same name + type), show combined minutes
-    const groupGoles = (goles) => {
-      if(!goles.length) return '';
-      const byKey = {};
-      goles.forEach(g => {
-        const k = (g.nombre||'?') + '|' + g.tipo;
-        if(!byKey[k]) byKey[k] = {nombre: g.nombre, mins: [], ec: g.tipo==='gol_contra'};
-        byKey[k].mins.push(parseInt(g.minuto)||0);
-      });
-      return Object.values(byKey)
-        .sort((a,b) => (a.mins[0]||0) - (b.mins[0]||0))
-        .map(p => {
-          const minsStr = p.mins.sort((a,b)=>a-b).map(m=>m+"'").join(' y ');
-          const ec = p.ec ? " <span style='font-size:9px;color:#999;'>(EC)</span>" : '';
-          return `<span class='mini-gol-min'>${minsStr}</span> <span class='mini-gol-nombre'>${fmtMiniNombre(p.nombre)}</span>${ec}`;
-        }).join(', ');
-    };
-    const golesLocalFmt = groupGoles(golesLocal);
-    const golesVisitFmt = groupGoles(golesVisit);
-
-    // Info bar: programmed = estadio + arbitro; live = no bar
-    const infoItems = [];
-    if(!esEnVivo){
-      if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
-      if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
-    }
-    const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
-      <div class="partido-infobar-txt" style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
-        ${infoItems.join(' &nbsp;')}
-      </div>
-      <div style="width:56px;flex-shrink:0;"></div>
-    </div>` : "";
-
-    const fmtLiveN = n => { if(!n) return "?"; const p=n.trim().split(/\s+/); return p.length===1?p[0]:p[0].charAt(0).toUpperCase()+". "+p[p.length-1]; };
-    const fmtLiveGol = g => `<span class='mini-gol-min'>${g.t}</span> <span class='mini-gol-nombre'>${fmtLiveN(g.n)}</span>`;
-    const fmtLiveRoja = r => `<span class='mini-gol-min'>${r.t}</span> <span class='mini-gol-nombre'>${fmtLiveN(r.n)}</span>`;
-    const liveLocalParts = [..._ld.gl.map(g=>'⚽ '+fmtLiveGol(g)), ..._ld.rln.map(r=>'🟥 '+fmtLiveRoja(r))];
-    const liveVisitParts = [..._ld.gv.map(g=>fmtLiveGol(g)+' ⚽'), ..._ld.rvn.map(r=>fmtLiveRoja(r)+' 🟥')];
-    const hasLiveEvents = liveLocalParts.length > 0 || liveVisitParts.length > 0;
-    const showLiveEvents = !tienePlanilla && m.gl !== null && hasLiveEvents;
-    const _golesCols = (golesLocalFmt && golesVisitFmt) ? '1fr 1fr' : '1fr';
-    const _golesInner = (golesLocalFmt && golesVisitFmt)
-      ? `<span style="text-align:left;word-break:break-word;">⚽ ${golesLocalFmt}</span><span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`
-      : golesLocalFmt
-        ? `<span style="word-break:break-word;">⚽ ${golesLocalFmt}</span>`
-        : `<span style="text-align:right;word-break:break-word;">${golesVisitFmt} ⚽</span>`;
-    goleadoresHTML = hayGoles
-      ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:${_golesCols};gap:.4rem;">
-        ${_golesInner}
-      </div>
-      <div style="width:56px;flex-shrink:0;"></div>
-    </div>`
-      : showLiveEvents
-        ? `<div style="display:flex;align-items:stretch;gap:.4rem;">
-      <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:.4rem;">
-        <span style="text-align:left;word-break:break-word;">${liveLocalParts.join(', ')}</span>
-        <span style="text-align:right;word-break:break-word;">${liveVisitParts.join(', ')}</span>
-      </div>
-      <div style="width:56px;flex-shrink:0;"></div>
-    </div>`
-        : "";
-
-    const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
-    const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
-    const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
-    // Always 2 slots: [stream, planilla] — stream left, planilla right
-    let leftBtn, rightBtn;
-    if(m.gl !== null && !esEnVivo){
-      // Finished: planilla icon left (primary), stream right (secondary)
-      leftBtn = tienePlanilla
-        ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
-        : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
-      rightBtn = _streamLink || _filler26;
-    } else {
-      // Programado or live: stream left, nothing right
-      leftBtn = _streamLink || _filler26;
-      rightBtn = _filler26;
-    }
-    const zc = zonaConfig(zona);
-    const zonaShort = zc.code || letraZona(zona);
-
-    html+=`<div class="partido-wrap">
-      <div style="display:flex;align-items:stretch;gap:.4rem">
-        <div class="partido topo-dia${liveClass}" style="flex:1;border-left-color:${zc.color};">
-          <div class="eq"><span class="grp-pill" style="background:${zc.color};border-color:${zc.color};color:${zc.text};">${zonaShort}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}${showRedIcons&&_rl>0?' '+rojasLocal:''}</div></div>
-          <div class="res">${centro}</div>
-          <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${showRedIcons&&_rv>0?rojasVisit+' ':''}${m.visitante}</div></div>
-        </div>
-        <div style="display:flex;flex-direction:row;gap:.25rem;align-items:center;flex-shrink:0;">
-          ${leftBtn}
-          ${rightBtn}
-        </div>
-      </div>
-      ${goleadoresHTML}
-      ${infoBarHTML}
-    </div>`;
+    html += renderFilaPartido(zona, f, m, meta);
   });
   document.getElementById("partidos-cont").innerHTML=html;
 }
@@ -2781,22 +2786,39 @@ function renderPartidos2(f){
   document.getElementById("btn-prev2").classList.toggle("dis", f<=1);
   document.getElementById("btn-next2").classList.toggle("dis", f>=9);
 
-  let html = "";
-  GRUPOS2.forEach(g=>{
-    const partidos = FIXTURE[g]?.[String(f)] || [];
-    const gc = zonaConfig(g);
-    partidos.forEach(m=>{
-      html += `<div class="partido-wrap">
-        <div style="display:flex;align-items:stretch;gap:.4rem">
-          <div class="partido topo-dia" style="flex:1;border-left-color:${gc.color};">
-            <div class="eq"><span class="grp-pill" style="background:${gc.color};border-color:${gc.color};color:${gc.text};">${gc.pillLabel||gc.code}</span>${escudoHTML(m.local)}<div class="eqn">${m.local}</div></div>
-            <div class="res"><div class="vs">VS</div></div>
-            <div class="eq vis">${escudoHTML(m.visitante)}<div class="eqn">${m.visitante}</div></div>
-          </div>
-          <div style="width:32px;flex-shrink:0;"></div>
-        </div>
-      </div>`;
+  const rows = [];
+  GRUPOS2.forEach(g => {
+    const ms = FIXTURE[g]?.[String(f)] || [];
+    ms.forEach(m => {
+      const meta = PARTIDO_META[getMetaKey(g,f,m.local,m.visitante)] || {};
+      rows.push({ zona: g, m, meta });
     });
+  });
+
+  rows.sort((a,b)=>{
+    // Sin día van al final
+    const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
+    const kd = ad.localeCompare(bd);
+    if(kd !== 0) return kd;
+    // Por hora
+    const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+    if(kh !== 0) return kh;
+    // Por grupo
+    return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
+  });
+
+  let html = "";
+  let diaActual = null;
+  rows.forEach(({zona, m, meta}) => {
+    const dKey = diaKey(meta.dia);
+    if(dKey !== diaActual){
+      diaActual = dKey;
+      const t = diaTitulo(meta.dia);
+      html += t.fecha
+        ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
+        : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
+    }
+    html += renderFilaPartido(zona, f, m, meta);
   });
 
   const libresFecha = GRUPOS2
@@ -2808,7 +2830,7 @@ function renderPartidos2(f){
         <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
         ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
       </div>
-      <div style="width:32px;flex-shrink:0;"></div>
+      <div style="width:56px;flex-shrink:0;"></div>
     </div>`;
   }
 
