@@ -4699,16 +4699,24 @@ async function _refrescarSilencioso(){
 }
 
 async function init(){
-  // Render immediately from hardcoded data — no loading spinners
-  try { await _renderTodo(); } catch(e){}
   const cached = _leerCache();
   if(cached){
+    // Caché válido (30 min): pintar al instante con esos datos, ya bastante al día,
+    // y refrescar en silencio por si cambió algo desde que se guardó.
     _aplicarCache(cached);
     try { await _renderTodo(); } catch(e){}
     _refrescarSilencioso();
   } else {
-    // Fetch DB in background, re-render silently when done
-    _refrescarSilencioso();
+    // Sin caché: NO pintar el snapshot hardcodeado (queda desactualizado — fecha 1, sin
+    // escudos, tablas en 0). Mostrar un loader prolijo y esperar los datos reales de Supabase
+    // antes de la primera pintada real.
+    ['partidos-cont','partidos-cont2','tablas-zona-a','tablas-zona-b','tablas-zona-c','tablas-zona-d',
+     'tablas-nonagonal-a','tablas-nonagonal-b','tablas-revalida-a','tablas-revalida-b',
+     'cont-goleadores-resumen','cont-asistentes-resumen','cont-descenso'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = _loadingHTML;
+    });
+    await _refrescarSilencioso();
   }
 
   // Navigate to URL path after data is ready
