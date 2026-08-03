@@ -2831,11 +2831,14 @@ function renderPartidos2(f){
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
-    // Por hora
-    const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+    // Por hora — solo mientras el partido no se jugó todavía. Una vez jugado (o si nunca
+    // se programó), se ordena por grupo, igual que los partidos sin programar.
+    const ha = a.m.gl===null ? horaOrden(a.meta.hora) : 9999;
+    const hb = b.m.gl===null ? horaOrden(b.meta.hora) : 9999;
+    const kh = ha - hb;
     if(kh !== 0) return kh;
-    // Por grupo
-    return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
+    // Por grupo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
+    return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
   });
 
   let html = "";
