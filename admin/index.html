@@ -1748,6 +1748,7 @@ async function procesarImagenes(){
   // Limpiar planillas anteriores antes de procesar
   planillaLocal = {jugadores:[]};
   planillaVisit = {jugadores:[]};
+  window._penalesPendientes = [];
   document.getElementById("tabla-local").innerHTML = "";
   document.getElementById("tabla-visit").innerHTML = "";
 
@@ -2706,6 +2707,7 @@ function abrirModalPenal(containerId, jIdx, tipo, minuto){
   const arr = containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
   if(!arr || !arr[jIdx]) return;
   const jugador = arr[jIdx];
+  window._penalCtx = {containerId, jIdx};
 
   // Determine equipos
   const esFavor = containerId==="tabla-local" ? partidoActual?.local : partidoActual?.visit;
@@ -2760,116 +2762,43 @@ async function guardarPenal(){
   const tipo = document.getElementById("pen-tipo")?.value;
   const favor = document.getElementById("pen-favor")?.value.trim();
   const contra = document.getElementById("pen-contra")?.value.trim();
-  const ejecutanteNombre = document.getElementById("pen-ejecutante")?.value.trim();
-  const ejecutanteId = document.getElementById("pen-ejecutante-id")?.value.trim();
-  const arqueroId = document.getElementById("pen-arquero")?.value.trim();
+  const arqueroIdSel = document.getElementById("pen-arquero")?.value.trim();
   const minuto = document.getElementById("pen-minuto")?.value.trim();
   const arbitro = document.getElementById("pen-arbitro")?.value.trim();
 
   // Map tipo to resultado
   const resultado = tipo==="gol_penal" ? "gol" : tipo==="penal_atajado" ? "atajado" : "desviado";
 
-  // Find jugador DB ids - fetch from DB directly to ensure correctness
-  let ejecutanteDBId = null;
-  let arqueroDBId = null;
+  // Resolvemos el ejecutante y el arquero por REFERENCIA al objeto de la planilla en memoria
+  // (no por id_federal), porque ese id todavía puede no estar resuelto si la planilla se
+  // cargó por foto/IA y recién se termina de identificar cuando se guarda todo el partido.
+  const ctx = window._penalCtx || {};
+  const arr = ctx.containerId==="tabla-local" ? planillaLocal.jugadores : planillaVisit.jugadores;
+  const jugadorRef = arr?.[ctx.jIdx];
+  if(!jugadorRef){ alert("No se encontró el jugador para este penal."); return; }
+  const arrOtro = ctx.containerId==="tabla-local" ? planillaVisit.jugadores : planillaLocal.jugadores;
+  const arqueroRef = arqueroIdSel ? (arrOtro||[]).find(j => String(j.id_federal||j.id)===String(arqueroIdSel)) || null : null;
 
-  if(ejecutanteId){
-    const cached = JUGADORES_CACHE.find(j => String(j.id_federal)===String(ejecutanteId) || String(j.id)===String(ejecutanteId));
-    if(cached){
-      ejecutanteDBId = cached.id;
-    } else {
-      const {data:jFetch} = await sb.from("jugadores")
-        .select("id").eq("id_federal", ejecutanteId).maybeSingle();
-      if(jFetch) ejecutanteDBId = jFetch.id;
-      else {
-        const parsed = parseInt(ejecutanteId);
-        if(parsed) ejecutanteDBId = parsed;
-      }
-    }
-  }
-
-  if(arqueroId){
-    // Look up arquero same way as ejecutante - id_federal or db id
-    const cachedArq = JUGADORES_CACHE.find(j => String(j.id_federal)===String(arqueroId) || String(j.id)===String(arqueroId));
-    if(cachedArq){
-      arqueroDBId = cachedArq.id;
-    } else {
-      const {data:aFetch} = await sb.from("jugadores")
-        .select("id").eq("id_federal", arqueroId).maybeSingle();
-      if(aFetch) arqueroDBId = aFetch.id;
-      else {
-        const parsed = parseInt(arqueroId);
-        if(parsed) arqueroDBId = parsed;
-      }
-    }
-  }
-
-  // Get partido_id and fixture_id from current state
-  const sel = obtenerPartidoSeleccionado();
-  const fixtureId = sel?.p?.id || null;
-
-  // Get partido_id from partidos table
-  let partidoId = null;
-  if(fixtureId){
-    const {data} = await sb.from("partidos").select("id").eq("fixture_id", fixtureId).maybeSingle();
-    partidoId = data?.id || null;
-  }
-
-  const {error} = await sb.from("penales").insert({
-    partido_id: partidoId,
-    fixture_id: fixtureId,
-    equipo_favor: favor,
-    equipo_contra: contra,
-    ejecutante_id: ejecutanteDBId || null,
-    arquero_id: arqueroDBId || null,
-    resultado,
-    minuto,
-    arbitro,
+  if(!window._penalesPendientes) window._penalesPendientes = [];
+  window._penalesPendientes.push({
+    favor, contra, resultado, minuto, arbitro,
+    jugadorRef, arqueroRef,
   });
 
-  if(error){ alert("Error al guardar penal: "+error.message); return; }
-  // Auto-backfill: if partidoId was null, try to patch after save
-  if(!partidoId && fixtureId){
-    const {data:pMatch} = await sb.from("partidos").select("id").eq("fixture_id", fixtureId).maybeSingle();
-    if(pMatch?.id){
-      await sb.from("penales").update({partido_id: pMatch.id}).eq("fixture_id", fixtureId).is("partido_id", null);
-    }
-  }
-
-  // If penal was saved (atajado), persist event to DB for arquero
-  if(resultado === "atajado" && arqueroDBId){
-    // Find arquero's planilla_id in DB
-    if(partidoId){
-      const {data:arqPlan} = await sb.from("planillas")
-        .select("id")
-        .eq("partido_id", partidoId)
-        .eq("jugador_id", arqueroDBId)
-        .maybeSingle();
-      if(arqPlan?.id){
-        await sb.from("eventos").insert({
-          planilla_id: arqPlan.id,
-          tipo: "penal_atajado",
-          minuto: String(minuto),
-          extra: "arquero"
-        });
-      }
-    }
-    // Also update in memory
+  // Reflejar en memoria el penal atajado para que el arquero rival vea su chip al instante
+  if(resultado === "atajado" && arqueroRef){
     const rivalSide = favor === (partidoActual?.local||"") ? "visit" : "local";
     const rivalPlan = rivalSide === "local" ? planillaLocal : planillaVisit;
     const rivalContId = rivalSide === "local" ? "tabla-local" : "tabla-visit";
-    const arqJug = (rivalPlan.jugadores||[]).find(j => j.numero == 1 || j.numero == 12);
-    if(arqJug){
-      if(!arqJug.eventos) arqJug.eventos = [];
-      arqJug.eventos.push({tipo:"penal_atajado", minuto, extra: "arquero"});
-      arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-      renderPlanilla(rivalContId, rivalPlan.jugadores);
-      actualizarMarcadorLive();
-    }
+    if(!arqueroRef.eventos) arqueroRef.eventos = [];
+    arqueroRef.eventos.push({tipo:"penal_atajado", minuto, extra: "arquero"});
+    arqueroRef.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+    renderPlanilla(rivalContId, rivalPlan.jugadores);
+    actualizarMarcadorLive();
   }
 
   document.getElementById("modal-penal")?.remove();
-  showFlash("✓ Penal registrado correctamente.", "ok");
+  showFlash("✓ Penal registrado (se guarda en la base al publicar la planilla).", "ok");
 }
 
 function abrirModalPenalNuevo(containerId, jIdx){
@@ -2953,67 +2882,36 @@ async function confirmarPenalNuevo(containerId, jIdx){
 
 async function _guardarPenalDB(containerId, jIdx, tipo, minuto, arqueroId){
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
-  const jugador = arr?.[jIdx];
+  const jugadorRef = arr?.[jIdx];
+  if(!jugadorRef){ showFlash("No se encontró el jugador para este penal.","err"); return; }
   const esFavor = containerId==="tabla-local" ? partidoActual?.local : partidoActual?.visit;
   const esContra = containerId==="tabla-local" ? partidoActual?.visit : partidoActual?.local;
-  const ejecutanteNombre = jugador?.nombre||"";
-  const ejecutanteId = jugador?.id_federal||jugador?.id||"";
   const arbitro = document.getElementById("partido-arbitro")?.value||"";
   const resultado = tipo==="gol_penal"?"gol":tipo==="penal_atajado"?"atajado":"desviado";
 
-  let ejecutanteDBId=null, arqueroDBId=null;
-  if(ejecutanteId){
-    const cached=JUGADORES_CACHE.find(j=>String(j.id_federal)===String(ejecutanteId)||String(j.id)===String(ejecutanteId));
-    if(cached) ejecutanteDBId=cached.id;
-    else {
-      const {data:jF}=await sb.from("jugadores").select("id").eq("id_federal",ejecutanteId).maybeSingle();
-      ejecutanteDBId=jF?.id||(parseInt(ejecutanteId)||null);
-    }
-  }
-  if(arqueroId){
-    const cachedArq=JUGADORES_CACHE.find(j=>String(j.id_federal)===String(arqueroId)||String(j.id)===String(arqueroId));
-    if(cachedArq) arqueroDBId=cachedArq.id;
-    else {
-      const {data:aF}=await sb.from("jugadores").select("id").eq("id_federal",arqueroId).maybeSingle();
-      arqueroDBId=aF?.id||(parseInt(arqueroId)||null);
-    }
-  }
-  const sel=obtenerPartidoSeleccionado();
-  const fixtureId=sel?.p?.id||null;
-  let partidoId=null;
-  if(fixtureId){
-    const {data}=await sb.from("partidos").select("id").eq("fixture_id",fixtureId).maybeSingle();
-    partidoId=data?.id||null;
-  }
-  const {error}=await sb.from("penales").insert({
-    partido_id:partidoId, fixture_id:fixtureId,
-    equipo_favor:esFavor, equipo_contra:esContra,
-    ejecutante_id:ejecutanteDBId||null, arquero_id:arqueroDBId||null,
-    resultado, minuto, arbitro,
+  // Resolvemos el arquero por REFERENCIA al objeto de la planilla rival, igual que el
+  // ejecutante: el id_federal puede no estar resuelto todavía si la planilla vino de una
+  // lectura por foto/IA (recién se termina de identificar cuando se guarda el partido entero).
+  const arrOtro = containerId==="tabla-local"?planillaVisit.jugadores:planillaLocal.jugadores;
+  const arqueroRef = arqueroId ? (arrOtro||[]).find(j=>String(j.id_federal||j.id)===String(arqueroId))||null : null;
+
+  if(!window._penalesPendientes) window._penalesPendientes = [];
+  window._penalesPendientes.push({
+    favor: esFavor, contra: esContra, resultado, minuto, arbitro,
+    jugadorRef, arqueroRef,
   });
-  if(error){ showFlash("Error al guardar penal: "+error.message,"err"); return; }
-  if(!partidoId&&fixtureId){
-    const {data:pM}=await sb.from("partidos").select("id").eq("fixture_id",fixtureId).maybeSingle();
-    if(pM?.id) await sb.from("penales").update({partido_id:pM.id}).eq("fixture_id",fixtureId).is("partido_id",null);
-  }
-  if(resultado==="atajado"&&arqueroDBId&&partidoId){
-    const {data:arqPlan}=await sb.from("planillas").select("id").eq("partido_id",partidoId).eq("jugador_id",arqueroDBId).maybeSingle();
-    if(arqPlan?.id) await sb.from("eventos").insert({planilla_id:arqPlan.id,tipo:"penal_atajado",minuto:String(minuto),extra:"arquero"});
-  }
-  if(resultado==="atajado"){
+
+  if(resultado==="atajado" && arqueroRef){
     const rivalSide=esFavor===(partidoActual?.local||"")?"visit":"local";
     const rivalPlan=rivalSide==="local"?planillaLocal:planillaVisit;
     const rivalContId=rivalSide==="local"?"tabla-local":"tabla-visit";
-    const arqJug=(rivalPlan.jugadores||[]).find(j=>j.numero==1||j.numero==12);
-    if(arqJug){
-      if(!arqJug.eventos)arqJug.eventos=[];
-      arqJug.eventos.push({tipo:"penal_atajado",minuto,extra:"arquero"});
-      arqJug.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
-      renderPlanilla(rivalContId,rivalPlan.jugadores);
-      actualizarMarcadorLive();
-    }
+    if(!arqueroRef.eventos) arqueroRef.eventos=[];
+    arqueroRef.eventos.push({tipo:"penal_atajado",minuto,extra:"arquero"});
+    arqueroRef.eventos.sort((a,b)=>(parseInt(a.minuto)||0)-(parseInt(b.minuto)||0));
+    renderPlanilla(rivalContId,rivalPlan.jugadores);
+    actualizarMarcadorLive();
   }
-  showFlash("✓ Penal registrado.","ok");
+  showFlash("✓ Penal registrado (se guarda en la base al publicar la planilla).","ok");
 }
 
 function abrirAsistencia(containerId, jIdx){
@@ -3276,7 +3174,11 @@ async function upsertPartido(payload){
 }
 
 async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
-  if(!jugadores || !jugadores.length) return true;
+  // idMap: referencia al objeto jugador (tal cual vive en planillaLocal/Visit.jugadores) → id real en BD.
+  // Sirve para resolver después, con certeza, los penales pendientes que se cargaron en vivo
+  // (cuando el jugador todavía no tenía su id_federal resuelto).
+  const idMap = new Map();
+  if(!jugadores || !jugadores.length) return { ok:true, idMap };
 
   // Cargar planteles UNA SOLA VEZ
   const {data: plantelPropio} = await sb.from("jugadores")
@@ -3358,7 +3260,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
   // ── REVISIÓN: casos en zona gris o sin match → mostrar pantalla de confirmación ──
   if(pendientesRevision.length > 0){
     const decisiones = await mostrarRevisionJugadores(pendientesRevision, equipoNombre, plantelLocal);
-    if(decisiones === null) return false; // usuario canceló
+    if(decisiones === null) return { ok:false, idMap }; // usuario canceló
     for(const {item, decision} of decisiones){
       if(decision === "mismo" && item.candidato){
         resoluciones.push({ accion:"existente", jExistente:item.candidato, jugadorDatos:item.jugadorDatos });
@@ -3408,6 +3310,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
 
     if(!jDB) continue;
     savedJugIds.add(jDB.id);
+    idMap.set(j, jDB.id);
 
     const {data:pDB} = await sb.from("planillas").insert({
       partido_id: partidoId,
@@ -3437,7 +3340,31 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     alert(`⚠️ Algunos jugadores NO se pudieron guardar en la planilla:\n\n${fallosJugadores.join("\n")}\n\nRevisalos manualmente (puede ser un ID federal duplicado u otro conflicto).`);
   }
 
-  return true;
+  return { ok:true, idMap };
+}
+
+// Resuelve y guarda en la tabla "penales" los penales cargados en vivo durante esta sesión,
+// ahora que ambos planteles (local y visitante) ya tienen su id real en BD.
+async function guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId){
+  const pendientes = window._penalesPendientes || [];
+  if(!pendientes.length) return;
+  for(const p of pendientes){
+    const ejecutanteDBId = idMapLocal?.get(p.jugadorRef) ?? idMapVisit?.get(p.jugadorRef) ?? null;
+    const arqueroDBId = p.arqueroRef ? (idMapLocal?.get(p.arqueroRef) ?? idMapVisit?.get(p.arqueroRef) ?? null) : null;
+    const {error} = await sb.from("penales").insert({
+      partido_id: partidoId,
+      fixture_id: fixtureId,
+      equipo_favor: p.favor,
+      equipo_contra: p.contra,
+      ejecutante_id: ejecutanteDBId,
+      arquero_id: arqueroDBId,
+      resultado: p.resultado,
+      minuto: p.minuto,
+      arbitro: p.arbitro,
+    });
+    if(error) console.warn("[Penales] Error al guardar penal pendiente:", error.message);
+  }
+  window._penalesPendientes = [];
 }
 
 function mostrarModalTransfer(nombrePlanilla, jugOtro){
@@ -3823,6 +3750,7 @@ async function leerPlanillaEquipo(partidoId, equipoId){
 async function cargarPlanillasExistentes(){
   planillaLocal = {jugadores:[]};
   planillaVisit = {jugadores:[]};
+  window._penalesPendientes = [];
 
   const partidoId = await getOrCreatePartidoIdActual();
   if(!partidoId) return;
@@ -4023,14 +3951,21 @@ async function confirmarCarga(publicar=true){
     await upsertABMSiNuevo("arbitros", cuarto);
     await upsertABMSiNuevo("estadios", estadio);
 
+    let idMapLocal = null, idMapVisit = null;
     if(localId){
-      const okLocal = await guardarPlanilla(planillaLocal.jugadores || [], localId, partidoId, partidoActual.local);
-      if(okLocal === false){ alert("Carga cancelada. No se guardó ningún dato."); return; }
+      const resLocal = await guardarPlanilla(planillaLocal.jugadores || [], localId, partidoId, partidoActual.local);
+      if(!resLocal.ok){ alert("Carga cancelada. No se guardó ningún dato."); return; }
+      idMapLocal = resLocal.idMap;
     }
     if(visitId){
-      const okVisit = await guardarPlanilla(planillaVisit.jugadores || [], visitId, partidoId, partidoActual.visit);
-      if(okVisit === false){ alert("Carga cancelada en el visitante. El local ya fue guardado."); return; }
+      const resVisit = await guardarPlanilla(planillaVisit.jugadores || [], visitId, partidoId, partidoActual.visit);
+      if(!resVisit.ok){ alert("Carga cancelada en el visitante. El local ya fue guardado."); return; }
+      idMapVisit = resVisit.idMap;
     }
+
+    // Ahora que ambos planteles tienen su id real en BD, resolvemos y guardamos los penales
+    // que se hayan cargado durante la sesión (en vivo).
+    await guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId);
 
     document.getElementById("paso3").style.display = "none";
     document.getElementById("paso4").style.display = "";
