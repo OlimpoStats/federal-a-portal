@@ -3262,7 +3262,18 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     const decisiones = await mostrarRevisionJugadores(pendientesRevision, equipoNombre, plantelLocal);
     if(decisiones === null) return { ok:false, idMap }; // usuario canceló
     for(const {item, decision} of decisiones){
-      if(decision === "mismo" && item.candidato){
+      if(decision === "traspaso" && item.candidato){
+        // Elegido manualmente desde la búsqueda "en todos los clubes": es una persona real
+        // que jugaba en otro club → tratarlo como transferencia (jugador nuevo en este club,
+        // vinculado por historial al de origen), igual que la detección automática.
+        const jugOtro = item.candidato;
+        const datosInsert = {
+          nombre: jugOtro.nombre, nombre_display: jugOtro.nombre_display,
+          equipo_id: equipoId, id_federal: "TRANS_" + Date.now(),
+        };
+        resoluciones.push({ accion:"transferencia", datosInsert, transferInfo:{ jugOrigenId: jugOtro.id, equipoOrigenId: jugOtro.equipo_id }, jugadorDatos:item.jugadorDatos });
+        plantelLocal.push({ id:"_p_trans", nombre: datosInsert.nombre, nombre_display: datosInsert.nombre_display });
+      } else if(decision === "mismo" && item.candidato){
         resoluciones.push({ accion:"existente", jExistente:item.candidato, jugadorDatos:item.jugadorDatos });
       } else {
         const idTemp = "TEMP_" + Date.now() + "_" + Math.floor(Math.random()*1000);
@@ -3557,7 +3568,11 @@ async function resolverRevisionTodo(confirmar){
   const manualSel = window._revisionManualSel||{};
   const decisiones = _revisionItems.map((item,i)=>{
     if(manualSel[i]){
-      return { item: {...item, candidato: manualSel[i]}, decision: "mismo" };
+      // Si el jugador elegido es de OTRO club (búsqueda global "traspaso"), no es "el mismo
+      // registro" a reutilizar tal cual — hay que tratarlo como transferencia real (crear un
+      // jugador nuevo en este club y vincular el traspaso), igual que la detección automática.
+      const decision = manualSel[i]._esTraspaso ? "traspaso" : "mismo";
+      return { item: {...item, candidato: manualSel[i]}, decision };
     }
     const sel = document.querySelector(`input[name="rev-${i}"]:checked`);
     const val = sel?.value || "nuevo";
@@ -3569,23 +3584,6 @@ async function resolverRevisionTodo(confirmar){
     }
     return { item, decision: "nuevo" };
   });
-
-  // Registrar traspasos para jugadores de otros clubes seleccionados manualmente
-  const clubDestinoNombre = window._revisionEquipoNombre || "";
-  const clubDestinoId = EQUIPOS_ID_MAP[clubDestinoNombre] || null;
-  for(const [i, jug] of Object.entries(manualSel)){
-    if(!jug?._esTraspaso) continue;
-    await sb.from("transferencias").insert({
-      jugador_origen_id: jug.id,
-      equipo_origen_id: jug.equipo_id || null,
-      jugador_destino_id: null,
-      equipo_destino_id: clubDestinoId,
-      fecha: new Date().toISOString().slice(0,10),
-      origen: 'automatico',
-    }).then(({error})=>{
-      if(error && !error.message.includes("duplicate")) console.warn("Traspaso ya registrado o error:", error.message);
-    });
-  }
 
   window._revisionManualSel={};
   window._revisionBusqueda={};
