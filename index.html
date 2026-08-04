@@ -4763,23 +4763,38 @@ init();
 
 // ── LIVE SCORE POLLING ──
 let _liveInterval = null;
+let _liveTickBusy = false;
 
 async function iniciarPollingEnVivo(){
   activarPolling();
 }
 
+async function _tickLive(){
+  if(_liveTickBusy) return;
+  _liveTickBusy = true;
+  try {
+    await cargarPartidosDesdeDB();
+    renderPartidos(fechaActual);
+    renderPartidos2(fechaActual2);
+    renderTablas();
+    const grupos = calcularGruposSegundaFase();
+    renderSegundaFase(grupos);
+    renderGruposSegundaFase(grupos);
+    renderGoleadoresResumen();
+    _guardarCache();
+  } catch(e){}
+  _liveTickBusy = false;
+}
+
 function activarPolling(){
   if(_liveInterval) return;
-  _liveInterval = setInterval(async ()=>{
-    try {
-      await cargarPartidosDesdeDB();
-      renderPartidos(fechaActual);
-      renderTablas();
-      renderSegundaFase();
-      renderGoleadoresResumen();
-      _guardarCache();
-    } catch(e){}
-  }, 60000);
+  _liveInterval = setInterval(_tickLive, 60000);
+  // Los celulares pausan los timers cuando la pantalla se bloquea o se cambia de pestaña.
+  // Al volver (desbloquear, volver a la pestaña), forzamos un refresco inmediato en vez de
+  // esperar a que el intervalo de 60s vuelva a caer solo.
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') _tickLive();
+  });
 }
 
 function detenerPolling(){
