@@ -2682,7 +2682,12 @@ function aplicarPctCRevalida(rowsA, rowsB){
   const n = Math.min(ocreA.length, ocreB.length);
   for(let i=0;i<n;i++){
     const a = ocreA[i], b = ocreB[i];
-    if(a._pctCVal===null || b._pctCVal===null || a._pctCVal===b._pctCVal) continue;
+    if(a._pctCVal===null && b._pctCVal===null) continue; // ninguno jugó todavía: nada que comparar
+    if(a._pctCVal===b._pctCVal) continue; // empate real
+    // Si uno todavía no jugó su fase de Reválida (byes/fecha libre), el que sí jugó y sumó queda
+    // mejor posicionado que "sin datos" — no se bloquean entre sí como antes.
+    if(a._pctCVal===null){ b._pctCTone='verde'; continue; }
+    if(b._pctCVal===null){ a._pctCTone='verde'; continue; }
     if(a._pctCVal > b._pctCVal){ a._pctCTone='verde'; b._pctCTone='rosa'; }
     else { b._pctCTone='verde'; a._pctCTone='rosa'; }
   }
