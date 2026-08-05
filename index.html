@@ -2849,16 +2849,12 @@ function ordenarTierNonagonal(a, b){
 }
 
 // Compara 2 equipos del mismo puesto de clasificación (1° vs 1°, 2° vs 2°...) entre Reválida A
-// y B. La posición DENTRO de cada zona ya viene resuelta de antes (pts→dif→GF del grupo, más
-// desempate de temporada completa) — acá solo se decide, entre esos dos, cuál clasifica mejor:
-// puntos (fase Reválida) → dif. de gol → GF → recién al final el %C (promedio pts/PJ exclusivo
-// de la fase de Reválida, que sí sirve para comparar zonas con distinta cantidad de partidos
-// jugados). 0 = empate total.
+// y B. La posición DENTRO de cada zona ya viene resuelta de antes (pts→dif.gol→GF del grupo,
+// más el desempate de temporada completa propio de cada zona — promedio para A, suma total
+// para B) y esos criterios NO se reutilizan acá: no son comparables entre zonas de distinto
+// tamaño (Reválida A juega una fecha menos que B). El ÚNICO criterio para decidir cuál de los
+// dos clasifica mejor es el %C (promedio pts/PJ exclusivo de la fase de Reválida). Empate → 0.
 function ordenarTierRevalida(a, b){
-  if(a.pts!==b.pts) return b.pts-a.pts;
-  const difA = a.gf-a.gc, difB = b.gf-b.gc;
-  if(difA!==difB) return difB-difA;
-  if(a.gf!==b.gf) return b.gf-a.gf;
   const va = a._pctCVal ?? -1, vb = b._pctCVal ?? -1;
   if(va!==vb) return vb-va;
   return 0;
