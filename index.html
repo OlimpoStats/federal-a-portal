@@ -2848,12 +2848,28 @@ function ordenarTierNonagonal(a, b){
   return 0;
 }
 
+// Compara 2 equipos del mismo puesto de clasificación (1° vs 1°, 2° vs 2°...) entre Reválida A
+// y B. La posición DENTRO de cada zona ya viene resuelta de antes (pts→dif→GF del grupo, más
+// desempate de temporada completa) — acá solo se decide, entre esos dos, cuál clasifica mejor:
+// puntos (fase Reválida) → dif. de gol → GF → recién al final el %C (promedio pts/PJ exclusivo
+// de la fase de Reválida, que sí sirve para comparar zonas con distinta cantidad de partidos
+// jugados). 0 = empate total.
+function ordenarTierRevalida(a, b){
+  if(a.pts!==b.pts) return b.pts-a.pts;
+  const difA = a.gf-a.gc, difB = b.gf-b.gc;
+  if(difA!==difB) return difB-difA;
+  if(a.gf!==b.gf) return b.gf-a.gf;
+  const va = a._pctCVal ?? -1, vb = b._pctCVal ?? -1;
+  if(va!==vb) return vb-va;
+  return 0;
+}
+
 // Tabla de Mérito (20 puestos): primero los NO clasificados del Nonagonal (5° a 9° de cada
 // grupo, comparados de a pares por puesto — 5° vs 5°, 6° vs 6°, etc., con stats exclusivas de
-// la fase de Nonagonal), después los clasificados de Reválida (10, 5 de cada zona, ordenados
-// entre todos por %C — promedio exclusivo de la fase de Reválida). Nonagonal SIEMPRE va antes
-// que Reválida. Empates totales quedan como puestos "a sorteo" (una fila por puesto, sin
-// saltear numeración, listando a todos los candidatos empatados).
+// la fase de Nonagonal), después los clasificados de Reválida (10, 5 de cada zona, comparados
+// TAMBIÉN de a pares por puesto de clasificación — el 1° de A contra el 1° de B, etc., no todos
+// contra todos). Nonagonal SIEMPRE va antes que Reválida. Empates totales quedan como puestos
+// "a sorteo" (una fila por puesto, sin saltear numeración, listando a todos los candidatos).
 function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   const items = [];
   for(let tier=4; tier<=8; tier++){
@@ -2874,23 +2890,30 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
     }
   }
 
-  // pos = puesto real en la tabla de su zona (1-indexado), no solo entre los que clasifican.
-  const pool = [
-    ...revARows.map((r,idx)=>({n:r.n, val:r._pctCVal, pos:idx+1, origen:'Reválida A', ocre:r._posClass==='ocre'})),
-    ...revBRows.map((r,idx)=>({n:r.n, val:r._pctCVal, pos:idx+1, origen:'Reválida B', ocre:r._posClass==='ocre'})),
-  ].filter(x=>x.ocre);
-  pool.sort((a,b)=> (b.val??-1) - (a.val??-1));
-  let i=0;
-  while(i<pool.length){
-    let j=i;
-    while(j+1<pool.length && (pool[j+1].val??-1)===(pool[i].val??-1)) j++;
-    if(j>i){
-      const candidatos = pool.slice(i,j+1).map(x=>({n:x.n, pos:x.pos, origen:x.origen}));
-      for(let k=i;k<=j;k++) items.push({tipo:'sorteo', candidatos});
-    } else {
-      items.push({tipo:'equipo', n:pool[i].n, pos:pool[i].pos, origen:pool[i].origen});
+  // _rawPos = puesto real en la tabla de su zona (1-indexado), el que se muestra al usuario.
+  const ocreA = revARows.map((r,idx)=>({...r, _rawPos:idx+1})).filter(r=>r._posClass==='ocre');
+  const ocreB = revBRows.map((r,idx)=>({...r, _rawPos:idx+1})).filter(r=>r._posClass==='ocre');
+  const nRev = Math.max(ocreA.length, ocreB.length);
+  for(let k=0; k<nRev; k++){
+    const a = ocreA[k], b = ocreB[k];
+    if(a && b){
+      const cmp = ordenarTierRevalida(a, b);
+      if(cmp===0){
+        const candidatos = [{n:a.n, pos:a._rawPos, origen:'Reválida A'}, {n:b.n, pos:b._rawPos, origen:'Reválida B'}];
+        items.push({tipo:'sorteo', candidatos});
+        items.push({tipo:'sorteo', candidatos});
+      } else if(cmp<0){
+        items.push({tipo:'equipo', n:a.n, pos:a._rawPos, origen:'Reválida A'});
+        items.push({tipo:'equipo', n:b.n, pos:b._rawPos, origen:'Reválida B'});
+      } else {
+        items.push({tipo:'equipo', n:b.n, pos:b._rawPos, origen:'Reválida B'});
+        items.push({tipo:'equipo', n:a.n, pos:a._rawPos, origen:'Reválida A'});
+      }
+    } else if(a){
+      items.push({tipo:'equipo', n:a.n, pos:a._rawPos, origen:'Reválida A'});
+    } else if(b){
+      items.push({tipo:'equipo', n:b.n, pos:b._rawPos, origen:'Reválida B'});
     }
-    i = j+1;
   }
   return items; // 20 items, posición en la Tabla de Mérito = índice+1
 }
