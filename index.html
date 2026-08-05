@@ -138,6 +138,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+/* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
+   fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
+   ni en mobile ni en desktop. */
+.cruce-merito-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;margin-bottom:.5rem;}
+.cruce-merito-lado{display:flex;align-items:center;gap:.4rem;font-size:13px;flex-wrap:wrap;word-break:break-word;}
+.cruce-merito-lado.pend{color:var(--muted);font-style:italic;}
+.cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:.3rem 0;}
 @media (max-width:900px){
   #bracket-nonagonal-cont{grid-template-columns:1fr;}
   #bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:1fr 1fr;}
@@ -2852,38 +2859,40 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   for(let tier=4; tier<=8; tier++){
     const a = nonARows[tier], b = nonBRows[tier];
     if(!a || !b) continue;
+    const pos = tier+1;
     const cmp = ordenarTierNonagonal(a, b);
     if(cmp===0){
-      const candidatos = [a.n, b.n];
+      const candidatos = [{n:a.n, pos, origen:'Nonagonal A'}, {n:b.n, pos, origen:'Nonagonal B'}];
       items.push({tipo:'sorteo', candidatos});
       items.push({tipo:'sorteo', candidatos});
     } else if(cmp<0){
-      items.push({tipo:'equipo', n:a.n, origen:'Nonagonal A'});
-      items.push({tipo:'equipo', n:b.n, origen:'Nonagonal B'});
+      items.push({tipo:'equipo', n:a.n, pos, origen:'Nonagonal A'});
+      items.push({tipo:'equipo', n:b.n, pos, origen:'Nonagonal B'});
     } else {
-      items.push({tipo:'equipo', n:b.n, origen:'Nonagonal B'});
-      items.push({tipo:'equipo', n:a.n, origen:'Nonagonal A'});
+      items.push({tipo:'equipo', n:b.n, pos, origen:'Nonagonal B'});
+      items.push({tipo:'equipo', n:a.n, pos, origen:'Nonagonal A'});
     }
   }
 
+  // pos = puesto real en la tabla de su zona (1-indexado), no solo entre los que clasifican.
   const pool = [
-    ...revARows.filter(r=>r._posClass==='ocre').map(r=>({n:r.n, val:r._pctCVal, origen:'Reválida A'})),
-    ...revBRows.filter(r=>r._posClass==='ocre').map(r=>({n:r.n, val:r._pctCVal, origen:'Reválida B'})),
-  ];
+    ...revARows.map((r,idx)=>({n:r.n, val:r._pctCVal, pos:idx+1, origen:'Reválida A', ocre:r._posClass==='ocre'})),
+    ...revBRows.map((r,idx)=>({n:r.n, val:r._pctCVal, pos:idx+1, origen:'Reválida B', ocre:r._posClass==='ocre'})),
+  ].filter(x=>x.ocre);
   pool.sort((a,b)=> (b.val??-1) - (a.val??-1));
   let i=0;
   while(i<pool.length){
     let j=i;
     while(j+1<pool.length && (pool[j+1].val??-1)===(pool[i].val??-1)) j++;
     if(j>i){
-      const candidatos = pool.slice(i,j+1).map(x=>x.n);
+      const candidatos = pool.slice(i,j+1).map(x=>({n:x.n, pos:x.pos, origen:x.origen}));
       for(let k=i;k<=j;k++) items.push({tipo:'sorteo', candidatos});
     } else {
-      items.push({tipo:'equipo', n:pool[i].n, origen:pool[i].origen});
+      items.push({tipo:'equipo', n:pool[i].n, pos:pool[i].pos, origen:pool[i].origen});
     }
     i = j+1;
   }
-  return items; // 20 items, posición = índice+1
+  return items; // 20 items, posición en la Tabla de Mérito = índice+1
 }
 
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
@@ -2903,22 +2912,27 @@ function armarCrucesDesdeOrden(lista){
   return cruces;
 }
 
-function _ladoLlaveMerito(item){
-  if(!item) return `<div class="llave-eq-simple pend">A definir</div>`;
-  if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend">${item.label}</div>`;
-  if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend">Sorteo: ${item.candidatos.join(' / ')}</div>`;
-  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+function _etiquetaOrigenCandidato(c){ return `${c.n} (${c.pos}° ${c.origen})`; }
+
+// Lado de un cruce del camino por el segundo ascenso — a diferencia de las llaves del
+// Nonagonal (compactas, solo escudo), acá el contenido puede ser un texto largo (varios
+// candidatos a sorteo), así que va en bloque propio con wrap, no en una fila fija angosta.
+function _ladoCruceMerito(item){
+  if(!item) return `<div class="cruce-merito-lado pend">A definir</div>`;
+  if(item.tipo==='pendiente') return `<div class="cruce-merito-lado pend">${item.label}</div>`;
+  if(item.tipo==='sorteo') return `<div class="cruce-merito-lado pend">Sorteo: ${item.candidatos.map(_etiquetaOrigenCandidato).join(' / ')}</div>`;
+  return `<div class="cruce-merito-lado">${escudoHTML(item.n,'me')}<span>${item.n}</span></div>`;
 }
 function _cardCruceMerito(mejor, peor){
-  return `<div class="llave-card">${_ladoLlaveMerito(mejor)}<div class="llave-vs-sep">vs</div>${_ladoLlaveMerito(peor)}</div>`;
+  return `<div class="cruce-merito-card">${_ladoCruceMerito(mejor)}<div class="cruce-merito-vs">vs</div>${_ladoCruceMerito(peor)}</div>`;
 }
 
 function renderTablaMeritoHTML(items){
   const filas = items.map((it,i)=>{
     const pos = i+1;
     const contenido = it.tipo==='sorteo'
-      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.join(' / ')}</span>`
-      : `<div style="display:flex;align-items:center;gap:.4rem;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${it.origen}</span></div>`;
+      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(_etiquetaOrigenCandidato).join(' / ')}</span>`
+      : `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${it.pos}° ${it.origen}</span></div>`;
     return `<tr>
       <td style="width:30px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
       <td style="padding:.4rem .5rem;font-size:13px;">${contenido}</td>
@@ -2943,12 +2957,12 @@ function abrirModalMerito(){
   const cruces16vos = armarCrucesDesdeOrden(lista16vos);
 
   cont.innerHTML = `
-    <p class="sec" style="color:#fff;">Tabla de Mérito</p>
-    ${renderTablaMeritoHTML(tablaMerito)}
-    <p class="sec" style="color:#fff;margin-top:1.2rem;">16vos — Cruces parciales</p>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;">
+    <p class="sec" style="color:#fff;">16vos — Cruces parciales</p>
+    <div>
       ${cruces16vos.map(c=>_cardCruceMerito(c.mejor,c.peor)).join('')}
     </div>
+    <p class="sec" style="color:#fff;margin-top:1.2rem;">Tabla de Mérito</p>
+    ${renderTablaMeritoHTML(tablaMerito)}
   `;
   modal.style.display = 'flex';
 }
