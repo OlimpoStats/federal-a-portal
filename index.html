@@ -2642,7 +2642,7 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
       <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
-      <th title="GC">GC</th><th title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase">%C</th>':''}
+      <th title="GC">GC</th><th title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase" style="width:46px;">%C</th>':''}
     </tr></thead><tbody>`;
   rows.forEach((r,i)=>{
     const pos=i+1, dif=r.gf-r.gc;
@@ -2655,7 +2655,7 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
       <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
       <td>${r.gf}</td><td>${r.gc}</td>
       <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
-      ${conPctC?`<td style="color:${pctCColor};">${r._pctCLabel}</td>`:''}
+      ${conPctC?`<td style="color:${pctCColor};white-space:nowrap;font-size:12px;">${r._pctCLabel}</td>`:''}
     </tr>`;
   });
   h += `</tbody></table></div>`;
@@ -2686,8 +2686,11 @@ function aplicarPctCRevalida(rowsA, rowsB){
     if(a._pctCVal > b._pctCVal){ a._pctCTone='verde'; b._pctCTone='rosa'; }
     else { b._pctCTone='verde'; a._pctCTone='rosa'; }
   }
+  // "N/C" para cualquiera que no esté efectivamente clasificando — no solo el 'rosa' (por
+  // posición), también el 'noclasif' (descenso): un descendido siempre está, por regla, por
+  // debajo del último clasificado.
   rowsA.concat(rowsB).forEach(r=>{
-    if(r._posClass==='rosa'){ r._pctCLabel='N/C'; r._pctCTone=null; }
+    if(r._posClass!=='ocre'){ r._pctCLabel='N/C'; r._pctCTone=null; }
   });
 }
 
