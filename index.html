@@ -692,6 +692,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
                 <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
                 <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
                 <span><b style="color:#e53935;">●</b> En descenso</span>
+                <span>%C = Promedio para clasif. a siguiente fase</span>
               </div>
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
@@ -2635,16 +2636,18 @@ function calcDescensoInfo(equipos, grupo, criterioTipo){
 function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
   const el = document.getElementById(elId);
   if(!el) return;
+  const conPctC = rows.length && rows[0]._pctCLabel !== undefined;
   let h = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${colorTitulo};margin:0 0 .28rem;">${titulo}</p>`;
   h += `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
       <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
-      <th title="GC">GC</th><th title="+/-">+/-</th>
+      <th title="GC">GC</th><th title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase">%C</th>':''}
     </tr></thead><tbody>`;
   rows.forEach((r,i)=>{
     const pos=i+1, dif=r.gf-r.gc;
     const posClass = r._posClass || colorFn(pos, rows.length);
+    const pctCColor = r._pctCTone==='verde' ? '#a5d6a7' : r._pctCTone==='rosa' ? '#f8bbd0' : 'var(--muted)';
     h += `<tr>
       <td><span class="pos ${posClass}">${pos}</span></td>
       <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
@@ -2652,10 +2655,40 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
       <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
       <td>${r.gf}</td><td>${r.gc}</td>
       <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      ${conPctC?`<td style="color:${pctCColor};">${r._pctCLabel}</td>`:''}
     </tr>`;
   });
   h += `</tbody></table></div>`;
   el.innerHTML = h;
+}
+
+// %C: promedio de puntos por partido, EXCLUSIVO de lo jugado en la fase de Reválida (r.pts/r.pj,
+// no el acumulado de temporada completa que se usa para el cruce con descenso). Se colorea
+// comparando, entre las dos zonas, al N-ésimo equipo que efectivamente clasifica (_posClass
+// 'ocre') contra el N-ésimo de la otra zona — no por número de fila de la tabla, así que si el
+// 3° de una zona está en 'noclasif' (descenso), el 4° de esa zona pasa a compararse contra el
+// 3° real de la otra. Los que no clasifican por posición ('rosa') muestran "N/C" en vez de valor.
+function aplicarPctCRevalida(rowsA, rowsB){
+  [rowsA, rowsB].forEach(rows=>{
+    rows.forEach(r=>{
+      const val = r.pj>0 ? r.pts/r.pj : null;
+      r._pctCVal = val;
+      r._pctCLabel = val===null ? '—' : val.toFixed(3).replace('.', ',');
+      r._pctCTone = null;
+    });
+  });
+  const ocreA = rowsA.filter(r=>r._posClass==='ocre');
+  const ocreB = rowsB.filter(r=>r._posClass==='ocre');
+  const n = Math.min(ocreA.length, ocreB.length);
+  for(let i=0;i<n;i++){
+    const a = ocreA[i], b = ocreB[i];
+    if(a._pctCVal===null || b._pctCVal===null || a._pctCVal===b._pctCVal) continue;
+    if(a._pctCVal > b._pctCVal){ a._pctCTone='verde'; b._pctCTone='rosa'; }
+    else { b._pctCTone='verde'; a._pctCTone='rosa'; }
+  }
+  rowsA.concat(rowsB).forEach(r=>{
+    if(r._posClass==='rosa'){ r._pctCLabel='N/C'; r._pctCTone=null; }
+  });
 }
 
 // Un equipo entre los que clasificarían de Reválida (mitad superior de la tabla del grupo) pero
@@ -2702,6 +2735,8 @@ function renderGruposSegundaFase(grupos){
   const descensoBRows = calcDescensoInfo(datos.revB, 'Reválida B', 'suma');
   const descensoBMap = {}; descensoBRows.forEach(r=>{ descensoBMap[r.n] = r._danger; });
   aplicarDescensoAGrupo(revBRows, descensoBMap);
+
+  aplicarPctCRevalida(revARows, revBRows);
 
   renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
