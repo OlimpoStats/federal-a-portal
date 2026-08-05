@@ -2565,17 +2565,18 @@ function calcTablaGrupo(grupo){
   const eq = {};
   for(let f=1; f<=9; f++){
     (FIXTURE[grupo]?.[String(f)]||[]).forEach(m=>{
-      [m.local, m.visitante].forEach(e=>{ if(!eq[e]) eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; });
+      [m.local, m.visitante].forEach(e=>{ if(!eq[e]) eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,gfVisit:0}; });
       if(m.gl===null) return;
       eq[m.local].pj++; eq[m.visitante].pj++;
       eq[m.local].gf+=m.gl; eq[m.local].gc+=m.gv;
       eq[m.visitante].gf+=m.gv; eq[m.visitante].gc+=m.gl;
+      eq[m.visitante].gfVisit+=m.gv;
       if(m.gl>m.gv){ eq[m.local].g++; eq[m.local].pts+=3; eq[m.visitante].p++; }
       else if(m.gl<m.gv){ eq[m.visitante].g++; eq[m.visitante].pts+=3; eq[m.local].p++; }
       else{ eq[m.local].e++; eq[m.visitante].e++; eq[m.local].pts++; eq[m.visitante].pts++; }
     });
   }
-  return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts} }
+  return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts,gfVisit} }
 }
 
 // Combina el plantel (con su Pts/PJ de Primera Fase ya cargados por calcularGruposSegundaFase)
@@ -2584,10 +2585,10 @@ function calcTablaGrupo(grupo){
 function armarFilasTemporada(roster, grupo){
   const stats = calcTablaGrupo(grupo);
   return roster.map(r => {
-    const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+    const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,gfVisit:0};
     return {
       n: r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false,
-      pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts,
+      pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts, gfVisit: s.gfVisit||0,
       _tempPts: (r.pts||0) + s.pts,
       _tempPj: (r.pj||0) + s.pj,
     };
@@ -2726,6 +2727,10 @@ const sortPorPromedio = (a,b) => baseSortGrupo(a,b) || ((b._tempPj?b._tempPts/b.
 // Desempate por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
 const sortPorSumaTotal = (a,b) => baseSortGrupo(a,b) || (b._tempPts-a._tempPts);
 
+// Últimas filas calculadas de los 4 grupos — el modal de "cruces y tablas" del segundo ascenso
+// las lee de acá en vez de recalcular todo de nuevo.
+let _ultimoNonARows = null, _ultimoNonBRows = null, _ultimoRevARows = null, _ultimoRevBRows = null;
+
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
 
@@ -2750,6 +2755,9 @@ function renderGruposSegundaFase(grupos){
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
   renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
   renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
+
+  _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
+  _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
   renderBracketNonagonal(grupos);
 }
@@ -2821,13 +2829,127 @@ function renderBracketNonagonal(grupos){
 }
 
 // ── MODAL: cruces y tablas del camino por el segundo ascenso ──
+
+// Compara 2 equipos de un mismo puesto (5°, 6°...) entre Nonagonal A y B, exclusivamente con
+// stats de la fase de Nonagonal: pts, dif. de gol, GF, GF de visitante. 0 = empate total.
+function ordenarTierNonagonal(a, b){
+  const difA = a.gf-a.gc, difB = b.gf-b.gc;
+  if(a.pts!==b.pts) return b.pts-a.pts;
+  if(difA!==difB) return difB-difA;
+  if(a.gf!==b.gf) return b.gf-a.gf;
+  if(a.gfVisit!==b.gfVisit) return b.gfVisit-a.gfVisit;
+  return 0;
+}
+
+// Tabla de Mérito (20 puestos): primero los NO clasificados del Nonagonal (5° a 9° de cada
+// grupo, comparados de a pares por puesto — 5° vs 5°, 6° vs 6°, etc., con stats exclusivas de
+// la fase de Nonagonal), después los clasificados de Reválida (10, 5 de cada zona, ordenados
+// entre todos por %C — promedio exclusivo de la fase de Reválida). Nonagonal SIEMPRE va antes
+// que Reválida. Empates totales quedan como puestos "a sorteo" (una fila por puesto, sin
+// saltear numeración, listando a todos los candidatos empatados).
+function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
+  const items = [];
+  for(let tier=4; tier<=8; tier++){
+    const a = nonARows[tier], b = nonBRows[tier];
+    if(!a || !b) continue;
+    const cmp = ordenarTierNonagonal(a, b);
+    if(cmp===0){
+      const candidatos = [a.n, b.n];
+      items.push({tipo:'sorteo', candidatos});
+      items.push({tipo:'sorteo', candidatos});
+    } else if(cmp<0){
+      items.push({tipo:'equipo', n:a.n, origen:'Nonagonal A'});
+      items.push({tipo:'equipo', n:b.n, origen:'Nonagonal B'});
+    } else {
+      items.push({tipo:'equipo', n:b.n, origen:'Nonagonal B'});
+      items.push({tipo:'equipo', n:a.n, origen:'Nonagonal A'});
+    }
+  }
+
+  const pool = [
+    ...revARows.filter(r=>r._posClass==='ocre').map(r=>({n:r.n, val:r._pctCVal, origen:'Reválida A'})),
+    ...revBRows.filter(r=>r._posClass==='ocre').map(r=>({n:r.n, val:r._pctCVal, origen:'Reválida B'})),
+  ];
+  pool.sort((a,b)=> (b.val??-1) - (a.val??-1));
+  let i=0;
+  while(i<pool.length){
+    let j=i;
+    while(j+1<pool.length && (pool[j+1].val??-1)===(pool[i].val??-1)) j++;
+    if(j>i){
+      const candidatos = pool.slice(i,j+1).map(x=>x.n);
+      for(let k=i;k<=j;k++) items.push({tipo:'sorteo', candidatos});
+    } else {
+      items.push({tipo:'equipo', n:pool[i].n, origen:pool[i].origen});
+    }
+    i = j+1;
+  }
+  return items; // 20 items, posición = índice+1
+}
+
+// Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
+// (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
+// de los 20 puestos de la Tabla de Mérito. 24 en total.
+function calcLista16vos(tablaMerito){
+  const reenganches = [1,2,3,4].map(i=>({tipo:'pendiente', label:`Perdedor QF${i}`}));
+  return [...reenganches, ...tablaMerito];
+}
+
+// Cruces "mejor vs peor" de una lista ya ordenada: 1° vs último, 2° vs anteúltimo, etc.
+function armarCrucesDesdeOrden(lista){
+  const cruces = [];
+  for(let i=0; i<Math.floor(lista.length/2); i++){
+    cruces.push({ mejor: lista[i], peor: lista[lista.length-1-i] });
+  }
+  return cruces;
+}
+
+function _ladoLlaveMerito(item){
+  if(!item) return `<div class="llave-eq-simple pend">A definir</div>`;
+  if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend">${item.label}</div>`;
+  if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend">Sorteo: ${item.candidatos.join(' / ')}</div>`;
+  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+}
+function _cardCruceMerito(mejor, peor){
+  return `<div class="llave-card">${_ladoLlaveMerito(mejor)}<div class="llave-vs-sep">vs</div>${_ladoLlaveMerito(peor)}</div>`;
+}
+
+function renderTablaMeritoHTML(items){
+  const filas = items.map((it,i)=>{
+    const pos = i+1;
+    const contenido = it.tipo==='sorteo'
+      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.join(' / ')}</span>`
+      : `<div style="display:flex;align-items:center;gap:.4rem;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${it.origen}</span></div>`;
+    return `<tr>
+      <td style="width:30px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+      <td style="padding:.4rem .5rem;font-size:13px;">${contenido}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="tabla-mini"><table style="width:100%;"><tbody>${filas}</tbody></table></div>`;
+}
+
 function abrirModalMerito(){
   const modal = document.getElementById('merito-modal');
   const cont = document.getElementById('merito-cont');
   if(!modal||!cont) return;
-  cont.innerHTML = `<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">
-    La Tabla de Mérito y los cruces del camino por el segundo ascenso todavía no están definidos.
-  </div>`;
+  if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows){
+    cont.innerHTML = `<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">
+      Todavía no hay datos suficientes para armar la Tabla de Mérito.
+    </div>`;
+    modal.style.display = 'flex';
+    return;
+  }
+  const tablaMerito = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
+  const lista16vos = calcLista16vos(tablaMerito);
+  const cruces16vos = armarCrucesDesdeOrden(lista16vos);
+
+  cont.innerHTML = `
+    <p class="sec" style="color:#fff;">Tabla de Mérito</p>
+    ${renderTablaMeritoHTML(tablaMerito)}
+    <p class="sec" style="color:#fff;margin-top:1.2rem;">16vos — Cruces parciales</p>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;">
+      ${cruces16vos.map(c=>_cardCruceMerito(c.mejor,c.peor)).join('')}
+    </div>
+  `;
   modal.style.display = 'flex';
 }
 
