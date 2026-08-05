@@ -2950,7 +2950,7 @@ function renderTablaMeritoHTML(items){
   const filas = items.map((it,i)=>{
     const pos = i+1;
     const contenido = it.tipo==='sorteo'
-      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(_etiquetaOrigenCandidato).join(' / ')}</span>`
+      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`
       : `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${it.pos}° ${it.origen}</span></div>`;
     return `<tr>
       <td style="width:30px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
