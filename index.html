@@ -149,6 +149,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #bracket-nonagonal-cont{grid-template-columns:1fr;}
   #bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:1fr 1fr;}
 }
+/* preview de 16vos (segundo ascenso) en la home — solo escudos, tarjetas chicas: 6 columnas x
+   2 filas en desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). */
+#preview16-cont{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;}
+@media (max-width:900px){ #preview16-cont{grid-template-columns:repeat(3,1fr);} }
+.preview16-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:.25rem;display:flex;align-items:center;justify-content:center;gap:.2rem;}
+.preview16-lado{display:flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:15px;flex-shrink:0;}
+.preview16-vs{font-size:7px;color:var(--muted);flex-shrink:0;}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -687,8 +694,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           </div>
         </div>
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Parcial</p>
+          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
           <div id="bracket-nonagonal-cont"></div>
+          <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
+          <div id="preview16-cont"></div>
+          <div id="preview16-leyenda" class="leyenda-colores"></div>
           <div id="btn-ver-merito" onclick="abrirModalMerito()">📊 Mirá todos los cruces y tablas</div>
         </div>
         <div id="revalidas-wrap">
@@ -2767,6 +2777,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
   renderBracketNonagonal(grupos);
+  renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
@@ -2813,7 +2824,7 @@ function renderBracketNonagonal(grupos){
   const cuartosResueltos = bracket.cuartos.every(c => c.resultado.resuelto);
 
   if(!cuartosResueltos){
-    if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Parcial';
+    if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Primer Ascenso';
     el.className = 'llave-grid-cuartos';
     el.innerHTML = bracket.cuartos.map(c => _cardLlave(c, true)).join('');
     return;
@@ -2929,6 +2940,31 @@ function armarCrucesDesdeOrden(lista){
     cruces.push({ mejor: lista[i], peor: lista[lista.length-1-i] });
   }
   return cruces;
+}
+
+// Preview de los cruces de 16vos en la home — solo escudos (o ícono si el lugar todavía no
+// tiene equipo real: ⬇️ para los 4 que caen del primer ascenso, 🎲 para los que dependen de
+// un sorteo). El nombre real queda como tooltip (title) para no escribir texto en la tarjeta.
+function _ladoPreview16(item){
+  if(!item) return `<div class="preview16-lado">?</div>`;
+  if(item.tipo==='pendiente') return `<div class="preview16-lado" title="${item.label} — Eliminado del 1er Ascenso">⬇️</div>`;
+  if(item.tipo==='sorteo') return `<div class="preview16-lado" title="Sorteo: ${item.candidatos.map(c=>c.n).join(' / ')}">🎲</div>`;
+  return `<div class="preview16-lado" title="${item.n}">${escudoHTML(item.n,'me')}</div>`;
+}
+
+function renderPreview16(nonARows, nonBRows, revARows, revBRows){
+  const cont = document.getElementById('preview16-cont');
+  const leyenda = document.getElementById('preview16-leyenda');
+  if(!cont) return;
+  const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
+  const lista16vos = calcLista16vos(tablaMerito);
+  const cruces = armarCrucesDesdeOrden(lista16vos);
+  cont.innerHTML = cruces.map(c =>
+    `<div class="preview16-card">${_ladoPreview16(c.mejor)}<span class="preview16-vs">vs</span>${_ladoPreview16(c.peor)}</div>`
+  ).join('');
+  if(leyenda){
+    leyenda.innerHTML = `<span>⬇️ Eliminado del 1er Ascenso</span><span>🎲 Sorteo</span>`;
+  }
 }
 
 function _etiquetaOrigenCandidato(c){ return `${c.n} (${c.pos}° ${c.origen})`; }
