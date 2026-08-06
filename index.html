@@ -1672,6 +1672,26 @@ function fechaInteligente(){
   // fallbackstrar la última
 }
 
+// Igual que fechaInteligente() pero para los grupos de Segunda Fase (Nonagonal/Reválida,
+// fechas 1-9) — sin esto, el widget de resultados de Segunda Fase queda fijo en la Fecha 1
+// en cada carga de página, sin importar qué fecha esté realmente en curso.
+function fechaInteligente2(){
+  for(let f=1;f<=9;f++){
+    const tieneProgramado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>{
+      const key = `${z}_${f}_${m.local}_${m.visitante}`;
+      const meta = PARTIDO_META[key];
+      return m.gl===null && (meta?.dia || meta?.hora);
+    }));
+    if(tieneProgramado) return f;
+  }
+  let ultimaJugada = 1;
+  for(let f=1;f<=9;f++){
+    const tieneJugado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>m.gl!==null));
+    if(tieneJugado) ultimaJugada = f;
+  }
+  return ultimaJugada;
+}
+
 function escudoHTML(nombre, size='esc'){
   const url = ESCUDOS[nombre];
   const i = ini(nombre);
@@ -4685,8 +4705,8 @@ async function _renderTodo(){
   renderSegundaFase(grupos);
   renderGruposSegundaFase(grupos);
   renderGoleadoresResumen();
-  fechaActual2 = 1;
-  renderPartidos2(1);
+  fechaActual2 = fechaInteligente2();
+  renderPartidos2(fechaActual2);
 }
 
 async function _refrescarSilencioso(){
