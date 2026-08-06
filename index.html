@@ -102,6 +102,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f8bbd0;}
+/* variante "recuadro": el puesto pasa de número de color a un rectángulo de ese color con el
+   número en blanco adentro — prueba de impacto visual, opt-in vía posBox en renderTablaGrupo. */
+.pos.pos-box{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 3px;border-radius:4px;box-sizing:border-box;}
+.pos.pos-box.verde{background:#4caf50;color:#fff;}
+.pos.pos-box.azul{background:#4fc3f7;color:#0a2733;}
+.pos.pos-box.ocre{background:#cc9933;color:#2a1d05;}
+.pos.pos-box.rosa{background:#f8bbd0;color:#5c1530;}
+.pos.pos-box.noclasif{background:#e53935;color:#fff;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -2671,7 +2679,7 @@ function calcDescensoInfo(equipos, grupo, criterioTipo){
   return rows; // ordenadas por criterio de descenso, cada fila con r._danger
 }
 
-function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
+function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, posBox){
   const el = document.getElementById(elId);
   if(!el) return;
   const conPctC = rows.length && rows[0]._pctCLabel !== undefined;
@@ -2687,7 +2695,7 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
     const posClass = r._posClass || colorFn(pos, rows.length);
     const pctCColor = r._pctCTone==='verde' ? '#a5d6a7' : r._pctCTone==='rosa' ? '#f8bbd0' : 'var(--muted)';
     h += `<tr>
-      <td><span class="pos ${posClass}">${pos}</span></td>
+      <td><span class="pos ${posClass}${posBox?' pos-box':''}">${pos}</span></td>
       <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
       <td><strong class="pts">${r.pts}</strong></td>
       <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
@@ -2788,7 +2796,7 @@ function renderGruposSegundaFase(grupos){
 
   aplicarPctCRevalida(revARows, revBRows);
 
-  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
+  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, true);
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
   renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
   renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
