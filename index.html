@@ -157,6 +157,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
 .llave-eq-simple.llave-solo-escudo{justify-content:center;}
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
+.llave-eq-simple.llave-eq-der{justify-content:flex-end;}
+.llave-eq-simple.llave-eq-der .llave-nombre{text-align:right;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
@@ -187,15 +189,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .bracket-espejo-cont{display:grid;grid-template-columns:1fr auto 1fr;gap:0 1rem;align-items:stretch;}
 .bracket-espejo-lado{display:flex;flex-direction:column;justify-content:space-around;gap:.7rem;}
 .bracket-espejo-centro{width:1px;background:repeating-linear-gradient(to bottom,var(--border) 0 6px,transparent 6px 12px);justify-self:center;}
-.espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;width:100%;box-sizing:border-box;}
-.espejo-lado{display:flex;align-items:center;gap:.4rem;flex:1;min-width:0;font-size:12px;}
+/* max-width: en desktop, sin esto la tarjeta se estira a todo el ancho de su columna (bastante
+   ancha) y con nombres cortos deja mucho hueco vacío antes del VS. */
+.espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;width:100%;max-width:360px;box-sizing:border-box;}
+.espejo-lado{display:flex;align-items:center;gap:.55rem;flex:1;min-width:0;font-size:12px;}
 .espejo-lado.espejo-izq{justify-content:flex-start;}
 .espejo-lado.espejo-der{justify-content:flex-end;}
 .espejo-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .espejo-izq .espejo-nombre{text-align:left;}
 .espejo-der .espejo-nombre{text-align:right;}
 .espejo-pos{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
-.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .5rem;}
+.espejo-vd{color:#e8c44a;text-transform:uppercase;}
+.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .6rem;}
 @media (max-width:900px){
   .bracket-espejo-cont{grid-template-columns:1fr;}
   .bracket-espejo-centro{display:none;}
@@ -2875,15 +2880,21 @@ function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)
 
 // Un lado de una llave. soloEscudo=true (usado en "Cuartos — Parcial") muestra nada más
 // que el escudo, más grande — los nombres largos quedaban cortados en la fila angosta.
-function _ladoLlave(equipo, esGanador, conSeed, soloEscudo){
-  if(!equipo) return `<div class="llave-eq-simple pend">A Definir</div>`;
+// lado 'izq' (mejor, por defecto) = seed/escudo/nombre; lado 'der' (peor) = nombre/escudo/seed
+// espejado, para que el nombre visitante no quede pegado al "vs" con espacio muerto a la
+// derecha (mismo criterio que _ladoEspejo, ya no comparte código porque uno es de la home).
+function _ladoLlave(equipo, esGanador, conSeed, soloEscudo, lado){
+  if(!equipo) return `<div class="llave-eq-simple pend"${lado==='der'?' style="justify-content:flex-end;"':''}>A Definir</div>`;
   if(soloEscudo){
     return `<div class="llave-eq-simple llave-solo-escudo${esGanador?' llave-gano':''}">${escudoHTML(equipo.n)}</div>`;
   }
-  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">
-    ${conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:''}
-    ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
-  </div>`;
+  const seed = conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:'';
+  const esc = escudoHTML(equipo.n,'me');
+  const nom = `<span class="llave-nombre">${equipo.n}</span>`;
+  if(lado==='der'){
+    return `<div class="llave-eq-simple llave-eq-der${esGanador?' llave-gano':''}">${nom}${esc}${seed}</div>`;
+  }
+  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">${seed}${esc}${nom}</div>`;
 }
 
 // Cuando ningún lado está definido todavía, una sola tarjeta "A Definir" centrada en vez de
@@ -2898,18 +2909,18 @@ function _cardLlave(tie, soloEscudo){
   if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
-    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo)}
+    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo, 'izq')}
     <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo)}
+    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo, 'der')}
   </div>`;
 }
 
 function _cardFinalNonagonal(final){
   if(!final.equipo1 && !final.equipo2) return _cardVacia();
   return `<div class="llave-card">
-    ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false)}
+    ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false, false, 'izq')}
     <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false)}
+    ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false, false, 'der')}
   </div>`;
 }
 
@@ -2964,7 +2975,10 @@ function _ladoEspejo(equipo, lado, esGanador){
   if(!equipo) return `<div class="espejo-lado" style="justify-content:center;color:var(--muted);font-style:italic;">A Definir</div>`;
   const pos = `<span class="espejo-pos">${_seedLabelLlave(equipo)}</span>`;
   const esc = escudoHTML(equipo.n,'me');
-  const nom = `<span class="espejo-nombre"${esGanador?' style="color:#4caf50;font-weight:700;"':''}>${equipo.n}</span>`;
+  // "mejor" (menor número de posición) SIEMPRE tiene la ventaja deportiva y SIEMPRE va del
+  // lado izquierdo (ver _cardEspejo) — el tag (VD) va ahí, nunca del lado derecho.
+  const vd = lado==='izq' ? ' <span class="espejo-vd">(VD)</span>' : '';
+  const nom = `<span class="espejo-nombre"${esGanador?' style="color:#4caf50;font-weight:700;"':''}>${equipo.n}${vd}</span>`;
   return lado==='izq'
     ? `<div class="espejo-lado espejo-izq">${pos}${esc}${nom}</div>`
     : `<div class="espejo-lado espejo-der">${nom}${esc}${pos}</div>`;
@@ -3042,9 +3056,10 @@ function ordenarTierRevalida(a, b){
 function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   const items = [];
   // Nonagonal no tiene %C (ese criterio es propio de Reválida, para compensar que juega
-  // distinta cantidad de partidos) — queda null para esas filas. destacar: 'gf'|'gfVisit'|null,
-  // solo se marca en el equipo que ganó la comparación gracias a ese criterio puntual.
-  const itemNona = (r, pos, origen, destacar) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, destacar:destacar||null});
+  // distinta cantidad de partidos) — queda null para esas filas. criterio: 'gf'|'gfVisit'|null
+  // (se marca en LOS DOS equipos del par cuando ese fue el que los diferenció), rol:
+  // 'win'|'lose' para saber a cuál de los dos le tocó el verde/amarillo y a cuál el rojo.
+  const itemNona = (r, pos, origen, criterio, rol) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, criterio:criterio||null, rol:rol||null});
   const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:r._pctCLabel});
 
   for(let tier=4; tier<=8; tier++){
@@ -3057,14 +3072,14 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
       items.push({tipo:'sorteo', candidatos});
       items.push({tipo:'sorteo', candidatos});
     } else {
-      const criterio = criterioDecisivoNonagonal(a, b);
-      const destacar = (criterio==='gf'||criterio==='gfVisit') ? criterio : null;
+      const criterioRaw = criterioDecisivoNonagonal(a, b);
+      const criterio = (criterioRaw==='gf'||criterioRaw==='gfVisit') ? criterioRaw : null;
       if(cmp<0){
-        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',destacar)});
-        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B')});
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',criterio,'win')});
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',criterio,'lose')});
       } else {
-        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',destacar)});
-        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A')});
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',criterio,'win')});
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',criterio,'lose')});
       }
     }
   }
@@ -3155,23 +3170,29 @@ function _cardCruceMerito(mejor, peor){
 
 // Para las filas de Nonagonal se suma pts y DG de la fase, y si el criterio que lo hizo pasar
 // por delante de su par fue GF o goles como visitante (GV), se destaca ese número en amarillo.
+// Criterio 'gf': se muestra en AMBOS equipos del par — verde el que está mejor ubicado por
+// eso, rojo el otro. Criterio 'gfVisit' (GV): mismo esquema pero el que avanza queda en
+// amarillo (para distinguir que fue justo por el criterio más inusual), el otro en rojo.
 function _contenidoMerito(it){
   if(it.tipo==='sorteo'){
-    return `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`;
+    return `<span style="color:#e8c44a;font-size:11px;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`;
   }
   let detalle = `${it.pos}° ${it.origen}`;
   if(it.origen && it.origen.startsWith('Nonagonal')){
     detalle += `, ${it.pts}pts; ${it.dif>=0?'+':''}${it.dif}`;
-    if(it.destacar){
-      const label = it.destacar==='gf' ? 'GF' : 'GV';
-      const valor = it.destacar==='gf' ? it.gf : it.gfVisit;
-      detalle += `; <span style="color:#e8c44a;">${label}: ${valor}</span>`;
+    if(it.criterio){
+      const label = it.criterio==='gf' ? 'GF' : 'GV';
+      const valor = it.criterio==='gf' ? it.gf : it.gfVisit;
+      const color = it.rol==='win' ? (it.criterio==='gfVisit' ? '#e8c44a' : '#4caf50') : '#e57373';
+      detalle += `; <span style="color:${color};">${label}: ${valor}</span>`;
     }
   }
-  return `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${detalle}</span></div>`;
+  // Sin flex-wrap: el nombre se trunca con "..." si hace falta, pero la fila nunca crece de
+  // alto — así todas las filas quedan parejas aunque algunas tengan mucho más detalle.
+  return `<div style="display:flex;align-items:center;gap:.35rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">${it.n}</span><span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${detalle}</span></div>`;
 }
 function _filaMerito(it, pos){
-  return `<tr>
+  return `<tr style="height:40px;">
     <td style="width:26px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
     <td style="padding:.4rem .5rem;font-size:13px;">${_contenidoMerito(it)}</td>
   </tr>`;
@@ -3182,7 +3203,7 @@ function renderTablaMeritoHTML(items){
   const mitad = Math.ceil(items.length/2);
   const izq = items.slice(0, mitad);
   const der = items.slice(mitad);
-  const hayGV = items.some(it=>it.destacar==='gfVisit');
+  const hayGV = items.some(it=>it.criterio==='gfVisit');
   const tablaHTML = (rows, offset) => `<div class="tabla-mini"><table style="width:100%;"><tbody>${rows.map((it,i)=>_filaMerito(it, offset+i+1)).join('')}</tbody></table></div>`;
   return `<div class="merito-2col">
       ${tablaHTML(izq, 0)}
