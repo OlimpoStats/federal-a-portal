@@ -134,34 +134,38 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .bracket-nona-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 /* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
-   (align-items:stretch arriba) y cada .bracket-pair agrupa a los 2 partidos que alimentan al
-   siguiente — el "]" dibujado con bordes conecta el punto medio de cada par con la ronda
-   siguiente, como en cualquier cuadro eliminatorio deportivo. */
-.llave-col{display:flex;flex-direction:column;justify-content:space-around;gap:1rem;}
+   (align-items:stretch arriba). El título NO participa del reparto vertical (si no, con
+   distinta cantidad de tarjetas por columna, el título de cada una quedaba a distinta altura)
+   — solo .llave-col-body (flex:1, el espacio que sobra debajo del título) reparte sus
+   .bracket-pair con space-around, así la Final queda centrada entre las 2 semis y cada
+   .bracket-pair agrupa a los 2 partidos que alimentan a la ronda siguiente — el "]" dibujado
+   con bordes conecta el punto medio de cada par con la ronda siguiente. */
+.llave-col{display:flex;flex-direction:column;}
+.llave-col-body{display:flex;flex-direction:column;justify-content:space-around;gap:1rem;flex:1;}
 .bracket-pair{display:flex;flex-direction:column;justify-content:space-around;gap:.6rem;flex:1;position:relative;}
 .llave-col:not(:last-child) .bracket-pair::after{
   content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:1rem;
   border:1px solid var(--border);border-left:none;border-radius:0 4px 4px 0;
 }
-.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;display:flex;align-items:center;gap:.35rem;}
+.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;gap:.5rem;width:100%;box-sizing:border-box;}
 .llave-card-mini{padding:.4rem .5rem;}
-.llave-eq-simple{display:flex;align-items:center;gap:.25rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
+.llave-eq-simple{display:flex;align-items:center;gap:.35rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
 .llave-eq-simple.pend{color:var(--muted);font-style:italic;}
 .llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
 .llave-eq-simple.llave-solo-escudo{justify-content:center;}
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
-.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
+.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
    ni en mobile ni en desktop. */
-.cruce-merito-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;margin-bottom:.5rem;}
-.cruce-merito-lado{display:flex;align-items:center;gap:.4rem;font-size:13px;flex-wrap:wrap;word-break:break-word;}
-.cruce-merito-lado.pend{color:var(--muted);font-style:italic;}
-.cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:.3rem 0;}
+.cruce-merito-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;}
+.cruce-merito-lado{display:flex;align-items:center;gap:.35rem;font-size:12px;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.cruce-merito-lado.pend{color:var(--muted);font-style:italic;font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;}
+.cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 @media (max-width:900px){
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
@@ -2839,7 +2843,7 @@ function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)
 // Un lado de una llave. soloEscudo=true (usado en "Cuartos — Parcial") muestra nada más
 // que el escudo, más grande — los nombres largos quedaban cortados en la fila angosta.
 function _ladoLlave(equipo, esGanador, conSeed, soloEscudo){
-  if(!equipo) return `<div class="llave-eq-simple pend">A definir</div>`;
+  if(!equipo) return `<div class="llave-eq-simple pend">A Definir</div>`;
   if(soloEscudo){
     return `<div class="llave-eq-simple llave-solo-escudo${esGanador?' llave-gano':''}">${escudoHTML(equipo.n)}</div>`;
   }
@@ -2849,9 +2853,16 @@ function _ladoLlave(equipo, esGanador, conSeed, soloEscudo){
   </div>`;
 }
 
+// Cuando ningún lado está definido todavía, una sola tarjeta "A Definir" centrada en vez de
+// "A Definir vs A Definir" (no aporta nada mostrar el "vs" contra sí mismo).
+function _cardVacia(soloEscudo){
+  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
+}
+
 // Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
 // (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
 function _cardLlave(tie, soloEscudo){
+  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
     ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo)}
@@ -2861,6 +2872,7 @@ function _cardLlave(tie, soloEscudo){
 }
 
 function _cardFinalNonagonal(final){
+  if(!final.equipo1 && !final.equipo2) return _cardVacia();
   return `<div class="llave-card">
     ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false)}
     <div class="llave-vs-sep">vs</div>
@@ -2883,16 +2895,20 @@ function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElI
   const [sf1,sf2] = bracket.semis;
   el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
-      <div class="bracket-pair">${_cardLlave(qf1)}${_cardLlave(qf2)}</div>
-      <div class="bracket-pair">${_cardLlave(qf3)}${_cardLlave(qf4)}</div>
+      <div class="llave-col-body">
+        <div class="bracket-pair">${_cardLlave(qf1)}${_cardLlave(qf2)}</div>
+        <div class="bracket-pair">${_cardLlave(qf3)}${_cardLlave(qf4)}</div>
+      </div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Semifinales</p>
-      <div class="bracket-pair">${_cardLlave(sf1)}${_cardLlave(sf2)}</div>
+      <div class="llave-col-body">
+        <div class="bracket-pair">${_cardLlave(sf1)}${_cardLlave(sf2)}</div>
+      </div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Final</p>
-      ${_cardFinalNonagonal(bracket.final)}
+      <div class="llave-col-body">${_cardFinalNonagonal(bracket.final)}</div>
     </div>`;
 }
 
@@ -3022,16 +3038,15 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
   }
 }
 
-function _etiquetaOrigenCandidato(c){ return `${c.n} (${c.pos}° ${c.origen})`; }
-
-// Lado de un cruce del camino por el segundo ascenso — a diferencia de las llaves del
-// Nonagonal (compactas, solo escudo), acá el contenido puede ser un texto largo (varios
-// candidatos a sorteo), así que va en bloque propio con wrap, no en una fila fija angosta.
+// Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
+// igual densidad que las llaves del Nonagonal. Cuando hay que sortear, el candidato queda
+// solo con el nombre (sin el tag de posición/grupo) y puede pasar a una segunda línea si son
+// varios, pero sin forzar ancho — la fila no crece para los costados, solo para abajo.
 function _ladoCruceMerito(item){
-  if(!item) return `<div class="cruce-merito-lado pend">A definir</div>`;
+  if(!item) return `<div class="cruce-merito-lado pend">A Definir</div>`;
   if(item.tipo==='pendiente') return `<div class="cruce-merito-lado pend">${item.label}</div>`;
-  if(item.tipo==='sorteo') return `<div class="cruce-merito-lado pend">Sorteo: ${item.candidatos.map(_etiquetaOrigenCandidato).join(' / ')}</div>`;
-  return `<div class="cruce-merito-lado">${escudoHTML(item.n,'me')}<span>${item.n}</span></div>`;
+  if(item.tipo==='sorteo') return `<div class="cruce-merito-lado pend">🎲 ${item.candidatos.map(c=>c.n).join(' / ')}</div>`;
+  return `<div class="cruce-merito-lado">${escudoHTML(item.n,'me')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${item.n}</span></div>`;
 }
 function _cardCruceMerito(mejor, peor){
   return `<div class="cruce-merito-card">${_ladoCruceMerito(mejor)}<div class="cruce-merito-vs">vs</div>${_ladoCruceMerito(peor)}</div>`;
@@ -5661,7 +5676,7 @@ function renderTablaMeritoDetalle(elId, items){
     </tr>`;
   }).join('');
   el.innerHTML = `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
-    <colgroup><col style="width:22px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
+    <colgroup><col style="width:30px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
     <thead><tr>
     <th>#</th><th style="text-align:left;">Equipo</th><th>Pts</th><th>DG</th><th title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
   </tr></thead><tbody>${filas}</tbody></table></div>`;
