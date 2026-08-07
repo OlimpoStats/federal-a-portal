@@ -131,15 +131,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
-.bracket-nona-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;align-items:stretch;}
-.bracket-nona-cont.llave-grid-cuartos{grid-template-columns:repeat(4,1fr);gap:.6rem;align-items:start;}
+.bracket-nona-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
-/* las 3 columnas (Cuartos/Semis/Final) quedan de igual altura (align-items:stretch arriba) y
-   cada una reparte sus tarjetas parejo en ese alto — así las 4 de Cuartos quedan "abrazando"
-   verticalmente a las 2 de Semis, y esas a la Final, sugiriendo el árbol del cuadro. */
-.llave-col{display:flex;flex-direction:column;justify-content:space-around;}
-.llave-col>.llave-card{margin-bottom:.4rem;position:relative;}
-.llave-col:not(:last-child)>.llave-card::after{content:'';position:absolute;top:50%;right:-0.75rem;width:0.7rem;height:1px;background:var(--border);}
+/* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
+   (align-items:stretch arriba) y cada .bracket-pair agrupa a los 2 partidos que alimentan al
+   siguiente — el "]" dibujado con bordes conecta el punto medio de cada par con la ronda
+   siguiente, como en cualquier cuadro eliminatorio deportivo. */
+.llave-col{display:flex;flex-direction:column;justify-content:space-around;gap:1rem;}
+.bracket-pair{display:flex;flex-direction:column;justify-content:space-around;gap:.6rem;flex:1;position:relative;}
+.llave-col:not(:last-child) .bracket-pair::after{
+  content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:1rem;
+  border:1px solid var(--border);border-left:none;border-radius:0 4px 4px 0;
+}
 .llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;display:flex;align-items:center;gap:.35rem;}
 .llave-card-mini{padding:.4rem .5rem;}
 .llave-eq-simple{display:flex;align-items:center;gap:.25rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
@@ -161,8 +164,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:.3rem 0;}
 @media (max-width:900px){
   .bracket-nona-cont{grid-template-columns:1fr;}
-  .bracket-nona-cont.llave-grid-cuartos{grid-template-columns:1fr 1fr;}
-  .llave-col:not(:last-child)>.llave-card::after{display:none;}
+  .bracket-pair::after{display:none;}
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
@@ -669,20 +671,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div id="calc-real-tabla-nona-a"></div>
       <div id="calc-real-tabla-nona-b"></div>
     </div>
-    <div class="calc-form-grid" style="margin-bottom:1.2rem;">
+    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
       <div id="calc-real-tabla-rev-a"></div>
       <div id="calc-real-tabla-rev-b"></div>
-    </div>
-    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
-      <div id="calc-real-descenso-a"></div>
-      <div id="calc-real-descenso-b"></div>
     </div>
     <p class="sec" style="color:#fff;">Primer ascenso — cuadro actual</p>
     <div id="calc-real-bracket-nona" class="bracket-nona-cont" style="margin-bottom:1.2rem;"></div>
     <p class="sec" style="color:#fff;">Segundo ascenso — 16vos actuales</p>
-    <div id="calc-real-preview16" style="margin-bottom:.4rem;"></div>
-    <p class="sec" style="color:#fff;">Tabla de Mérito actual</p>
-    <div id="calc-real-tabla-merito" style="margin-bottom:1.5rem;"></div>
+    <div id="calc-real-preview16" class="preview16-cont" style="margin-bottom:1.5rem;"></div>
 
     <p class="sec" style="color:#fff;">Simulá resultados pendientes</p>
     <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes de Segunda Fase y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y los cuadros proyectados.</p>
@@ -2872,31 +2868,27 @@ function _cardFinalNonagonal(final){
   </div>`;
 }
 
+// Siempre arma el cuadro completo de 3 rondas (Cuartos/Semis/Final) con forma de llave real —
+// los cruces sin jugar ya se conocen de antemano (vienen de la posición en el Nonagonal), así
+// que no hace falta esperar a que se resuelvan los cuartos para mostrar la estructura completa;
+// simplemente los lados sin ganador todavía quedan en "A definir".
 function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
   const el = document.getElementById(elId);
   const tituloEl = document.getElementById(tituloElId);
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  // Semis y Final se muestran recién cuando los 4 cuartos ya se jugaron —
-  // hasta entonces solo se ve la llave de Cuartos de Final.
-  const cuartosResueltos = bracket.cuartos.every(c => c.resultado.resuelto);
-
-  if(!cuartosResueltos){
-    if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Primer Ascenso';
-    el.className = 'bracket-nona-cont llave-grid-cuartos';
-    el.innerHTML = bracket.cuartos.map(c => _cardLlave(c, true)).join('');
-    return;
-  }
-
-  if(tituloEl) tituloEl.textContent = 'Fase Campeonato — Nonagonal';
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso — Nonagonal';
   el.className = 'bracket-nona-cont';
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  const [sf1,sf2] = bracket.semis;
   el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
-      ${bracket.cuartos.map(c => _cardLlave(c)).join('')}
+      <div class="bracket-pair">${_cardLlave(qf1)}${_cardLlave(qf2)}</div>
+      <div class="bracket-pair">${_cardLlave(qf3)}${_cardLlave(qf4)}</div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Semifinales</p>
-      ${bracket.semis.map(c => _cardLlave(c)).join('')}
+      <div class="bracket-pair">${_cardLlave(sf1)}${_cardLlave(sf2)}</div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Final</p>
@@ -5615,6 +5607,8 @@ async function cargarPlantelClub(equipoId, clubColor){
 // del primer ascenso y cruces del segundo ascenso, reusando los mismos datos/funciones que la
 // home. _ultimoNonARows/etc. ya están calculados por renderGruposSegundaFase() de la carga
 // general de la página, así que no hace falta recalcular las tablas acá.
+// "Estado actual" = solo ejemplificativo, para orientarse antes de simular — sin descenso ni
+// Tabla de Mérito con detalle (eso queda para lo proyectado, después de Calcular).
 function renderEstadoActualCalc(){
   if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows) return;
   renderTablaSimple('calc-real-tabla-nona-a', _ultimoNonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color);
@@ -5622,11 +5616,8 @@ function renderEstadoActualCalc(){
   renderTablaSimple('calc-real-tabla-rev-a', _ultimoRevARows, 'Reválida A', zonaConfig('Reválida A').color);
   renderTablaSimple('calc-real-tabla-rev-b', _ultimoRevBRows, 'Reválida B', zonaConfig('Reválida B').color);
   const grupos = calcularGruposSegundaFase();
-  renderTablaDescenso('calc-real-descenso-a', grupos.revA, 'Reválida A', 'promedio', 'Tabla de descenso A');
-  renderTablaDescenso('calc-real-descenso-b', grupos.revB, 'Reválida B', 'suma', 'Tabla de descenso B');
   renderBracketNonagonal(grupos, 'calc-real-bracket-nona', 'calc-real-bracket-nona-title');
-  const tablaMerito = renderCruces16vosRoomy('calc-real-preview16', _ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
-  renderTablaMeritoDetalle('calc-real-tabla-merito', tablaMerito);
+  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16', 'calc-real-preview16-leyenda-inexistente');
 }
 
 // Cruces de 16vos "cómodos" para la calculadora (nombre completo + candidatos de sorteo bien
@@ -5645,29 +5636,34 @@ function renderCruces16vosRoomy(elId, nonARows, nonBRows, revARows, revBRows){
 
 // Tabla de Mérito con el detalle de las variables usadas para ordenar: Pts y DG (de la fase de
 // origen — Nonagonal o Reválida) y %C (solo aplica a Reválida, ver ordenarTierRevalida).
+// Ancho fijo + table-layout:fixed en las columnas numéricas para que nunca fuerce scroll
+// lateral (ni con nombres largos ni con varios candidatos a sorteo) — mismo criterio que ya
+// se usó para la columna %C de las tablas de Reválida.
 function renderTablaMeritoDetalle(elId, items){
   const el = document.getElementById(elId);
   if(!el || !items) return;
   const filas = items.map((it,i)=>{
     const pos = i+1;
     if(it.tipo==='sorteo'){
-      const cands = it.candidatos.map(c=>`${c.n} (${c.pos}° ${c.origen})`).join(' / ');
+      const cands = it.candidatos.map(c=>c.n).join(' / ');
       return `<tr>
-        <td style="width:26px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
-        <td colspan="4" style="padding:.35rem .5rem;font-size:12px;color:#e8c44a;">🎲 Sorteo: ${cands}</td>
+        <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+        <td colspan="4" style="padding:.3rem .4rem;font-size:11px;color:#e8c44a;">🎲 Sorteo: ${cands}</td>
       </tr>`;
     }
     const dif = it.dif;
     return `<tr>
-      <td style="width:26px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
-      <td style="padding:.35rem .5rem;"><div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span style="font-size:12px;">${it.n}</span><span style="font-size:9px;color:var(--muted);">${it.pos}° ${it.origen}</span></div></td>
+      <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+      <td style="padding:.3rem .4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><div style="display:flex;align-items:center;gap:.3rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.n}</span></div></td>
       <td style="text-align:center;font-size:12px;font-weight:700;">${it.pts}</td>
       <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};">${dif>0?'+':''}${dif}</td>
-      <td style="text-align:center;font-size:12px;color:var(--muted);">${it.pctC ?? '—'}</td>
+      <td style="text-align:center;font-size:11px;color:var(--muted);white-space:nowrap;">${it.pctC ?? '—'}</td>
     </tr>`;
   }).join('');
-  el.innerHTML = `<div class="tabla-mini"><table style="width:100%;"><thead><tr>
-    <th style="width:26px;">#</th><th style="text-align:left;">Equipo</th><th>Pts</th><th>DG</th><th title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
+  el.innerHTML = `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
+    <colgroup><col style="width:22px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
+    <thead><tr>
+    <th>#</th><th style="text-align:left;">Equipo</th><th>Pts</th><th>DG</th><th title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
   </tr></thead><tbody>${filas}</tbody></table></div>`;
 }
 
