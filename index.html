@@ -191,14 +191,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* max-width: en desktop, sin esto la tarjeta se estira a todo el ancho de su columna (bastante
    ancha) y con nombres cortos deja mucho hueco vacío antes del VS. */
 .espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;width:100%;max-width:360px;box-sizing:border-box;}
-.espejo-lado{display:flex;align-items:center;gap:.55rem;flex:1;min-width:0;font-size:12px;}
+.espejo-lado{display:flex;align-items:center;gap:.35rem;flex:1;min-width:0;font-size:12px;}
 .espejo-lado.espejo-izq{justify-content:flex-start;}
 .espejo-lado.espejo-der{justify-content:flex-end;}
-.espejo-nombre{flex:1;min-width:0;overflow-wrap:break-word;}
+.espejo-lado .me{width:18px;height:18px;}
+.espejo-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .espejo-izq .espejo-nombre{text-align:left;}
 .espejo-pos{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .espejo-vd{color:#e8c44a;text-transform:uppercase;}
-.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .6rem;}
+.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .4rem;}
 @media (max-width:900px){
   .bracket-espejo-cont{grid-template-columns:1fr;}
   .bracket-espejo-centro{display:none;}
