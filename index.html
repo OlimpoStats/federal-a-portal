@@ -122,16 +122,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #archivo-fase1-toggle:hover{opacity:.85;}
 #archivo-fase1-toggle.active{background:var(--accent);color:#111;}
 #archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
-/* botón "ver todos los cruces y tablas" (segundo ascenso) */
-#btn-ver-merito{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem 1.1rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;margin-top:.9rem;}
-#btn-ver-merito:hover{opacity:.85;}
+/* botones "ver detalle de los cruces" (2/3) + "calculalos" (1/3), segundo ascenso */
+#btns-cruces-split{display:flex;gap:.5rem;width:100%;box-sizing:border-box;margin-top:.9rem;}
+#btn-ver-merito,#btn-ir-calc{display:flex;align-items:center;justify-content:center;gap:.4rem;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem .6rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;}
+#btn-ver-merito{flex:2;}
+#btn-ir-calc{flex:1;background:var(--accent);color:#111;}
+#btn-ver-merito:hover,#btn-ir-calc:hover{opacity:.85;}
 /* leyenda de colores */
 .leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
-.bracket-nona-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;align-items:stretch;}
+.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 /* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
    (align-items:stretch arriba). El título NO participa del reparto vertical (si no, con
@@ -166,6 +169,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .cruce-merito-lado{display:flex;align-items:center;gap:.35rem;font-size:12px;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .cruce-merito-lado.pend{color:var(--muted);font-style:italic;font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;}
 .cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
+/* Tabla de Mérito del modal: 1-10 y 11-20 en 2 columnas en desktop (más ancho disponible),
+   apilada en mobile — el modal ya tiene su propio max-width, así que en mobile ambas mitades
+   entran igual de angostas que antes. */
+.merito-2col{display:flex;flex-direction:column;gap:.5rem;}
+@media (min-width:640px){ .merito-2col{flex-direction:row;gap:1rem;} .merito-2col>div{flex:1;min-width:0;} }
 @media (max-width:900px){
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
@@ -759,7 +767,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
           <div id="preview16-cont" class="preview16-cont"></div>
           <div id="preview16-leyenda" class="leyenda-colores"></div>
-          <div id="btn-ver-merito" onclick="abrirModalMerito()">📊 Mirá todos los cruces y tablas</div>
+          <div id="btns-cruces-split">
+            <div id="btn-ver-merito" onclick="abrirModalMerito()">🔍 Detalle de los cruces</div>
+            <div id="btn-ir-calc" onclick="goPage('calculadora')">Calculalos</div>
+          </div>
         </div>
         <div id="revalidas-wrap">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
@@ -2913,6 +2924,16 @@ function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElI
   const bracket = calcBracketNonagonal(grupos);
   if(tituloEl) tituloEl.textContent = 'Primer Ascenso — Nonagonal';
   el.className = 'bracket-nona-cont';
+  // La ronda que ya tiene contenido real (normalmente Cuartos, hasta que se juegue esa llave)
+  // se muestra más ancha que las que todavía son "A Definir" — 3 columnas iguales le achicaban
+  // el lugar a la única que realmente tiene equipos y nombres para mostrar.
+  const conContenido = c => c.some(x => x.mejor || x.peor);
+  const pesoQ = conContenido(bracket.cuartos) ? 2.4 : 1;
+  const pesoS = conContenido(bracket.semis) ? 2.4 : 1;
+  const pesoF = (bracket.final.equipo1 || bracket.final.equipo2) ? 2.4 : 1;
+  // Variable CSS (no grid-template-columns directo): así en mobile sigue ganando el
+  // grid-template-columns:1fr fijo de la media query, sin que este peso dinámico lo pise.
+  el.style.setProperty('--bnc-cols', `${pesoQ}fr ${pesoS}fr ${pesoF}fr`);
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
   el.innerHTML = `<div class="llave-col">
@@ -2988,6 +3009,18 @@ function ordenarTierNonagonal(a, b){
   return 0;
 }
 
+// Qué criterio terminó desempatando a estos 2 (mismo orden de cascada que ordenarTierNonagonal),
+// para poder destacar en la Tabla de Mérito cuándo un equipo avanzó "por goles" (GF o GV) y no
+// simplemente por puntos o diferencia de gol.
+function criterioDecisivoNonagonal(a, b){
+  if(a.pts!==b.pts) return 'pts';
+  const difA=a.gf-a.gc, difB=b.gf-b.gc;
+  if(difA!==difB) return 'dif';
+  if(a.gf!==b.gf) return 'gf';
+  if(a.gfVisit!==b.gfVisit) return 'gfVisit';
+  return null;
+}
+
 // Compara 2 equipos del mismo puesto de clasificación (1° vs 1°, 2° vs 2°...) entre Reválida A
 // y B. La posición DENTRO de cada zona ya viene resuelta de antes (pts→dif.gol→GF del grupo,
 // más el desempate de temporada completa propio de cada zona — promedio para A, suma total
@@ -3009,8 +3042,9 @@ function ordenarTierRevalida(a, b){
 function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   const items = [];
   // Nonagonal no tiene %C (ese criterio es propio de Reválida, para compensar que juega
-  // distinta cantidad de partidos) — queda null para esas filas.
-  const itemNona = (r, pos, origen) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:null});
+  // distinta cantidad de partidos) — queda null para esas filas. destacar: 'gf'|'gfVisit'|null,
+  // solo se marca en el equipo que ganó la comparación gracias a ese criterio puntual.
+  const itemNona = (r, pos, origen, destacar) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, destacar:destacar||null});
   const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:r._pctCLabel});
 
   for(let tier=4; tier<=8; tier++){
@@ -3022,12 +3056,16 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
       const candidatos = [itemNona(a,pos,'Nonagonal A'), itemNona(b,pos,'Nonagonal B')];
       items.push({tipo:'sorteo', candidatos});
       items.push({tipo:'sorteo', candidatos});
-    } else if(cmp<0){
-      items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A')});
-      items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B')});
     } else {
-      items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B')});
-      items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A')});
+      const criterio = criterioDecisivoNonagonal(a, b);
+      const destacar = (criterio==='gf'||criterio==='gfVisit') ? criterio : null;
+      if(cmp<0){
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',destacar)});
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B')});
+      } else {
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',destacar)});
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A')});
+      }
     }
   }
 
@@ -3115,18 +3153,42 @@ function _cardCruceMerito(mejor, peor){
   return `<div class="cruce-merito-card">${_ladoCruceMerito(mejor)}<div class="cruce-merito-vs">vs</div>${_ladoCruceMerito(peor)}</div>`;
 }
 
+// Para las filas de Nonagonal se suma pts y DG de la fase, y si el criterio que lo hizo pasar
+// por delante de su par fue GF o goles como visitante (GV), se destaca ese número en amarillo.
+function _contenidoMerito(it){
+  if(it.tipo==='sorteo'){
+    return `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`;
+  }
+  let detalle = `${it.pos}° ${it.origen}`;
+  if(it.origen && it.origen.startsWith('Nonagonal')){
+    detalle += `, ${it.pts}pts; ${it.dif>=0?'+':''}${it.dif}`;
+    if(it.destacar){
+      const label = it.destacar==='gf' ? 'GF' : 'GV';
+      const valor = it.destacar==='gf' ? it.gf : it.gfVisit;
+      detalle += `; <span style="color:#e8c44a;">${label}: ${valor}</span>`;
+    }
+  }
+  return `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${detalle}</span></div>`;
+}
+function _filaMerito(it, pos){
+  return `<tr>
+    <td style="width:26px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+    <td style="padding:.4rem .5rem;font-size:13px;">${_contenidoMerito(it)}</td>
+  </tr>`;
+}
+// En desktop se parte al medio (1-10 / 11-20) en 2 columnas para aprovechar el ancho del
+// modal; en mobile queda apilado (.merito-2col se encarga vía CSS).
 function renderTablaMeritoHTML(items){
-  const filas = items.map((it,i)=>{
-    const pos = i+1;
-    const contenido = it.tipo==='sorteo'
-      ? `<span style="color:#e8c44a;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`
-      : `<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">${escudoHTML(it.n,'me')}<span>${it.n}</span><span style="font-size:10px;color:var(--muted);">${it.pos}° ${it.origen}</span></div>`;
-    return `<tr>
-      <td style="width:30px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
-      <td style="padding:.4rem .5rem;font-size:13px;">${contenido}</td>
-    </tr>`;
-  }).join('');
-  return `<div class="tabla-mini"><table style="width:100%;"><tbody>${filas}</tbody></table></div>`;
+  const mitad = Math.ceil(items.length/2);
+  const izq = items.slice(0, mitad);
+  const der = items.slice(mitad);
+  const hayGV = items.some(it=>it.destacar==='gfVisit');
+  const tablaHTML = (rows, offset) => `<div class="tabla-mini"><table style="width:100%;"><tbody>${rows.map((it,i)=>_filaMerito(it, offset+i+1)).join('')}</tbody></table></div>`;
+  return `<div class="merito-2col">
+      ${tablaHTML(izq, 0)}
+      ${tablaHTML(der, mitad)}
+    </div>
+    ${hayGV ? `<div style="font-size:11px;color:var(--muted);margin-top:.5rem;"><span style="color:#e8c44a;font-weight:700;">GV</span>: Avanza por los goles como visitante</div>` : ''}`;
 }
 
 function abrirModalMerito(){
@@ -5734,7 +5796,7 @@ function renderTablaMeritoDetalle(elId, items){
     const dif = it.dif;
     return `<tr>
       <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
-      <td style="padding:.3rem .4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><div style="display:flex;align-items:center;gap:.3rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.n}</span></div></td>
+      <td style="padding:.3rem .4rem .3rem .65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><div style="display:flex;align-items:center;gap:.3rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.n}</span></div></td>
       <td style="text-align:center;font-size:12px;font-weight:700;${sep}">${it.pts}</td>
       <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};${sep}">${dif>0?'+':''}${dif}</td>
       <td style="text-align:center;font-size:11px;color:var(--muted);white-space:nowrap;${sep}">${it.pctC ?? '—'}</td>
@@ -5742,8 +5804,10 @@ function renderTablaMeritoDetalle(elId, items){
   }).join('');
   // max-width: en desktop, sin esto la tabla se estira a los 860px del contenedor y deja un
   // hueco enorme entre el nombre del equipo y las columnas numéricas. En mobile no cambia nada
-  // (el contenedor ya es más angosto que el máximo).
-  el.innerHTML = `<div class="tabla-mini"><table style="width:100%;max-width:480px;table-layout:fixed;">
+  // (el contenedor ya es más angosto que el máximo). El wrapper .tabla-mini TAMBIÉN necesita el
+  // mismo max-width — si no, su propio fondo se estira más que la tabla y deja una franja gris
+  // vacía a la derecha.
+  el.innerHTML = `<div class="tabla-mini" style="max-width:480px;"><table style="width:100%;table-layout:fixed;">
     <colgroup><col style="width:30px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
     <thead><tr>
     <th>#</th><th style="text-align:left;">Equipo</th><th style="border-left:1px solid rgba(232,196,74,.22);">Pts</th><th style="border-left:1px solid rgba(232,196,74,.22);">DG</th><th style="border-left:1px solid rgba(232,196,74,.22);" title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
