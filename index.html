@@ -170,6 +170,28 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
 }
+/* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
+   cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
+   semi 1 a la izquierda, 2 del lado de la semi 2 a la derecha, con una línea central tenue
+   sugiriendo que se cruzan más adelante. Todavía sin recuadros de semis/final.
+   Nota: esta clase es propia de este cuadro — no tocar/reusar .llave-* de arriba para no
+   volver a mezclar los dos cuadros por accidente. */
+.bracket-espejo-cont{display:grid;grid-template-columns:1fr auto 1fr;gap:0 1rem;align-items:stretch;}
+.bracket-espejo-lado{display:flex;flex-direction:column;justify-content:space-around;gap:.7rem;}
+.bracket-espejo-centro{width:1px;background:repeating-linear-gradient(to bottom,var(--border) 0 6px,transparent 6px 12px);justify-self:center;}
+.espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;width:100%;box-sizing:border-box;}
+.espejo-lado{display:flex;align-items:center;gap:.4rem;flex:1;min-width:0;font-size:12px;}
+.espejo-lado.espejo-izq{justify-content:flex-start;}
+.espejo-lado.espejo-der{justify-content:flex-end;}
+.espejo-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.espejo-izq .espejo-nombre{text-align:left;}
+.espejo-der .espejo-nombre{text-align:right;}
+.espejo-pos{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
+.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .5rem;}
+@media (max-width:900px){
+  .bracket-espejo-cont{grid-template-columns:1fr;}
+  .bracket-espejo-centro{display:none;}
+}
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
    (home + calculadora), no atada a un id. */
@@ -2834,7 +2856,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
-  renderBracketNonagonal(grupos);
+  renderBracketNonagonalEspejo(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
@@ -2910,6 +2932,47 @@ function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElI
       <p class="llave-col-title">Final</p>
       <div class="llave-col-body">${_cardFinalNonagonal(bracket.final)}</div>
     </div>`;
+}
+
+// ── CUADRO "ESPEJO" DEL NONAGONAL — SOLO PARA LA HOME ──
+// Independiente de renderBracketNonagonal/.llave-* de arriba (que sigue usando la
+// calculadora) para que un ajuste acá no vuelva a filtrarse a la calculadora, ni viceversa.
+
+// pos/escudo/nombre a la izquierda; nombre/escudo/pos a la derecha (espejado), VS centrado.
+function _ladoEspejo(equipo, lado, esGanador){
+  if(!equipo) return `<div class="espejo-lado" style="justify-content:center;color:var(--muted);font-style:italic;">A Definir</div>`;
+  const pos = `<span class="espejo-pos">${_seedLabelLlave(equipo)}</span>`;
+  const esc = escudoHTML(equipo.n,'me');
+  const nom = `<span class="espejo-nombre"${esGanador?' style="color:#4caf50;font-weight:700;"':''}>${equipo.n}</span>`;
+  return lado==='izq'
+    ? `<div class="espejo-lado espejo-izq">${pos}${esc}${nom}</div>`
+    : `<div class="espejo-lado espejo-der">${nom}${esc}${pos}</div>`;
+}
+function _cardEspejo(tie){
+  if(!tie.mejor && !tie.peor){
+    return `<div class="espejo-card"><div class="espejo-lado" style="justify-content:center;color:var(--muted);font-style:italic;">A Definir</div></div>`;
+  }
+  const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
+  return `<div class="espejo-card">
+    ${_ladoEspejo(tie.mejor, 'izq', ganadorEsMejor===true)}
+    <div class="espejo-vs">VS</div>
+    ${_ladoEspejo(tie.peor, 'der', ganadorEsMejor===false)}
+  </div>`;
+}
+
+// 2 cuartos del lado de la Semi 1 a la izquierda, 2 del lado de la Semi 2 a la derecha, con
+// una línea central tenue — sin recuadros de semis/final todavía (se suman más adelante).
+function renderBracketNonagonalEspejo(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
+  const el = document.getElementById(elId);
+  const tituloEl = document.getElementById(tituloElId);
+  if(!el) return;
+  const bracket = calcBracketNonagonal(grupos);
+  if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Primer Ascenso';
+  el.className = 'bracket-espejo-cont';
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  el.innerHTML = `<div class="bracket-espejo-lado">${_cardEspejo(qf1)}${_cardEspejo(qf2)}</div>
+    <div class="bracket-espejo-centro"></div>
+    <div class="bracket-espejo-lado">${_cardEspejo(qf3)}${_cardEspejo(qf4)}</div>`;
 }
 
 // ── MODAL: cruces y tablas del camino por el segundo ascenso ──
@@ -5659,6 +5722,8 @@ function renderTablaMeritoDetalle(elId, items){
   if(!el || !items) return;
   const filas = items.map((it,i)=>{
     const pos = i+1;
+    // Línea tenue entre Pts/DG/%C (border-left) para separarlas visualmente sin ocupar ancho.
+    const sep = 'border-left:1px solid rgba(232,196,74,.22);';
     if(it.tipo==='sorteo'){
       const cands = it.candidatos.map(c=>c.n).join(' / ');
       return `<tr>
@@ -5670,15 +5735,18 @@ function renderTablaMeritoDetalle(elId, items){
     return `<tr>
       <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
       <td style="padding:.3rem .4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><div style="display:flex;align-items:center;gap:.3rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.n}</span></div></td>
-      <td style="text-align:center;font-size:12px;font-weight:700;">${it.pts}</td>
-      <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};">${dif>0?'+':''}${dif}</td>
-      <td style="text-align:center;font-size:11px;color:var(--muted);white-space:nowrap;">${it.pctC ?? '—'}</td>
+      <td style="text-align:center;font-size:12px;font-weight:700;${sep}">${it.pts}</td>
+      <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};${sep}">${dif>0?'+':''}${dif}</td>
+      <td style="text-align:center;font-size:11px;color:var(--muted);white-space:nowrap;${sep}">${it.pctC ?? '—'}</td>
     </tr>`;
   }).join('');
-  el.innerHTML = `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
+  // max-width: en desktop, sin esto la tabla se estira a los 860px del contenedor y deja un
+  // hueco enorme entre el nombre del equipo y las columnas numéricas. En mobile no cambia nada
+  // (el contenedor ya es más angosto que el máximo).
+  el.innerHTML = `<div class="tabla-mini"><table style="width:100%;max-width:480px;table-layout:fixed;">
     <colgroup><col style="width:30px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
     <thead><tr>
-    <th>#</th><th style="text-align:left;">Equipo</th><th>Pts</th><th>DG</th><th title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
+    <th>#</th><th style="text-align:left;">Equipo</th><th style="border-left:1px solid rgba(232,196,74,.22);">Pts</th><th style="border-left:1px solid rgba(232,196,74,.22);">DG</th><th style="border-left:1px solid rgba(232,196,74,.22);" title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
   </tr></thead><tbody>${filas}</tbody></table></div>`;
 }
 
