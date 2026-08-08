@@ -543,10 +543,27 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table tbody tr:hover td:first-child{background:#181818;}
 .plt-table td.plt-nac-col{color:#aaa;}
 .plt-table td.plt-ori-col{color:#888;font-size:11px;}
-.plt-table .plt-stat-hi{font-weight:700;color:#e8e8e8;}
-.plt-table .plt-stat-0{color:#444;}
-.plt-table .plt-gol-hi{color:#ffd54f;font-weight:700;}
-.plt-table .plt-ast-hi{color:#80cbc4;font-weight:700;}
+.plt-table .plt-stat-hi,.jug-cards-wrap .plt-stat-hi{font-weight:700;color:#e8e8e8;}
+.plt-table .plt-stat-0,.jug-cards-wrap .plt-stat-0{color:#444;}
+.plt-table .plt-gol-hi,.jug-cards-wrap .plt-gol-hi{color:#ffd54f;font-weight:700;}
+.plt-table .plt-ast-hi,.jug-cards-wrap .plt-ast-hi{color:#80cbc4;font-weight:700;}
+.plt-desk-only{display:block;}
+.plt-mob-only{display:none;}
+.jug-cards-wrap{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;}
+.jug-card{display:flex;align-items:center;gap:.55rem;padding:.55rem .65rem;border-radius:8px;background:rgba(255,255,255,.03);border-left:3px solid rgba(255,255,255,.15);cursor:pointer;transition:background .15s;}
+.jug-card:active{background:rgba(255,255,255,.08);}
+.jug-card-name{flex:1;min-width:0;display:flex;flex-direction:column;}
+.jug-card-name b{font-size:12.5px;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jug-card-subname{font-size:10px;color:#999;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jug-card-pos{font-size:10px;color:#999;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:10px;flex-shrink:0;white-space:nowrap;}
+.jug-card-stat{display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:24px;}
+.jug-card-stat span{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;line-height:1;}
+.jug-card-stat small{font-size:8.5px;color:#777;text-transform:uppercase;margin-top:1px;}
+.jug-card-arrow{color:#555;font-size:18px;flex-shrink:0;}
+@media(max-width:700px){
+  .plt-desk-only{display:none;}
+  .plt-mob-only{display:flex;}
+}
 .plt-cumple{cursor:default;font-size:14px;}
 .jug-perfil-btn{cursor:pointer;font-size:12px;margin-left:.4rem;opacity:.7;transition:opacity .15s;}
 .jug-perfil-btn:hover{opacity:1;}
@@ -5712,6 +5729,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     const extraShadow=i===0?`;box-shadow:${vShadow}`:'';
     return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')" style="border-bottom-color:${hdrColor}${extraShadow}">${c.label}${arrow}</th>`;
   }).join('');
+  const cards=[];
   const tbody=sorted.map(j=>{
     const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
     const name=j.nombre||j.nombre_display||'—';
@@ -5731,6 +5749,16 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     const nameCell=primerNombre
       ?`<span class="plt-name-desk">${name}${cumpleHtml}${ahoraEnBadge}${perfilBtn}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b>${ahoraEnBadge}${perfilBtn}<br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
       :`${name}${cumpleHtml}${ahoraEnBadge}${perfilBtn}`;
+    cards.push(`<div class="jug-card" style="border-left-color:${clubColor||'rgba(255,255,255,.15)'};" onclick="abrirPerfilJugador(${j.id})">
+      <div class="jug-card-name">
+        <b>${apellidos.toUpperCase()}${cumpleHtml}</b>
+        <span class="jug-card-subname">${primerNombre}${ahoraEnBadge}</span>
+      </div>
+      <div class="jug-card-pos">${j.posicion||'—'}</div>
+      <div class="jug-card-stat"><span>${sv(s.pj)}</span><small>PJ</small></div>
+      <div class="jug-card-stat"><span>${sv(s.gol,'plt-gol-hi')}</span><small>Gol</small></div>
+      <span class="jug-card-arrow">›</span>
+    </div>`);
     return `<tr style="border-bottom:1px solid ${rowColor}">
       <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
       <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
@@ -5751,10 +5779,11 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     </tr>`;
   }).join('');
   cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#ccc;font-size:18px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
-    <div class="plt-table-wrap"><table class="plt-table">
+    <div class="plt-table-wrap plt-desk-only"><table class="plt-table">
       <thead><tr>${thead}</tr></thead>
       <tbody>${tbody}</tbody>
-    </table></div>`;
+    </table></div>
+    <div class="jug-cards-wrap plt-mob-only">${cards.join('')}</div>`;
 }
 
 async function cargarPlantelClub(equipoId, clubColor){
