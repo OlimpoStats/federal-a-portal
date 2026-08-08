@@ -572,10 +572,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .jug-tbl-lv-res.G{color:#7ecb7e;}
 .jug-tbl-lv-res.E{color:#ffd54f;}
 .jug-tbl-lv-res.P{color:#ef9a9a;}
+.jug-stat-0{color:#444;}
+.jug-stat-hi{font-weight:700;color:#e8e8e8;}
+.jug-stat-hi.jug-gol-hi{color:#ffd54f;}
+.jug-stat-hi.jug-ast-hi{color:#64b5f6;}
+.jug-stat-hi.jug-am-hi{color:#ffd54f;}
+.jug-stat-hi.jug-roja-hi{color:#ef9a9a;}
 #jugador-modal{padding:1rem;}
 #jugador-cont{padding:1rem;}
 .jug-bio{font-size:12px;color:#ccc;margin-bottom:1rem;line-height:1.7;}
 .jug-bio b{color:#f0f0f0;font-weight:600;font-size:13px;}
+.jug-transfer-nota{font-size:11.5px;color:#e8c44a;background:rgba(232,196,74,.1);border:1px solid rgba(232,196,74,.25);border-radius:6px;padding:.5rem .65rem;margin-bottom:1rem;line-height:1.4;}
 @media(max-width:700px){
   #jugador-modal{padding:.35rem;}
   #jugador-cont{padding:.65rem .5rem;}
@@ -5752,14 +5759,19 @@ async function cargarPlantelClub(equipoId, clubColor){
   cont.innerHTML = '<div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando plantel…</div>';
   try {
     const jugFields='id,id_federal,nombre,nombre_display,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil';
-    const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut}] = await Promise.all([
+    const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut},{data:transfersIn}] = await Promise.all([
       sb.from('jugadores').select(jugFields).eq('equipo_id',equipoId),
       sb.from('planillas').select(`jugador_id,titular,eventos(tipo,minuto),jug:jugadores(${jugFields})`).eq('equipo_id',equipoId),
       sb.from('transferencias').select('jugador_origen_id,eq_dest:equipos!equipo_destino_id(nombre)').eq('equipo_origen_id',equipoId),
+      sb.from('transferencias').select('jugador_destino_id,eq_orig:equipos!equipo_origen_id(nombre)').eq('equipo_destino_id',equipoId),
     ]);
-    const transferMap={};
+    const transferMap={}; // jugador_id (de ESTE club) → club al que se fue
     (transfersOut||[]).forEach(t=>{
       if(t.jugador_origen_id && t.eq_dest?.nombre) transferMap[t.jugador_origen_id]=t.eq_dest.nombre;
+    });
+    const origenMap={}; // jugador_id (de ESTE club) → club del que vino
+    (transfersIn||[]).forEach(t=>{
+      if(t.jugador_destino_id && t.eq_orig?.nombre) origenMap[t.jugador_destino_id]=t.eq_orig.nombre;
     });
     // Merge: jugadores actuales del club + ex-jugadores con planillas aquí (equipo_id ya cambió)
     const jugMap=new Map();
@@ -5800,7 +5812,7 @@ async function cargarPlantelClub(equipoId, clubColor){
         if(e.tipo==='asistencia') s.ast++;
       });
     });
-    _pltData={jugadores,stats,clubColor:clubColor||null,transferMap,equipoId};
+    _pltData={jugadores,stats,clubColor:clubColor||null,transferMap,origenMap,equipoId};
     _pltSort={col:'nombre',dir:'asc'};
     _renderPlantelTable(cont,jugadores,stats,_pltData.clubColor,transferMap);
     if(_pltCurrentClub) renderPartidosClub(_pltCurrentClub);
@@ -5925,7 +5937,7 @@ async function abrirPerfilJugador(jugadorId){
     </div>`;
 
     const condAbbr = {tit:'TIT', ing:'ING', bnc:'BNC', nc:'NC'};
-    const sv = (v, cls='') => v>0 ? `<span class="plt-stat-hi ${cls}">${v}</span>` : `<span class="plt-stat-0">0</span>`;
+    const sv = (v, cls='') => v>0 ? `<span class="jug-stat-hi ${cls}">${v}</span>` : `<span class="jug-stat-0">0</span>`;
     const tablaHTML = filas.length ? `<div class="jug-tbl-wrap"><table class="jug-tbl">
       <colgroup><col style="width:32px"><col><col style="width:36px"><col style="width:30px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"></colgroup>
       <thead><tr><th>Fecha</th><th style="text-align:left;">Rival</th><th>Cond.</th><th>Min</th><th>⚽</th><th>👟</th><th>🟨</th><th>🟥</th></tr></thead>
@@ -5941,15 +5953,22 @@ async function abrirPerfilJugador(jugadorId){
           </td>
           <td><span class="jug-cond-badge ${f.condClass}">${condAbbr[f.condClass]}</span></td>
           <td>${f.minutos||'—'}</td>
-          <td>${sv(f.goles,'plt-gol-hi')}</td>
-          <td>${sv(f.asist,'plt-ast-hi')}</td>
-          <td>${sv(f.amarillas)}</td>
-          <td>${sv(f.rojas)}</td>
+          <td>${sv(f.goles,'jug-gol-hi')}</td>
+          <td>${sv(f.asist,'jug-ast-hi')}</td>
+          <td>${sv(f.amarillas,'jug-am-hi')}</td>
+          <td>${sv(f.rojas,'jug-roja-hi')}</td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>` : '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin partidos registrados.</div>';
 
-    cont.innerHTML = _jugBioHTML(j) + summaryHTML + tablaHTML;
+    const destClub = _pltData?.transferMap?.[jugadorId];
+    const origClub = _pltData?.origenMap?.[jugadorId];
+    let transferNota = '';
+    if(destClub) transferNota = `Las estadísticas mostradas son solo por su paso por ${equipoNombre} — actualmente juega en ${destClub}.`;
+    else if(origClub) transferNota = `Las estadísticas mostradas son solo por su paso por ${equipoNombre} — antes jugó en ${origClub}.`;
+    const transferNotaHTML = transferNota ? `<div class="jug-transfer-nota">🔀 ${transferNota}</div>` : '';
+
+    cont.innerHTML = _jugBioHTML(j) + transferNotaHTML + summaryHTML + tablaHTML;
   } catch(e){
     cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">Error al cargar los datos del jugador.</div>';
   }
