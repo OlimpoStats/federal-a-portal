@@ -5374,6 +5374,25 @@ function _setSelect(id, value){
   if(!matched) el.options[0].selected = true;
 }
 
+// fecha_nacimiento se guarda siempre como texto DD/MM/AAAA (así llega del Excel y así la
+// leen todas las funciones del sitio público: _pltEdad/_pltFmtFecha/_fnToISO). El <input
+// type="date"> del navegador solo entiende/devuelve AAAA-MM-DD, así que hay que convertir
+// en los dos sentidos al mostrarlo y al guardarlo — si no, quedaba pisado en formato ISO.
+function _fnacToInputDate(fn){
+  if(!fn) return "";
+  const m = String(fn).trim().match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if(!m) return ""; // ya viene en otro formato raro — no forzar nada, mejor vacío que corromper
+  const [,dd,mm,yyyy] = m;
+  return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+}
+function _inputDateToFnac(v){
+  if(!v) return null;
+  const m = String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return v; // no debería pasar (el input ya fuerza ISO), fallback defensivo
+  const [,yyyy,mm,dd] = m;
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 async function abrirEditJugador(id){
   const modal = document.getElementById("jug-modal");
   modal.style.display = "flex";
@@ -5398,7 +5417,7 @@ async function abrirEditJugador(id){
   document.getElementById("jug-edit-display").value = j.nombre_display ?? "";
   _setSelect("jug-edit-posicion", j.posicion);
   _setSelect("jug-edit-pierna", j.pierna_habil);
-  document.getElementById("jug-edit-fnac").value = j.fecha_nacimiento ? j.fecha_nacimiento.slice(0, 10) : "";
+  document.getElementById("jug-edit-fnac").value = _fnacToInputDate(j.fecha_nacimiento);
   document.getElementById("jug-edit-lugar").value = j.lugar_nacimiento ?? "";
   document.getElementById("jug-edit-altura").value = j.altura_m ?? "";
   document.getElementById("jug-edit-peso").value = j.peso_kg ?? "";
@@ -5441,7 +5460,7 @@ async function sincronizarConTraspaso(){
   const campos = {
     posicion:          document.getElementById("jug-edit-posicion")?.value||null,
     pierna_habil:      document.getElementById("jug-edit-pierna")?.value||null,
-    fecha_nacimiento:  document.getElementById("jug-edit-fnac")?.value||null,
+    fecha_nacimiento:  _inputDateToFnac(document.getElementById("jug-edit-fnac")?.value)||null,
     lugar_nacimiento:  document.getElementById("jug-edit-lugar")?.value.trim()||null,
     altura_m:          parseFloat(document.getElementById("jug-edit-altura")?.value)||null,
     peso_kg:           parseFloat(document.getElementById("jug-edit-peso")?.value)||null,
@@ -5479,7 +5498,7 @@ async function guardarJugador(){
   const equipo_id = equipoNombre ? (EQUIPOS_ID_MAP[equipoNombre] || null) : (orig.equipo_id || null);
   const posicion = document.getElementById("jug-edit-posicion").value || orig.posicion || null;
   const pierna_habil = document.getElementById("jug-edit-pierna").value || orig.pierna_habil || null;
-  const fecha_nacimiento = document.getElementById("jug-edit-fnac").value || orig.fecha_nacimiento || null;
+  const fecha_nacimiento = _inputDateToFnac(document.getElementById("jug-edit-fnac").value) || orig.fecha_nacimiento || null;
   const lugar_nacimiento = document.getElementById("jug-edit-lugar").value.trim() || orig.lugar_nacimiento || null;
   const alturaVal = document.getElementById("jug-edit-altura").value;
   const altura_m = alturaVal ? parseFloat(alturaVal) : (orig.altura_m ?? null);
