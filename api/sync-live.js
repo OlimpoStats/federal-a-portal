@@ -215,7 +215,28 @@ module.exports = async (req, res) => {
         const html = await resp.text();
         const finished = isFinished(html);
         const live = !finished && isLive(html);
-        const implicitFinished = !live && !finished && fx.estado === 'en_curso';
+        const ambiguous = !live && !finished && fx.estado === 'en_curso';
+
+        // When closing a match, preserve existing goal/card data if FotMob returns
+        // fewer events than we already have (FT is sometimes reported before events load)
+        let existingMa = {};
+        try { existingMa = JSON.parse(fx.minuto_actual || '{}'); } catch(e) {}
+
+        // A single failed live-detection can just be a flaky/blocked scrape (FotMob
+        // layout hiccup, rate limit, etc.), not necessarily the match actually ending.
+        // Require MAX_MISSES consecutive ambiguous reads in a row before treating it
+        // as implicitly finished, so a transient failure doesn't wrongly close a live
+        // match and get it permanently skipped (estado:'jugado' rows are never re-checked).
+        const MAX_MISSES = 3;
+        if (ambiguous) {
+          const misses = (existingMa.mc || 0) + 1;
+          if (misses < MAX_MISSES) {
+            const res = await sbPatch(fx.id, { minuto_actual: JSON.stringify({ ...existingMa, mc: misses }) });
+            results.push({ id: fx.id, ambiguous: true, misses, updated: res.ok });
+            continue;
+          }
+        }
+        const implicitFinished = ambiguous && (existingMa.mc || 0) + 1 >= MAX_MISSES;
 
         if (!live && !implicitFinished && !finished) {
           results.push({ id: fx.id, skip: 'not live' });
@@ -229,10 +250,6 @@ module.exports = async (req, res) => {
         const { rojasLocal, rojasVisit } = eventos;
         const minuto = live ? parseMinuto(html) : null;
 
-        // When closing a match, preserve existing goal/card data if FotMob returns
-        // fewer events than we already have (FT is sometimes reported before events load)
-        let existingMa = {};
-        try { existingMa = JSON.parse(fx.minuto_actual || '{}'); } catch(e) {}
         const isClosing = finished || implicitFinished;
         const newGl = eventos.golesLocal.map(g => ({n: g.nombre, t: g.min}));
         const newGv = eventos.golesVisit.map(g => ({n: g.nombre, t: g.min}));
