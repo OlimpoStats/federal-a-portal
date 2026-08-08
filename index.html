@@ -1083,7 +1083,13 @@ async function cargarPartidosDesdeDB(){
           match.gl = p.goles_local;
           match.gv = p.goles_visitante;
         }
-        if(p.estado && !(match.estado === 'jugado' && p.estado === 'en_curso')) match.estado = p.estado;
+        // Antes bloqueaba volver a 'en_curso' si el cliente ya había visto 'jugado' (para evitar
+        // que un partido terminado parpadeara como en vivo por reprocesamientos del cron viejo).
+        // Ya no hace falta: sync-live.js excluye 'jugado' a nivel de base, así que ese estado ya
+        // no flip-flopea solo — y este guard del lado del cliente terminaba trabando para siempre
+        // a cualquier pestaña que hubiera quedado con el estado viejo cacheado (ej. un partido que
+        // se cerró mal por un bug y después se corrige a mano en la base, como pasó hoy).
+        if(p.estado) match.estado = p.estado;
         if(p.fotmob_url) match.fotmob_url = p.fotmob_url;
         if(p.minuto_actual && match.estado !== 'jugado') match.minuto_actual = p.minuto_actual;
         if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
