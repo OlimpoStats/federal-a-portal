@@ -154,7 +154,10 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Missing env vars' });
 
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    // Fecha de Argentina (UTC-3), no UTC: usar la fecha del servidor rompía todo
+    // pasadas las 21hs ART (ya es medianoche UTC del día siguiente) y cerraba/reseteaba
+    // partidos que en Argentina todavía estaban en curso.
+    const today = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     // Close any en_curso fixtures from previous days in one bulk UPDATE
     const staleResult = await sbCloseStale(today);
@@ -207,7 +210,7 @@ module.exports = async (req, res) => {
             'Accept-Language': 'es-AR,es;q=0.9',
             'Cache-Control': 'no-cache'
           },
-          signal: AbortSignal.timeout(12000)
+          signal: AbortSignal.timeout(8000)
         });
 
         if (!resp.ok) { results.push({ id: fx.id, error: `HTTP ${resp.status}` }); continue; }
