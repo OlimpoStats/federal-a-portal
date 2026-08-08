@@ -3372,17 +3372,23 @@ function renderPartidos2(f){
     });
   });
 
+  // Prioridad dentro del día: en vivo primero, después los que todavía no arrancaron
+  // (por hora), y al final los ya finalizados. Antes un partido en vivo (que ya tiene
+  // gl/gv cargados aunque sea 0-0) se trataba igual que uno finalizado y quedaba al
+  // fondo — justo lo opuesto de lo que se quiere ver mientras se está jugando.
+  const prioridadFila = m => m.estado==="en_curso" ? 0 : (m.gl===null ? 1 : 2);
   rows.sort((a,b)=>{
     // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
-    // Por hora — solo mientras el partido no se jugó todavía. Una vez jugado (o si nunca
-    // se programó), se ordena por grupo, igual que los partidos sin programar.
-    const ha = a.m.gl===null ? horaOrden(a.meta.hora) : 9999;
-    const hb = b.m.gl===null ? horaOrden(b.meta.hora) : 9999;
-    const kh = ha - hb;
-    if(kh !== 0) return kh;
+    const pa = prioridadFila(a.m), pb = prioridadFila(b.m);
+    if(pa !== pb) return pa - pb;
+    // Por hora — solo entre los que todavía no arrancaron
+    if(pa === 1){
+      const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+      if(kh !== 0) return kh;
+    }
     // Por grupo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
     return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
   });

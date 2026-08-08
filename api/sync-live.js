@@ -181,7 +181,9 @@ module.exports = async (req, res) => {
     if (!needsProcessing) return res.status(200).json({ ok: true, message: 'No matches active yet', today, stale: staleResult });
 
     const results = [];
+    const toCheck = [];
 
+    // Pase rápido, sin red: cerrar lo que ya está resuelto sin necesidad de tocar FotMob.
     for (const fx of fixtures) {
       if (fx.estado === 'jugado') { results.push({ id: fx.id, skip: 'jugado' }); continue; }
 
@@ -199,6 +201,20 @@ module.exports = async (req, res) => {
         continue;
       }
 
+      toCheck.push(fx);
+    }
+
+    // Chequeo real contra FotMob para lo que sigue en pie. Un partido por vez con una
+    // pausa de 500ms entre cada uno tardaba demasiado apenas había varios partidos
+    // simultáneos (ej. los 4 grupos de la Segunda Fase jugando el mismo horario): con
+    // 15 partidos por delante, en el peor caso (8s de timeout c/u) esto superaba
+    // ampliamente el maxDuration de la función y la cortaba a mitad de la lista, dejando
+    // partidos en vivo sin actualizar hasta la próxima corrida. Se procesan en tandas
+    // de CONCURRENCY en paralelo — la pausa de 500ms queda entre tandas, no entre cada
+    // partido, para seguir sin bombardear FotMob de golpe.
+    const CONCURRENCY = 5;
+
+    async function checkFixture(fx) {
       try {
         const baseUrl = fx.fotmob_url.split('#')[0];
         const url = baseUrl + '?_=' + Date.now();
@@ -213,7 +229,7 @@ module.exports = async (req, res) => {
           signal: AbortSignal.timeout(8000)
         });
 
-        if (!resp.ok) { results.push({ id: fx.id, error: `HTTP ${resp.status}` }); continue; }
+        if (!resp.ok) return { id: fx.id, error: `HTTP ${resp.status}` };
 
         const html = await resp.text();
         const finished = isFinished(html);
@@ -234,20 +250,18 @@ module.exports = async (req, res) => {
         if (ambiguous) {
           const misses = (existingMa.mc || 0) + 1;
           if (misses < MAX_MISSES) {
-            const res = await sbPatch(fx.id, { minuto_actual: JSON.stringify({ ...existingMa, mc: misses }) });
-            results.push({ id: fx.id, ambiguous: true, misses, updated: res.ok });
-            continue;
+            const r = await sbPatch(fx.id, { minuto_actual: JSON.stringify({ ...existingMa, mc: misses }) });
+            return { id: fx.id, ambiguous: true, misses, updated: r.ok };
           }
         }
         const implicitFinished = ambiguous && (existingMa.mc || 0) + 1 >= MAX_MISSES;
 
         if (!live && !implicitFinished && !finished) {
-          results.push({ id: fx.id, skip: 'not live' });
-          continue;
+          return { id: fx.id, skip: 'not live' };
         }
 
         const score = parseScore(html);
-        if (!score && !implicitFinished) { results.push({ id: fx.id, error: 'no score', live, finished }); continue; }
+        if (!score && !implicitFinished) return { id: fx.id, error: 'no score', live, finished };
 
         const eventos = parseFotmobEventos(html);
         const { rojasLocal, rojasVisit } = eventos;
@@ -273,27 +287,31 @@ module.exports = async (req, res) => {
         if (implicitFinished) {
           const patch = { estado: 'jugado', minuto_actual: eventData };
           if (score) { patch.goles_local = score.local; patch.goles_visitante = score.visitante; }
-          const res = await sbPatch(fx.id, patch);
-          results.push({ id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: res.ok, rows: res.rows });
-          continue;
+          const r = await sbPatch(fx.id, patch);
+          return { id: fx.id, implicitFinished: true, score: score ? `${score.local}-${score.visitante}` : 'no-score', updated: r.ok, rows: r.rows };
         }
 
         const upd = { goles_local: score.local, goles_visitante: score.visitante };
         if (finished) { upd.estado = 'jugado'; upd.minuto_actual = eventData; }
         else { upd.estado = 'en_curso'; upd.minuto_actual = eventData; }
 
-        const res = await sbPatch(fx.id, upd);
-        results.push({
-          id: fx.id, updated: res.ok, rows: res.rows,
+        const r = await sbPatch(fx.id, upd);
+        return {
+          id: fx.id, updated: r.ok, rows: r.rows,
           score: `${score.local}-${score.visitante}`,
           minuto, rojasLocal, rojasVisit,
           golesLocal: eventos.golesLocal.length,
           golesVisit: eventos.golesVisit.length,
           estado: upd.estado
-        });
+        };
+      } catch(e) { return { id: fx.id, error: e.message }; }
+    }
 
-        await new Promise(r => setTimeout(r, 500));
-      } catch(e) { results.push({ id: fx.id, error: e.message }); }
+    for (let i = 0; i < toCheck.length; i += CONCURRENCY) {
+      const batch = toCheck.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(batch.map(checkFixture));
+      results.push(...batchResults);
+      if (i + CONCURRENCY < toCheck.length) await new Promise(r => setTimeout(r, 500));
     }
 
     return res.status(200).json({ ok: true, synced: fixtures.length, results, ts: new Date().toISOString() });
