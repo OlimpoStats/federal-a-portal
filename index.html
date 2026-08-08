@@ -1483,8 +1483,8 @@ function resolverLlaveIdaVuelta(ida, vuelta){
 // si hay resultados cargados en PLAYOFF_NONA, resuelve quién avanza en cada instancia.
 function calcBracketNonagonal(datos){
   const d = datos || calcularGruposSegundaFase();
-  const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortPorPromedio);
-  const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortNonagonal);
+  const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortNonagonal);
   const rowsPorZona = {'Nonagonal A': nonARows, 'Nonagonal B': nonBRows};
   const equipoDe = (zona,pos) => {
     const r = rowsPorZona[zona][pos-1];
@@ -2595,17 +2595,18 @@ function calcTablaGrupo(grupo){
   const eq = {};
   for(let f=1; f<=9; f++){
     (FIXTURE[grupo]?.[String(f)]||[]).forEach(m=>{
-      [m.local, m.visitante].forEach(e=>{ if(!eq[e]) eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; });
+      [m.local, m.visitante].forEach(e=>{ if(!eq[e]) eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,gfVisit:0}; });
       if(m.gl===null) return;
       eq[m.local].pj++; eq[m.visitante].pj++;
       eq[m.local].gf+=m.gl; eq[m.local].gc+=m.gv;
       eq[m.visitante].gf+=m.gv; eq[m.visitante].gc+=m.gl;
+      eq[m.visitante].gfVisit+=m.gv;
       if(m.gl>m.gv){ eq[m.local].g++; eq[m.local].pts+=3; eq[m.visitante].p++; }
       else if(m.gl<m.gv){ eq[m.visitante].g++; eq[m.visitante].pts+=3; eq[m.local].p++; }
       else{ eq[m.local].e++; eq[m.visitante].e++; eq[m.local].pts++; eq[m.visitante].pts++; }
     });
   }
-  return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts} }
+  return eq; // { nombreEquipo: {pj,g,e,p,gf,gc,pts,gfVisit} }
 }
 
 // Combina el plantel (con su Pts/PJ de Primera Fase ya cargados por calcularGruposSegundaFase)
@@ -2614,10 +2615,11 @@ function calcTablaGrupo(grupo){
 function armarFilasTemporada(roster, grupo){
   const stats = calcTablaGrupo(grupo);
   return roster.map(r => {
-    const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};
+    const s = stats[r.n] || {pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,gfVisit:0};
     return {
       n: r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false,
-      pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts,
+      pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts, gfVisit: s.gfVisit||0,
+      ptsFase1: r.pts||0,
       _tempPts: (r.pts||0) + s.pts,
       _tempPj: (r.pj||0) + s.pj,
     };
@@ -2709,20 +2711,22 @@ function aplicarDescensoAGrupo(rows, descensoMap){
 }
 
 // Orden de las 4 tablas de grupo: 1° puntos del grupo, 2° dif. de gol del grupo, 3° GF del grupo,
-// y recién ahí el criterio de temporada completa que distingue cada Nonagonal/Reválida.
+// y recién ahí el criterio que distingue Nonagonal de Reválida.
 const baseSortGrupo = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
-// Desempate por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
+// Nonagonal A y B: ...GF, goles de visitante en el Nonagonal, puntos de Primera Fase (no de
+// toda la temporada), sorteo.
+const sortNonagonal = (a,b) => baseSortGrupo(a,b) || (b.gfVisit-a.gfVisit) || (b.ptsFase1-a.ptsFase1);
+// Reválida A y B: ...GF, promedio de puntos por partido de toda la temporada (Reválida + Primera
+// Fase combinadas), sorteo.
 const sortPorPromedio = (a,b) => baseSortGrupo(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
-// Desempate por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
-const sortPorSumaTotal = (a,b) => baseSortGrupo(a,b) || (b._tempPts-a._tempPts);
 
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
 
-  const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
-  const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortNonagonal);
+  const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortNonagonal);
   const revARows = armarFilasTemporada(datos.revA, 'Reválida A').sort(sortPorPromedio);
-  const revBRows = armarFilasTemporada(datos.revB, 'Reválida B').sort(sortPorSumaTotal);
+  const revBRows = armarFilasTemporada(datos.revB, 'Reválida B').sort(sortPorPromedio);
 
   // Cruce con la tabla de descenso (temporada completa) — un equipo en zona de descenso no
   // clasifica de Reválida aunque su posición en el grupo diga lo contrario.
@@ -2861,23 +2865,21 @@ function renderPartidos2(f){
     });
   });
 
-  // Prioridad dentro del día: en vivo primero, después los que todavía no arrancaron
-  // (por hora), y al final los ya finalizados. Antes un partido en vivo (que ya tiene
-  // gl/gv cargados aunque sea 0-0) se trataba igual que uno finalizado y quedaba al
-  // fondo — justo lo opuesto de lo que se quiere ver mientras se está jugando.
-  const prioridadFila = m => m.estado==="en_curso" ? 0 : (m.gl===null ? 1 : 2);
+  // Orden: sin programar (sin día/hora) → por grupo. Programados → día, hora, grupo,
+  // siempre por la hora REAL de partido, sea que ya arrancó, esté en vivo o haya
+  // terminado — el horario queda "fijo" una vez programado. Así, entrando a las 19,
+  // los partidos de las 14 (ya jugados) quedan arriba, los que se están jugando después,
+  // y los que faltan arrancar al fondo, todo en el mismo orden cronológico. (Antes un
+  // partido con resultado cargado —en vivo o terminado— ignoraba su hora real y usaba
+  // un valor fijo, rompiendo ese orden.)
   rows.sort((a,b)=>{
     // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
-    const pa = prioridadFila(a.m), pb = prioridadFila(b.m);
-    if(pa !== pb) return pa - pb;
-    // Por hora — solo entre los que todavía no arrancaron
-    if(pa === 1){
-      const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
-      if(kh !== 0) return kh;
-    }
+    // Por hora real programada
+    const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
+    if(kh !== 0) return kh;
     // Por grupo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
     return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
   });
