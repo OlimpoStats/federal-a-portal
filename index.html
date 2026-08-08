@@ -1618,8 +1618,8 @@ function resolverLlaveIdaVuelta(ida, vuelta){
 // si hay resultados cargados en PLAYOFF_NONA, resuelve quién avanza en cada instancia.
 function calcBracketNonagonal(datos){
   const d = datos || calcularGruposSegundaFase();
-  const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortPorPromedio);
-  const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortNonagonal);
+  const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortNonagonal);
   const rowsPorZona = {'Nonagonal A': nonARows, 'Nonagonal B': nonBRows};
   const equipoDe = (zona,pos) => {
     const r = rowsPorZona[zona][pos-1];
@@ -2754,6 +2754,7 @@ function armarFilasTemporada(roster, grupo){
     return {
       n: r.n, _quinto:r._quinto||false, _topQuinto:r._topQuinto||false, _tied:r._tied||false,
       pj: s.pj, g: s.g, e: s.e, p: s.p, gf: s.gf, gc: s.gc, pts: s.pts, gfVisit: s.gfVisit||0,
+      ptsFase1: r.pts||0,
       _tempPts: (r.pts||0) + s.pts,
       _tempPj: (r.pj||0) + s.pj,
     };
@@ -2885,12 +2886,14 @@ function aplicarDescensoAGrupo(rows, descensoMap){
 }
 
 // Orden de las 4 tablas de grupo: 1° puntos del grupo, 2° dif. de gol del grupo, 3° GF del grupo,
-// y recién ahí el criterio de temporada completa que distingue cada Nonagonal/Reválida.
+// y recién ahí el criterio que distingue Nonagonal de Reválida.
 const baseSortGrupo = (a,b) => b.pts-a.pts || (b.gf-b.gc)-(a.gf-a.gc) || b.gf-a.gf;
-// Desempate por promedio de puntos por partido de toda la temporada (Nonagonal A / Reválida A)
+// Nonagonal A y B: ...GF, goles de visitante en el Nonagonal, puntos de Primera Fase (no de
+// toda la temporada), sorteo.
+const sortNonagonal = (a,b) => baseSortGrupo(a,b) || (b.gfVisit-a.gfVisit) || (b.ptsFase1-a.ptsFase1);
+// Reválida A y B: ...GF, promedio de puntos por partido de toda la temporada (Reválida + Primera
+// Fase combinadas), sorteo.
 const sortPorPromedio = (a,b) => baseSortGrupo(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
-// Desempate por suma total de puntos de toda la temporada (Nonagonal B / Reválida B)
-const sortPorSumaTotal = (a,b) => baseSortGrupo(a,b) || (b._tempPts-a._tempPts);
 
 // Últimas filas calculadas de los 4 grupos — el modal de "cruces y tablas" del segundo ascenso
 // las lee de acá en vez de recalcular todo de nuevo.
@@ -2899,10 +2902,10 @@ let _ultimoNonARows = null, _ultimoNonBRows = null, _ultimoRevARows = null, _ult
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
 
-  const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortPorPromedio);
-  const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+  const nonARows = armarFilasTemporada(datos.nonA, 'Nonagonal A').sort(sortNonagonal);
+  const nonBRows = armarFilasTemporada(datos.nonB, 'Nonagonal B').sort(sortNonagonal);
   const revARows = armarFilasTemporada(datos.revA, 'Reválida A').sort(sortPorPromedio);
-  const revBRows = armarFilasTemporada(datos.revB, 'Reválida B').sort(sortPorSumaTotal);
+  const revBRows = armarFilasTemporada(datos.revB, 'Reválida B').sort(sortPorPromedio);
 
   // Cruce con la tabla de descenso (temporada completa) — un equipo en zona de descenso no
   // clasifica de Reválida aunque su posición en el grupo diga lo contrario.
@@ -6180,10 +6183,10 @@ function calcularProyeccion(){
   // calcTablaGrupo), así que hay que renderizarlos mientras el reemplazo sigue activo.
   conFixtureHipotetico(fx, () => {
     const grupos = calcularGruposSegundaFase();
-    const nonARows = armarFilasTemporada(grupos.nonA, 'Nonagonal A').sort(sortPorPromedio);
-    const nonBRows = armarFilasTemporada(grupos.nonB, 'Nonagonal B').sort(sortPorSumaTotal);
+    const nonARows = armarFilasTemporada(grupos.nonA, 'Nonagonal A').sort(sortNonagonal);
+    const nonBRows = armarFilasTemporada(grupos.nonB, 'Nonagonal B').sort(sortNonagonal);
     const revARows = armarFilasTemporada(grupos.revA, 'Reválida A').sort(sortPorPromedio);
-    const revBRows = armarFilasTemporada(grupos.revB, 'Reválida B').sort(sortPorSumaTotal);
+    const revBRows = armarFilasTemporada(grupos.revB, 'Reválida B').sort(sortPorPromedio);
 
     const descA = calcDescensoInfo(grupos.revA, 'Reválida A', 'promedio');
     const dMapA = {}; descA.forEach(r=>{ dMapA[r.n] = r._danger; });
