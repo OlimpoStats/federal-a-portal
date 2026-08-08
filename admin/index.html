@@ -839,6 +839,14 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Fecha de origen</label>
               <input id="sanc-fecha-origen" type="number" min="1" max="18" placeholder="Nº de fecha" style="width:100%;">
             </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:3px;">Zona</label>
+              <select id="sanc-zona" style="width:100%;">
+                <option value="">— Zona —</option>
+                <option>Zona A</option><option>Zona B</option><option>Zona C</option><option>Zona D</option>
+                <option>Nonagonal A</option><option>Nonagonal B</option><option>Reválida A</option><option>Reválida B</option>
+              </select>
+            </div>
           </div>
           <button class="btn btn-primary" onclick="agregarSancion()">💾 Guardar sanción</button>
         </div>
@@ -5764,6 +5772,18 @@ async function importarPlantelExcel(){
 
 // ── SANCIONADOS ──────────────────────────────────────────────────────────────
 
+// La Segunda Fase (Nonagonal/Reválida) reinicia su numeración de fechas en 1, así que un
+// fecha=1 de esa fase no puede compararse directo contra un fecha=18 de Primera Fase.
+// zona=null (sanciones viejas anteriores a la Segunda Fase) → se asume Primera Fase.
+const _ZONAS_SEGUNDA_FASE = ['Nonagonal A','Nonagonal B','Reválida A','Reválida B'];
+function faseRankZona(z){ return _ZONAS_SEGUNDA_FASE.includes(z) ? 1 : 0; }
+function fechaAbsolutaZona(zona, fecha){
+  const f = Number(fecha) || 0;
+  if(!f) return 0;
+  const rank = zona ? faseRankZona(zona) : 0;
+  return rank*1000 + f;
+}
+
 async function cargarSancionados(){
   document.getElementById('sanc-activas-cont').innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Cargando...</div>';
 
@@ -5784,7 +5804,7 @@ async function cargarSancionados(){
   let allSancForCheck = [], sancPage = 0;
   while(true){
     const {data} = await sb.from('sanciones')
-      .select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo')
+      .select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo,zona')
       .range(sancPage * 1000, (sancPage + 1) * 1000 - 1);
     if(!data || data.length === 0) break;
     allSancForCheck = allSancForCheck.concat(data);
@@ -5792,7 +5812,7 @@ async function cargarSancionados(){
     sancPage++;
   }
   const {data: playedPartidos} = await sb.from('partidos')
-    .select('fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null);
+    .select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null);
 
   if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
@@ -5808,12 +5828,12 @@ async function cargarSancionados(){
   // 1. partidos jugados (goles_local no nulo), 2. partidos con eventos de tarjeta, 3. fecha_origen de sanciones
   const maxFechaJugada = Math.max(
     0,
-    ...(playedPartidos||[]).map(p => Number(p.fecha) || 0),
-    ...Object.values(partidoMap).map(p => Number(p.fecha) || 0),
-    ...(allSancForCheck||[]).map(s => Number(s.fecha_origen) || 0)
+    ...(playedPartidos||[]).map(p => fechaAbsolutaZona(p.zona, p.fecha)),
+    ...Object.values(partidoMap).map(p => fechaAbsolutaZona(p.zona, p.fecha)),
+    ...(allSancForCheck||[]).map(s => fechaAbsolutaZona(s.zona, s.fecha_origen))
   );
   const isServed = s => {
-    const fo = Number(s.fecha_origen);
+    const fo = fechaAbsolutaZona(s.zona, s.fecha_origen);
     if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo
     return maxFechaJugada >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
   };
@@ -5841,10 +5861,12 @@ async function cargarSancionados(){
   }
 
   // Build existing-keys set to avoid duplicates
+  // (incluye zona: la Segunda Fase reinicia fecha en 1, un fecha=1 de Nonagonal no es
+  // la misma sanción que un fecha=1 de Zona A — sin esto se pisaban entre fases)
   const existingKeys = new Set();
   (allSancForCheck||[]).forEach(s => {
-    if(s.jugador_id) existingKeys.add(`${s.jugador_id}|${s.fecha_origen||0}`);
-    existingKeys.add(`${s.jugador_nombre}|${s.equipo}|${s.fecha_origen||0}`);
+    if(s.jugador_id) existingKeys.add(`${s.jugador_id}|${s.zona||''}|${s.fecha_origen||0}`);
+    existingKeys.add(`${s.jugador_nombre}|${s.equipo}|${s.zona||''}|${s.fecha_origen||0}`);
   });
 
   // Auto-create sanciones for expulsados not yet in DB
@@ -5859,12 +5881,13 @@ async function cargarSancionados(){
     const eq = pl.equipos.nombre || '';
     const p = partidoMap[pl.partido_id] || {};
     const fo = p.fecha || null;
+    const zo = p.zona || null;
     if(!fo) continue; // sin fecha de partido no se puede trackear
-    const key = `${jId}|${fo}`;
-    const legacyKey = `${jNom}|${eq}|${fo}`;
+    const key = `${jId}|${zo||''}|${fo}`;
+    const legacyKey = `${jNom}|${eq}|${zo||''}|${fo}`;
     if(existingKeys.has(key) || existingKeys.has(legacyKey) || seenInBatch.has(key)) continue;
-    const estadoInicial = isServed({fecha_origen: fo, partidos_sancion: 0}) ? 'cumplida' : 'pendiente';
-    toCreate.push({ jugador_id: jId, jugador_nombre: jNom, equipo: eq, tipo: 'roja',
+    const estadoInicial = isServed({fecha_origen: fo, zona: zo, partidos_sancion: 0}) ? 'cumplida' : 'pendiente';
+    toCreate.push({ jugador_id: jId, jugador_nombre: jNom, equipo: eq, tipo: 'roja', zona: zo,
       partidos_sancion: 0, motivo: ev.tipo==='doble_amarilla'?'Doble amarilla':'Roja directa',
       fecha_origen: fo, estado: estadoInicial });
     seenInBatch.add(key);
@@ -5873,7 +5896,7 @@ async function cargarSancionados(){
 
   // Auto-detectar jugadores con 5 amarillas acumuladas
   // Cuenta una amarilla por partido (sin expulsión en ese mismo partido)
-  const _amPartido = {}; // "jId_partidoId" → {jId, jNom, eq, fo, amarilla, expulsion}
+  const _amPartido = {}; // "jId_partidoId" → {jId, jNom, eq, fo, zona, amarilla, expulsion}
   for(const ev of (expEvs||[])){
     const pl = ev.planillas;
     if(!pl?.jugadores?.id || !pl?.equipos) continue;
@@ -5882,22 +5905,26 @@ async function cargarSancionados(){
     const eq = pl.equipos.nombre || '';
     const p = partidoMap[pl.partido_id] || {};
     const fo = p.fecha || null;
+    const zo = p.zona || null;
     const mk = `${jId}_${pl.partido_id}`;
-    if(!_amPartido[mk]) _amPartido[mk] = {jId, jNom, eq, fo, amarilla:false, expulsion:false};
+    if(!_amPartido[mk]) _amPartido[mk] = {jId, jNom, eq, fo, zona:zo, amarilla:false, expulsion:false};
     if(ev.tipo==='amarilla') _amPartido[mk].amarilla = true;
     if(ev.tipo==='doble_amarilla'){ _amPartido[mk].amarilla = true; _amPartido[mk].expulsion = true; }
     if(ev.tipo==='roja') _amPartido[mk].expulsion = true;
   }
   // Contar amarillas netas (sin expulsión) por jugador — guardar fechas ordenadas
-  const amCountMap = {}; // jId → {jNom, eq, count, fechas:[]}
+  // (par fecha+zona: la Segunda Fase reinicia la numeración de fechas en 1, así que una
+  // amarilla nueva en fecha=1 de Nonagonal no puede ordenarse como si fuera anterior a
+  // las de fecha alta de Primera Fase — se ordena por fecha ABSOLUTA vía fechaAbsolutaZona)
+  const amCountMap = {}; // jId → {jNom, eq, count, fechas:[{fo,zona}]}
   Object.values(_amPartido).forEach(m => {
     if(!m.amarilla || m.expulsion) return;
     if(!m.fo) return; // sin fecha no se puede determinar el umbral
     if(!amCountMap[m.jId]) amCountMap[m.jId] = {jNom:m.jNom, eq:m.eq, count:0, fechas:[]};
     amCountMap[m.jId].count++;
-    amCountMap[m.jId].fechas.push(m.fo);
+    amCountMap[m.jId].fechas.push({fo:m.fo, zona:m.zona});
   });
-  Object.values(amCountMap).forEach(d => d.fechas.sort((a,b) => a - b));
+  Object.values(amCountMap).forEach(d => d.fechas.sort((a,b) => fechaAbsolutaZona(a.zona,a.fo) - fechaAbsolutaZona(b.zona,b.fo)));
 
   // Restar 5 por cada sanción de acumulación existente (incluyendo eliminadas: borrar no recrea)
   const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas');
@@ -5919,11 +5946,13 @@ async function cargarSancionados(){
     // Umbral actual = (sanciones existentes + 1) × 5 → índice 0-based = sancExist×5 + 4
     const sancExist = accumSancCount[Number(jId)] || 0;
     const umbralIdx = sancExist * 5 + 4; // 0-indexed
-    const umbralFo = d.fechas[umbralIdx] ?? d.fechas[d.fechas.length - 1];
-    const estadoInicial = isServed({fecha_origen: umbralFo, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
+    const umbralEntry = d.fechas[umbralIdx] ?? d.fechas[d.fechas.length - 1];
+    const umbralFo = umbralEntry.fo;
+    const umbralZona = umbralEntry.zona;
+    const estadoInicial = isServed({fecha_origen: umbralFo, zona: umbralZona, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
     toCreateAccum.push({
       jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: d.eq,
-      tipo: 'amarillas', partidos_sancion: 1,
+      tipo: 'amarillas', partidos_sancion: 1, zona: umbralZona,
       motivo: 'Acumulación de amarillas', fecha_origen: umbralFo,
       estado: estadoInicial,
     });
@@ -5961,11 +5990,11 @@ async function cargarSancionados(){
     // Simular ciclos de 5 amarillas en orden cronológico
     let cicloCount = 0;
     let umbralFoCurrent = null;
-    for(const fo of d.fechas) {
+    for(const entry of d.fechas) {
       cicloCount++;
       if(cicloCount === 5) {
-        umbralFoCurrent = fo;
-        if(maxFechaJugada > fo) {
+        umbralFoCurrent = entry;
+        if(maxFechaJugada > fechaAbsolutaZona(entry.zona, entry.fo)) {
           // Suspensión de este ciclo ya fue cumplida (el club jugó después)
           cicloCount = 0; umbralFoCurrent = null;
         } else {
@@ -5980,7 +6009,7 @@ async function cargarSancionados(){
     amarillasSuspAhora.push({
       id: dbSanc?.id ?? null, jugador_id: Number(jId),
       jugador_nombre: d.jNom, equipo: d.eq,
-      fecha_origen: umbralFoCurrent, tipo: 'amarillas',
+      fecha_origen: umbralFoCurrent.fo, zona: umbralFoCurrent.zona, tipo: 'amarillas',
       partidos_sancion: 1, estado: 'pendiente', motivo: 'Acumulación de amarillas',
     });
   });
@@ -5993,17 +6022,19 @@ async function cargarSancionados(){
     const pl = ev.planillas;
     if(!pl?.jugadores?.id || !pl?.equipos) continue;
     const jId = pl.jugadores.id;
-    const fo = partidoMap[pl.partido_id]?.fecha;
-    if(!fo || isServed({fecha_origen: fo, partidos_sancion: 0})) continue;
-    const key = `${jId}|${fo}`;
+    const partido = partidoMap[pl.partido_id];
+    const fo = partido?.fecha;
+    const zo = partido?.zona || null;
+    if(!fo || isServed({fecha_origen: fo, zona: zo, partidos_sancion: 0})) continue;
+    const key = `${jId}|${zo||''}|${fo}`;
     if(_rojasVistas.has(key)) continue;
     _rojasVistas.add(key);
     const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '?';
     const eq = pl.equipos.nombre || '?';
-    const dbSanc = activeSanc.find(s => s.tipo==='roja' && s.jugador_id===jId && Number(s.fecha_origen)===fo);
+    const dbSanc = activeSanc.find(s => s.tipo==='roja' && s.jugador_id===jId && Number(s.fecha_origen)===fo && (s.zona||null)===zo);
     rojasSuspAhora.push({
       id: dbSanc?.id ?? null, jugador_id: jId,
-      jugador_nombre: jNom, equipo: eq, fecha_origen: fo,
+      jugador_nombre: jNom, equipo: eq, fecha_origen: fo, zona: zo,
       tipo: 'roja', partidos_sancion: dbSanc?.partidos_sancion ?? 0,
       estado: 'pendiente', motivo: ev.tipo==='doble_amarilla' ? 'Doble amarilla' : 'Roja directa',
     });
@@ -6098,9 +6129,11 @@ function renderExpulsadosAdmin(expEvs, partidoMap, sanciones){
   const cont = document.getElementById('sanc-expulsados-cont');
   if(!expEvs.length){ cont.innerHTML = '<div style="padding:1rem;font-size:13px;color:#666;">Sin expulsiones registradas.</div>'; return; }
 
-  // Build set of jugador|equipo that have a pending sanción
-  const pendingKeys = new Set(sanciones.filter(s=>s.estado==='pendiente').map(s=>`${s.jugador_nombre}|${s.equipo}`));
-  const cumplKeys = new Set(sanciones.filter(s=>s.estado==='cumplida').map(s=>`${s.jugador_nombre}|${s.equipo}`));
+  // Build set of jugador|equipo|zona|fecha that have a pending sanción
+  // (incluye zona+fecha: sin esto, una expulsión nueva en Segunda Fase se mostraba como
+  // "ya cumplida"/"pendiente" solo porque el mismo jugador tuvo otra en Primera Fase)
+  const pendingKeys = new Set(sanciones.filter(s=>s.estado==='pendiente').map(s=>`${s.jugador_nombre}|${s.equipo}|${s.zona||''}|${s.fecha_origen||0}`));
+  const cumplKeys = new Set(sanciones.filter(s=>s.estado==='cumplida').map(s=>`${s.jugador_nombre}|${s.equipo}|${s.zona||''}|${s.fecha_origen||0}`));
 
   // Sort by fecha DESC
   const sorted = [...expEvs].sort((a,b) => {
@@ -6123,7 +6156,7 @@ function renderExpulsadosAdmin(expEvs, partidoMap, sanciones){
     const tipoLabel = ev.tipo==='doble_amarilla'
       ? `<span style="color:#ffa726;">🟨🟨 Doble amarilla</span>`
       : `<span style="color:#e57373;">🟥 Roja directa</span>`;
-    const key = `${jNom}|${eq}`;
+    const key = `${jNom}|${eq}|${partido.zona||''}|${partido.fecha||0}`;
     let sancStatus;
     if(pendingKeys.has(key)){
       sancStatus = `<span style="font-size:11px;background:#5c1e1e;color:#fbb;border-radius:3px;padding:2px 7px;">PENDIENTE</span>`;
@@ -6160,6 +6193,7 @@ function prefillSancion(jugNom, equipo, zona, fechaOrigen, tipoExpulsion){
   document.getElementById('sanc-jugador').value = jugNom;
   document.getElementById('sanc-equipo').value = equipo;
   document.getElementById('sanc-fecha-origen').value = fechaOrigen || '';
+  document.getElementById('sanc-zona').value = zona || '';
   document.getElementById('sanc-motivo').value = tipoExpulsion === 'doble_amarilla' ? 'Doble amarilla' : 'Roja directa';
   document.getElementById('sanc-jugador').scrollIntoView({behavior:'smooth', block:'center'});
   document.getElementById('sanc-jugador').focus();
@@ -6170,13 +6204,14 @@ async function agregarSancion(){
   const equipo = document.getElementById('sanc-equipo').value.trim();
   const motivo = document.getElementById('sanc-motivo').value.trim();
   const fechaOrigen = parseInt(document.getElementById('sanc-fecha-origen').value) || null;
+  const zona = document.getElementById('sanc-zona').value.trim() || null;
   if(!jugador || !equipo){ alert('Completá al menos jugador y equipo.'); return; }
   const {error} = await sb.from('sanciones').insert({
-    jugador_nombre: jugador, equipo, tipo: 'roja',
+    jugador_nombre: jugador, equipo, tipo: 'roja', zona,
     partidos_sancion: 0, motivo: motivo||null, fecha_origen: fechaOrigen, estado: 'pendiente'
   });
   if(error){ alert('Error al guardar: ' + error.message); return; }
-  ['sanc-jugador','sanc-equipo','sanc-motivo','sanc-fecha-origen'].forEach(id => document.getElementById(id).value='');
+  ['sanc-jugador','sanc-equipo','sanc-motivo','sanc-fecha-origen','sanc-zona'].forEach(id => document.getElementById(id).value='');
   cargarSancionados();
 }
 
