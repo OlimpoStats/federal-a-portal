@@ -1432,6 +1432,15 @@ const ZONAS_TODAS = [...ZONAS, ...GRUPOS2];
 const LIBRES2 = {"Nonagonal A":{"1":"Sarmiento (LB)","2":"Gimnasia (Ch)","3":"Bartolomé Mitre","4":"9 de Julio (Rafaela)","5":"Sol de América (F)","6":"San Martín (F)","7":"Douglas Haig","8":"Defensores (VR)","9":"Sp. Belgrano"},"Nonagonal B":{"1":"Alvarado","2":"Kimberley","3":"Juv. Antoniana","4":"Atenas (RC)","5":"Huracán LH","6":"Cipolletti","7":"Villa Mitre","8":"Olimpo","9":"Argentino (MM)"},"Reválida A":{"1":"Independiente (Ch)","2":"Gimnasia (CDU)","3":"Boca Unidos","4":"El Linqueño","5":"Sarmiento (R)","6":"Defensores (PV)","7":"Sp. Las Parejas","8":"Atlético Escobar","9":"Tucumán Central"},"Reválida B":{}};
 function faseRank(z){ return ZONAS.includes(z) ? 0 : 1; }
 function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? `${code} F${f}` : `F${f}`; }
+// Fecha "absoluta" cruzando fases: la Segunda Fase reinicia su numeración de fechas en 1,
+// así que un fecha=1 de Nonagonal/Reválida no puede compararse directo contra un fecha=18
+// de Primera Fase. zona=null (sanciones viejas anteriores a la Segunda Fase) → Primera Fase.
+function fechaAbsoluta(zona, fecha){
+  const f = Number(fecha) || 0;
+  if(!f) return 0;
+  const rank = zona ? faseRank(zona) : 0;
+  return rank*1000 + f;
+}
 let fechaActual2 = 1;
 
 // ── FASE CAMPEONATO: bracket de playoffs del Nonagonal (cuartos/semis/final) ──
@@ -3447,13 +3456,14 @@ async function cargarEstadisticas(){
     });
 
     // Max fecha jugada — usa partidos con resultado + fecha_origen de sanciones como fallback
+    // (en "fecha absoluta" para no mezclar la fecha 1 de Segunda Fase con fechas altas de Primera Fase)
     const maxFechaJug = Math.max(
       0,
-      ...(partidosDB||[]).map(p => Number(p.fecha) || 0),
-      ...(sancionesDB||[]).map(s => Number(s.fecha_origen) || 0)
+      ...(partidosDB||[]).map(p => fechaAbsoluta(p.zona, p.fecha)),
+      ...(sancionesDB||[]).map(s => fechaAbsoluta(s.zona, s.fecha_origen))
     );
     const isSancServed = s => {
-      const fo = Number(s.fecha_origen);
+      const fo = fechaAbsoluta(s.zona, s.fecha_origen);
       if(!fo) return maxFechaJug > 0;
       return maxFechaJug >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
     };
@@ -3469,7 +3479,8 @@ async function cargarEstadisticas(){
       const nombre=jug.nombre_display||jug.nombre||'?';
       const equipo=pl.equipos?.nombre;
       const partidoId=planillaPartido[ev.planilla_id]||pl.partido_id;
-      const fo=Number(partidosById[partidoId]?.fecha)||null;
+      const _p=partidosById[partidoId];
+      const fo=_p ? fechaAbsoluta(_p.zona, _p.fecha) : null;
       const mk=`${canonId}_${partidoId}`;
       if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,amarilla:false,expulsion:false};
       if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
