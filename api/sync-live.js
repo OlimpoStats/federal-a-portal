@@ -1,4 +1,10 @@
-// api/sync-live.js - Live sync via FotMob HTML scraping (__NEXT_DATA__)
+// api/sync-live.js - Live sync via FotMob's matchDetails JSON API
+//
+// Previously this scraped the public match HTML page. That page is served through
+// FotMob's CDN with Cache-Control: max-age=600 (10 min, plus stale-while-revalidate)
+// — a goal could take up to ~10 minutes to reach our site even when the cronjob ran
+// on schedule. The matchDetails JSON API (what FotMob's own live match center polls)
+// is cached only 10s, so we read from that instead.
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -44,84 +50,51 @@ async function sbCloseStale(today) {
   return { ok: true, closed: Array.isArray(rows) ? rows.length : 0 };
 }
 
-function parseScore(html) {
-  const m = html.match(/MFHeaderStatusScore[^>]*>([^<]+)<\/span>/);
-  if (m) {
-    const s = m[1].match(/(\d+)\s*[-–]\s*(\d+)/);
-    if (s) return { local: parseInt(s[1]), visitante: parseInt(s[2]) };
+// Extrae el matchId numérico de la URL (formato copiado de la barra de FotMob:
+// .../matches/equipo-a-vs-equipo-b/codigo#5978547 — el matchId es el fragmento).
+function getMatchId(fotmobUrl) {
+  const m = fotmobUrl.match(/#(\d+)/);
+  return m ? m[1] : null;
+}
+
+function parseScore(data) {
+  const teams = data?.header?.teams;
+  if (Array.isArray(teams) && teams.length === 2 &&
+      typeof teams[0]?.score === 'number' && typeof teams[1]?.score === 'number') {
+    return { local: teams[0].score, visitante: teams[1].score };
   }
   return null;
 }
 
-function getNextData(html) {
-  const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-  if (!m) return null;
-  try { return JSON.parse(m[1]); } catch(e) { return null; }
-}
-
-function parseMinuto(html) {
-  const m = html.match(/MFStatusLiveTimeText[^>]*>([^<]+)<\/span>/);
-  if (m) {
-    const t = m[1].trim();
-    // If the text is a digit-based minute, return it. If it's FT/TC/PT skip it.
-    if (/^\d/.test(t)) return t.includes(':') ? t.split(':')[0] + "'" : t;
-    if (/^(HT|ET)$/i.test(t)) return 'ET';
-  }
-  if (/\bHT\b|\bHalf.?time\b/i.test(html)) return 'ET';
+function parseMinuto(data) {
+  const short = data?.header?.status?.liveTime?.short;
+  if (!short) return null;
+  // FotMob envuelve el minuto con marcas de dirección de texto invisibles
+  // (U+200E/U+200F) alrededor de un apóstrofe tipográfico (U+2019), no uno común.
+  const clean = short.replace(/[‎‏’'′]/g, '').trim();
+  if (/^\d/.test(clean)) return clean + "'";
+  if (/^HT$/i.test(clean)) return 'ET';
   return null;
 }
 
-function isFinished(html) {
-  // Primary: __NEXT_DATA__ general status (most reliable)
-  // FotMob has 'general' at pageProps.general (new) OR pageProps.content.general (old)
-  const nd = getNextData(html);
-  if (nd) {
-    const general = nd?.props?.pageProps?.general ?? nd?.props?.pageProps?.content?.general;
-    if (general?.finished === true) return true;
-    if (typeof general?.status === 'string') {
-      const s = general.status.toUpperCase();
-      if (s === 'FT' || s === 'FINISHED' || s === 'FULLTIME') return true;
-    }
-  }
-  // Fallback: HTML text patterns near the score
-  const scoreIdx = html.indexOf('MFHeaderStatusScore');
-  const ctx = scoreIdx > 0
-    ? html.substring(Math.max(0, scoreIdx - 1000), scoreIdx + 1000)
-    : html.substring(0, 3000);
-  return />\s*(?:FT|TC|PT)\s*</.test(ctx) || ctx.includes('"finished":true');
+function isFinished(data) {
+  return data?.header?.status?.finished === true || data?.general?.finished === true;
 }
 
-function isLive(html) {
-  if (isFinished(html)) return false;
-  // Only consider live if there's an actual digit minute OR explicit HT marker.
-  // Checking for MFStatusLiveTimeText class alone is unreliable (FotMob keeps
-  // the element in DOM even after FT, just changing its text content).
-  const hasDigitMinute = /MFStatusLiveTimeText[^>]*>\s*\d+['′\u2019]/.test(html);
-  if (hasDigitMinute) return true;
-  const hasHT = /MFStatusLiveTimeText[^>]*>\s*(?:HT|ET)\s*</.test(html);
-  if (hasHT) return true;
-  // Secondary: __NEXT_DATA__ explicit live flag
-  // FotMob has 'general' at pageProps.general (new) OR pageProps.content.general (old)
-  const nd = getNextData(html);
-  if (nd) {
-    const general = nd?.props?.pageProps?.general ?? nd?.props?.pageProps?.content?.general;
-    if (general?.started === true && general?.finished === false) return true;
-    // Also check top-level ongoing flag
-    if (nd?.props?.pageProps?.ongoing === true) return true;
-  }
-  return false;
+function isLive(data) {
+  const status = data?.header?.status;
+  if (!status || status.cancelled || status.finished) return false;
+  return status.started === true;
 }
 
-function parseFotmobEventos(html) {
+function parseFotmobEventos(data) {
   const result = { golesLocal: [], golesVisit: [], rojasLocal: 0, rojasVisit: 0, rojasLocalNames: [], rojasVisitNames: [] };
 
-  const ndMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-  if (!ndMatch) return result;
+  const status = data?.header?.status;
+  result.rojasLocal = status?.numberOfHomeRedCards || 0;
+  result.rojasVisit = status?.numberOfAwayRedCards || 0;
 
-  let nd;
-  try { nd = JSON.parse(ndMatch[1]); } catch(e) { return result; }
-
-  const events = nd?.props?.pageProps?.content?.matchFacts?.events?.events;
+  const events = data?.content?.matchFacts?.events?.events;
   if (!Array.isArray(events)) return result;
 
   for (const ev of events) {
@@ -138,8 +111,8 @@ function parseFotmobEventos(html) {
       const overload = ev.overloadTime ? `+${ev.overloadTime}` : '';
       const min = `${ev.time}${overload}'`;
       const entry = { n: ev.player.name, t: min };
-      if (ev.isHome) { result.rojasLocal++; result.rojasLocalNames.push(entry); }
-      else { result.rojasVisit++; result.rojasVisitNames.push(entry); }
+      if (ev.isHome) result.rojasLocalNames.push(entry);
+      else result.rojasVisitNames.push(entry);
     }
   }
 
@@ -216,24 +189,25 @@ module.exports = async (req, res) => {
 
     async function checkFixture(fx) {
       try {
-        const baseUrl = fx.fotmob_url.split('#')[0];
-        const url = baseUrl + '?_=' + Date.now();
+        const matchId = getMatchId(fx.fotmob_url);
+        if (!matchId) return { id: fx.id, error: 'no matchId in fotmob_url' };
+
+        const url = `https://www.fotmob.com/api/data/matchDetails?matchId=${matchId}`;
 
         const resp = await fetch(url, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'es-AR,es;q=0.9',
-            'Cache-Control': 'no-cache'
+            'Accept': 'application/json',
+            'Accept-Language': 'es-AR,es;q=0.9'
           },
           signal: AbortSignal.timeout(8000)
         });
 
         if (!resp.ok) return { id: fx.id, error: `HTTP ${resp.status}` };
 
-        const html = await resp.text();
-        const finished = isFinished(html);
-        const live = !finished && isLive(html);
+        const data = await resp.json();
+        const finished = isFinished(data);
+        const live = !finished && isLive(data);
         const ambiguous = !live && !finished && fx.estado === 'en_curso';
 
         // When closing a match, preserve existing goal/card data if FotMob returns
@@ -260,12 +234,12 @@ module.exports = async (req, res) => {
           return { id: fx.id, skip: 'not live' };
         }
 
-        const score = parseScore(html);
+        const score = parseScore(data);
         if (!score && !implicitFinished) return { id: fx.id, error: 'no score', live, finished };
 
-        const eventos = parseFotmobEventos(html);
+        const eventos = parseFotmobEventos(data);
         const { rojasLocal, rojasVisit } = eventos;
-        const minuto = live ? parseMinuto(html) : null;
+        const minuto = live ? parseMinuto(data) : null;
 
         const isClosing = finished || implicitFinished;
         const newGl = eventos.golesLocal.map(g => ({n: g.nombre, t: g.min}));
