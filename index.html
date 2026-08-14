@@ -102,40 +102,35 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f8bbd0;}
-/* 4 variantes de marca de posición, una por grupo, para comparar cuál gusta más.
-   Todas más chicas que un escudo (22px) para no competir visualmente con él en mobile. */
+/* Marcas de posición por grupo, para comparar cuál gusta más antes de unificar.
+   Todas más chicas/livianas que un escudo (22px) para no competir con él en mobile. */
 
-/* variante "círculo": punto de color con el número adentro, 18px (Nonagonal A) */
-.pos.pos-circle{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;font-size:11px;box-sizing:border-box;}
-.pos.pos-circle.verde{background:#4caf50;color:#fff;}
-.pos.pos-circle.azul{background:#4fc3f7;color:#0a2733;}
-.pos.pos-circle.ocre{background:#cc9933;color:#2a1d05;}
-.pos.pos-circle.rosa{background:#f8bbd0;color:#5c1530;}
-.pos.pos-circle.noclasif{background:#e53935;color:#fff;}
-
-/* variante "fila sombreada": el color pasa a un fondo tenue en toda la fila, el número
-   mantiene su color de texto normal, sin caja (Nonagonal B) */
+/* variante "fila sombreada" (elegida, en pausa): el color pasa a un fondo tenue en toda la
+   fila, el número mantiene su color de texto normal, sin caja (Nonagonal B) */
 .tabla-mini tbody tr.fila-verde{background:rgba(76,175,80,.08);}
 .tabla-mini tbody tr.fila-azul{background:rgba(79,195,247,.08);}
 .tabla-mini tbody tr.fila-ocre{background:rgba(204,153,51,.08);}
 .tabla-mini tbody tr.fila-rosa{background:rgba(248,187,208,.08);}
 .tabla-mini tbody tr.fila-noclasif{background:rgba(229,57,53,.1);}
 
-/* variante "barra": borde izquierdo de color en la celda de posición, el número queda neutro
-   (el color se traslada fuera del número) (Reválida A) */
-.tabla-mini tbody td.barra-verde{border-left:3px solid #4caf50;}
-.tabla-mini tbody td.barra-azul{border-left:3px solid #4fc3f7;}
-.tabla-mini tbody td.barra-ocre{border-left:3px solid #cc9933;}
-.tabla-mini tbody td.barra-rosa{border-left:3px solid #f8bbd0;}
-.tabla-mini tbody td.barra-noclasif{border-left:3px solid #e53935;}
+/* misma fila sombreada, más brillosa/saturada (Reválida B) */
+.tabla-mini tbody tr.fila-brillo-verde{background:rgba(76,175,80,.22);}
+.tabla-mini tbody tr.fila-brillo-azul{background:rgba(79,195,247,.22);}
+.tabla-mini tbody tr.fila-brillo-ocre{background:rgba(204,153,51,.22);}
+.tabla-mini tbody tr.fila-brillo-rosa{background:rgba(248,187,208,.24);}
+.tabla-mini tbody tr.fila-brillo-noclasif{background:rgba(229,57,53,.26);}
 
-/* variante "punto": punto de color al lado del número, el número queda neutro (Reválida B) */
-.pos-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-.pos-dot.verde{background:#4caf50;}
-.pos-dot.azul{background:#4fc3f7;}
-.pos-dot.ocre{background:#cc9933;}
-.pos-dot.rosa{background:#f8bbd0;}
-.pos-dot.noclasif{background:#e53935;}
+/* variante "anillo": círculo hueco (solo borde) del color de la posición, número del mismo
+   color adentro — más liviano que el círculo relleno que se descartó (Nonagonal A) */
+.pos.pos-ring{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:2px solid currentColor;box-sizing:border-box;font-size:11px;}
+
+/* variante "barra ancha": borde izquierdo de color, más grueso que el que se descartó, y el
+   número queda del mismo color que la barra (antes iba neutro) (Reválida A) */
+.tabla-mini tbody td.barra-ancha-verde{border-left:6px solid #4caf50;}
+.tabla-mini tbody td.barra-ancha-azul{border-left:6px solid #4fc3f7;}
+.tabla-mini tbody td.barra-ancha-ocre{border-left:6px solid #cc9933;}
+.tabla-mini tbody td.barra-ancha-rosa{border-left:6px solid #f8bbd0;}
+.tabla-mini tbody td.barra-ancha-noclasif{border-left:6px solid #e53935;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -2852,8 +2847,8 @@ function calcDescensoInfo(equipos, grupo, criterioTipo){
   return rows; // ordenadas por criterio de descenso, cada fila con r._danger
 }
 
-// variant: 'circle' | 'shade' | 'bar' | 'dot' — 4 formas distintas de marcar la posición,
-// una por grupo, para comparar cuál gusta más antes de quedarnos con una sola.
+// variant: 'ring' | 'shade' | 'shade-bright' | 'bar-wide' — formas distintas de marcar la
+// posición, una por grupo, para comparar cuál gusta más antes de quedarnos con una sola.
 function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, variant){
   const el = document.getElementById(elId);
   if(!el) return;
@@ -2869,11 +2864,10 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, variant){
     const pos=i+1, dif=r.gf-r.gc;
     const posClass = r._posClass || colorFn(pos, rows.length);
     const pctCColor = r._pctCTone==='verde' ? '#a5d6a7' : r._pctCTone==='rosa' ? '#f8bbd0' : 'var(--muted)';
-    const trClass = variant==='shade' ? ` class="fila-${posClass}"` : '';
-    const posTdClass = variant==='bar' ? ` class="barra-${posClass}"` : '';
-    const posSpan = variant==='circle' ? `<span class="pos ${posClass} pos-circle">${pos}</span>`
-      : variant==='dot' ? `<span class="pos"><span class="pos-dot ${posClass}"></span>${pos}</span>`
-      : variant==='bar' ? `<span class="pos">${pos}</span>`
+    const trClass = variant==='shade' ? ` class="fila-${posClass}"`
+      : variant==='shade-bright' ? ` class="fila-brillo-${posClass}"` : '';
+    const posTdClass = variant==='bar-wide' ? ` class="barra-ancha-${posClass}"` : '';
+    const posSpan = variant==='ring' ? `<span class="pos ${posClass} pos-ring">${pos}</span>`
       : `<span class="pos ${posClass}">${pos}</span>`;
     h += `<tr${trClass}>
       <td${posTdClass}>${posSpan}</td>
@@ -2979,10 +2973,10 @@ function renderGruposSegundaFase(grupos){
 
   aplicarPctCRevalida(revARows, revBRows);
 
-  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, 'circle');
+  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, 'ring');
   renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal, 'shade');
-  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida, 'bar');
-  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida, 'dot');
+  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida, 'bar-wide');
+  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida, 'shade-bright');
 
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
