@@ -102,14 +102,40 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f8bbd0;}
-/* variante "recuadro": el puesto pasa de número de color a un rectángulo de ese color con el
-   número en blanco adentro — prueba de impacto visual, opt-in vía posBox en renderTablaGrupo. */
-.pos.pos-box{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 3px;border-radius:4px;box-sizing:border-box;}
-.pos.pos-box.verde{background:#4caf50;color:#fff;}
-.pos.pos-box.azul{background:#4fc3f7;color:#0a2733;}
-.pos.pos-box.ocre{background:#cc9933;color:#2a1d05;}
-.pos.pos-box.rosa{background:#f8bbd0;color:#5c1530;}
-.pos.pos-box.noclasif{background:#e53935;color:#fff;}
+/* 4 variantes de marca de posición, una por grupo, para comparar cuál gusta más.
+   Todas más chicas que un escudo (22px) para no competir visualmente con él en mobile. */
+
+/* variante "círculo": punto de color con el número adentro, 18px (Nonagonal A) */
+.pos.pos-circle{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:50%;font-size:11px;box-sizing:border-box;}
+.pos.pos-circle.verde{background:#4caf50;color:#fff;}
+.pos.pos-circle.azul{background:#4fc3f7;color:#0a2733;}
+.pos.pos-circle.ocre{background:#cc9933;color:#2a1d05;}
+.pos.pos-circle.rosa{background:#f8bbd0;color:#5c1530;}
+.pos.pos-circle.noclasif{background:#e53935;color:#fff;}
+
+/* variante "fila sombreada": el color pasa a un fondo tenue en toda la fila, el número
+   mantiene su color de texto normal, sin caja (Nonagonal B) */
+.tabla-mini tbody tr.fila-verde{background:rgba(76,175,80,.08);}
+.tabla-mini tbody tr.fila-azul{background:rgba(79,195,247,.08);}
+.tabla-mini tbody tr.fila-ocre{background:rgba(204,153,51,.08);}
+.tabla-mini tbody tr.fila-rosa{background:rgba(248,187,208,.08);}
+.tabla-mini tbody tr.fila-noclasif{background:rgba(229,57,53,.1);}
+
+/* variante "barra": borde izquierdo de color en la celda de posición, el número queda neutro
+   (el color se traslada fuera del número) (Reválida A) */
+.tabla-mini tbody td.barra-verde{border-left:3px solid #4caf50;}
+.tabla-mini tbody td.barra-azul{border-left:3px solid #4fc3f7;}
+.tabla-mini tbody td.barra-ocre{border-left:3px solid #cc9933;}
+.tabla-mini tbody td.barra-rosa{border-left:3px solid #f8bbd0;}
+.tabla-mini tbody td.barra-noclasif{border-left:3px solid #e53935;}
+
+/* variante "punto": punto de color al lado del número, el número queda neutro (Reválida B) */
+.pos-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.pos-dot.verde{background:#4caf50;}
+.pos-dot.azul{background:#4fc3f7;}
+.pos-dot.ocre{background:#cc9933;}
+.pos-dot.rosa{background:#f8bbd0;}
+.pos-dot.noclasif{background:#e53935;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -2826,7 +2852,9 @@ function calcDescensoInfo(equipos, grupo, criterioTipo){
   return rows; // ordenadas por criterio de descenso, cada fila con r._danger
 }
 
-function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, posBox){
+// variant: 'circle' | 'shade' | 'bar' | 'dot' — 4 formas distintas de marcar la posición,
+// una por grupo, para comparar cuál gusta más antes de quedarnos con una sola.
+function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, variant){
   const el = document.getElementById(elId);
   if(!el) return;
   const conPctC = rows.length && rows[0]._pctCLabel !== undefined;
@@ -2841,8 +2869,14 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, posBox){
     const pos=i+1, dif=r.gf-r.gc;
     const posClass = r._posClass || colorFn(pos, rows.length);
     const pctCColor = r._pctCTone==='verde' ? '#a5d6a7' : r._pctCTone==='rosa' ? '#f8bbd0' : 'var(--muted)';
-    h += `<tr>
-      <td><span class="pos ${posClass}${posBox?' pos-box':''}">${pos}</span></td>
+    const trClass = variant==='shade' ? ` class="fila-${posClass}"` : '';
+    const posTdClass = variant==='bar' ? ` class="barra-${posClass}"` : '';
+    const posSpan = variant==='circle' ? `<span class="pos ${posClass} pos-circle">${pos}</span>`
+      : variant==='dot' ? `<span class="pos"><span class="pos-dot ${posClass}"></span>${pos}</span>`
+      : variant==='bar' ? `<span class="pos">${pos}</span>`
+      : `<span class="pos ${posClass}">${pos}</span>`;
+    h += `<tr${trClass}>
+      <td${posTdClass}>${posSpan}</td>
       <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
       <td><strong class="pts">${r.pts}</strong></td>
       <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
@@ -2945,10 +2979,10 @@ function renderGruposSegundaFase(grupos){
 
   aplicarPctCRevalida(revARows, revBRows);
 
-  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, true);
-  renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
-  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
-  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
+  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, 'circle');
+  renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal, 'shade');
+  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida, 'bar');
+  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida, 'dot');
 
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
