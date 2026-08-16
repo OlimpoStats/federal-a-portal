@@ -102,21 +102,25 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f8bbd0;}
-/* Marca de posición: "fila sombreada" en los Nonagonales, "barra ancha" en las Reválidas. */
+/* Estándar de sitio (rama privada): "fila sombreada" en tablas de grupo (Nonagonales, Zona
+   A-D), "barra ancha" en tablas de línea de corte (Reválidas, Quintos, Tabla de descenso). */
 
 /* fila sombreada: fondo tenue de color en toda la fila, el número mantiene su color de texto
-   normal, sin caja (Nonagonal A y B) */
+   normal, sin caja */
 .tabla-mini tbody tr.fila-verde{background:rgba(76,175,80,.08);}
 .tabla-mini tbody tr.fila-azul{background:rgba(79,195,247,.08);}
 .tabla-mini tbody tr.fila-ocre{background:rgba(204,153,51,.08);}
 .tabla-mini tbody tr.fila-rosa{background:rgba(248,187,208,.08);}
+.tabla-mini tbody tr.fila-clasif{background:rgba(76,175,80,.08);}
+.tabla-mini tbody tr.fila-quinto{background:rgba(232,196,74,.08);}
 .tabla-mini tbody tr.fila-noclasif{background:rgba(229,57,53,.1);}
 
-/* barra ancha: borde izquierdo de color, número del mismo color que la barra (Reválida A y B) */
+/* barra ancha: borde izquierdo de color, número del mismo color que la barra */
 .tabla-mini tbody td.barra-ancha-verde{border-left:6px solid #4caf50;}
 .tabla-mini tbody td.barra-ancha-azul{border-left:6px solid #4fc3f7;}
 .tabla-mini tbody td.barra-ancha-ocre{border-left:6px solid #cc9933;}
 .tabla-mini tbody td.barra-ancha-rosa{border-left:6px solid #f8bbd0;}
+.tabla-mini tbody td.barra-ancha-clasif{border-left:6px solid #4caf50;}
 .tabla-mini tbody td.barra-ancha-noclasif{border-left:6px solid #e53935;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
@@ -2670,17 +2674,19 @@ function renderTablas(){
       let posClass="noclasif";
       if(pos<=clasif) posClass="clasif";
       else if(pos===5&&z!=="Zona A") posClass="quinto";
-      html+=`<tr>
+      const desc = posClass==='noclasif';
+      const descTd = desc ? ' style="color:#e53935;"' : '';
+      html+=`<tr class="fila-${posClass}">
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
-        <td><strong class="pts">${r.pts}</strong></td>
-        <td>${r.pj}</td>
-        <td>${r.g}</td>
-        <td>${r.e}</td>
-        <td>${r.p}</td>
-        <td>${r.gf}</td>
-        <td>${r.gc}</td>
-        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${desc?'color:#e53935;':''}">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><strong class="pts"${descTd}>${r.pts}</strong></td>
+        <td${descTd}>${r.pj}</td>
+        <td${descTd}>${r.g}</td>
+        <td${descTd}>${r.e}</td>
+        <td${descTd}>${r.p}</td>
+        <td${descTd}>${r.gf}</td>
+        <td${descTd}>${r.gc}</td>
+        <td style="color:${desc?'#e53935':dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
          <td class="h2h-cell" style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;font-weight:${r.h2h==='—'?'400':'600'};${r.h2hMatches?'cursor:pointer;':''}" data-matches="${r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):''}"
            onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)">
            ${r.h2h}</td>
@@ -2711,13 +2717,15 @@ function renderTablas(){
       let posClass="noclasif";
       if(pos<=clasif) posClass="clasif";
       else if(pos===5&&z!=="Zona A") posClass="quinto";
-      zh+=`<tr>
+      const desc = posClass==='noclasif';
+      const descTd = desc ? ' style="color:#e53935;"' : '';
+      zh+=`<tr class="fila-${posClass}">
         <td><span class="pos ${posClass}">${pos}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
-        <td><strong class="pts">${r.pts}</strong></td>
-        <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
-        <td>${r.gf}</td><td>${r.gc}</td>
-        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${desc?'color:#e53935;':''}">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+        <td><strong class="pts"${descTd}>${r.pts}</strong></td>
+        <td${descTd}>${r.pj}</td><td${descTd}>${r.g}</td><td${descTd}>${r.e}</td><td${descTd}>${r.p}</td>
+        <td${descTd}>${r.gf}</td><td${descTd}>${r.gc}</td>
+        <td style="color:${desc?'#e53935':dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
          <td class="h2h-cell" style="color:${r.h2h==='—'?'var(--muted)':'var(--accent)'};font-size:11px;" data-matches="${r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):''}"
            onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)">
            ${r.h2h}</td>
@@ -2738,13 +2746,16 @@ function renderTablas(){
     </tr></thead><tbody>
     ${quintosRows.map((r,i)=>{
       const dif=r.gf-r.gc;
-      return `<tr><td><span class="pos ${i===0?'clasif':'noclasif'}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span></div></td>
+      const posClass = i===0?'clasif':'noclasif';
+      const desc = posClass==='noclasif';
+      const descTd = desc ? ' style="color:#e53935;"' : '';
+      return `<tr><td class="barra-ancha-${posClass}"><span class="pos ${posClass}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;${desc?'color:#e53935;':''}">${r.n}</span></div></td>
         <td style="font-size:11px;color:var(--muted)">${r.zona.replace('Zona ','')}</td>
-        <td><strong class="pts">${r.pts}</strong></td>
-        <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
-        <td>${r.gf}</td><td>${r.gc}</td>
-        <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+        <td><strong class="pts"${descTd}>${r.pts}</strong></td>
+        <td${descTd}>${r.pj}</td><td${descTd}>${r.g}</td><td${descTd}>${r.e}</td><td${descTd}>${r.p}</td>
+        <td${descTd}>${r.gf}</td><td${descTd}>${r.gc}</td>
+        <td style="color:${desc?'#e53935':dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
       </tr>`;
     }).join('')}
     </tbody></table></div>`;
@@ -5051,8 +5062,9 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
     const promSty = dc ? dataSty : 'color:var(--accent);';
     const isQuinto=r._quinto||r._topQuinto;
+    const barraSty = dc==='red'?'border-left:6px solid #e57373;':dc==='orange'?'border-left:6px solid #ff9800;':'';
     return `<tr>
-      <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
+      <td style="${barraSty}"><span class="pos" style="color:${posCol}">${i+1}</span></td>
       <td><div style="display:flex;align-items:center;">
         <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
