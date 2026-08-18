@@ -214,20 +214,33 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .espejo-vd{color:#e8c44a;text-transform:uppercase;}
 .espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding:0 .4rem;}
 @media (max-width:900px){
-  .bracket-espejo-cont{grid-template-columns:1fr;}
+  .bracket-espejo-cont{grid-template-columns:1fr;gap:1.3rem 0;}
   .bracket-espejo-centro{display:none;}
-  /* En mobile cada llave se apila en 2 filas (una por equipo) en vez de espejarse lado a
+  /* En mobile cada tarjeta se apila en 2 filas (una por equipo) en vez de espejarse lado a
      lado con el VS en el medio — con nombres de club largos, el layout horizontal solo
      dejaba lugar para 2-3 letras antes de cortar con "...". El lado derecho, que en
      desktop va invertido (nombre-escudo-puesto) para el efecto espejo, se reordena acá
      con `order` para que en su propia fila se lea igual que el izquierdo. */
-  .espejo-card{flex-direction:column;align-items:stretch;gap:.3rem;max-width:none;}
+  .espejo-card{flex-direction:column;align-items:stretch;gap:.3rem;max-width:320px;}
   .espejo-lado{font-size:13px;}
   .espejo-lado.espejo-der{justify-content:flex-start;}
   .espejo-der .espejo-pos{order:0;}
   .espejo-der .me{order:1;}
   .espejo-der .espejo-nombre{order:2;text-align:left;}
   .espejo-vs{align-self:center;padding:.1rem 0;}
+  /* Cada .bracket-espejo-lado ya agrupa los 2 cuartos que se cruzan entre sí (QF1+QF2 arriba,
+     QF3+QF4 abajo) — se unen con una línea en forma de llave a la izquierda, al estilo
+     tradicional de cuadro de torneo, en vez de 4 tarjetas sueltas sin relación visual entre sí. */
+  .bracket-espejo-lado{position:relative;padding-left:14px;}
+  .bracket-espejo-lado::before{
+    content:'';
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:12px;
+    border:2px solid var(--border);
+    border-right:none;
+    border-radius:8px 0 0 8px;
+  }
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
@@ -5067,12 +5080,11 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
     const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
     const promSty = dc ? dataSty : 'color:var(--accent);';
-    const isQuinto=r._quinto||r._topQuinto;
     const barraSty = dc==='red'?'border-left:6px solid #e57373;':dc==='orange'?'border-left:6px solid #ff9800;':'';
     return `<tr>
       <td style="${barraSty}"><span class="pos" style="color:${posCol}">${i+1}</span></td>
       <td><div style="display:flex;align-items:center;">
-        <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
+        <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}</span></div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
       </div></td>
       <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
