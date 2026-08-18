@@ -57,6 +57,22 @@ function getMatchId(fotmobUrl) {
   return m ? m[1] : null;
 }
 
+// Ventana mínima obligatoria antes de poder cerrar un partido por lecturas ambiguas (ver
+// MAX_MISSES más abajo). Ningún partido real termina antes de este margen, así que sirve de
+// piso de seguridad: si FotMob da lecturas ambiguas (ni "en vivo" ni "finalizado") durante un
+// corte transitorio (entretiempo largo, hiccup de la API, etc.), el sistema NO puede darlo por
+// terminado implícitamente hasta que pasen GUARD_MIN minutos desde el ancla — el horario
+// programado o el momento en que lo vimos "en vivo" por primera vez, lo que ocurra más tarde.
+// Esto no afecta el cierre real (FotMob confirmando "finished:true"), que siempre se respeta
+// al instante — solo frena el mecanismo de emergencia para partidos que en verdad no terminaron.
+const GUARD_MIN = 150; // 2h30
+
+function kickoffDate(fx) {
+  if (!fx.dia || !fx.hora) return null;
+  const [h, m] = fx.hora.split(':').map(Number);
+  return new Date(`${fx.dia}T${String(h).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}:00-03:00`);
+}
+
 function parseScore(data) {
   const teams = data?.header?.teams;
   if (Array.isArray(teams) && teams.length === 2 &&
@@ -215,20 +231,31 @@ module.exports = async (req, res) => {
         let existingMa = {};
         try { existingMa = JSON.parse(fx.minuto_actual || '{}'); } catch(e) {}
 
+        // Ancla del partido: el momento en que lo vimos "en vivo" por primera vez (persistido
+        // como `ls` en minuto_actual), o el horario programado si todavía no lo detectamos.
+        const liveSince = live ? (existingMa.ls ? new Date(existingMa.ls) : new Date())
+          : (existingMa.ls ? new Date(existingMa.ls) : null);
+        const kickoff = kickoffDate(fx);
+        const anchorMs = Math.max(liveSince ? liveSince.getTime() : -Infinity, kickoff ? kickoff.getTime() : -Infinity);
+        const guardUntilMs = anchorMs > -Infinity ? anchorMs + GUARD_MIN * 60 * 1000 : null;
+        const pastGuard = guardUntilMs === null || Date.now() >= guardUntilMs;
+
         // A single failed live-detection can just be a flaky/blocked scrape (FotMob
         // layout hiccup, rate limit, etc.), not necessarily the match actually ending.
-        // Require MAX_MISSES consecutive ambiguous reads in a row before treating it
-        // as implicitly finished, so a transient failure doesn't wrongly close a live
-        // match and get it permanently skipped (estado:'jugado' rows are never re-checked).
+        // Require MAX_MISSES consecutive ambiguous reads AND que ya haya pasado GUARD_MIN
+        // desde el comienzo (real o programado) antes de tratarlo como implícitamente
+        // terminado — evita que un corte transitorio cierre un partido que en realidad
+        // sigue en curso y lo deje permanentemente sin revisar (estado:'jugado' no se
+        // vuelve a chequear nunca).
         const MAX_MISSES = 3;
         if (ambiguous) {
           const misses = (existingMa.mc || 0) + 1;
-          if (misses < MAX_MISSES) {
-            const r = await sbPatch(fx.id, { minuto_actual: JSON.stringify({ ...existingMa, mc: misses }) });
-            return { id: fx.id, ambiguous: true, misses, updated: r.ok };
+          if (misses < MAX_MISSES || !pastGuard) {
+            const r = await sbPatch(fx.id, { minuto_actual: JSON.stringify({ ...existingMa, mc: misses, ls: liveSince ? liveSince.toISOString() : existingMa.ls }) });
+            return { id: fx.id, ambiguous: true, misses, guardActive: !pastGuard, updated: r.ok };
           }
         }
-        const implicitFinished = ambiguous && (existingMa.mc || 0) + 1 >= MAX_MISSES;
+        const implicitFinished = ambiguous && (existingMa.mc || 0) + 1 >= MAX_MISSES && pastGuard;
 
         if (!live && !implicitFinished && !finished) {
           return { id: fx.id, skip: 'not live' };
@@ -255,7 +282,8 @@ module.exports = async (req, res) => {
           gl: finalGl,
           gv: finalGv,
           rln: finalRln,
-          rvn: finalRvn
+          rvn: finalRvn,
+          ...(liveSince ? { ls: liveSince.toISOString() } : {})
         });
 
         if (implicitFinished) {
