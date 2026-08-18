@@ -216,6 +216,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media (max-width:900px){
   .bracket-espejo-cont{grid-template-columns:1fr;}
   .bracket-espejo-centro{display:none;}
+  /* En mobile cada llave se apila en 2 filas (una por equipo) en vez de espejarse lado a
+     lado con el VS en el medio — con nombres de club largos, el layout horizontal solo
+     dejaba lugar para 2-3 letras antes de cortar con "...". El lado derecho, que en
+     desktop va invertido (nombre-escudo-puesto) para el efecto espejo, se reordena acá
+     con `order` para que en su propia fila se lea igual que el izquierdo. */
+  .espejo-card{flex-direction:column;align-items:stretch;gap:.3rem;max-width:none;}
+  .espejo-lado{font-size:13px;}
+  .espejo-lado.espejo-der{justify-content:flex-start;}
+  .espejo-der .espejo-pos{order:0;}
+  .espejo-der .me{order:1;}
+  .espejo-der .espejo-nombre{order:2;text-align:left;}
+  .espejo-vs{align-self:center;padding:.1rem 0;}
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
