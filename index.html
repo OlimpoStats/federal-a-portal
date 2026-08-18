@@ -115,13 +115,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tabla-mini tbody tr.fila-quinto{background:rgba(232,196,74,.08);}
 .tabla-mini tbody tr.fila-noclasif{background:rgba(229,57,53,.1);}
 
-/* barra ancha: borde izquierdo de color, número del mismo color que la barra */
-.tabla-mini tbody td.barra-ancha-verde{border-left:6px solid #4caf50;}
-.tabla-mini tbody td.barra-ancha-azul{border-left:6px solid #4fc3f7;}
-.tabla-mini tbody td.barra-ancha-ocre{border-left:6px solid #cc9933;}
-.tabla-mini tbody td.barra-ancha-rosa{border-left:6px solid #f8bbd0;}
-.tabla-mini tbody td.barra-ancha-clasif{border-left:6px solid #4caf50;}
-.tabla-mini tbody td.barra-ancha-noclasif{border-left:6px solid #e53935;}
+/* barra ancha: borde izquierdo de color, número del mismo color que la barra.
+   box-shadow inset en vez de border-left: la tabla usa border-collapse:collapse, y un
+   border-left directo en el <td> se "fusiona" con el borde de la fila de arriba (el header
+   u otra fila con un ancho de borde distinto) y termina asomando fuera de su propia fila. El
+   inset queda estrictamente dentro de la caja de la celda, sin participar del collapse. */
+.tabla-mini tbody td.barra-ancha-verde{box-shadow:inset 6px 0 0 0 #4caf50;}
+.tabla-mini tbody td.barra-ancha-azul{box-shadow:inset 6px 0 0 0 #4fc3f7;}
+.tabla-mini tbody td.barra-ancha-ocre{box-shadow:inset 6px 0 0 0 #cc9933;}
+.tabla-mini tbody td.barra-ancha-rosa{box-shadow:inset 6px 0 0 0 #f8bbd0;}
+.tabla-mini tbody td.barra-ancha-clasif{box-shadow:inset 6px 0 0 0 #4caf50;}
+.tabla-mini tbody td.barra-ancha-noclasif{box-shadow:inset 6px 0 0 0 #e53935;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -229,18 +233,21 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .espejo-der .espejo-nombre{order:2;text-align:left;}
   .espejo-vs{align-self:center;padding:.1rem 0;}
   /* Cada .bracket-espejo-lado ya agrupa los 2 cuartos que se cruzan entre sí (QF1+QF2 arriba,
-     QF3+QF4 abajo) — se unen con una línea en forma de llave a la izquierda, al estilo
-     tradicional de cuadro de torneo, en vez de 4 tarjetas sueltas sin relación visual entre sí. */
-  .bracket-espejo-lado{position:relative;padding-left:14px;}
+     QF3+QF4 abajo) — se unen con una línea en forma de llave a la derecha, al estilo
+     tradicional de cuadro de torneo, en vez de 4 tarjetas sueltas sin relación visual entre
+     sí. Cada par tiene su propio color de línea para distinguirse del otro par. */
+  .bracket-espejo-lado{position:relative;padding-right:14px;}
   .bracket-espejo-lado::before{
     content:'';
     position:absolute;
-    left:0; top:0; bottom:0;
+    right:0; top:0; bottom:0;
     width:12px;
     border:2px solid var(--border);
-    border-right:none;
-    border-radius:8px 0 0 8px;
+    border-left:none;
+    border-radius:0 8px 8px 0;
   }
+  .bracket-espejo-lado:first-child::before{border-color:#e8c44a;}
+  .bracket-espejo-lado:last-child::before{border-color:#4fc3f7;}
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
@@ -5080,7 +5087,7 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
     const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
     const promSty = dc ? dataSty : 'color:var(--accent);';
-    const barraSty = dc==='red'?'border-left:6px solid #e57373;':dc==='orange'?'border-left:6px solid #ff9800;':'';
+    const barraSty = dc==='red'?'box-shadow:inset 6px 0 0 0 #e57373;':dc==='orange'?'box-shadow:inset 6px 0 0 0 #ff9800;':'';
     return `<tr>
       <td style="${barraSty}"><span class="pos" style="color:${posCol}">${i+1}</span></td>
       <td><div style="display:flex;align-items:center;">
