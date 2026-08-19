@@ -205,13 +205,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    estilo tradicional de cuadro de torneo, en vez de tarjetas sueltas sin relación visual.
    Nota: esta clase es propia de este cuadro — no tocar/reusar .llave-* de arriba para no
    volver a mezclar los dos cuadros por accidente. */
-.bracket-espejo-cont{display:grid;grid-template-columns:1fr auto 1fr;gap:0 1rem;align-items:stretch;}
+.bracket-espejo-cont{display:grid;grid-template-columns:max-content 64px max-content;gap:0;align-items:stretch;justify-content:center;}
 .bracket-espejo-centro{width:1px;background:repeating-linear-gradient(to bottom,var(--border) 0 6px,transparent 6px 12px);justify-self:center;}
 
 .bracket-espejo-lado{position:relative;display:flex;flex-direction:column;gap:.6rem;width:fit-content;padding-right:14px;box-sizing:border-box;}
 .bracket-espejo-lado::before{content:'';position:absolute;right:0;top:0;bottom:0;width:12px;border:2px solid var(--border);border-left:none;border-radius:0 8px 8px 0;}
 .bracket-espejo-lado:first-child::before{border-color:#e8c44a;}
 .bracket-espejo-lado:last-child::before{border-color:#4fc3f7;}
+/* Conectores horizontales que salen de cada par hacia el centro y se encuentran en la mitad
+   de la columna central (64px) — el efecto "se llaman entre sí" de una llave de eliminatoria
+   tradicional, en vez de 2 grupos sueltos con una línea de puntos sin relación entre ellos. */
+.bracket-espejo-lado::after{content:'';position:absolute;top:50%;width:32px;height:2px;margin-top:-1px;}
+.bracket-espejo-lado:first-child::after{right:-32px;background:#e8c44a;}
+.bracket-espejo-lado:last-child::after{left:-32px;background:#4fc3f7;}
 
 .espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.3rem;width:250px;box-sizing:border-box;}
 .espejo-lado{display:flex;align-items:center;gap:.35rem;font-size:13px;}
@@ -228,15 +234,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .espejo-der .me{order:1;}
 .espejo-der .espejo-nombre{order:2;text-align:left;}
 
-@media (min-width:901px){
-  /* El par de la izquierda (QF1+QF2) se pega al borde derecho de su columna, cerca de la
-     línea central, en vez de quedar contra el borde exterior con un hueco gris enorme hasta
-     el centro — el de la derecha (QF3+QF4) ya queda cerca del centro por defecto. */
-  .bracket-espejo-lado:first-child{justify-self:end;}
-}
 @media (max-width:900px){
-  .bracket-espejo-cont{grid-template-columns:1fr;gap:1.3rem 0;}
+  .bracket-espejo-cont{grid-template-columns:1fr;gap:1.3rem 0;justify-content:stretch;}
   .bracket-espejo-centro{display:none;}
+  .bracket-espejo-lado::after{display:none;}
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
