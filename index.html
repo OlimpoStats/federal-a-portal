@@ -241,6 +241,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-espejo-cont{grid-template-columns:1fr;gap:1.3rem 0;justify-content:stretch;}
   .bracket-espejo-centro{display:none;}
   .bracket-espejo-lado::after{display:none;}
+  /* Apilados verticalmente, los 2 ganchos van del mismo lado (derecha) y se estiran medio
+     espacio cada uno hacia el otro para tocarse en el medio del hueco entre pares — antes el
+     de abajo seguía apuntando a la izquierda (heredado del desktop) y no se unían. */
+  .bracket-espejo-lado:first-child::before{bottom:-.65rem;}
+  .bracket-espejo-lado:last-child{padding-left:0;padding-right:14px;}
+  .bracket-espejo-lado:last-child::before{left:auto;right:0;top:-.65rem;border-left:none;border-right:2px solid #4fc3f7;border-radius:0 8px 8px 0;}
 }
 /* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
    desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
