@@ -300,6 +300,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
               <button class="btn btn-secondary" id="btn-continuar-borrador" onclick="cargarBorrador()" style="display:none;">📂 Continuar borrador</button>
               <button class="btn btn-secondary" onclick="irPaso2Manual()">✏️ Cargar manual</button>
               <button class="btn btn-secondary" onclick="irPasoUnificado()">🖼️ Unificada</button>
+              <button class="btn btn-secondary" onclick="irPasoComet()">🌐 Desde COMET</button>
               <button class="btn btn-primary" id="btn-sel-siguiente" onclick="irPaso2()">📋 Cargar separadas →</button>
             </div>
           </div>
@@ -371,6 +372,25 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
             <div style="display:flex;justify-content:space-between;margin-top:1rem;">
               <button class="btn btn-secondary" onclick="irPaso1()">← Atrás</button>
               <button class="btn btn-primary" id="btn-procesar-uni" onclick="procesarImagenUnificada()" disabled>Procesar con IA →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2C: cargar directo desde la API de COMET (sin imagen) -->
+      <div id="paso2c" style="display:none;">
+        <div class="card">
+          <div class="card-hdr" id="paso2c-titulo">Cargar desde COMET</div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:.5rem;">Pegá el ID numérico del partido (el último tramo de la URL de COMET, después del #). Trae las 2 formaciones y los eventos directo, sin imagen.</p>
+            <div style="max-width:420px;margin:0 auto;">
+              <label style="margin-bottom:.5rem;">ID de partido en COMET</label>
+              <input type="text" id="comet-match-id" placeholder="Ej: 389617624" inputmode="numeric"
+                style="width:100%;box-sizing:border-box;padding:.6rem .75rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;">
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:1rem;">
+              <button class="btn btn-secondary" onclick="irPaso1()">← Atrás</button>
+              <button class="btn btn-primary" id="btn-procesar-comet" onclick="procesarDesdeComet()">Buscar y procesar →</button>
             </div>
           </div>
         </div>
@@ -1396,6 +1416,7 @@ function irPaso1(){
   document.getElementById("paso1").style.display="";
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso2u").style.display="none";
+  document.getElementById("paso2c").style.display="none";
   document.getElementById("paso3").style.display="none";
   document.getElementById("steps-bar").style.display="none";
   setStep(1);
@@ -1439,6 +1460,27 @@ function irPasoUnificado(){
   document.getElementById("paso1").style.display="none";
   document.getElementById("paso2").style.display="none";
   document.getElementById("paso2u").style.display="";
+  document.getElementById("paso3").style.display="none";
+  document.getElementById("steps-bar").style.display="";
+  setStep(2);
+}
+
+function irPasoComet(){
+  const sel=obtenerPartidoSeleccionado();
+  if(!sel){alert("Seleccioná zona, fecha y partido primero.");return;}
+  cargarDatosPartidoSeleccionadoEnUI(sel);
+  planillaLocal={jugadores:[]};
+  planillaVisit={jugadores:[]};
+  const tl=document.getElementById("tabla-local");
+  const tv=document.getElementById("tabla-visit");
+  if(tl) tl.innerHTML="";
+  if(tv) tv.innerHTML="";
+  document.getElementById("comet-match-id").value="";
+  document.getElementById("paso2c-titulo").textContent="Cargar desde COMET — "+sel.p.local+" vs "+sel.p.visitante;
+  document.getElementById("paso1").style.display="none";
+  document.getElementById("paso2").style.display="none";
+  document.getElementById("paso2u").style.display="none";
+  document.getElementById("paso2c").style.display="";
   document.getElementById("paso3").style.display="none";
   document.getElementById("steps-bar").style.display="";
   setStep(2);
@@ -1997,6 +2039,59 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves: "local" y "vis
     showFlash("Error al procesar: "+err.message,"err");
     document.getElementById("paso3").style.display="none";
     document.getElementById("paso2u").style.display="";
+    setStep(2);
+    console.error(err);
+  }
+}
+
+// Carga directo desde la API de COMET (sin imagen ni IA de visión) — mismo camino que
+// procesarImagenUnificada() de acá en más: setea planillaLocal/planillaVisit vía
+// normalizarPlanilla() (sin cambios en esa función) y pasa a paso 3 para revisar/confirmar.
+async function procesarDesdeComet(){
+  const matchId = (document.getElementById("comet-match-id").value || "").trim();
+  if(!matchId || !/^\d+$/.test(matchId)){
+    showFlash("Ingresá un ID de partido válido (solo números).", "err");
+    return;
+  }
+
+  document.getElementById("paso2c").style.display="none";
+  document.getElementById("paso3").style.display="";
+  setStep(3);
+  document.getElementById("res-local").textContent=partidoActual.local;
+  document.getElementById("res-visit").textContent=partidoActual.visit;
+  document.getElementById("title-plan-local").textContent="Planilla — "+partidoActual.local;
+  document.getElementById("title-plan-visit").textContent="Planilla — "+partidoActual.visit;
+  document.getElementById("loading-overlay").classList.add("on");
+  document.getElementById("loading-text").textContent="Buscando planilla en COMET...";
+
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    const resp = await fetch("/api/comet-planilla", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization": `Bearer ${session?.access_token||""}`},
+      body: JSON.stringify({matchId})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
+
+    planillaLocal=normalizarPlanilla(data.local||{}, partidoActual.local);
+    planillaVisit=normalizarPlanilla(data.visit||{}, partidoActual.visit);
+    if(!(planillaLocal.jugadores?.length) && !(planillaVisit.jugadores?.length)){
+      throw new Error("COMET no devolvió jugadores válidos para ese partido.");
+    }
+
+    const glLocal=planillaLocal.goles_equipo ?? contarGoles(planillaLocal.jugadores,"local");
+    const glVisit=planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores,"visitante");
+    document.getElementById("score-local").value=glLocal;
+    document.getElementById("score-visit").value=glVisit;
+    renderPlanilla("tabla-local", planillaLocal.jugadores||[]);
+    renderPlanilla("tabla-visit", planillaVisit.jugadores||[]);
+    document.getElementById("loading-overlay").classList.remove("on");
+  } catch(err){
+    document.getElementById("loading-overlay").classList.remove("on");
+    showFlash("Error al procesar: "+err.message, "err");
+    document.getElementById("paso3").style.display="none";
+    document.getElementById("paso2c").style.display="";
     setStep(2);
     console.error(err);
   }
