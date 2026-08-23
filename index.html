@@ -2661,7 +2661,7 @@ function liveScoreBadge(equipo){
   const myG = esLocal?liveM.gl:liveM.gv;
   const thG = esLocal?liveM.gv:liveM.gl;
   const col = myG>thG?"#2ea043":myG<thG?"#e57373":"#e8c44a";
-  return `<span style="margin-left:10px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
+  return `<span style="margin-left:10px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:${col};animation:breathe 2s ease-in-out infinite;letter-spacing:.5px;">${myG}–${thG}</span>`;
 }
 
 // Solo para Tabla de descenso: marcador + "vs Rival" para aprovechar el espacio libre de esa
@@ -2883,9 +2883,9 @@ function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, variant){
   let h = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${colorTitulo};margin:0 0 .28rem;">${titulo}</p>`;
   h += `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
       <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
-      <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
-      <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
-      <th title="GC">GC</th><th title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase" style="width:46px;">%C</th>':''}
+      <th style="width:34px;" title="Puntos">Pts</th><th style="width:30px;" title="PJ">PJ</th><th style="width:26px;" title="G">G</th>
+      <th style="width:26px;" title="E">E</th><th style="width:26px;" title="P">P</th><th style="width:30px;" title="GF">GF</th>
+      <th style="width:30px;" title="GC">GC</th><th style="width:36px;" title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase" style="width:46px;">%C</th>':''}
     </tr></thead><tbody>`;
   rows.forEach((r,i)=>{
     const pos=i+1, dif=r.gf-r.gc;
