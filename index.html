@@ -593,8 +593,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table .plt-stat-0,.jug-cards-wrap .plt-stat-0{color:#444;}
 .plt-table .plt-gol-hi,.jug-cards-wrap .plt-gol-hi{color:#ffd54f;font-weight:700;}
 .plt-table .plt-ast-hi,.jug-cards-wrap .plt-ast-hi{color:#80cbc4;font-weight:700;}
-.plt-desk-only{display:block;}
-.plt-mob-only{display:none;}
+.plt-desk-only{display:block!important;}
+.plt-mob-only{display:none!important;}
 .jug-cards-wrap{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;}
 .jug-card{display:flex;align-items:center;gap:.55rem;padding:.55rem .65rem;border-radius:8px;background:rgba(255,255,255,.03);border-left:3px solid rgba(255,255,255,.15);cursor:pointer;transition:background .15s;}
 .jug-card:active{background:rgba(255,255,255,.08);}
@@ -607,8 +607,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .jug-card-stat small{font-size:8.5px;color:#777;text-transform:uppercase;margin-top:1px;}
 .jug-card-arrow{color:#555;font-size:18px;flex-shrink:0;}
 @media(max-width:700px){
-  .plt-desk-only{display:none;}
-  .plt-mob-only{display:flex;}
+  .plt-desk-only{display:none!important;}
+  .plt-mob-only{display:flex!important;}
 }
 .plt-cumple{cursor:default;font-size:14px;}
 .jug-perfil-btn{cursor:pointer;font-size:12px;margin-left:.4rem;opacity:.7;transition:opacity .15s;}
