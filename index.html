@@ -627,7 +627,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .jug-tbl thead th{padding:.35rem .3rem;border-bottom:2px solid rgba(255,255,255,.12);color:var(--muted);font-weight:700;font-size:10.5px;text-align:center;}
 .jug-tbl tbody td{padding:.32rem .3rem;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;vertical-align:middle;}
 .jug-tbl tbody tr:hover td{background:rgba(255,255,255,.04);}
-.jug-tbl-fecha{font-size:10px;color:#888;}
+.jug-tbl-fecha{font-size:10px;color:#888;white-space:nowrap;}
 .jug-tbl-rival{text-align:left!important;display:flex;align-items:center;min-width:0;}
 .jug-tbl-rival img{width:16px;height:16px;object-fit:contain;flex-shrink:0;margin-right:.3rem;}
 .jug-tbl-rival-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;}
@@ -6040,7 +6040,7 @@ async function abrirPerfilJugador(jugadorId){
     const condAbbr = {tit:'TIT', ing:'ING', bnc:'BNC', nc:'NC'};
     const sv = (v, cls='') => v>0 ? `<span class="jug-stat-hi ${cls}">${v}</span>` : `<span class="jug-stat-0">0</span>`;
     const tablaHTML = filas.length ? `<div class="jug-tbl-wrap"><table class="jug-tbl">
-      <colgroup><col style="width:32px"><col><col style="width:36px"><col style="width:30px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"></colgroup>
+      <colgroup><col style="width:40px"><col><col style="width:36px"><col style="width:30px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"></colgroup>
       <thead><tr><th>Fecha</th><th style="text-align:left;">Rival</th><th>Cond.</th><th>Min</th><th>⚽</th><th>👟</th><th>🟨</th><th>🟥</th></tr></thead>
       <tbody>${filas.map(f=>{
         const res = f.gf>f.gc?'G':f.gf===f.gc?'E':'P';
