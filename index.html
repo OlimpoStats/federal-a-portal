@@ -208,10 +208,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .bracket-espejo-cont{display:grid;grid-template-columns:max-content 64px max-content;gap:0;align-items:stretch;justify-content:center;}
 .bracket-espejo-centro{width:1px;background:repeating-linear-gradient(to bottom,var(--border) 0 6px,transparent 6px 12px);justify-self:center;}
 
-.bracket-espejo-lado{position:relative;display:flex;flex-direction:column;gap:.6rem;width:fit-content;padding-right:14px;box-sizing:border-box;}
-.bracket-espejo-lado::before{content:'';position:absolute;right:0;top:0;bottom:0;width:12px;border:2px solid var(--border);border-left:none;border-radius:0 8px 8px 0;}
-.bracket-espejo-lado:first-child::before{border-color:#e8c44a;}
-.bracket-espejo-lado:last-child::before{border-color:#4fc3f7;}
+.bracket-espejo-lado{position:relative;display:flex;flex-direction:column;gap:.6rem;width:fit-content;box-sizing:border-box;}
+/* El gancho de cada par mira hacia el centro (espejado): el de la izquierda abre a la
+   derecha, el de la derecha abre a la izquierda — antes los 2 abrían del mismo lado. */
+.bracket-espejo-lado:first-child{padding-right:14px;}
+.bracket-espejo-lado:first-child::before{content:'';position:absolute;right:0;top:0;bottom:0;width:12px;border:2px solid #e8c44a;border-left:none;border-radius:0 8px 8px 0;}
+.bracket-espejo-lado:last-child{padding-left:14px;}
+.bracket-espejo-lado:last-child::before{content:'';position:absolute;left:0;top:0;bottom:0;width:12px;border:2px solid #4fc3f7;border-right:none;border-radius:8px 0 0 8px;}
 /* Conectores horizontales que salen de cada par hacia el centro y se encuentran en la mitad
    de la columna central (64px) — el efecto "se llaman entre sí" de una llave de eliminatoria
    tradicional, en vez de 2 grupos sueltos con una línea de puntos sin relación entre ellos. */
