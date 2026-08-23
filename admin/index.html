@@ -2177,7 +2177,7 @@ function normalizarPlanilla(planilla, equipo){
     nombre: formatearNombre(j?.nombre ?? ""),
     titular: !!j?.titular,
     es_capitan: (j?.nota||"").includes("CP"),
-    eventos: [],
+    eventos: Array.isArray(j?.eventos) ? j.eventos : [],
   }));
   // Enriquecer con datos de DB: si el jugador ya existe, usar su nombre_display
   for(const j of normalizados){
