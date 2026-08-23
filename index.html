@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .tabla-mini tbody tr:hover{background:rgba(255,255,255,0.03);}
 .tabla-mini tbody td{padding:.5rem .45rem;text-align:center;font-size:13px;line-height:1.2;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tabla-mini tbody td:nth-child(2){text-align:left;overflow:visible;max-width:none;}
-.pos{font-size:14px;font-weight:700;color:#bbb;}
+.pos{font-size:14px;font-weight:800;color:#bbb;text-shadow:0 0 3px rgba(0,0,0,.6);}
 .pos.clasif{color:#4caf50;}
 .pos.quinto{color:#e8c44a;}
 .pos.noclasif{color:#e53935;}
@@ -102,6 +102,30 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pos.azul{color:#4fc3f7;}
 .pos.ocre{color:#cc9933;}
 .pos.rosa{color:#f8bbd0;}
+/* Estándar de sitio (rama privada): "fila sombreada" en tablas de grupo (Nonagonales, Zona
+   A-D), "barra ancha" en tablas de línea de corte (Reválidas, Quintos, Tabla de descenso). */
+
+/* fila sombreada: fondo tenue de color en toda la fila, el número mantiene su color de texto
+   normal, sin caja */
+.tabla-mini tbody tr.fila-verde{background:rgba(76,175,80,.08);}
+.tabla-mini tbody tr.fila-azul{background:rgba(79,195,247,.08);}
+.tabla-mini tbody tr.fila-ocre{background:rgba(204,153,51,.08);}
+.tabla-mini tbody tr.fila-rosa{background:rgba(248,187,208,.08);}
+.tabla-mini tbody tr.fila-clasif{background:rgba(76,175,80,.08);}
+.tabla-mini tbody tr.fila-quinto{background:rgba(232,196,74,.08);}
+.tabla-mini tbody tr.fila-noclasif{background:rgba(229,57,53,.1);}
+
+/* barra ancha: borde izquierdo de color, número del mismo color que la barra.
+   box-shadow inset en vez de border-left: la tabla usa border-collapse:collapse, y un
+   border-left directo en el <td> se "fusiona" con el borde de la fila de arriba (el header
+   u otra fila con un ancho de borde distinto) y termina asomando fuera de su propia fila. El
+   inset queda estrictamente dentro de la caja de la celda, sin participar del collapse. */
+.tabla-mini tbody td.barra-ancha-verde{box-shadow:inset 6px 0 0 0 #4caf50;}
+.tabla-mini tbody td.barra-ancha-azul{box-shadow:inset 6px 0 0 0 #4fc3f7;}
+.tabla-mini tbody td.barra-ancha-ocre{box-shadow:inset 6px 0 0 0 #cc9933;}
+.tabla-mini tbody td.barra-ancha-rosa{box-shadow:inset 6px 0 0 0 #f8bbd0;}
+.tabla-mini tbody td.barra-ancha-clasif{box-shadow:inset 6px 0 0 0 #4caf50;}
+.tabla-mini tbody td.barra-ancha-noclasif{box-shadow:inset 6px 0 0 0 #e53935;}
 .pts{font-weight:700;font-size:14px;}
 .tr-eq{display:flex;align-items:center;gap:.4rem;flex-wrap:nowrap;overflow:hidden;}.tr-eq .me{margin-right:5px;flex-shrink:0;}
 .eq-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 auto;}
@@ -114,31 +138,124 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #archivo-fase1-toggle:hover{opacity:.85;}
 #archivo-fase1-toggle.active{background:var(--accent);color:#111;}
 #archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
+/* botones "ver detalle de los cruces" (2/3) + "calculalos" (1/3), segundo ascenso */
+#btns-cruces-split{display:flex;gap:.5rem;width:100%;box-sizing:border-box;margin-top:.9rem;}
+#btn-ver-merito,#btn-ir-calc{display:flex;align-items:center;justify-content:center;gap:.4rem;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem .6rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;}
+#btn-ver-merito{flex:2;}
+#btn-ir-calc{flex:1;background:var(--accent);color:#111;}
+#btn-ver-merito:hover,#btn-ir-calc:hover{opacity:.85;}
 /* leyenda de colores */
 .leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
-/* bracket Fase Campeonato (Nonagonal) */
-#bracket-nonagonal-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;}
-#bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:repeat(4,1fr);gap:.6rem;}
+/* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
+   renderizar el mismo cuadro en más de un lugar (home + calculadora). */
+.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
-.llave-col>.llave-card{margin-bottom:.4rem;}
-.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;display:flex;align-items:center;gap:.35rem;}
+/* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
+   (align-items:stretch arriba). El título NO participa del reparto vertical (si no, con
+   distinta cantidad de tarjetas por columna, el título de cada una quedaba a distinta altura)
+   — solo .llave-col-body (flex:1, el espacio que sobra debajo del título) reparte sus
+   .bracket-pair con space-around, así la Final queda centrada entre las 2 semis y cada
+   .bracket-pair agrupa a los 2 partidos que alimentan a la ronda siguiente — el "]" dibujado
+   con bordes conecta el punto medio de cada par con la ronda siguiente. */
+.llave-col{display:flex;flex-direction:column;}
+.llave-col-body{display:flex;flex-direction:column;justify-content:space-around;gap:1rem;flex:1;}
+.bracket-pair{display:flex;flex-direction:column;justify-content:space-around;gap:.6rem;flex:1;position:relative;}
+.llave-col:not(:last-child) .bracket-pair::after{
+  content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:1rem;
+  border:1px solid var(--border);border-left:none;border-radius:0 4px 4px 0;
+}
+.llave-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;align-items:center;gap:.5rem;width:100%;box-sizing:border-box;}
 .llave-card-mini{padding:.4rem .5rem;}
-.llave-eq-simple{display:flex;align-items:center;gap:.25rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
+.llave-eq-simple{display:flex;align-items:center;gap:.35rem;font-size:12px;min-width:0;flex:1;overflow:hidden;white-space:nowrap;}
 .llave-eq-simple.pend{color:var(--muted);font-style:italic;}
 .llave-eq-simple.llave-gano .llave-nombre{color:#4caf50;font-weight:700;}
 .llave-eq-simple.llave-solo-escudo{justify-content:center;}
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
+.llave-eq-simple.llave-eq-der{justify-content:flex-end;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
-.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;}
+.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+/* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
+   fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
+   ni en mobile ni en desktop. */
+.cruce-merito-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;}
+.cruce-merito-lado{display:flex;align-items:center;gap:.35rem;font-size:12px;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.cruce-merito-lado.pend{color:var(--muted);font-style:italic;font-size:11px;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;}
+.cruce-merito-vs{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
+/* Tabla de Mérito del modal: 1-10 y 11-20 en 2 columnas en desktop (más ancho disponible),
+   apilada en mobile — el modal ya tiene su propio max-width, así que en mobile ambas mitades
+   entran igual de angostas que antes. */
+.merito-2col{display:flex;flex-direction:column;gap:.5rem;}
+@media (min-width:640px){ .merito-2col{flex-direction:row;gap:1rem;} .merito-2col>div{flex:1;min-width:0;} }
 @media (max-width:900px){
-  #bracket-nonagonal-cont{grid-template-columns:1fr;}
-  #bracket-nonagonal-cont.llave-grid-cuartos{grid-template-columns:1fr 1fr;}
+  .bracket-nona-cont{grid-template-columns:1fr;}
+  .bracket-pair::after{display:none;}
 }
+/* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
+   cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
+   semi 1 a la izquierda, 2 del lado de la semi 2 a la derecha. Cada tarjeta apila los 2
+   equipos en 2 filas (no espejados en una sola línea) para que el nombre del club tenga
+   ancho de sobra en cualquier resolución, no solo en mobile — el layout horizontal viejo
+   dejaba lugar para 2-3 letras antes de cortar con "..." en pantallas angostas. Cada par que
+   se cruza entre sí (QF1+QF2 / QF3+QF4) se une con una línea de color en forma de llave, al
+   estilo tradicional de cuadro de torneo, en vez de tarjetas sueltas sin relación visual.
+   Nota: esta clase es propia de este cuadro — no tocar/reusar .llave-* de arriba para no
+   volver a mezclar los dos cuadros por accidente. */
+.bracket-espejo-cont{display:grid;grid-template-columns:max-content 64px max-content;gap:0;align-items:stretch;justify-content:center;}
+.bracket-espejo-centro{width:1px;background:repeating-linear-gradient(to bottom,var(--border) 0 6px,transparent 6px 12px);justify-self:center;}
+
+.bracket-espejo-lado{position:relative;display:flex;flex-direction:column;gap:.6rem;width:fit-content;box-sizing:border-box;}
+/* El gancho de cada par mira hacia el centro (espejado): el de la izquierda abre a la
+   derecha, el de la derecha abre a la izquierda — antes los 2 abrían del mismo lado. */
+.bracket-espejo-lado:first-child{padding-right:14px;}
+.bracket-espejo-lado:first-child::before{content:'';position:absolute;right:0;top:0;bottom:0;width:12px;border:2px solid #e8c44a;border-left:none;border-radius:0 8px 8px 0;}
+.bracket-espejo-lado:last-child{padding-left:14px;}
+.bracket-espejo-lado:last-child::before{content:'';position:absolute;left:0;top:0;bottom:0;width:12px;border:2px solid #4fc3f7;border-right:none;border-radius:8px 0 0 8px;}
+/* Conectores horizontales que salen de cada par hacia el centro y se encuentran en la mitad
+   de la columna central (64px) — el efecto "se llaman entre sí" de una llave de eliminatoria
+   tradicional, en vez de 2 grupos sueltos con una línea de puntos sin relación entre ellos. */
+.bracket-espejo-lado::after{content:'';position:absolute;top:50%;width:32px;height:2px;margin-top:-1px;}
+.bracket-espejo-lado:first-child::after{right:-32px;background:#e8c44a;}
+.bracket-espejo-lado:last-child::after{left:-32px;background:#4fc3f7;}
+
+.espejo-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.3rem;width:250px;box-sizing:border-box;}
+.espejo-lado{display:flex;align-items:center;gap:.35rem;font-size:13px;}
+.espejo-lado .me{width:18px;height:18px;flex-shrink:0;}
+.espejo-nombre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.espejo-pos{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
+.espejo-vd{color:#e8c44a;text-transform:uppercase;}
+.espejo-vs{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;align-self:center;padding:.1rem 0;}
+/* El lado "der" de cada cruce llega del HTML en orden nombre-escudo-puesto (pensado para el
+   viejo efecto espejo en una sola línea) — con las 2 filas apiladas ya no hay espejo que
+   hacer, así que se reordena con `order` para leerse igual que el izquierdo. */
+.espejo-der{justify-content:flex-start;}
+.espejo-der .espejo-pos{order:0;}
+.espejo-der .me{order:1;}
+.espejo-der .espejo-nombre{order:2;text-align:left;}
+
+@media (max-width:900px){
+  .bracket-espejo-cont{grid-template-columns:1fr;gap:1.3rem 0;justify-content:stretch;}
+  .bracket-espejo-centro{display:none;}
+  .bracket-espejo-lado::after{display:none;}
+  /* Apilados verticalmente, los 2 ganchos van del mismo lado (derecha) y se estiran medio
+     espacio cada uno hacia el otro para tocarse en el medio del hueco entre pares — antes el
+     de abajo seguía apuntando a la izquierda (heredado del desktop) y no se unían. */
+  .bracket-espejo-lado:first-child::before{bottom:-.65rem;}
+  .bracket-espejo-lado:last-child{padding-left:0;padding-right:14px;}
+  .bracket-espejo-lado:last-child::before{left:auto;right:0;top:-.65rem;border-left:none;border-right:2px solid #4fc3f7;border-radius:0 8px 8px 0;}
+}
+/* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
+   desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
+   (home + calculadora), no atada a un id. */
+.preview16-cont{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;}
+@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(3,1fr);} }
+.preview16-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:.25rem;display:flex;align-items:center;justify-content:center;gap:.2rem;}
+.preview16-lado{display:flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:15px;flex-shrink:0;}
+.preview16-vs{font-size:7px;color:var(--muted);flex-shrink:0;}
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -472,11 +589,74 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-table tbody tr:hover td:first-child{background:#181818;}
 .plt-table td.plt-nac-col{color:#aaa;}
 .plt-table td.plt-ori-col{color:#888;font-size:11px;}
-.plt-table .plt-stat-hi{font-weight:700;color:#e8e8e8;}
-.plt-table .plt-stat-0{color:#444;}
-.plt-table .plt-gol-hi{color:#ffd54f;font-weight:700;}
-.plt-table .plt-ast-hi{color:#80cbc4;font-weight:700;}
+.plt-table .plt-stat-hi,.jug-cards-wrap .plt-stat-hi{font-weight:700;color:#e8e8e8;}
+.plt-table .plt-stat-0,.jug-cards-wrap .plt-stat-0{color:#444;}
+.plt-table .plt-gol-hi,.jug-cards-wrap .plt-gol-hi{color:#ffd54f;font-weight:700;}
+.plt-table .plt-ast-hi,.jug-cards-wrap .plt-ast-hi{color:#80cbc4;font-weight:700;}
+.plt-desk-only{display:block!important;}
+.plt-mob-only{display:none!important;}
+.jug-cards-wrap{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;}
+.jug-card{display:flex;align-items:center;gap:.55rem;padding:.55rem .65rem;border-radius:8px;background:rgba(255,255,255,.03);border-left:3px solid rgba(255,255,255,.15);cursor:pointer;transition:background .15s;}
+.jug-card:active{background:rgba(255,255,255,.08);}
+.jug-card-name{flex:1;min-width:0;display:flex;flex-direction:column;}
+.jug-card-name b{font-size:12.5px;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jug-card-subname{font-size:10px;color:#999;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jug-card-pos{font-size:10px;color:#999;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:10px;flex-shrink:0;white-space:nowrap;}
+.jug-card-stat{display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:24px;}
+.jug-card-stat span{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;line-height:1;}
+.jug-card-stat small{font-size:8.5px;color:#777;text-transform:uppercase;margin-top:1px;}
+.jug-card-arrow{color:#555;font-size:18px;flex-shrink:0;}
+@media(max-width:700px){
+  .plt-desk-only{display:none!important;}
+  .plt-mob-only{display:flex!important;}
+}
 .plt-cumple{cursor:default;font-size:14px;}
+.jug-perfil-btn{cursor:pointer;font-size:12px;margin-left:.4rem;opacity:.7;transition:opacity .15s;}
+.jug-perfil-btn:hover{opacity:1;}
+.jug-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:.5rem;margin-bottom:1.25rem;}
+.jug-summary-cell{background:rgba(255,255,255,.04);border-radius:8px;padding:.55rem .3rem;text-align:center;}
+.jug-summary-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#f0f0f0;line-height:1.1;}
+.jug-summary-lbl{font-size:9.5px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+.jug-cond-badge{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+.jug-cond-badge.tit{background:rgba(77,175,74,.2);color:#7ecb7e;}
+.jug-cond-badge.ing{background:rgba(79,195,247,.18);color:#81d4fa;}
+.jug-cond-badge.bnc{background:rgba(255,255,255,.08);color:#999;}
+.jug-cond-badge.nc{background:rgba(255,255,255,.04);color:#666;font-style:italic;}
+.jug-tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.jug-tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;}
+.jug-tbl thead th{padding:.35rem .3rem;border-bottom:2px solid rgba(255,255,255,.12);color:var(--muted);font-weight:700;font-size:10.5px;text-align:center;}
+.jug-tbl tbody td{padding:.32rem .3rem;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;vertical-align:middle;}
+.jug-tbl tbody tr:hover td{background:rgba(255,255,255,.04);}
+.jug-tbl-fecha{font-size:10px;color:#888;}
+.jug-tbl-rival{text-align:left!important;display:flex;align-items:center;min-width:0;}
+.jug-tbl-rival img{width:16px;height:16px;object-fit:contain;flex-shrink:0;margin-right:.3rem;}
+.jug-tbl-rival-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;}
+.jug-tbl-lv-res{font-size:10.5px;color:#888;margin-left:.3rem;flex-shrink:0;white-space:nowrap;}
+.jug-tbl-lv-res.G{color:#7ecb7e;}
+.jug-tbl-lv-res.E{color:#ffd54f;}
+.jug-tbl-lv-res.P{color:#ef9a9a;}
+.jug-stat-0{color:#444;}
+.jug-stat-hi{font-weight:700;color:#e8e8e8;}
+.jug-stat-hi.jug-gol-hi{color:#ffd54f;}
+.jug-stat-hi.jug-ast-hi{color:#64b5f6;}
+.jug-stat-hi.jug-am-hi{color:#ffd54f;}
+.jug-stat-hi.jug-roja-hi{color:#ef9a9a;}
+#jugador-modal{padding:1rem;}
+#jugador-cont{padding:1rem;}
+.jug-bio{font-size:12px;color:#ccc;margin-bottom:1rem;line-height:1.7;}
+.jug-bio b{color:#f0f0f0;font-weight:600;font-size:13px;}
+.jug-transfer-nota{font-size:11.5px;color:#e8c44a;background:rgba(232,196,74,.1);border:1px solid rgba(232,196,74,.25);border-radius:6px;padding:.5rem .65rem;margin-bottom:1rem;line-height:1.4;}
+@media(max-width:700px){
+  #jugador-modal{padding:.35rem;}
+  #jugador-cont{padding:.65rem .5rem;}
+  .jug-tbl{font-size:10.5px;}
+  .jug-tbl thead th{padding:.3rem .12rem;font-size:9px;}
+  .jug-tbl tbody td{padding:.28rem .12rem;}
+  .jug-tbl-rival-name{font-size:11px;}
+  .jug-tbl-lv-res{font-size:9.5px;margin-left:.2rem;}
+  .jug-tbl-rival img{width:14px;height:14px;margin-right:.2rem;}
+  .jug-summary-grid{grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:.35rem;}
+}
 @media(max-width:700px){
   .plt-grid{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:.45rem;}
   .plt-card{padding:.7rem .35rem .5rem;}
@@ -633,7 +813,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="page" id="page-calculadora">
   <div style="padding:1rem 1rem 2.5rem;max-width:860px;margin:0 auto;">
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:.2rem;">🧮 Calculadora</div>
-    <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y la clasificación proyectada.</p>
+
+    <p class="sec" style="color:#fff;margin-top:.5rem;">Estado actual</p>
+    <div class="calc-form-grid" style="margin-bottom:1rem;">
+      <div id="calc-real-tabla-nona-a"></div>
+      <div id="calc-real-tabla-nona-b"></div>
+    </div>
+    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
+      <div id="calc-real-tabla-rev-a"></div>
+      <div id="calc-real-tabla-rev-b"></div>
+    </div>
+    <p class="sec" style="color:#fff;">Primer ascenso — cuadro actual</p>
+    <div id="calc-real-bracket-nona" class="bracket-nona-cont" style="margin-bottom:1.2rem;"></div>
+    <p class="sec" style="color:#fff;">Segundo ascenso — 16vos actuales</p>
+    <div id="calc-real-preview16" class="preview16-cont" style="margin-bottom:1.5rem;"></div>
+
+    <p class="sec" style="color:#fff;">Simulá resultados pendientes</p>
+    <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes de Segunda Fase y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y los cuadros proyectados.</p>
     <div id="calc-form"><div style="color:#888;font-size:13px;">Cargando partidos...</div></div>
     <div id="calc-btn-wrap" style="display:none;margin:1.25rem 0;text-align:center;">
       <button onclick="calcularProyeccion()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.65rem 2.5rem;font-size:16px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;">CALCULAR</button>
@@ -680,8 +876,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           </div>
         </div>
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Parcial</p>
-          <div id="bracket-nonagonal-cont"></div>
+          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
+          <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
+          <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
+          <div id="preview16-cont" class="preview16-cont"></div>
+          <div id="preview16-leyenda" class="leyenda-colores"></div>
+          <div id="btns-cruces-split">
+            <div id="btn-ver-merito" onclick="abrirModalMerito()">🔍 Detalle de los cruces</div>
+            <div id="btn-ir-calc" onclick="goPage('calculadora')">Calculalos</div>
+          </div>
         </div>
         <div id="revalidas-wrap">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
@@ -691,6 +894,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
                 <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
                 <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
                 <span><b style="color:#e53935;">●</b> En descenso</span>
+                <span>%C = Promedio para clasif. a siguiente fase</span>
               </div>
             </div>
             <div id="tablas-revalida-b" style="align-self:start;"></div>
@@ -2504,7 +2708,7 @@ function renderTablas(){
       let posClass="noclasif";
       if(pos<=clasif) posClass="clasif";
       else if(pos===5&&z!=="Zona A") posClass="quinto";
-      html+=`<tr>
+      html+=`<tr class="fila-${posClass}">
         <td><span class="pos ${posClass}">${pos}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
@@ -2545,7 +2749,7 @@ function renderTablas(){
       let posClass="noclasif";
       if(pos<=clasif) posClass="clasif";
       else if(pos===5&&z!=="Zona A") posClass="quinto";
-      zh+=`<tr>
+      zh+=`<tr class="fila-${posClass}">
         <td><span class="pos ${posClass}">${pos}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
         <td><strong class="pts">${r.pts}</strong></td>
@@ -2572,8 +2776,9 @@ function renderTablas(){
     </tr></thead><tbody>
     ${quintosRows.map((r,i)=>{
       const dif=r.gf-r.gc;
-      return `<tr><td><span class="pos ${i===0?'clasif':'noclasif'}">${i+1}</span></td>
-        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px">${r.n}</span></div></td>
+      const posClass = i===0?'clasif':'noclasif';
+      return `<tr><td class="barra-ancha-${posClass}"><span class="pos ${posClass}">${i+1}</span></td>
+        <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td>
         <td style="font-size:11px;color:var(--muted)">${r.zona.replace('Zona ','')}</td>
         <td><strong class="pts">${r.pts}</strong></td>
         <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
@@ -2668,30 +2873,77 @@ function calcDescensoInfo(equipos, grupo, criterioTipo){
   return rows; // ordenadas por criterio de descenso, cada fila con r._danger
 }
 
-function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn){
+// variant: 'shade' (Nonagonal A/B) | 'bar-wide' (Reválida A/B) — marca de posición de cada
+// tabla de grupo. Un equipo en zona de descenso (posClass 'noclasif') muestra su nombre y
+// todas sus estadísticas en rojo, además de su marca de posición.
+function renderTablaGrupo(elId, rows, titulo, colorTitulo, colorFn, variant){
   const el = document.getElementById(elId);
   if(!el) return;
+  const conPctC = rows.length && rows[0]._pctCLabel !== undefined;
   let h = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${colorTitulo};margin:0 0 .28rem;">${titulo}</p>`;
   h += `<div class="tabla-mini"><table style="width:100%;table-layout:fixed;"><thead><tr>
       <th style="width:30px">#</th><th style="text-align:left;">Equipo</th>
       <th title="Puntos">Pts</th><th title="PJ">PJ</th><th title="G">G</th>
       <th title="E">E</th><th title="P">P</th><th title="GF">GF</th>
-      <th title="GC">GC</th><th title="+/-">+/-</th>
+      <th title="GC">GC</th><th title="+/-">+/-</th>${conPctC?'<th title="Promedio para clasificar a la siguiente fase" style="width:46px;">%C</th>':''}
     </tr></thead><tbody>`;
   rows.forEach((r,i)=>{
     const pos=i+1, dif=r.gf-r.gc;
     const posClass = r._posClass || colorFn(pos, rows.length);
-    h += `<tr>
-      <td><span class="pos ${posClass}">${pos}</span></td>
-      <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
-      <td><strong class="pts">${r.pts}</strong></td>
-      <td>${r.pj}</td><td>${r.g}</td><td>${r.e}</td><td>${r.p}</td>
-      <td>${r.gf}</td><td>${r.gc}</td>
-      <td style="color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+    const desc = posClass==='noclasif';
+    const descTd = desc ? ' style="color:#e53935;"' : '';
+    const pctCColor = r._pctCTone==='verde' ? '#a5d6a7' : r._pctCTone==='rosa' ? '#f8bbd0' : 'var(--muted)';
+    const trClass = variant==='shade' ? ` class="fila-${posClass}"` : '';
+    const posTdClass = variant==='bar-wide' ? ` class="barra-ancha-${posClass}"` : '';
+    h += `<tr${trClass}>
+      <td${posTdClass}><span class="pos ${posClass}">${pos}</span></td>
+      <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${desc?'color:#e53935;':''}">${r.n}</span>${liveScoreBadge(r.n)}</div></td>
+      <td><strong class="pts"${descTd}>${r.pts}</strong></td>
+      <td${descTd}>${r.pj}</td><td${descTd}>${r.g}</td><td${descTd}>${r.e}</td><td${descTd}>${r.p}</td>
+      <td${descTd}>${r.gf}</td><td${descTd}>${r.gc}</td>
+      <td style="color:${desc?'#e53935':dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'}">${dif>0?'+':''}${dif}</td>
+      ${conPctC?`<td style="color:${pctCColor};white-space:nowrap;font-size:12px;">${r._pctCLabel}</td>`:''}
     </tr>`;
   });
   h += `</tbody></table></div>`;
   el.innerHTML = h;
+}
+
+// %C: promedio de puntos por partido, EXCLUSIVO de lo jugado en la fase de Reválida (r.pts/r.pj,
+// no el acumulado de temporada completa que se usa para el cruce con descenso). Se colorea
+// comparando, entre las dos zonas, al N-ésimo equipo que efectivamente clasifica (_posClass
+// 'ocre') contra el N-ésimo de la otra zona — no por número de fila de la tabla, así que si el
+// 3° de una zona está en 'noclasif' (descenso), el 4° de esa zona pasa a compararse contra el
+// 3° real de la otra. Los que no clasifican por posición ('rosa') muestran "N/C" en vez de valor.
+function aplicarPctCRevalida(rowsA, rowsB){
+  [rowsA, rowsB].forEach(rows=>{
+    rows.forEach(r=>{
+      const val = r.pj>0 ? r.pts/r.pj : null;
+      r._pctCVal = val;
+      r._pctCLabel = val===null ? '—' : val.toFixed(3).replace('.', ',');
+      r._pctCTone = null;
+    });
+  });
+  const ocreA = rowsA.filter(r=>r._posClass==='ocre');
+  const ocreB = rowsB.filter(r=>r._posClass==='ocre');
+  const n = Math.min(ocreA.length, ocreB.length);
+  for(let i=0;i<n;i++){
+    const a = ocreA[i], b = ocreB[i];
+    if(a._pctCVal===null && b._pctCVal===null) continue; // ninguno jugó todavía: nada que comparar
+    if(a._pctCVal===b._pctCVal) continue; // empate real
+    // Si uno todavía no jugó su fase de Reválida (byes/fecha libre), el que sí jugó y sumó queda
+    // mejor posicionado que "sin datos" — no se bloquean entre sí como antes.
+    if(a._pctCVal===null){ b._pctCTone='verde'; continue; }
+    if(b._pctCVal===null){ a._pctCTone='verde'; continue; }
+    if(a._pctCVal > b._pctCVal){ a._pctCTone='verde'; b._pctCTone='rosa'; }
+    else { b._pctCTone='verde'; a._pctCTone='rosa'; }
+  }
+  // "N/C" para cualquiera que no esté efectivamente clasificando — no solo el 'rosa' (por
+  // posición), también el 'noclasif' (descenso): un descendido siempre está, por regla, por
+  // debajo del último clasificado.
+  rowsA.concat(rowsB).forEach(r=>{
+    if(r._posClass!=='ocre'){ r._pctCLabel='N/C'; r._pctCTone=null; }
+  });
 }
 
 // Un equipo entre los que clasificarían de Reválida (mitad superior de la tabla del grupo) pero
@@ -2723,6 +2975,10 @@ const sortNonagonal = (a,b) => baseSortGrupo(a,b) || (b.gfVisit-a.gfVisit) || (b
 // Fase combinadas), sorteo.
 const sortPorPromedio = (a,b) => baseSortGrupo(a,b) || ((b._tempPj?b._tempPts/b._tempPj:0) - (a._tempPj?a._tempPts/a._tempPj:0));
 
+// Últimas filas calculadas de los 4 grupos — el modal de "cruces y tablas" del segundo ascenso
+// las lee de acá en vez de recalcular todo de nuevo.
+let _ultimoNonARows = null, _ultimoNonBRows = null, _ultimoRevARows = null, _ultimoRevBRows = null;
+
 function renderGruposSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
 
@@ -2741,78 +2997,380 @@ function renderGruposSegundaFase(grupos){
   const descensoBMap = {}; descensoBRows.forEach(r=>{ descensoBMap[r.n] = r._danger; });
   aplicarDescensoAGrupo(revBRows, descensoBMap);
 
-  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal);
-  renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal);
-  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida);
-  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida);
+  aplicarPctCRevalida(revARows, revBRows);
 
-  renderBracketNonagonal(grupos);
+  renderTablaGrupo('tablas-nonagonal-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color, posClassNonagonal, 'shade');
+  renderTablaGrupo('tablas-nonagonal-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color, posClassNonagonal, 'shade');
+  renderTablaGrupo('tablas-revalida-a', revARows, 'Reválida A', zonaConfig('Reválida A').color, posClassRevalida, 'bar-wide');
+  renderTablaGrupo('tablas-revalida-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color, posClassRevalida, 'bar-wide');
+
+  _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
+  _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
+
+  renderBracketNonagonalEspejo(grupos);
+  renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
 
 // Un lado de una llave. soloEscudo=true (usado en "Cuartos — Parcial") muestra nada más
 // que el escudo, más grande — los nombres largos quedaban cortados en la fila angosta.
-function _ladoLlave(equipo, esGanador, conSeed, soloEscudo){
-  if(!equipo) return `<div class="llave-eq-simple pend">A definir</div>`;
+// lado 'izq' (mejor, por defecto) = seed/escudo/nombre; lado 'der' (peor) = nombre/escudo/seed
+// espejado, para que el nombre visitante no quede pegado al "vs" con espacio muerto a la
+// derecha (mismo criterio que _ladoEspejo, ya no comparte código porque uno es de la home).
+function _ladoLlave(equipo, esGanador, conSeed, soloEscudo, lado){
+  if(!equipo) return `<div class="llave-eq-simple pend"${lado==='der'?' style="justify-content:flex-end;"':''}>A Definir</div>`;
   if(soloEscudo){
     return `<div class="llave-eq-simple llave-solo-escudo${esGanador?' llave-gano':''}">${escudoHTML(equipo.n)}</div>`;
   }
-  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">
-    ${conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:''}
-    ${escudoHTML(equipo.n,'me')}<span class="llave-nombre">${equipo.n}</span>
-  </div>`;
+  const seed = conSeed?`<span class="llave-seed">${_seedLabelLlave(equipo)}</span>`:'';
+  const esc = escudoHTML(equipo.n,'me');
+  const nom = `<span class="llave-nombre">${equipo.n}</span>`;
+  if(lado==='der'){
+    return `<div class="llave-eq-simple llave-eq-der${esGanador?' llave-gano':''}">${nom}${esc}${seed}</div>`;
+  }
+  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">${seed}${esc}${nom}</div>`;
+}
+
+// Cuando ningún lado está definido todavía, una sola tarjeta "A Definir" centrada en vez de
+// "A Definir vs A Definir" (no aporta nada mostrar el "vs" contra sí mismo).
+function _cardVacia(soloEscudo){
+  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
 }
 
 // Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
 // (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
 function _cardLlave(tie, soloEscudo){
+  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
-    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo)}
+    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo, 'izq')}
     <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo)}
+    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo, 'der')}
   </div>`;
 }
 
 function _cardFinalNonagonal(final){
+  if(!final.equipo1 && !final.equipo2) return _cardVacia();
   return `<div class="llave-card">
-    ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false)}
+    ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false, false, 'izq')}
     <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false)}
+    ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false, false, 'der')}
   </div>`;
 }
 
-function renderBracketNonagonal(grupos){
-  const el = document.getElementById('bracket-nonagonal-cont');
-  const tituloEl = document.getElementById('bracket-nonagonal-title');
+// Siempre arma el cuadro completo de 3 rondas (Cuartos/Semis/Final) con forma de llave real —
+// los cruces sin jugar ya se conocen de antemano (vienen de la posición en el Nonagonal), así
+// que no hace falta esperar a que se resuelvan los cuartos para mostrar la estructura completa;
+// simplemente los lados sin ganador todavía quedan en "A definir".
+function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
+  const el = document.getElementById(elId);
+  const tituloEl = document.getElementById(tituloElId);
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  // Semis y Final se muestran recién cuando los 4 cuartos ya se jugaron —
-  // hasta entonces solo se ve la llave de Cuartos de Final.
-  const cuartosResueltos = bracket.cuartos.every(c => c.resultado.resuelto);
-
-  if(!cuartosResueltos){
-    if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Parcial';
-    el.className = 'llave-grid-cuartos';
-    el.innerHTML = bracket.cuartos.map(c => _cardLlave(c, true)).join('');
-    return;
-  }
-
-  if(tituloEl) tituloEl.textContent = 'Fase Campeonato — Nonagonal';
-  el.className = '';
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso — Nonagonal';
+  el.className = 'bracket-nona-cont';
+  // La ronda que ya tiene contenido real (normalmente Cuartos, hasta que se juegue esa llave)
+  // se muestra más ancha que las que todavía son "A Definir" — 3 columnas iguales le achicaban
+  // el lugar a la única que realmente tiene equipos y nombres para mostrar.
+  const conContenido = c => c.some(x => x.mejor || x.peor);
+  const pesoQ = conContenido(bracket.cuartos) ? 2.4 : 1;
+  const pesoS = conContenido(bracket.semis) ? 2.4 : 1;
+  const pesoF = (bracket.final.equipo1 || bracket.final.equipo2) ? 2.4 : 1;
+  // Variable CSS (no grid-template-columns directo): así en mobile sigue ganando el
+  // grid-template-columns:1fr fijo de la media query, sin que este peso dinámico lo pise.
+  el.style.setProperty('--bnc-cols', `${pesoQ}fr ${pesoS}fr ${pesoF}fr`);
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  const [sf1,sf2] = bracket.semis;
   el.innerHTML = `<div class="llave-col">
       <p class="llave-col-title">Cuartos de Final</p>
-      ${bracket.cuartos.map(c => _cardLlave(c)).join('')}
+      <div class="llave-col-body">
+        <div class="bracket-pair">${_cardLlave(qf1)}${_cardLlave(qf2)}</div>
+        <div class="bracket-pair">${_cardLlave(qf3)}${_cardLlave(qf4)}</div>
+      </div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Semifinales</p>
-      ${bracket.semis.map(c => _cardLlave(c)).join('')}
+      <div class="llave-col-body">
+        <div class="bracket-pair">${_cardLlave(sf1)}${_cardLlave(sf2)}</div>
+      </div>
     </div>
     <div class="llave-col">
       <p class="llave-col-title">Final</p>
-      ${_cardFinalNonagonal(bracket.final)}
+      <div class="llave-col-body">${_cardFinalNonagonal(bracket.final)}</div>
     </div>`;
+}
+
+// ── CUADRO "ESPEJO" DEL NONAGONAL — SOLO PARA LA HOME ──
+// Independiente de renderBracketNonagonal/.llave-* de arriba (que sigue usando la
+// calculadora) para que un ajuste acá no vuelva a filtrarse a la calculadora, ni viceversa.
+
+// pos/escudo/nombre a la izquierda; nombre/escudo/pos a la derecha (espejado), VS centrado.
+function _ladoEspejo(equipo, lado, esGanador){
+  if(!equipo) return `<div class="espejo-lado" style="justify-content:center;color:var(--muted);font-style:italic;">A Definir</div>`;
+  const pos = `<span class="espejo-pos">${_seedLabelLlave(equipo)}</span>`;
+  const esc = escudoHTML(equipo.n,'me');
+  // "mejor" (menor número de posición) SIEMPRE tiene la ventaja deportiva y SIEMPRE va del
+  // lado izquierdo (ver _cardEspejo) — el tag (VD) va ahí, nunca del lado derecho.
+  const vd = lado==='izq' ? ' <span class="espejo-vd">(VD)</span>' : '';
+  const nom = `<span class="espejo-nombre"${esGanador?' style="color:#4caf50;font-weight:700;"':''}>${equipo.n}${vd}</span>`;
+  return lado==='izq'
+    ? `<div class="espejo-lado espejo-izq">${pos}${esc}${nom}</div>`
+    : `<div class="espejo-lado espejo-der">${nom}${esc}${pos}</div>`;
+}
+function _cardEspejo(tie){
+  if(!tie.mejor && !tie.peor){
+    return `<div class="espejo-card"><div class="espejo-lado" style="justify-content:center;color:var(--muted);font-style:italic;">A Definir</div></div>`;
+  }
+  const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
+  return `<div class="espejo-card">
+    ${_ladoEspejo(tie.mejor, 'izq', ganadorEsMejor===true)}
+    <div class="espejo-vs">VS</div>
+    ${_ladoEspejo(tie.peor, 'der', ganadorEsMejor===false)}
+  </div>`;
+}
+
+// 2 cuartos del lado de la Semi 1 a la izquierda, 2 del lado de la Semi 2 a la derecha, con
+// una línea central tenue — sin recuadros de semis/final todavía (se suman más adelante).
+function renderBracketNonagonalEspejo(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
+  const el = document.getElementById(elId);
+  const tituloEl = document.getElementById(tituloElId);
+  if(!el) return;
+  const bracket = calcBracketNonagonal(grupos);
+  if(tituloEl) tituloEl.textContent = 'Cuartos de Final — Primer Ascenso';
+  el.className = 'bracket-espejo-cont';
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  el.innerHTML = `<div class="bracket-espejo-lado">${_cardEspejo(qf1)}${_cardEspejo(qf2)}</div>
+    <div class="bracket-espejo-centro"></div>
+    <div class="bracket-espejo-lado">${_cardEspejo(qf3)}${_cardEspejo(qf4)}</div>`;
+}
+
+// ── MODAL: cruces y tablas del camino por el segundo ascenso ──
+
+// Compara 2 equipos de un mismo puesto (5°, 6°...) entre Nonagonal A y B, exclusivamente con
+// stats de la fase de Nonagonal: pts, dif. de gol, GF, GF de visitante. 0 = empate total.
+function ordenarTierNonagonal(a, b){
+  const difA = a.gf-a.gc, difB = b.gf-b.gc;
+  if(a.pts!==b.pts) return b.pts-a.pts;
+  if(difA!==difB) return difB-difA;
+  if(a.gf!==b.gf) return b.gf-a.gf;
+  if(a.gfVisit!==b.gfVisit) return b.gfVisit-a.gfVisit;
+  return 0;
+}
+
+// Qué criterio terminó desempatando a estos 2 (mismo orden de cascada que ordenarTierNonagonal),
+// para poder destacar en la Tabla de Mérito cuándo un equipo avanzó "por goles" (GF o GV) y no
+// simplemente por puntos o diferencia de gol.
+function criterioDecisivoNonagonal(a, b){
+  if(a.pts!==b.pts) return 'pts';
+  const difA=a.gf-a.gc, difB=b.gf-b.gc;
+  if(difA!==difB) return 'dif';
+  if(a.gf!==b.gf) return 'gf';
+  if(a.gfVisit!==b.gfVisit) return 'gfVisit';
+  return null;
+}
+
+// Compara 2 equipos del mismo puesto de clasificación (1° vs 1°, 2° vs 2°...) entre Reválida A
+// y B. La posición DENTRO de cada zona ya viene resuelta de antes (pts→dif.gol→GF del grupo,
+// más el desempate de temporada completa propio de cada zona — promedio para A, suma total
+// para B) y esos criterios NO se reutilizan acá: no son comparables entre zonas de distinto
+// tamaño (Reválida A juega una fecha menos que B). El ÚNICO criterio para decidir cuál de los
+// dos clasifica mejor es el %C (promedio pts/PJ exclusivo de la fase de Reválida). Empate → 0.
+function ordenarTierRevalida(a, b){
+  const va = a._pctCVal ?? -1, vb = b._pctCVal ?? -1;
+  if(va!==vb) return vb-va;
+  return 0;
+}
+
+// Tabla de Mérito (20 puestos): primero los NO clasificados del Nonagonal (5° a 9° de cada
+// grupo, comparados de a pares por puesto — 5° vs 5°, 6° vs 6°, etc., con stats exclusivas de
+// la fase de Nonagonal), después los clasificados de Reválida (10, 5 de cada zona, comparados
+// TAMBIÉN de a pares por puesto de clasificación — el 1° de A contra el 1° de B, etc., no todos
+// contra todos). Nonagonal SIEMPRE va antes que Reválida. Empates totales quedan como puestos
+// "a sorteo" (una fila por puesto, sin saltear numeración, listando a todos los candidatos).
+function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
+  const items = [];
+  // Nonagonal no tiene %C (ese criterio es propio de Reválida, para compensar que juega
+  // distinta cantidad de partidos) — queda null para esas filas. criterio: 'gf'|'gfVisit'|null
+  // (se marca en LOS DOS equipos del par cuando ese fue el que los diferenció), rol:
+  // 'win'|'lose' para saber a cuál de los dos le tocó el verde/amarillo y a cuál el rojo.
+  const itemNona = (r, pos, origen, criterio, rol) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, criterio:criterio||null, rol:rol||null});
+  const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:r._pctCLabel});
+
+  for(let tier=4; tier<=8; tier++){
+    const a = nonARows[tier], b = nonBRows[tier];
+    if(!a || !b) continue;
+    const pos = tier+1;
+    const cmp = ordenarTierNonagonal(a, b);
+    if(cmp===0){
+      const candidatos = [itemNona(a,pos,'Nonagonal A'), itemNona(b,pos,'Nonagonal B')];
+      items.push({tipo:'sorteo', candidatos});
+      items.push({tipo:'sorteo', candidatos});
+    } else {
+      const criterioRaw = criterioDecisivoNonagonal(a, b);
+      const criterio = (criterioRaw==='gf'||criterioRaw==='gfVisit') ? criterioRaw : null;
+      if(cmp<0){
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',criterio,'win')});
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',criterio,'lose')});
+      } else {
+        items.push({tipo:'equipo', ...itemNona(b,pos,'Nonagonal B',criterio,'win')});
+        items.push({tipo:'equipo', ...itemNona(a,pos,'Nonagonal A',criterio,'lose')});
+      }
+    }
+  }
+
+  // _rawPos = puesto real en la tabla de su zona (1-indexado), el que se muestra al usuario.
+  const ocreA = revARows.map((r,idx)=>({...r, _rawPos:idx+1})).filter(r=>r._posClass==='ocre');
+  const ocreB = revBRows.map((r,idx)=>({...r, _rawPos:idx+1})).filter(r=>r._posClass==='ocre');
+  const nRev = Math.max(ocreA.length, ocreB.length);
+  for(let k=0; k<nRev; k++){
+    const a = ocreA[k], b = ocreB[k];
+    if(a && b){
+      const cmp = ordenarTierRevalida(a, b);
+      if(cmp===0){
+        const candidatos = [itemRev(a,'Reválida A'), itemRev(b,'Reválida B')];
+        items.push({tipo:'sorteo', candidatos});
+        items.push({tipo:'sorteo', candidatos});
+      } else if(cmp<0){
+        items.push({tipo:'equipo', ...itemRev(a,'Reválida A')});
+        items.push({tipo:'equipo', ...itemRev(b,'Reválida B')});
+      } else {
+        items.push({tipo:'equipo', ...itemRev(b,'Reválida B')});
+        items.push({tipo:'equipo', ...itemRev(a,'Reválida A')});
+      }
+    } else if(a){
+      items.push({tipo:'equipo', ...itemRev(a,'Reválida A')});
+    } else if(b){
+      items.push({tipo:'equipo', ...itemRev(b,'Reválida B')});
+    }
+  }
+  return items; // 20 items, posición en la Tabla de Mérito = índice+1
+}
+
+// Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
+// (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
+// de los 20 puestos de la Tabla de Mérito. 24 en total.
+function calcLista16vos(tablaMerito){
+  const reenganches = [1,2,3,4].map(i=>({tipo:'pendiente', label:`Perdedor QF${i}`}));
+  return [...reenganches, ...tablaMerito];
+}
+
+// Cruces "mejor vs peor" de una lista ya ordenada: 1° vs último, 2° vs anteúltimo, etc.
+function armarCrucesDesdeOrden(lista){
+  const cruces = [];
+  for(let i=0; i<Math.floor(lista.length/2); i++){
+    cruces.push({ mejor: lista[i], peor: lista[lista.length-1-i] });
+  }
+  return cruces;
+}
+
+// Preview de los cruces de 16vos en la home — solo escudos (o ícono si el lugar todavía no
+// tiene equipo real: ⬇️ para los 4 que caen del primer ascenso, 🎲 para los que dependen de
+// un sorteo). El nombre real queda como tooltip (title) para no escribir texto en la tarjeta.
+function _ladoPreview16(item){
+  if(!item) return `<div class="preview16-lado">?</div>`;
+  if(item.tipo==='pendiente') return `<div class="preview16-lado" title="${item.label} — Eliminado del 1er Ascenso">⬇️</div>`;
+  if(item.tipo==='sorteo') return `<div class="preview16-lado" title="Sorteo: ${item.candidatos.map(c=>c.n).join(' / ')}">🎲</div>`;
+  return `<div class="preview16-lado" title="${item.n}">${escudoHTML(item.n,'me')}</div>`;
+}
+
+function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont', leyendaId='preview16-leyenda'){
+  const cont = document.getElementById(contId);
+  const leyenda = document.getElementById(leyendaId);
+  if(!cont) return;
+  const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
+  const lista16vos = calcLista16vos(tablaMerito);
+  const cruces = armarCrucesDesdeOrden(lista16vos);
+  cont.innerHTML = cruces.map(c =>
+    `<div class="preview16-card">${_ladoPreview16(c.mejor)}<span class="preview16-vs">vs</span>${_ladoPreview16(c.peor)}</div>`
+  ).join('');
+  if(leyenda){
+    leyenda.innerHTML = `<span>⬇️ Eliminado del 1er Ascenso</span><span>🎲 Sorteo</span>`;
+  }
+}
+
+// Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
+// igual densidad que las llaves del Nonagonal. Cuando hay que sortear, el candidato queda
+// solo con el nombre (sin el tag de posición/grupo) y puede pasar a una segunda línea si son
+// varios, pero sin forzar ancho — la fila no crece para los costados, solo para abajo.
+function _ladoCruceMerito(item){
+  if(!item) return `<div class="cruce-merito-lado pend">A Definir</div>`;
+  if(item.tipo==='pendiente') return `<div class="cruce-merito-lado pend">${item.label}</div>`;
+  if(item.tipo==='sorteo') return `<div class="cruce-merito-lado pend">🎲 ${item.candidatos.map(c=>c.n).join(' / ')}</div>`;
+  return `<div class="cruce-merito-lado">${escudoHTML(item.n,'me')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${item.n}</span></div>`;
+}
+function _cardCruceMerito(mejor, peor){
+  return `<div class="cruce-merito-card">${_ladoCruceMerito(mejor)}<div class="cruce-merito-vs">vs</div>${_ladoCruceMerito(peor)}</div>`;
+}
+
+// Para las filas de Nonagonal se suma pts y DG de la fase, y si el criterio que lo hizo pasar
+// por delante de su par fue GF o goles como visitante (GV), se destaca ese número en amarillo.
+// Criterio 'gf': se muestra en AMBOS equipos del par — verde el que está mejor ubicado por
+// eso, rojo el otro. Criterio 'gfVisit' (GV): mismo esquema pero el que avanza queda en
+// amarillo (para distinguir que fue justo por el criterio más inusual), el otro en rojo.
+function _contenidoMerito(it){
+  if(it.tipo==='sorteo'){
+    return `<span style="color:#e8c44a;font-size:11px;">Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span>`;
+  }
+  let detalle = `${it.pos}° ${it.origen}`;
+  if(it.origen && it.origen.startsWith('Nonagonal')){
+    detalle += `, ${it.pts}pts; ${it.dif>=0?'+':''}${it.dif}`;
+    if(it.criterio){
+      const label = it.criterio==='gf' ? 'GF' : 'GV';
+      const valor = it.criterio==='gf' ? it.gf : it.gfVisit;
+      const color = it.rol==='win' ? (it.criterio==='gfVisit' ? '#e8c44a' : '#4caf50') : '#e57373';
+      detalle += `; <span style="color:${color};">${label}: ${valor}</span>`;
+    }
+  }
+  // Sin flex-wrap: el nombre se trunca con "..." si hace falta, pero la fila nunca crece de
+  // alto — así todas las filas quedan parejas aunque algunas tengan mucho más detalle.
+  return `<div style="display:flex;align-items:center;gap:.35rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">${it.n}</span><span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${detalle}</span></div>`;
+}
+function _filaMerito(it, pos){
+  return `<tr style="height:40px;">
+    <td style="width:26px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+    <td style="padding:.4rem .5rem;font-size:13px;">${_contenidoMerito(it)}</td>
+  </tr>`;
+}
+// En desktop se parte al medio (1-10 / 11-20) en 2 columnas para aprovechar el ancho del
+// modal; en mobile queda apilado (.merito-2col se encarga vía CSS).
+function renderTablaMeritoHTML(items){
+  const mitad = Math.ceil(items.length/2);
+  const izq = items.slice(0, mitad);
+  const der = items.slice(mitad);
+  const hayGV = items.some(it=>it.criterio==='gfVisit');
+  const tablaHTML = (rows, offset) => `<div class="tabla-mini"><table style="width:100%;"><tbody>${rows.map((it,i)=>_filaMerito(it, offset+i+1)).join('')}</tbody></table></div>`;
+  return `<div class="merito-2col">
+      ${tablaHTML(izq, 0)}
+      ${tablaHTML(der, mitad)}
+    </div>
+    ${hayGV ? `<div style="font-size:11px;color:var(--muted);margin-top:.5rem;"><span style="color:#e8c44a;font-weight:700;">GV</span>: Avanza por los goles como visitante</div>` : ''}`;
+}
+
+function abrirModalMerito(){
+  const modal = document.getElementById('merito-modal');
+  const cont = document.getElementById('merito-cont');
+  if(!modal||!cont) return;
+  if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows){
+    cont.innerHTML = `<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">
+      Todavía no hay datos suficientes para armar la Tabla de Mérito.
+    </div>`;
+    modal.style.display = 'flex';
+    return;
+  }
+  const tablaMerito = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
+  const lista16vos = calcLista16vos(tablaMerito);
+  const cruces16vos = armarCrucesDesdeOrden(lista16vos);
+
+  cont.innerHTML = `
+    <p class="sec" style="color:#fff;">16vos — Cruces parciales</p>
+    <div>
+      ${cruces16vos.map(c=>_cardCruceMerito(c.mejor,c.peor)).join('')}
+    </div>
+    <p class="sec" style="color:#fff;margin-top:1.2rem;">Tabla de Mérito</p>
+    ${renderTablaMeritoHTML(tablaMerito)}
+  `;
+  modal.style.display = 'flex';
 }
 
 function toggleFechaPicker(){
@@ -3080,7 +3638,7 @@ function goPage(id, el){
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas") cargarEstadisticas();
   if(id==="planteles") cargarPlanteles();
-  if(id==="calculadora") cargarCalculadora();
+  if(id==="calculadora"){ renderEstadoActualCalc(); cargarCalculadora(); }
   if(id==="foro"){
     page.style.display="flex";
     const hdrH = window.innerWidth<=700?52:62;
@@ -4517,6 +5075,44 @@ function calcularGruposSegundaFase(){
   return {tabA,tabB,tabC,tabD,quintos,topQ,tied,topQTied,bestQuintoZona,nonA,nonB,revA,revB};
 }
 
+// Tabla de descenso (temporada completa) de un grupo de Reválida — reusable (home + calculadora).
+// criterioTipo: 'promedio' (Reválida A, muestra columna Prom.) o 'suma' (Reválida B, sin ella).
+function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const rows = calcDescensoInfo(equipos, grupo, criterioTipo);
+  const conProm = criterioTipo === 'promedio';
+  const fmtProm = (pts,pj) => !pj ? '—' : (Math.trunc(pts/pj*1000)/1000).toFixed(3).replace('.',',');
+  const hayNaranja = rows.some(r=>r._danger==='orange');
+  const tableRows = rows.map((r,i)=>{
+    const dc = r._danger;
+    const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
+    const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
+    const promSty = dc ? dataSty : 'color:var(--accent);';
+    const barraSty = dc==='red'?'box-shadow:inset 6px 0 0 0 #e57373;':dc==='orange'?'box-shadow:inset 6px 0 0 0 #ff9800;':'';
+    return `<tr>
+      <td style="${barraSty}"><span class="pos" style="color:${posCol}">${i+1}</span></td>
+      <td><div style="display:flex;align-items:center;">
+        <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}</span></div>
+        <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
+      </div></td>
+      <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
+      <td style="${dataSty}">${r._tempPj}</td>
+      ${conProm ? `<td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r._tempPts,r._tempPj)}</td>` : ''}
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">${titulo}</p>
+    <div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="text-align:left;">Equipo</th>
+        <th style="width:42px;" title="Puntos de toda la temporada">Pts</th>
+        <th style="width:38px;" title="Partidos jugados en toda la temporada">PJ</th>
+        ${conProm?'<th style="width:56px;" title="Promedio de puntos por partido">Prom.</th>':''}
+      </tr></thead><tbody>${tableRows}</tbody>
+    </table>${hayNaranja?`<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`:''}</div>`;
+}
+
 function renderSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
   const {quintos, topQ, tied, topQTied, revA, revB} = datos;
@@ -4552,73 +5148,6 @@ function renderSegundaFase(grupos){
         <th title="Diferencia de gol">+/-</th>
       </tr></thead><tbody>${tableRows}</tbody>
     </table></div>`;
-  };
-
-  const notaDesempate = `<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`;
-
-  const renderRevATabla = (equipos) => {
-    const rows = calcDescensoInfo(equipos, 'Reválida A', 'promedio');
-    const fmtProm = (pts,pj) => {
-      if(!pj) return '—';
-      return (Math.trunc(pts/pj*1000)/1000).toFixed(3).replace('.',',');
-    };
-    const hayNaranja = rows.some(r=>r._danger==='orange');
-    const tableRows = rows.map((r,i)=>{
-      const dc = r._danger;
-      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
-      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
-      const promSty = dc ? dataSty : 'color:var(--accent);';
-      const isQuinto=r._quinto||r._topQuinto;
-      return `<tr>
-        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div style="display:flex;align-items:center;">
-          <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
-          <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
-        </div></td>
-        <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
-        <td style="${dataSty}">${r._tempPj}</td>
-        <td style="font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;${promSty}">${fmtProm(r._tempPts,r._tempPj)}</td>
-      </tr>`;
-    }).join('');
-    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso A</p>
-    <div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
-      <thead><tr>
-        <th style="width:30px">#</th>
-        <th style="text-align:left;">Equipo</th>
-        <th style="width:42px;" title="Puntos de toda la temporada">Pts</th>
-        <th style="width:38px;" title="Partidos jugados en toda la temporada">PJ</th>
-        <th style="width:56px;" title="Promedio de puntos por partido">Prom.</th>
-      </tr></thead><tbody>${tableRows}</tbody>
-    </table>${hayNaranja?notaDesempate:''}</div>`;
-  };
-
-  const renderRevBTabla = (equipos) => {
-    const rows = calcDescensoInfo(equipos, 'Reválida B', 'suma');
-    const hayNaranja = rows.some(r=>r._danger==='orange');
-    const tableRows = rows.map((r,i)=>{
-      const dc = r._danger;
-      const posCol = dc==='red'?'#e57373':dc==='orange'?'#ff9800':'#aaa';
-      const dataSty = dc==='red'?'color:#e57373;':dc==='orange'?'color:#ff9800;':'';
-      const isQuinto=r._quinto||r._topQuinto;
-      return `<tr>
-        <td><span class="pos" style="color:${posCol}">${i+1}</span></td>
-        <td><div style="display:flex;align-items:center;">
-          <div class="tr-eq">${escudoHTML(r.n,'me')}<span class="eq-name" style="font-size:13px;${dataSty}">${r.n}${isQuinto?'&nbsp;<span style="font-size:9px;color:#f5e99a;">5°</span>':''}</span></div>
-          <div style="flex:1;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;">${liveScoreBadgeConRival(r.n)}</div>
-        </div></td>
-        <td><strong class="pts" style="${dataSty}">${r._tempPts}</strong></td>
-        <td style="${dataSty}">${r._tempPj}</td>
-      </tr>`;
-    }).join('');
-    return `<p style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e07040;margin:.5rem 0 .4rem;">Tabla de descenso B</p>
-    <div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
-      <thead><tr>
-        <th style="width:30px">#</th>
-        <th style="text-align:left;">Equipo</th>
-        <th style="width:42px;" title="Puntos de toda la temporada">Pts</th>
-        <th style="width:38px;" title="Partidos jugados en toda la temporada">PJ</th>
-      </tr></thead><tbody>${tableRows}</tbody>
-    </table>${hayNaranja?notaDesempate:''}</div>`;
   };
 
   // Quintos mini table
@@ -4660,10 +5189,14 @@ function renderSegundaFase(grupos){
 
 
   const elD = document.getElementById('cont-descenso');
-  if(elD) elD.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;margin-top:1rem;">
-      <div>${renderRevATabla(revA)}</div>
-      <div>${renderRevBTabla(revB)}</div>
-    </div>`;
+  if(elD){
+    elD.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;margin-top:1rem;">
+        <div id="cont-descenso-a"></div>
+        <div id="cont-descenso-b"></div>
+      </div>`;
+    renderTablaDescenso('cont-descenso-a', revA, 'Reválida A', 'promedio', 'Tabla de descenso A');
+    renderTablaDescenso('cont-descenso-b', revB, 'Reválida B', 'suma', 'Tabla de descenso B');
+  }
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
@@ -5265,6 +5798,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     const extraShadow=i===0?`;box-shadow:${vShadow}`:'';
     return `<th class="${isSorted?'plt-sorted':''}"${ta} onclick="pltSort('${c.key}')" style="border-bottom-color:${hdrColor}${extraShadow}">${c.label}${arrow}</th>`;
   }).join('');
+  const cards=[];
   const tbody=sorted.map(j=>{
     const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
     const name=j.nombre||j.nombre_display||'—';
@@ -5280,9 +5814,20 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     const destClub=transferMap[j.id];
     const destColor=destClub?(TEAM_COLORS[destClub]||'#aaa'):'';
     const ahoraEnBadge=destClub?`<span style="font-size:10px;color:${destColor};margin-left:.35rem;font-weight:400;">(Ahora en ${destClub})</span>`:'';
+    const perfilBtn=`<span class="jug-perfil-btn" title="Ver estadísticas del jugador" onclick="event.stopPropagation();abrirPerfilJugador(${j.id})">📊</span>`;
     const nameCell=primerNombre
-      ?`<span class="plt-name-desk">${name}${cumpleHtml}${ahoraEnBadge}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b>${ahoraEnBadge}<br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
-      :`${name}${cumpleHtml}${ahoraEnBadge}`;
+      ?`<span class="plt-name-desk">${name}${cumpleHtml}${ahoraEnBadge}${perfilBtn}</span><span class="plt-name-mob"><b style="font-size:11px;letter-spacing:.02em;">${apellidos.toUpperCase()}${cumpleHtml}</b>${ahoraEnBadge}${perfilBtn}<br><span style="font-size:9px;color:#aaa;font-weight:400;">${primerNombre}</span></span>`
+      :`${name}${cumpleHtml}${ahoraEnBadge}${perfilBtn}`;
+    cards.push(`<div class="jug-card" style="border-left-color:${clubColor||'rgba(255,255,255,.15)'};" onclick="abrirPerfilJugador(${j.id})">
+      <div class="jug-card-name">
+        <b>${apellidos.toUpperCase()}${cumpleHtml}</b>
+        <span class="jug-card-subname">${primerNombre}${ahoraEnBadge}</span>
+      </div>
+      <div class="jug-card-pos">${j.posicion||'—'}</div>
+      <div class="jug-card-stat"><span>${sv(s.pj)}</span><small>PJ</small></div>
+      <div class="jug-card-stat"><span>${sv(s.gol,'plt-gol-hi')}</span><small>Gol</small></div>
+      <span class="jug-card-arrow">›</span>
+    </div>`);
     return `<tr style="border-bottom:1px solid ${rowColor}">
       <td style="font-size:13px;font-weight:500;border-bottom:1px solid ${rowColor};box-shadow:${vShadow}">${nameCell}</td>
       <td style="border-bottom:1px solid ${rowColor}">${j.posicion||'—'}</td>
@@ -5303,10 +5848,11 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
     </tr>`;
   }).join('');
   cont.innerHTML=`<div class="plt-squad-title">Plantel (${jugadores.length}) <span style="font-weight:400;color:#ccc;font-size:18px;text-transform:none;letter-spacing:0;">— Datos: @FMenAscenso</span></div>
-    <div class="plt-table-wrap"><table class="plt-table">
+    <div class="plt-table-wrap plt-desk-only"><table class="plt-table">
       <thead><tr>${thead}</tr></thead>
       <tbody>${tbody}</tbody>
-    </table></div>`;
+    </table></div>
+    <div class="jug-cards-wrap plt-mob-only">${cards.join('')}</div>`;
 }
 
 async function cargarPlantelClub(equipoId, clubColor){
@@ -5314,14 +5860,19 @@ async function cargarPlantelClub(equipoId, clubColor){
   cont.innerHTML = '<div style="color:#888;font-size:13px;padding:.5rem 0;">Cargando plantel…</div>';
   try {
     const jugFields='id,id_federal,nombre,nombre_display,posicion,fecha_nacimiento,lugar_nacimiento,altura_m,peso_kg,pierna_habil';
-    const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut}] = await Promise.all([
+    const [{data:jugActuales,error:jErr},{data:planillas},{data:transfersOut},{data:transfersIn}] = await Promise.all([
       sb.from('jugadores').select(jugFields).eq('equipo_id',equipoId),
       sb.from('planillas').select(`jugador_id,titular,eventos(tipo,minuto),jug:jugadores(${jugFields})`).eq('equipo_id',equipoId),
       sb.from('transferencias').select('jugador_origen_id,eq_dest:equipos!equipo_destino_id(nombre)').eq('equipo_origen_id',equipoId),
+      sb.from('transferencias').select('jugador_destino_id,eq_orig:equipos!equipo_origen_id(nombre)').eq('equipo_destino_id',equipoId),
     ]);
-    const transferMap={};
+    const transferMap={}; // jugador_id (de ESTE club) → club al que se fue
     (transfersOut||[]).forEach(t=>{
       if(t.jugador_origen_id && t.eq_dest?.nombre) transferMap[t.jugador_origen_id]=t.eq_dest.nombre;
+    });
+    const origenMap={}; // jugador_id (de ESTE club) → club del que vino
+    (transfersIn||[]).forEach(t=>{
+      if(t.jugador_destino_id && t.eq_orig?.nombre) origenMap[t.jugador_destino_id]=t.eq_orig.nombre;
     });
     // Merge: jugadores actuales del club + ex-jugadores con planillas aquí (equipo_id ya cambió)
     const jugMap=new Map();
@@ -5362,7 +5913,7 @@ async function cargarPlantelClub(equipoId, clubColor){
         if(e.tipo==='asistencia') s.ast++;
       });
     });
-    _pltData={jugadores,stats,clubColor:clubColor||null,transferMap};
+    _pltData={jugadores,stats,clubColor:clubColor||null,transferMap,origenMap,equipoId};
     _pltSort={col:'nombre',dir:'asc'};
     _renderPlantelTable(cont,jugadores,stats,_pltData.clubColor,transferMap);
     if(_pltCurrentClub) renderPartidosClub(_pltCurrentClub);
@@ -5371,7 +5922,252 @@ async function cargarPlantelClub(equipoId, clubColor){
   }
 }
 
+function _jugSumCell(val, lbl){
+  return `<div class="jug-summary-cell"><div class="jug-summary-val">${val}</div><div class="jug-summary-lbl">${lbl}</div></div>`;
+}
+
+function _jugBioHTML(j){
+  if(!j) return '';
+  const nombreCompleto = j.nombre ? j.nombre.split(',').map(s=>s.trim()).reverse().join(' ') : (j.nombre_display||'');
+  const edad = _pltEdad(j.fecha_nacimiento);
+  const fechaNac = j.fecha_nacimiento ? `${_pltFmtFecha(j.fecha_nacimiento)}${edad?` (${edad} años)`:''}` : null;
+  const filas = [
+    nombreCompleto ? `<div><b>${nombreCompleto}</b></div>` : '',
+    j.lugar_nacimiento ? `<div>📍 ${j.lugar_nacimiento}</div>` : '',
+    fechaNac ? `<div>🎂 ${fechaNac}</div>` : '',
+  ].filter(Boolean).join('');
+  return filas ? `<div class="jug-bio">${filas}</div>` : '';
+}
+
+// Ficha individual de un jugador dentro del plantel de un club: partido a partido, si fue
+// titular/entró/banco/no convocado, más el resumen de goles/amarillas/rojas/minutos. Se
+// arma con los mismos partidos jugados del club (tabla "partidos") cruzados contra las
+// planillas de ESE jugador en ESE equipo — si no hay planilla para un partido del club,
+// se interpreta como "No convocado" (no había forma de distinguirlo de "no registrado" con
+// los datos actuales, así que es una aproximación).
+async function abrirPerfilJugador(jugadorId){
+  const modal = document.getElementById('jugador-modal');
+  const cont = document.getElementById('jugador-cont');
+  const titleEl = document.getElementById('jugador-modal-title');
+  if(!modal || !cont) return;
+  const j = (_pltData?.jugadores||[]).find(x=>String(x.id)===String(jugadorId));
+  if(titleEl) titleEl.textContent = j?.nombre_display || j?.nombre || 'Jugador';
+  cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">Cargando…</div>';
+  modal.style.display = 'flex';
+
+  const equipoId = _pltData?.equipoId;
+  const equipoNombre = _pltCurrentClub;
+  if(!equipoId || !equipoNombre){
+    cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">No se pudo cargar la ficha del jugador.</div>';
+    return;
+  }
+
+  try {
+    const [{data:planillas, error:plErr}, {data:partidos, error:ptErr}] = await Promise.all([
+      sb.from('planillas').select('partido_id,titular,eventos(tipo,minuto)').eq('jugador_id', jugadorId).eq('equipo_id', equipoId),
+      sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante')
+        .or(`equipo_local_nombre.eq."${equipoNombre}",equipo_visitante_nombre.eq."${equipoNombre}"`)
+        .not('goles_local', 'is', null)
+    ]);
+    if(plErr) throw plErr;
+    if(ptErr) throw ptErr;
+
+    // Fusionar (no pisar): a veces hay más de una fila de planilla para el mismo jugador+partido
+    // (ej. una fila "banco" y otra "ingresó" del mismo cambio, por una carga duplicada) — quedarse
+    // con la última arbitrariamente podía mostrar mal la condición o perder eventos.
+    const planillaByPartido = {};
+    (planillas||[]).forEach(pl => {
+      const ex = planillaByPartido[pl.partido_id];
+      if(!ex) planillaByPartido[pl.partido_id] = { titular: pl.titular, eventos: [...(pl.eventos||[])] };
+      else { ex.titular = ex.titular || pl.titular; ex.eventos = ex.eventos.concat(pl.eventos||[]); }
+    });
+
+    const filas = (partidos||[]).map(p => {
+      const esLocal = p.equipo_local_nombre === equipoNombre;
+      const rival = esLocal ? p.equipo_visitante_nombre : p.equipo_local_nombre;
+      const gf = esLocal ? p.goles_local : p.goles_visitante;
+      const gc = esLocal ? p.goles_visitante : p.goles_local;
+      const pl = planillaByPartido[p.id];
+      let cond='No convocado', condClass='nc', goles=0, asist=0, amarillas=0, rojas=0, minutos=0;
+      if(pl){
+        const evs = pl.eventos||[];
+        const entraEv = evs.find(e=>e.tipo==='cambio_entra');
+        const saleEv = evs.find(e=>e.tipo==='cambio_sale');
+        if(pl.titular){
+          cond='Titular'; condClass='tit';
+          minutos = saleEv ? (parseInt(saleEv.minuto)||90) : 90;
+        } else if(entraEv){
+          cond='Ingresó'; condClass='ing';
+          const entraMin = parseInt(entraEv.minuto)||0;
+          const saleMin = saleEv ? (parseInt(saleEv.minuto)||90) : 90;
+          minutos = Math.max(0, saleMin-entraMin);
+        } else {
+          cond='Banco'; condClass='bnc';
+        }
+        evs.forEach(e=>{
+          if(e.tipo==='gol'||e.tipo==='gol_penal'||e.tipo==='gol_tiro_libre') goles++;
+          if(e.tipo==='asistencia') asist++;
+          if(e.tipo==='amarilla') amarillas++;
+          if(e.tipo==='doble_amarilla'){ amarillas++; rojas++; }
+          if(e.tipo==='roja') rojas++;
+        });
+      }
+      return {zona:p.zona, fecha:p.fecha, rival, esLocal, gf, gc, cond, condClass, goles, asist, amarillas, rojas, minutos};
+    });
+    filas.sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
+
+    const tot = filas.reduce((t,f)=>{
+      if(f.condClass==='tit'){ t.tit++; t.pj++; }
+      if(f.condClass==='ing'){ t.ing++; t.pj++; }
+      if(f.condClass==='bnc') t.bnc++;
+      if(f.condClass==='nc') t.nc++;
+      t.goles+=f.goles; t.asist+=f.asist; t.amarillas+=f.amarillas; t.rojas+=f.rojas; t.minutos+=f.minutos;
+      return t;
+    }, {pj:0,tit:0,ing:0,bnc:0,nc:0,goles:0,asist:0,amarillas:0,rojas:0,minutos:0});
+
+    const summaryHTML = `<div class="jug-summary-grid">
+      ${_jugSumCell(tot.pj,'PJ')}
+      ${_jugSumCell(tot.tit,'Titular')}
+      ${_jugSumCell(tot.ing,'Ingresó')}
+      ${_jugSumCell(tot.bnc,'Banco')}
+      ${_jugSumCell(tot.goles,'Goles')}
+      ${_jugSumCell(tot.asist,'Asist.')}
+      ${_jugSumCell(tot.amarillas,'Amarillas')}
+      ${_jugSumCell(tot.rojas,'Rojas')}
+      ${_jugSumCell(tot.minutos,'Minutos')}
+    </div>`;
+
+    const condAbbr = {tit:'TIT', ing:'ING', bnc:'BNC', nc:'NC'};
+    const sv = (v, cls='') => v>0 ? `<span class="jug-stat-hi ${cls}">${v}</span>` : `<span class="jug-stat-0">0</span>`;
+    const tablaHTML = filas.length ? `<div class="jug-tbl-wrap"><table class="jug-tbl">
+      <colgroup><col style="width:32px"><col><col style="width:36px"><col style="width:30px"><col style="width:26px"><col style="width:26px"><col style="width:26px"><col style="width:26px"></colgroup>
+      <thead><tr><th>Fecha</th><th style="text-align:left;">Rival</th><th>Cond.</th><th>Min</th><th>⚽</th><th>👟</th><th>🟨</th><th>🟥</th></tr></thead>
+      <tbody>${filas.map(f=>{
+        const res = f.gf>f.gc?'G':f.gf===f.gc?'E':'P';
+        const rivalEsc = ESCUDOS[f.rival];
+        return `<tr>
+          <td class="jug-tbl-fecha">${fechaLabel(f.zona,f.fecha)}</td>
+          <td class="jug-tbl-rival">
+            ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
+            <span class="jug-tbl-rival-name">${f.rival}</span>
+            <span class="jug-tbl-lv-res ${res}">(${f.esLocal?'L':'V'}, ${f.gf}-${f.gc})</span>
+          </td>
+          <td><span class="jug-cond-badge ${f.condClass}">${condAbbr[f.condClass]}</span></td>
+          <td>${f.minutos||'—'}</td>
+          <td>${sv(f.goles,'jug-gol-hi')}</td>
+          <td>${sv(f.asist,'jug-ast-hi')}</td>
+          <td>${sv(f.amarillas,'jug-am-hi')}</td>
+          <td>${sv(f.rojas,'jug-roja-hi')}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>` : '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin partidos registrados.</div>';
+
+    const destClub = _pltData?.transferMap?.[jugadorId];
+    const origClub = _pltData?.origenMap?.[jugadorId];
+    let transferNota = '';
+    if(destClub) transferNota = `Las estadísticas mostradas son solo por su paso por ${equipoNombre} — actualmente juega en ${destClub}.`;
+    else if(origClub) transferNota = `Las estadísticas mostradas son solo por su paso por ${equipoNombre} — antes jugó en ${origClub}.`;
+    const transferNotaHTML = transferNota ? `<div class="jug-transfer-nota">🔀 ${transferNota}</div>` : '';
+
+    cont.innerHTML = _jugBioHTML(j) + transferNotaHTML + summaryHTML + tablaHTML;
+  } catch(e){
+    cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">Error al cargar los datos del jugador.</div>';
+  }
+}
+
 // ===== CALCULADORA =====
+// Pinta el estado REAL (sin simular) arriba de la calculadora: tablas simplificadas, cuadro
+// del primer ascenso y cruces del segundo ascenso, reusando los mismos datos/funciones que la
+// home. _ultimoNonARows/etc. ya están calculados por renderGruposSegundaFase() de la carga
+// general de la página, así que no hace falta recalcular las tablas acá.
+// "Estado actual" = solo ejemplificativo, para orientarse antes de simular — sin descenso ni
+// Tabla de Mérito con detalle (eso queda para lo proyectado, después de Calcular).
+function renderEstadoActualCalc(){
+  if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows) return;
+  renderTablaSimple('calc-real-tabla-nona-a', _ultimoNonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color);
+  renderTablaSimple('calc-real-tabla-nona-b', _ultimoNonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color);
+  renderTablaSimple('calc-real-tabla-rev-a', _ultimoRevARows, 'Reválida A', zonaConfig('Reválida A').color);
+  renderTablaSimple('calc-real-tabla-rev-b', _ultimoRevBRows, 'Reválida B', zonaConfig('Reválida B').color);
+  const grupos = calcularGruposSegundaFase();
+  renderBracketNonagonal(grupos, 'calc-real-bracket-nona', 'calc-real-bracket-nona-title');
+  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16', 'calc-real-preview16-leyenda-inexistente');
+}
+
+// Cruces de 16vos "cómodos" para la calculadora (nombre completo + candidatos de sorteo bien
+// legibles) — reusa las tarjetas del modal de mérito (_cardCruceMerito), pensadas para wrap
+// de texto largo, en vez del preview compacto de la home (que ahí necesita ser chico). Devuelve
+// la tablaMerito ya calculada para no tener que recalcularla de nuevo para el detalle de abajo.
+function renderCruces16vosRoomy(elId, nonARows, nonBRows, revARows, revBRows){
+  const el = document.getElementById(elId);
+  if(!el) return null;
+  const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
+  const lista16vos = calcLista16vos(tablaMerito);
+  const cruces = armarCrucesDesdeOrden(lista16vos);
+  el.innerHTML = cruces.map(c => _cardCruceMerito(c.mejor, c.peor)).join('');
+  return tablaMerito;
+}
+
+// Tabla de Mérito con el detalle de las variables usadas para ordenar: Pts y DG (de la fase de
+// origen — Nonagonal o Reválida) y %C (solo aplica a Reválida, ver ordenarTierRevalida).
+// Ancho fijo + table-layout:fixed en las columnas numéricas para que nunca fuerce scroll
+// lateral (ni con nombres largos ni con varios candidatos a sorteo) — mismo criterio que ya
+// se usó para la columna %C de las tablas de Reválida.
+function renderTablaMeritoDetalle(elId, items){
+  const el = document.getElementById(elId);
+  if(!el || !items) return;
+  const filas = items.map((it,i)=>{
+    const pos = i+1;
+    // Línea tenue entre Pts/DG/%C (border-left) para separarlas visualmente sin ocupar ancho.
+    const sep = 'border-left:1px solid rgba(232,196,74,.22);';
+    if(it.tipo==='sorteo'){
+      const cands = it.candidatos.map(c=>c.n).join(' / ');
+      return `<tr>
+        <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+        <td colspan="4" style="padding:.3rem .4rem;font-size:11px;color:#e8c44a;">🎲 Sorteo: ${cands}</td>
+      </tr>`;
+    }
+    const dif = it.dif;
+    return `<tr>
+      <td style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${pos}</td>
+      <td style="padding:.3rem .4rem .3rem .65rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><div style="display:flex;align-items:center;gap:.3rem;overflow:hidden;">${escudoHTML(it.n,'me')}<span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.n}</span></div></td>
+      <td style="text-align:center;font-size:12px;font-weight:700;${sep}">${it.pts}</td>
+      <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};${sep}">${dif>0?'+':''}${dif}</td>
+      <td style="text-align:center;font-size:11px;color:var(--muted);white-space:nowrap;${sep}">${it.pctC ?? '—'}</td>
+    </tr>`;
+  }).join('');
+  // max-width: en desktop, sin esto la tabla se estira a los 860px del contenedor y deja un
+  // hueco enorme entre el nombre del equipo y las columnas numéricas. En mobile no cambia nada
+  // (el contenedor ya es más angosto que el máximo). El wrapper .tabla-mini TAMBIÉN necesita el
+  // mismo max-width — si no, su propio fondo se estira más que la tabla y deja una franja gris
+  // vacía a la derecha.
+  el.innerHTML = `<div class="tabla-mini" style="max-width:480px;"><table style="width:100%;table-layout:fixed;">
+    <colgroup><col style="width:30px;"><col><col style="width:32px;"><col style="width:32px;"><col style="width:44px;"></colgroup>
+    <thead><tr>
+    <th>#</th><th style="text-align:left;">Equipo</th><th style="border-left:1px solid rgba(232,196,74,.22);">Pts</th><th style="border-left:1px solid rgba(232,196,74,.22);">DG</th><th style="border-left:1px solid rgba(232,196,74,.22);" title="Promedio exclusivo de Reválida — no aplica a Nonagonal">%C</th>
+  </tr></thead><tbody>${filas}</tbody></table></div>`;
+}
+
+// Tabla chica: #, escudo+nombre, Pts, PJ, DG — sin G/E/P/GF/GC/%C (esos quedan en las tablas
+// completas de la home). Reusada por el estado real y por las tablas proyectadas.
+function renderTablaSimple(elId, rows, titulo, colorTitulo){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const filas = rows.map((r,i)=>{
+    const dif = r.gf-r.gc;
+    return `<tr>
+      <td style="width:24px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);">${i+1}</td>
+      <td style="padding:.3rem .4rem;"><div style="display:flex;align-items:center;gap:.35rem;">${escudoHTML(r.n,'me')}<span style="font-size:12px;">${r.n}</span></div></td>
+      <td style="text-align:center;font-size:12px;font-weight:700;">${r.pts}</td>
+      <td style="text-align:center;font-size:12px;color:var(--muted);">${r.pj}</td>
+      <td style="text-align:center;font-size:12px;color:${dif>0?'#4caf50':dif<0?'#e57373':'var(--muted)'};">${dif>0?'+':''}${dif}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<p style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${colorTitulo};margin:0 0 .28rem;">${titulo}</p>
+    <div class="tabla-mini"><table style="width:100%;"><thead><tr>
+      <th style="width:24px;">#</th><th style="text-align:left;">Equipo</th><th>Pts</th><th>PJ</th><th>DG</th>
+    </tr></thead><tbody>${filas}</tbody></table></div>`;
+}
+
 function cargarCalculadora(){
   const form=document.getElementById('calc-form');
   const btnWrap=document.getElementById('calc-btn-wrap');
@@ -5381,14 +6177,14 @@ function cargarCalculadora(){
     setTimeout(cargarCalculadora,500);
     return;
   }
-  const pares=[['Zona A','Zona B'],['Zona C','Zona D']];
+  const pares=[['Nonagonal A','Nonagonal B'],['Reválida A','Reválida B']];
   let hasPending=false;
 
   const makeZonaBlock=zona=>{
-    const code=zona.replace('Zona ','');
+    const code=zonaConfig(zona).code || zona;
     const color=(ZONA_COLORES[zona]||{color:'#777'}).color;
     let fechasHtml='';
-    for(let f=1;f<=18;f++){
+    for(let f=1;f<=9;f++){
       const allM=FIXTURE[zona]?.[String(f)]||[];
       const pending=allM.map((m,i)=>({m,i})).filter(({m})=>m.gl===null);
       if(!pending.length) continue;
@@ -5407,7 +6203,7 @@ function cargarCalculadora(){
     if(!fechasHtml) return null;
     return `<div id="calc-zona-block-${code}" style="border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden;">
       <div onclick="toggleCalcZona('${code}')" style="background:${color}22;border-bottom:2px solid ${color};padding:.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;color:${color};">ZONA ${code}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;color:${color};">${zona.toUpperCase()}</span>
         <span id="calc-zona-toggle-${code}" style="font-size:10px;color:${color};">▲</span>
       </div>
       <div id="calc-zona-body-${code}">${fechasHtml}</div>
@@ -5421,7 +6217,7 @@ function cargarCalculadora(){
   });
 
   if(!hasPending){
-    form.innerHTML='<div style="padding:.5rem 0;color:#888;font-size:13px;">✓ Todos los partidos ya fueron jugados.</div>';
+    form.innerHTML='<div style="padding:.5rem 0;color:#888;font-size:13px;">✓ No hay partidos pendientes de Segunda Fase por ahora.</div>';
     btnWrap.style.display='none';
   } else {
     form.innerHTML=html;
@@ -5437,212 +6233,108 @@ function toggleCalcZona(code){
   icon.textContent=shown?'▼':'▲';
 }
 
-function calcTablaFx(zona,fx){
-  const eq={},partidos=[];
-  for(let f=1;f<=18;f++){
-    (fx[zona]?.[String(f)]||[]).forEach(m=>{
-      [m.local,m.visitante].forEach(e=>{if(!eq[e])eq[e]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
-      if(m.gl===null)return;
-      partidos.push(m);
-      eq[m.local].pj++;eq[m.visitante].pj++;
-      eq[m.local].gf+=m.gl;eq[m.local].gc+=m.gv;
-      eq[m.visitante].gf+=m.gv;eq[m.visitante].gc+=m.gl;
-      if(m.gl>m.gv){eq[m.local].g++;eq[m.local].pts+=3;eq[m.visitante].p++;}
-      else if(m.gl<m.gv){eq[m.visitante].g++;eq[m.visitante].pts+=3;eq[m.local].p++;}
-      else{eq[m.local].e++;eq[m.visitante].e++;eq[m.local].pts++;eq[m.visitante].pts++;}
-    });
+// Ejecuta fn() con partes de FIXTURE temporalmente reemplazadas por resultados hipotéticos
+// (fxGrupos: {grupo:{fecha:[...]}}), restaurando los valores reales al salir (incluso si fn()
+// tira error) — así se reusa toda la lógica real (calcularGruposSegundaFase,
+// calcBracketNonagonal, calcTablaMerito, etc.) tal cual, sin duplicarla, para proyectar
+// resultados sin dejar tocados los datos reales de la página.
+function conFixtureHipotetico(fxGrupos, fn){
+  const respaldo = {};
+  for(const grupo in fxGrupos){
+    respaldo[grupo] = {};
+    for(const fecha in fxGrupos[grupo]){
+      respaldo[grupo][fecha] = FIXTURE[grupo][fecha];
+      FIXTURE[grupo][fecha] = fxGrupos[grupo][fecha];
+    }
   }
-  const all=new Set();
-  for(let f=1;f<=18;f++){(fx[zona]?.[String(f)]||[]).forEach(m=>{all.add(m.local);all.add(m.visitante);});}
-  all.forEach(t=>{if(!eq[t])eq[t]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0};});
-  const calcH2H=equipos=>{
-    const h2h={};
-    equipos.forEach(e=>{h2h[e]={pts:0,dif:0,gf:0,gv:0};});
-    partidos.forEach(m=>{
-      if(!equipos.includes(m.local)||!equipos.includes(m.visitante))return;
-      h2h[m.local].gf+=m.gl;h2h[m.local].gc=h2h[m.local].gc||0;h2h[m.local].dif+=m.gl-m.gv;
-      h2h[m.visitante].gf+=m.gv;h2h[m.visitante].dif+=m.gv-m.gl;
-      h2h[m.visitante].gv=(h2h[m.visitante].gv||0)+m.gv;
-      if(m.gl>m.gv)h2h[m.local].pts+=3;
-      else if(m.gl<m.gv)h2h[m.visitante].pts+=3;
-      else{h2h[m.local].pts++;h2h[m.visitante].pts++;}
-    });
-    return h2h;
-  };
-  const rows=Object.entries(eq).map(([n,s])=>({n,...s,h2h:'—'}));
-  rows.sort((a,b)=>b.pts!==a.pts?b.pts-a.pts:0);
-  const ptGroups={};
-  rows.forEach(r=>{(ptGroups[r.pts]=ptGroups[r.pts]||[]).push(r.n);});
-  const h2hRank={};
-  Object.entries(ptGroups).forEach(([,teams])=>{
-    if(teams.length<2)return;
-    const h2h=calcH2H(teams);
-    const sorted=[...teams].sort((a,b)=>
-      (h2h[b].pts-h2h[a].pts)||(h2h[b].dif-h2h[a].dif)||(h2h[b].gf-h2h[a].gf)||
-      ((h2h[b].gv||0)-(h2h[a].gv||0))||((eq[b].gf-eq[b].gc)-(eq[a].gf-eq[a].gc))||(eq[b].gf-eq[a].gf)||0
-    );
-    sorted.forEach((t,i)=>{h2hRank[t]={rank:i,label:`${h2h[t].pts}`};});
-    const h2hM=partidos.filter(m=>teams.includes(m.local)&&teams.includes(m.visitante));
-    rows.forEach(r=>{if(teams.includes(r.n)){r.h2h=h2hRank[r.n]?.label||'—';r.h2hMatches=h2hM;r.h2hGroup=teams;}});
-  });
-  rows.sort((a,b)=>{
-    if(b.pts!==a.pts)return b.pts-a.pts;
-    const ra=h2hRank[a.n]?.rank??0,rb=h2hRank[b.n]?.rank??0;
-    if(ra!==rb)return ra-rb;
-    return((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||(b.gf-b.pj)-(a.gf-a.pj)||0;
-  });
-  return rows;
+  try {
+    return fn();
+  } finally {
+    for(const grupo in respaldo){
+      for(const fecha in respaldo[grupo]){
+        FIXTURE[grupo][fecha] = respaldo[grupo][fecha];
+      }
+    }
+  }
 }
 
 function calcularProyeccion(){
-  const fx={};
-  for(const zona in FIXTURE){
-    fx[zona]={};
-    for(const fecha in FIXTURE[zona])fx[zona][fecha]=FIXTURE[zona][fecha].map(m=>({...m}));
-  }
+  const gruposSF = ['Nonagonal A','Nonagonal B','Reválida A','Reválida B'];
+  const fx = {};
+  gruposSF.forEach(zona=>{
+    fx[zona] = {};
+    for(let f=1; f<=9; f++){
+      fx[zona][f] = (FIXTURE[zona]?.[String(f)]||[]).map(m=>({...m}));
+    }
+  });
   document.querySelectorAll('.calc-partido').forEach(row=>{
     const zona=row.dataset.zona,fecha=row.dataset.fecha,idx=parseInt(row.dataset.idx);
     const glV=row.querySelector('.calc-gl').value.trim(),gvV=row.querySelector('.calc-gv').value.trim();
     if(glV!==''&&gvV!==''){
       const gl=parseInt(glV),gv=parseInt(gvV);
-      if(!isNaN(gl)&&!isNaN(gv)&&gl>=0&&gv>=0){fx[zona][fecha][idx].gl=gl;fx[zona][fecha][idx].gv=gv;fx[zona][fecha][idx]._hypo=true;}
+      if(!isNaN(gl)&&!isNaN(gv)&&gl>=0&&gv>=0){ fx[zona][fecha][idx].gl=gl; fx[zona][fecha][idx].gv=gv; }
     }
   });
-  const tabA=calcTablaFx('Zona A',fx),tabB=calcTablaFx('Zona B',fx);
-  const tabC=calcTablaFx('Zona C',fx),tabD=calcTablaFx('Zona D',fx);
-  const quintos=[
-    tabB[4]?{...tabB[4],zona:'Zona B'}:null,
-    tabC[4]?{...tabC[4],zona:'Zona C'}:null,
-    tabD[4]?{...tabD[4],zona:'Zona D'}:null
-  ].filter(Boolean);
-  quintos.sort((a,b)=>(b.pts-a.pts)||((b.gf-b.gc)-(a.gf-a.gc))||(b.gf-a.gf));
-  const topQ=quintos[0],bestZona=topQ?.zona;
-  const tied=topQ?quintos.filter(q=>q.pts===topQ.pts&&(q.gf-q.gc)===(topQ.gf-topQ.gc)&&q.gf===topQ.gf):[];
-  const nonA=[...tabA.slice(0,5),...tabB.slice(0,4)];
-  const nonB=[...tabC.slice(0,4),...tabD.slice(0,4)];
-  if(topQ) nonB.push({...topQ,_topQ:true,_tied:tied.length>1});
-  const restQ=quintos.slice(1);
-  const revA=[...tabA.slice(5,10),...tabB.slice(5,9)];
-  const revB=[...tabC.slice(5,9),...tabD.slice(5,9)];
-  if(bestZona!=='Zona B'){
-    const qB=restQ.find(q=>q.zona==='Zona B'),qO=restQ.find(q=>q.zona!=='Zona B');
-    if(qB)revA.push({...qB,_quinto:true});
-    if(qO)revB.push({...qO,_quinto:true});
-  } else {
-    restQ.forEach(q=>revB.push({...q,_quinto:true}));
-  }
-  const tiedZonas=tied.length>1?tied.map(q=>q.zona):[];
-  const cont=document.getElementById('calc-resultados');
-  cont.innerHTML=_renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,bestZona,tiedZonas);
-  cont.scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Todo el cálculo Y el pintado de cuadros pasa DENTRO de conFixtureHipotetico: el bracket y
+  // los cruces de 16vos vuelven a leer FIXTURE internamente (armarFilasTemporada→
+  // calcTablaGrupo), así que hay que renderizarlos mientras el reemplazo sigue activo.
+  conFixtureHipotetico(fx, () => {
+    const grupos = calcularGruposSegundaFase();
+    const nonARows = armarFilasTemporada(grupos.nonA, 'Nonagonal A').sort(sortNonagonal);
+    const nonBRows = armarFilasTemporada(grupos.nonB, 'Nonagonal B').sort(sortNonagonal);
+    const revARows = armarFilasTemporada(grupos.revA, 'Reválida A').sort(sortPorPromedio);
+    const revBRows = armarFilasTemporada(grupos.revB, 'Reválida B').sort(sortPorPromedio);
+
+    const descA = calcDescensoInfo(grupos.revA, 'Reválida A', 'promedio');
+    const dMapA = {}; descA.forEach(r=>{ dMapA[r.n] = r._danger; });
+    aplicarDescensoAGrupo(revARows, dMapA);
+    const descB = calcDescensoInfo(grupos.revB, 'Reválida B', 'suma');
+    const dMapB = {}; descB.forEach(r=>{ dMapB[r.n] = r._danger; });
+    aplicarDescensoAGrupo(revBRows, dMapB);
+    aplicarPctCRevalida(revARows, revBRows);
+
+    const cont = document.getElementById('calc-resultados');
+    cont.innerHTML = _renderCalcResultados();
+    renderTablaSimple('calc-proj-tabla-nona-a', nonARows, 'Nonagonal A', zonaConfig('Nonagonal A').color);
+    renderTablaSimple('calc-proj-tabla-nona-b', nonBRows, 'Nonagonal B', zonaConfig('Nonagonal B').color);
+    renderTablaSimple('calc-proj-tabla-rev-a', revARows, 'Reválida A', zonaConfig('Reválida A').color);
+    renderTablaSimple('calc-proj-tabla-rev-b', revBRows, 'Reválida B', zonaConfig('Reválida B').color);
+    renderTablaDescenso('calc-proj-descenso-a', grupos.revA, 'Reválida A', 'promedio', 'Tabla de descenso A');
+    renderTablaDescenso('calc-proj-descenso-b', grupos.revB, 'Reválida B', 'suma', 'Tabla de descenso B');
+    renderBracketNonagonal(grupos, 'calc-proj-bracket-nona', 'calc-proj-bracket-nona-title');
+    const tablaMerito = renderCruces16vosRoomy('calc-proj-preview16', nonARows, nonBRows, revARows, revBRows);
+    renderTablaMeritoDetalle('calc-proj-tabla-merito', tablaMerito);
+    cont.scrollIntoView({behavior:'smooth',block:'start'});
+  });
 }
 
-function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,bestZona,tiedZonas){
-  const VB='rgba(74,222,128,.06)',RB='rgba(252,165,165,.05)',OB='rgba(251,191,36,.06)';
-  const VT='#4ade80',RT='#fca5a5',OT='#fbbf24';
-
-  const rowClr=(z,i)=>{
-    if(z==='Zona A') return i<5?{bg:VB,t:VT}:{bg:RB,t:RT};
-    if(i<4) return{bg:VB,t:VT};
-    if(i===4){
-      if(tiedZonas.includes(z)) return{bg:OB,t:OT};
-      return z===bestZona?{bg:VB,t:VT}:{bg:RB,t:RT};
-    }
-    return{bg:RB,t:RT};
-  };
-
-  const zonaTable=(rows,z)=>{
-    const c=(ZONA_COLORES[z]||{color:'#777'}).color,code=z.replace('Zona ','');
-    const trs=rows.map((r,i)=>{
-      const{bg,t}=rowClr(z,i);
-      const ptColor=(i===0)?'#ffd700':(i<4)?'var(--accent)':'#ccc';
-      const h2hEnc=r.h2hMatches?encodeURIComponent(JSON.stringify(r.h2hMatches)):'';
-      const h2hClr=r.h2h==='—'?'#555':'var(--accent)';
-      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:${bg};">
-        <td style="padding:.26rem .28rem;font-size:11px;font-weight:700;color:${t};text-align:center;">${i+1}</td>
-        <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;max-width:145px;">
-          ${escudoHTML(r.n,'me')}<span style="font-size:11px;color:${t};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.n}</span>
-        </div></td>
-        <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${r.pj}</td>
-        <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${r.pts}</td>
-        <td class="h2h-cell" data-matches="${h2hEnc}" onmouseenter="h2hEnter(event)" onmouseleave="hideH2HTooltip()" ontouchstart="h2hTouch(event)"
-          style="padding:.26rem .28rem;font-size:10px;font-weight:${r.h2h==='—'?'400':'600'};color:${h2hClr};text-align:center;${h2hEnc?'cursor:pointer;':''}">${r.h2h}</td>
-      </tr>`;
-    }).join('');
-    return `<div style="flex:1;min-width:0;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:${c};margin-bottom:.3rem;padding-left:.15rem;">ZONA ${code}</div>
-      <table style="width:100%;border-collapse:collapse;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.02);">
-        <thead><tr style="background:rgba(255,255,255,.05);">
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:18px;">#</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Equipo</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:22px;">PJ</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">PTS</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:28px;">H2H</th>
-        </tr></thead><tbody>${trs}</tbody>
-      </table></div>`;
-  };
-
-  const qStatus=q=>{
-    if(tiedZonas.includes(q.zona))return{label:'⚖️ Sorteo',t:OT,bg:OB};
-    if(q.zona===bestZona)return{label:'🏆 Nonagonal B',t:VT,bg:VB};
-    if(bestZona!=='Zona B'&&q.zona==='Zona B')return{label:'⚔️ Reválida A',t:RT,bg:RB};
-    return{label:'⚔️ Reválida B',t:RT,bg:RB};
-  };
-  let qRows='';
-  quintos.forEach((q,i)=>{
-    const{label,t,bg}=qStatus(q);
-    const ptColor=i===0&&tiedZonas.length===0?'#ffd700':'#ccc';
-    qRows+=`<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:${bg};">
-      <td style="padding:.26rem .28rem;font-size:11px;font-weight:700;color:${t};text-align:center;">${i+1}</td>
-      <td style="padding:.26rem .28rem;font-size:10px;color:#888;text-align:center;">${q.zona.replace('Zona ','')}</td>
-      <td style="padding:.26rem .28rem;"><div style="display:flex;align-items:center;gap:.28rem;">
-        ${escudoHTML(q.n,'me')}<span style="font-size:11px;color:${t};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${q.n}</span>
-      </div></td>
-      <td style="padding:.26rem .28rem;font-size:11px;color:#888;text-align:center;">${q.pj}</td>
-      <td style="padding:.26rem .28rem;font-size:12px;font-weight:700;color:${ptColor};text-align:center;">${q.pts}</td>
-      <td style="padding:.26rem .28rem;font-size:10px;color:${t};">${label}</td>
-    </tr>`;
-  });
-  const quintosSection=quintos.length?`
-    <div style="margin-bottom:1.2rem;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:#bbb;margin-bottom:.3rem;padding-left:.15rem;">🧮 QUINTOS (5° de B / C / D)</div>
-      <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,.02);border-radius:6px;overflow:hidden;">
-        <thead><tr style="background:rgba(255,255,255,.05);">
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:18px;">#</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">Zona</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Equipo</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:22px;">PJ</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;width:26px;">PTS</th>
-          <th style="padding:.22rem .28rem;font-size:9px;color:#555;text-align:left;">Clasif.</th>
-        </tr></thead>
-        <tbody>${qRows}</tbody>
-      </table>
-    </div>`:'';
-
-  const lista=(equipos,titulo,color)=>{
-    const items=equipos.map((r,i)=>{
-      const isQ=r._quinto||r._topQ,isTied=r._tied;
-      return `<div style="display:flex;align-items:center;gap:.38rem;padding:.26rem .48rem;border-bottom:1px solid rgba(255,255,255,.04);">
-        <span style="font-size:10px;color:#555;width:13px;text-align:center;flex-shrink:0;">${i+1}</span>
-        ${escudoHTML(r.n,'me')}
-        <span style="font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;${isQ?'color:#f5e64a;':''}">${r.n}${isQ?' <span style="font-size:9px;opacity:.65;">(5°)</span>':''}</span>
-        ${isTied?'<span title="Empate en criterios — sorteo" style="font-size:9px;color:#60a5fa;flex-shrink:0;">⚖️</span>':''}
-      </div>`;
-    }).join('');
-    return `<div style="flex:1;min-width:0;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:${color};margin-bottom:.3rem;padding-left:.15rem;">${titulo}</div>
-      <div style="border:1px solid rgba(255,255,255,.07);border-radius:6px;overflow:hidden;">${items}</div>
-    </div>`;
-  };
-
+// El primer ascenso queda como cuadro eliminatorio armado (cuartos/semis/final, como en la
+// home) porque su llave es fija una vez conocidos los 4 clasificados. El segundo ascenso, en
+// cambio, se reordena ronda a ronda — no tiene sentido armarle un cuadro fijo de antemano, así
+// que solo se muestran los cruces de 16vos ordenados (los primeros 4 con un lado "por
+// confirmarse", igual que en la home), con nombres completos y detalle de sorteo visible.
+function _renderCalcResultados(){
   return `<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:1.25rem;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">TABLAS PROYECTADAS</div>
-    <div class="calc-form-grid">${zonaTable(tabA,'Zona A')}${zonaTable(tabB,'Zona B')}</div>
-    <div class="calc-form-grid" style="margin-bottom:1.2rem;">${zonaTable(tabC,'Zona C')}${zonaTable(tabD,'Zona D')}</div>
-    ${quintosSection}
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:.8rem;">CLASIFICACIÓN PROYECTADA</div>
-    <div class="calc-match-grid">${lista(nonA,'🏆 Nonagonal A','#4ade80')}${lista(nonB,'🏆 Nonagonal B','#4ade80')}</div>
-    <div class="calc-match-grid" style="margin-bottom:0;">${lista(revA,'⚔️ Reválida A','#f97316')}${lista(revB,'⚔️ Reválida B','#f97316')}</div>
+    <p class="sec" style="color:#fff;">Tablas proyectadas</p>
+    <div class="calc-form-grid" style="margin-bottom:1rem;">
+      <div id="calc-proj-tabla-nona-a"></div>
+      <div id="calc-proj-tabla-nona-b"></div>
+    </div>
+    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
+      <div id="calc-proj-tabla-rev-a"></div>
+      <div id="calc-proj-tabla-rev-b"></div>
+    </div>
+    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
+      <div id="calc-proj-descenso-a"></div>
+      <div id="calc-proj-descenso-b"></div>
+    </div>
+    <p class="sec" style="color:#fff;">Primer ascenso — cuadro proyectado</p>
+    <div id="calc-proj-bracket-nona" class="bracket-nona-cont" style="margin-bottom:1.2rem;"></div>
+    <p class="sec" style="color:#fff;">Segundo ascenso — 16vos proyectados</p>
+    <div id="calc-proj-preview16" style="margin-bottom:.4rem;"></div>
+    <p class="sec" style="color:#fff;">Tabla de Mérito proyectada</p>
+    <div id="calc-proj-tabla-merito"></div>
   </div>`;
 }
 
@@ -5655,6 +6347,26 @@ function _renderCalcResultados(tabA,tabB,tabC,tabD,nonA,nonB,revA,revB,quintos,b
       <button onclick="document.getElementById('ficha-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
     </div>
     <div id="ficha-cont" style="padding:1rem;max-height:85vh;overflow-y:auto;"></div>
+  </div>
+</div>
+<!-- MODAL: CRUCES Y TABLAS DEL SEGUNDO ASCENSO (Tabla de Mérito + cruces parciales) -->
+<div id="merito-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:780px;margin:auto;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;">CRUCES Y TABLAS — SEGUNDO ASCENSO</span>
+      <button onclick="document.getElementById('merito-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="merito-cont" style="padding:1rem;max-height:85vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<div id="jugador-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:640px;margin:auto;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <span id="jugador-modal-title" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;">JUGADOR</span>
+      <button onclick="document.getElementById('jugador-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="jugador-cont" style="max-height:85vh;overflow-y:auto;"></div>
   </div>
 </div>
 </body>
