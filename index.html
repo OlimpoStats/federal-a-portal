@@ -259,28 +259,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(max-width:900px){
   .inicio-grid{grid-template-columns:1fr 1fr;gap:1rem;}
   .inicio-grid > div:last-child{grid-column:1 / -1;}
-}
-@media(max-width:700px){
-  /* Header */
-  .hdr{padding:0 .75rem;gap:.5rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;position:fixed;top:0;left:0;right:0;}
-  .logo{font-size:15px;white-space:nowrap;flex-shrink:0;}
-  .logo-beta{font-size:13px;right:2px;bottom:-1px;}
-  .nav{display:none;}
-  .hamburger{display:flex;}
-  .user-btn{display:none;}
-  #user-btn-mob{display:flex!important;width:28px;height:28px;}
-  /* Pages */
-  html,body{overflow-x:hidden;}
-  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;padding-top:calc(.75rem + 52px);}
-  /* Inicio grid */
-  .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
-  .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
-  /* Nonagonal/Revalida pairs stack to 1 col on mobile */
+  /* Nonagonal/Revalida pairs stack to 1 col — movido acá desde max-width:700px: entre 701 y
+     900px (tablets/notebooks chicas) el par seguía en 2 columnas angostas pero sin el resto
+     del ajuste mobile de las tablas, quedaban truncadas ("1...", "+..."). */
   #nonagonales-wrap > div[style*="grid"],#revalidas-wrap > div[style*="grid"],#golasist-wrap{grid-template-columns:1fr!important;gap:.75rem!important;}
   #cont-descenso > div{grid-template-columns:1fr!important;}
   #cont-quintos{max-width:100%!important;}
   /* Tables - fixed numeric cols, equipo takes rest */
-  /* Zona tables scoped - no global tabla-mini changes */
   #tablas-zona-a .tabla-mini,#tablas-zona-b .tabla-mini,#tablas-zona-c .tabla-mini,#tablas-zona-d .tabla-mini,#cont-quintos .tabla-mini,#cont-goleadores-resumen .tabla-mini,#cont-asistentes-resumen .tabla-mini,
   #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini,#tablas-revalida-b .tabla-mini{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   #tablas-zona-a table,#tablas-zona-b table,#tablas-zona-c table,#tablas-zona-d table,#cont-quintos table,#cont-goleadores-resumen table,#cont-asistentes-resumen table,
@@ -297,6 +282,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-nonagonal-a .tr-eq,#tablas-nonagonal-b .tr-eq,#tablas-revalida-a .tr-eq,#tablas-revalida-b .tr-eq{gap:.1rem;}
   #tablas-zona-a .me,#tablas-zona-b .me,#tablas-zona-c .me,#tablas-zona-d .me,#cont-quintos .me,
   #tablas-nonagonal-a .me,#tablas-nonagonal-b .me,#tablas-revalida-a .me,#tablas-revalida-b .me{width:13px!important;height:13px!important;}
+}
+@media(max-width:700px){
+  /* Header */
+  .hdr{padding:0 .75rem;gap:.5rem;height:52px;flex-wrap:nowrap;box-sizing:border-box;width:100%;position:fixed;top:0;left:0;right:0;}
+  .logo{font-size:15px;white-space:nowrap;flex-shrink:0;}
+  .logo-beta{font-size:13px;right:2px;bottom:-1px;}
+  .nav{display:none;}
+  .hamburger{display:flex;}
+  .user-btn{display:none;}
+  #user-btn-mob{display:flex!important;width:28px;height:28px;}
+  /* Pages */
+  html,body{overflow-x:hidden;}
+  .page{padding:.75rem .4rem;box-sizing:border-box;width:100%;padding-top:calc(.75rem + 52px);}
+  /* Inicio grid */
+  .inicio-grid{grid-template-columns:1fr!important;gap:1rem;}
+  .inicio-grid > div:last-child > div{grid-template-columns:1fr!important;gap:.75rem!important;}
+  /* Nonagonal/Revalida/tablas: reglas movidas a max-width:900px (ver más arriba) para que
+     también apliquen entre 701 y 900px, no solo acá abajo de 700. */
   /* Stats grids 1 col */
   #jugcont-goles > div[style*="grid"],
   #jugcont-disciplina > div[style*="grid"],
