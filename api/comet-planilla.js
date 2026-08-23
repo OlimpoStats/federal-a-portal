@@ -74,14 +74,18 @@ function buildNota(lp) {
   return marcas.join(" ");
 }
 
+// Los cambios NO se sacan del endpoint /events: ahí el jugador que entra (relatedMatchRole)
+// no trae personId, solo nombre — habría que matchear por nombre, con el agravante de que ese
+// nombre viene en otro orden ("NOMBRE,APELLIDO" en vez de "APELLIDO, NOMBRE"). En cambio, cada
+// jugador titular ya trae en su PROPIA formación (gracias a showSubstitutionsOutAsEvent=true en
+// la URL del lineup) un array `matchEvents` con sus cambios: fcdName "substitutionOut" cuando
+// SE VA, y el que lo reemplaza en `relatedMatchRole` — con personId y dorsal de los dos lados,
+// sin necesidad de cruzar nada por nombre.
 function buildJugadoresBase(lineup) {
   const jugadores = {};
-  const numeroPorPersonId = {};
   for (const p of (lineup?.players || [])) {
-    const numero = p.lineupProperties?.shirtNumber ?? "";
-    numeroPorPersonId[p.personId] = numero;
     jugadores[p.personId] = {
-      numero,
+      numero: p.lineupProperties?.shirtNumber ?? "",
       id: p.personId,
       id_federal: p.personId,
       nota: buildNota(p.lineupProperties),
@@ -90,13 +94,32 @@ function buildJugadoresBase(lineup) {
       eventos: [],
     };
   }
-  return { jugadores, numeroPorPersonId };
+  for (const p of (lineup?.players || [])) {
+    for (const ev of (p.matchEvents || [])) {
+      if (ev.type?.fcdName !== "substitutionOut") continue;
+      const entra = ev.relatedMatchRole;
+      const minuto = ev.minuteTotal ?? ev.minute ?? null;
+      if (jugadores[p.personId]) {
+        jugadores[p.personId].eventos.push({
+          tipo: "cambio_sale", minuto,
+          extra: entra?.lineupProperties?.shirtNumber != null ? String(entra.lineupProperties.shirtNumber) : "",
+        });
+      }
+      if (entra?.personId && jugadores[entra.personId]) {
+        jugadores[entra.personId].eventos.push({
+          tipo: "cambio_entra", minuto,
+          extra: p.lineupProperties?.shirtNumber != null ? String(p.lineupProperties.shirtNumber) : "",
+        });
+      }
+    }
+  }
+  return { jugadores };
 }
 
 // Tipos de evento sin ambigüedad, confirmados contra 6 partidos reales en la investigación.
 // PENALTY/OWN_GOAL van sobre el jugador de matchRole, en SU PROPIO plantel (igual que hace la
 // IA con "gol_contra" — no hay que invertir nada, contarGoles() ya excluye gol_contra del
-// cómputo del equipo). SUBSTITUTION genera 2 eventos, uno por cada jugador involucrado.
+// cómputo del equipo). Los cambios (SUBSTITUTION) se resuelven aparte, ver buildJugadoresBase.
 const TIPO_POR_FCDNAME = {
   GOAL: "gol",
   PENALTY: "gol_penal",
@@ -106,34 +129,11 @@ const TIPO_POR_FCDNAME = {
   RED: "roja",
 };
 
-function aplicarEventos(events, ladoHome, jugadoresLocal, jugadoresVisit, numerosLocal, numerosVisit) {
+function aplicarEventos(events, ladoHome, jugadoresLocal, jugadoresVisit) {
   for (const ev of (events || [])) {
-    const fcd = ev.type?.fcdName;
-    const esLocal = ev.home === ladoHome;
-    const jugadores = esLocal ? jugadoresLocal : jugadoresVisit;
-    const numerosPropio = esLocal ? numerosLocal : numerosVisit;
-
-    if (fcd === "SUBSTITUTION") {
-      const sale = ev.matchRole;
-      const entra = ev.relatedMatchRole;
-      const minuto = ev.minuteTotal ?? ev.minute ?? null;
-      if (sale?.personId && jugadores[sale.personId]) {
-        jugadores[sale.personId].eventos.push({
-          tipo: "cambio_sale", minuto,
-          extra: entra?.personId != null ? String(numerosPropio[entra.personId] ?? "") : "",
-        });
-      }
-      if (entra?.personId && jugadores[entra.personId]) {
-        jugadores[entra.personId].eventos.push({
-          tipo: "cambio_entra", minuto,
-          extra: sale?.personId != null ? String(numerosPropio[sale.personId] ?? "") : "",
-        });
-      }
-      continue;
-    }
-
-    const tipo = TIPO_POR_FCDNAME[fcd];
-    if (!tipo) continue; // START/END/FULL_TIME u otro tipo no manejado — ignorar
+    const tipo = TIPO_POR_FCDNAME[ev.type?.fcdName];
+    if (!tipo) continue; // SUBSTITUTION (ver buildJugadoresBase), START/END/FULL_TIME u otro — ignorar acá
+    const jugadores = ev.home === ladoHome ? jugadoresLocal : jugadoresVisit;
     const jugadorId = ev.matchRole?.personId;
     if (jugadorId == null || !jugadores[jugadorId]) continue;
     jugadores[jugadorId].eventos.push({
@@ -195,10 +195,10 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: "COMET no devolvió formación para ese partido — puede que todavía no esté cargada." });
     }
 
-    const { jugadores: jugadoresLocal, numeroPorPersonId: numerosLocal } = buildJugadoresBase(lineupHome);
-    const { jugadores: jugadoresVisit, numeroPorPersonId: numerosVisit } = buildJugadoresBase(lineupAway);
+    const { jugadores: jugadoresLocal } = buildJugadoresBase(lineupHome);
+    const { jugadores: jugadoresVisit } = buildJugadoresBase(lineupAway);
 
-    aplicarEventos(events, true, jugadoresLocal, jugadoresVisit, numerosLocal, numerosVisit);
+    aplicarEventos(events, true, jugadoresLocal, jugadoresVisit);
 
     // COMET no devuelve la formación ordenada por dorsal (viene en orden de plantel/registro),
     // a diferencia de una planilla real (leída de arriba a abajo, siempre 1→11 y suplentes).
