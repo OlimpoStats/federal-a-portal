@@ -200,9 +200,13 @@ module.exports = async (req, res) => {
 
     aplicarEventos(events, true, jugadoresLocal, jugadoresVisit, numerosLocal, numerosVisit);
 
+    // COMET no devuelve la formación ordenada por dorsal (viene en orden de plantel/registro),
+    // a diferencia de una planilla real (leída de arriba a abajo, siempre 1→11 y suplentes).
+    const porNumero = (a, b) => (parseInt(a.numero, 10) || 999) - (parseInt(b.numero, 10) || 999);
+
     return res.status(200).json({
-      local: { jugadores: Object.values(jugadoresLocal) },
-      visit: { jugadores: Object.values(jugadoresVisit) },
+      local: { jugadores: Object.values(jugadoresLocal).sort(porNumero) },
+      visit: { jugadores: Object.values(jugadoresVisit).sort(porNumero) },
     });
   } catch(e) {
     return res.status(500).json({ error: e.message });
