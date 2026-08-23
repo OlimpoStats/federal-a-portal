@@ -5105,10 +5105,10 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     <div class="tabla-mini"><table style="width:100%;table-layout:fixed;">
       <thead><tr>
         <th style="width:30px">#</th>
-        <th style="text-align:left;min-width:150px;">Equipo</th>
-        <th title="Puntos de toda la temporada">Pts</th>
-        <th title="Partidos jugados en toda la temporada">PJ</th>
-        ${conProm?'<th title="Promedio de puntos por partido">Prom.</th>':''}
+        <th style="text-align:left;">Equipo</th>
+        <th style="width:42px;" title="Puntos de toda la temporada">Pts</th>
+        <th style="width:38px;" title="Partidos jugados en toda la temporada">PJ</th>
+        ${conProm?'<th style="width:56px;" title="Promedio de puntos por partido">Prom.</th>':''}
       </tr></thead><tbody>${tableRows}</tbody>
     </table>${hayNaranja?`<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`:''}</div>`;
 }
