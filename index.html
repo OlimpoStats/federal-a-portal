@@ -5510,7 +5510,8 @@ let _ARBI_SORT = {col:'pj', dir:-1};
 
 function renderArbiTable(){
   const {col, dir} = _ARBI_SORT;
-  const sorted = [..._ARBI_DATA].sort(([,a],[,b])=>{
+  const sorted = [..._ARBI_DATA].sort(([an,a],[bn,b])=>{
+    if(col==='nombre') return dir*an.localeCompare(bn,'es',{sensitivity:'base'});
     const va = col==='amt'?a.aml+a.amv : col==='rt'?a.rl+a.rv : a[col]??0;
     const vb = col==='amt'?b.aml+b.amv : col==='rt'?b.rl+b.rv : b[col]??0;
     return dir*(vb-va);
@@ -5521,6 +5522,8 @@ function renderArbiTable(){
     const arrow=active?(_ARBI_SORT.dir===-1?' ▼':' ▲'):'';
     return `<th onclick="sortArbiTable('${key}')" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.4rem .2rem;text-align:center;white-space:nowrap;font-size:11px;font-weight:700;color:${active?'#e8c44a':'#f5e99a'};width:${cW};min-width:${cW};max-width:${cW};cursor:pointer;user-select:none;">${label}${arrow}</th>`;
   };
+  const nombreActive=_ARBI_SORT.col==='nombre';
+  const nombreArrow=nombreActive?(_ARBI_SORT.dir===-1?' ▼':' ▲'):'';
   const colD=`text-align:center;font-size:13px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
   const cols=[['pj','PJ'],['vl','GL'],['emp','Emp'],['vv','GV'],['aml','🟨L'],['amv','🟨V'],['amt','🟨T'],['rl','🟥L'],['rv','🟥V'],['rt','🟥T'],['penl','PL'],['penv','PV']];
   const legend=`<div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;flex-wrap:wrap;gap:.3rem .8rem;border-top:1px solid rgba(255,255,255,.06);">
@@ -5531,7 +5534,7 @@ function renderArbiTable(){
   </div>`;
   const html=`<div style="overflow-x:auto;"><table id="arbi-table" style="border-collapse:collapse;width:100%;">
     <thead><tr>
-      <th style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:#f0f0f0;white-space:nowrap;">Árbitro</th>
+      <th onclick="sortArbiTable('nombre')" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:.45rem .6rem;text-align:left;font-size:12px;font-weight:700;color:${nombreActive?'#e8c44a':'#f0f0f0'};white-space:nowrap;cursor:pointer;user-select:none;">Árbitro${nombreArrow}</th>
       ${cols.map(([k,l])=>colH(k,l)).join('')}
     </tr></thead>
     <tbody>${sorted.map(([nombre,a])=>{
@@ -5554,7 +5557,7 @@ function renderArbiTable(){
 
 function sortArbiTable(col){
   if(_ARBI_SORT.col===col) _ARBI_SORT.dir*=-1;
-  else { _ARBI_SORT.col=col; _ARBI_SORT.dir=-1; }
+  else { _ARBI_SORT.col=col; _ARBI_SORT.dir=col==='nombre'?1:-1; }
   renderArbiTable();
 }
 function toggleArbiDetalle(nombre){
