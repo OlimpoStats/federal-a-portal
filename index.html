@@ -445,6 +445,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #pen-banner-cont > div{gap:.3rem!important;padding:.4rem .3rem!important;}
   #pen-banner-cont > div > div{font-size:9px!important;}
   #pen-banner-cont > div > div > div:first-child{font-size:16px!important;}
+  /* Árbitros que cobraron penales — angostar las 2 columnas de escudos para
+     que el nombre del árbitro (columna flexible del table-layout:fixed) tenga
+     lugar; sin esto quedaba tan angosta que se veía solo la inicial + "...". */
+  #tbl-pen-arbitros table th:nth-child(3),#tbl-pen-arbitros table td:nth-child(3),
+  #tbl-pen-arbitros table th:nth-child(4),#tbl-pen-arbitros table td:nth-child(4){width:70px!important;padding:.3rem .2rem!important;}
+  #tbl-pen-arbitros table th:nth-child(2),#tbl-pen-arbitros table td:nth-child(2){width:34px!important;padding:.3rem .15rem!important;}
+  #tbl-pen-arbitros table th:first-child,#tbl-pen-arbitros table td:first-child{font-size:11px!important;padding:.3rem .3rem!important;}
+  #tbl-pen-arbitros .me{width:17px!important;height:17px!important;}
   /* Fixture */
   .fecha-hdr{padding:.5rem .6rem;}
   .fnum{font-size:16px;}
@@ -4891,7 +4899,7 @@ async function cargarEstadisticas(){
         </div>
         <div style="margin-top:1rem;max-width:560px;">
           <p class="sec">🧑‍⚖️ Árbitros que cobraron penales</p>
-          <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+          <div class="tabla-mini" id="tbl-pen-arbitros">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">
             <thead><tr>
               <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
               <th style="width:55px;padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
