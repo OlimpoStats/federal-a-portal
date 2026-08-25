@@ -5512,8 +5512,8 @@ function renderArbiTable(){
   const {col, dir} = _ARBI_SORT;
   const sorted = [..._ARBI_DATA].sort(([an,a],[bn,b])=>{
     if(col==='nombre') return dir*an.localeCompare(bn,'es',{sensitivity:'base'});
-    const va = col==='amt'?a.aml+a.amv : col==='rt'?a.rl+a.rv : a[col]??0;
-    const vb = col==='amt'?b.aml+b.amv : col==='rt'?b.rl+b.rv : b[col]??0;
+    const va = col==='amt'?a.aml+a.amv : col==='rt'?a.rl+a.rv : col==='pt'?a.penl+a.penv : a[col]??0;
+    const vb = col==='amt'?b.aml+b.amv : col==='rt'?b.rl+b.rv : col==='pt'?b.penl+b.penv : b[col]??0;
     return dir*(vb-va);
   });
   const cW='32px';
@@ -5525,12 +5525,12 @@ function renderArbiTable(){
   const nombreActive=_ARBI_SORT.col==='nombre';
   const nombreArrow=nombreActive?(_ARBI_SORT.dir===-1?' ▼':' ▲'):'';
   const colD=`text-align:center;font-size:13px;padding:.4rem .2rem;border-bottom:1px solid var(--border);width:${cW};min-width:${cW};max-width:${cW};`;
-  const cols=[['pj','PJ'],['vl','GL'],['emp','Emp'],['vv','GV'],['aml','🟨L'],['amv','🟨V'],['amt','🟨T'],['rl','🟥L'],['rv','🟥V'],['rt','🟥T'],['penl','PL'],['penv','PV']];
+  const cols=[['pj','PJ'],['vl','GL'],['emp','Emp'],['vv','GV'],['aml','🟨L'],['amv','🟨V'],['amt','🟨T'],['rl','🟥L'],['rv','🟥V'],['rt','🟥T'],['penl','PL'],['penv','PV'],['pt','PT']];
   const legend=`<div style="font-size:11px;color:#666;padding:.5rem .6rem;display:flex;flex-wrap:wrap;gap:.3rem .8rem;border-top:1px solid rgba(255,255,255,.06);">
     <span><b style="color:#999;">PJ</b> Partidos</span><span><b style="color:#999;">GL</b> Ganó local</span><span><b style="color:#999;">Emp</b> Empate</span><span><b style="color:#999;">GV</b> Ganó visitante</span>
     <span><b style="color:#999;">🟨L/V</b> Amarillas local/visit.</span><span><b style="color:#999;">🟨T</b> Amarillas totales</span>
     <span><b style="color:#999;">🟥L/V</b> Rojas local/visit.</span><span><b style="color:#999;">🟥T</b> Rojas totales</span>
-    <span><b style="color:#999;">PL/PV</b> Penales a favor del local/visit.</span>
+    <span><b style="color:#999;">PL/PV</b> Penales a favor del local/visit.</span><span><b style="color:#999;">PT</b> Penales totales</span>
   </div>`;
   const html=`<div style="overflow-x:auto;"><table id="arbi-table" style="border-collapse:collapse;width:100%;">
     <thead><tr>
@@ -5548,6 +5548,7 @@ function renderArbiTable(){
         <td style="${colD}">${a.rl}</td><td style="${colD}">${a.rv}</td>
         <td style="${colD};font-weight:700;color:#e57373;">${a.rl+a.rv}</td>
         <td style="${colD}">${a.penl}</td><td style="${colD}">${a.penv}</td>
+        <td style="${colD};font-weight:700;color:#f5e99a;">${a.penl+a.penv}</td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>${legend}`;
@@ -5557,7 +5558,7 @@ function renderArbiTable(){
 
 function sortArbiTable(col){
   if(_ARBI_SORT.col===col) _ARBI_SORT.dir*=-1;
-  else { _ARBI_SORT.col=col; _ARBI_SORT.dir=col==='nombre'?1:-1; }
+  else { _ARBI_SORT.col=col; _ARBI_SORT.dir=-1; }
   renderArbiTable();
 }
 function toggleArbiDetalle(nombre){
