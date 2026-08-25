@@ -61,7 +61,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .dia-week{color:var(--accent);}
 .dia-date{color:#f0f0f0;}
 .partido-wrap{margin-bottom:.85rem;}
-.partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem;transition:border-color .15s;}
+.partido{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.4rem;transition:border-color .15s;}
 .partido:hover{border-color:rgba(255,255,255,0.14);}
 .partido.topo-dia{border-left:3px solid var(--accent);}
 .eq{display:flex;align-items:center;gap:.4rem;min-width:0;}
