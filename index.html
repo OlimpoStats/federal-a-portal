@@ -5514,7 +5514,7 @@ function renderArbiTable(){
     if(col==='nombre') return dir*an.localeCompare(bn,'es',{sensitivity:'base'});
     const va = col==='amt'?a.aml+a.amv : col==='rt'?a.rl+a.rv : col==='pt'?a.penl+a.penv : a[col]??0;
     const vb = col==='amt'?b.aml+b.amv : col==='rt'?b.rl+b.rv : col==='pt'?b.penl+b.penv : b[col]??0;
-    return dir*(vb-va);
+    return dir*(va-vb);
   });
   const cW='32px';
   const colH=(key,label)=>{
