@@ -4889,14 +4889,14 @@ async function cargarEstadisticas(){
           <div><p class="sec">🟢 Penales a favor</p><div class="tabla-mini">${tblEquiposPen(penFavorRows,'Equipo')}</div></div>
           <div><p class="sec">🔴 Penales en contra</p><div class="tabla-mini">${tblEquiposPen(penContraRows,'Equipo')}</div></div>
         </div>
-        <div style="margin-top:1rem;max-width:400px;">
+        <div style="margin-top:1rem;max-width:560px;">
           <p class="sec">🧑‍⚖️ Árbitros que cobraron penales</p>
-          <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;">
+          <div class="tabla-mini">${penArbiRows.length ? `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">
             <thead><tr>
               <th style="text-align:left;padding:.4rem .5rem;background:var(--surface2);color:#f0f0f0;font-size:12px;border-bottom:1px solid var(--border);">Árbitro</th>
               <th style="width:55px;padding:.4rem .5rem;background:var(--surface2);color:#f5e99a;font-size:12px;border-bottom:1px solid var(--border);text-align:center;">Pen.</th>
-              <th style="padding:.4rem 1rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);min-width:80px;">A favor</th>
-              <th style="padding:.4rem 1rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);min-width:80px;">En contra</th>
+              <th style="width:150px;padding:.4rem 1rem;background:var(--surface2);color:#4caf50;font-size:12px;border-bottom:1px solid var(--border);">A favor</th>
+              <th style="width:150px;padding:.4rem 1rem;background:var(--surface2);color:#e57373;font-size:12px;border-bottom:1px solid var(--border);">En contra</th>
             </tr></thead><tbody>
             ${penArbiRows.map(([arb,n])=>{
               const pensByArb = (penalesDB||[]).filter(p=>{
@@ -4920,10 +4920,10 @@ async function cargarEstadisticas(){
               const escFavor=Object.entries(cntFavor).map(([eq,n])=>_escBadge(eq,n)).join('');
               const escContra=Object.entries(cntContra).map(([eq,n])=>_escBadge(eq,n)).join('');
               return `<tr style="border-bottom:1px solid var(--border);">
-                <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;">${arb}</td>
+                <td style="padding:.35rem .5rem;font-size:13px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${arb}</td>
                 <td style="text-align:center;font-size:14px;font-weight:700;padding:.35rem .3rem;">${n}</td>
-                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:nowrap;align-items:center;">${escFavor}</div></td>
-                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:nowrap;align-items:center;">${escContra}</div></td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;">${escFavor}</div></td>
+                <td style="padding:.35rem 1rem;"><div style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;">${escContra}</div></td>
               </tr>`;
             }).join('')}
             </tbody></table>` : '<div style="padding:.5rem;color:var(--muted);font-size:12px;">Sin datos.</div>'}
