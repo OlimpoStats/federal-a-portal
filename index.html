@@ -3720,6 +3720,13 @@ async function enviarSugerencia(){
   if(error){ err.textContent="Error al enviar. Intentá de nuevo."; err.style.display=""; return; }
   document.getElementById("contacto-form").style.display="none";
   document.getElementById("contacto-ok").style.display="";
+  // Aviso por mail — no bloquea ni afecta la confirmación de arriba: la sugerencia ya quedó
+  // guardada en Supabase pase lo que pase acá.
+  fetch("/api/notificar-sugerencia", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({texto, medio, remitente: payload.username_display})
+  }).catch(()=>{});
 }
 
 function showSubTab(tab, el){
