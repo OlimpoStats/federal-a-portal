@@ -593,7 +593,11 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 <!-- ===================== ESCUDOS ===================== -->
     <div class="panel" id="panel-escudos">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1.25rem;">Escudos de clubes</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente).</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:.5rem;">Hacé click en cualquier club para subir o actualizar su escudo (PNG recomendado, fondo transparente). Los escudos nuevos se optimizan solos al subirlos.</p>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;">
+        <button class="btn btn-secondary btn-sm" onclick="optimizarEscudosExistentes()">Optimizar escudos ya subidos</button>
+        <span id="escudos-optimizar-status" style="font-size:12px;color:var(--muted);"></span>
+      </div>
       <div class="escudos-grid" id="escudos-grid"></div>
     </div>
 
@@ -4449,10 +4453,45 @@ function renderEscudos(){
   }).join("");
 }
 
+// Los escudos se suben en tamaño original de cámara/captura (llegaron a pesar 120-255KB
+// cada uno, mostrándose a 22-32px en el sitio) — eso es lo que agotó el Egress gratis de
+// Supabase. Se reducen acá a un cuadro de 256px (de sobra para el tamaño más grande que se
+// usa, 68px en la ficha de partido, con margen para pantallas retina) antes de subir.
+function resizeImageFile(file, maxSize){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if(w > maxSize || h > maxSize){
+        const ratio = Math.min(maxSize/w, maxSize/h);
+        w = Math.max(1, Math.round(w*ratio));
+        h = Math.max(1, Math.round(h*ratio));
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(url);
+        if(blob) resolve(blob); else reject(new Error('No se pudo procesar la imagen'));
+      }, 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo cargar la imagen')); };
+    img.src = url;
+  });
+}
+
 async function subirEscudo(e, team){
   const f=e.target.files[0]; if(!f) return;
   const fileName = team.replace(/[^a-z0-9]/gi,'_').toLowerCase()+".png";
-  const {error: upErr} = await sb.storage.from("escudos").upload(fileName, f, {upsert:true, contentType: f.type});
+  let toUpload = f, contentType = f.type;
+  try {
+    toUpload = await resizeImageFile(f, 256);
+    contentType = 'image/png';
+  } catch(err){ console.warn('No se pudo optimizar la imagen, subiendo el archivo original:', err.message); }
+  // cacheControl largo (1 año) — antes salían con "no-cache", así que cada visita volvía a
+  // pedirlos al servidor en vez de usar la copia que el navegador ya tenía.
+  const {error: upErr} = await sb.storage.from("escudos").upload(fileName, toUpload, {upsert:true, contentType, cacheControl:"31536000"});
   if(upErr){ alert("Error subiendo: "+upErr.message); return; }
   const {data: urlData} = sb.storage.from("escudos").getPublicUrl(fileName);
   const url = urlData.publicUrl;
@@ -4460,6 +4499,35 @@ async function subirEscudo(e, team){
   escudoData[team]=url;
   renderEscudos();
   alert("✓ Escudo guardado para "+team);
+}
+
+// Re-comprime los escudos que YA estaban subidos (con el tamaño/cache viejo) — mismo
+// nombre de archivo, así que no hace falta tocar escudo_url en la tabla equipos.
+async function optimizarEscudosExistentes(){
+  const entries = Object.entries(escudoData);
+  if(!entries.length){ alert("No hay escudos cargados todavía."); return; }
+  if(!confirm(`Se van a re-comprimir ${entries.length} escudos ya subidos (mismo archivo, mucho más liviano). Puede tardar un rato. ¿Continuar?`)) return;
+  const statusEl = document.getElementById("escudos-optimizar-status");
+  let ok=0, fail=0;
+  for(const [team, url] of entries){
+    if(statusEl) statusEl.textContent = `Optimizando ${team}... (${ok+fail+1}/${entries.length})`;
+    try {
+      const resp = await fetch(url + (url.includes('?')?'&':'?') + 'cb=' + Date.now());
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      const blob = await resp.blob();
+      const resized = await resizeImageFile(blob, 256);
+      const fileName = team.replace(/[^a-z0-9]/gi,'_').toLowerCase()+".png";
+      const {error: upErr} = await sb.storage.from("escudos").upload(fileName, resized, {upsert:true, contentType:'image/png', cacheControl:"31536000"});
+      if(upErr) throw upErr;
+      ok++;
+    } catch(err){
+      console.error('Error optimizando escudo de '+team, err);
+      fail++;
+    }
+  }
+  const resumen = `Listo: ${ok} optimizados${fail?`, ${fail} con error (ver consola)`:''}.`;
+  if(statusEl) statusEl.textContent = resumen;
+  alert(resumen);
 }
 
 // ── ABM ÁRBITROS Y ESTADIOS ──

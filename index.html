@@ -472,6 +472,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #ficha-modal > div{border-radius:0!important;max-width:100%!important;width:100%!important;height:100%;display:flex;flex-direction:column;overflow:hidden;}
   #ficha-modal > div > div:first-child{flex-shrink:0;position:sticky;top:0;z-index:10;}
   #ficha-cont{flex:1;overflow-y:auto;overflow-x:hidden;padding:.4rem .3rem!important;max-height:none!important;}
+  #info-partido-modal{padding:0!important;align-items:stretch!important;overflow:hidden!important;}
+  #info-partido-modal > div{border-radius:0!important;max-width:100%!important;width:100%!important;height:100%;display:flex;flex-direction:column;overflow:hidden;}
+  #info-partido-modal > div > div:first-child{flex-shrink:0;position:sticky;top:0;z-index:10;}
+  #info-partido-cont{flex:1;overflow-y:auto;overflow-x:hidden;max-height:none!important;}
+  .info-modal-eq img{width:44px;height:44px;}
+  .info-modal-h5{padding:.75rem;gap:.75rem;}
   #ficha-col-local,#ficha-col-visit{font-size:10px;}
   #ficha-cont strong{font-size:10px;}
   #ficha-cont .planillas-grid{gap:.3rem!important;}
@@ -585,6 +591,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .plt-act-btn{width:27px;height:27px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-size:14px;transition:background .15s;border:none;background:none;text-decoration:none;}
 .plt-act-btn:hover:not(.plt-dis){background:rgba(255,255,255,.1);}
 .plt-act-btn.plt-dis{opacity:.25;cursor:default;pointer-events:none;}
+/* Modal "Info del partido" (partidos programados) */
+.info-modal-banner{display:flex;align-items:center;justify-content:center;gap:1.5rem;padding:1.25rem 1rem .75rem;}
+.info-modal-eq{display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:1;min-width:0;max-width:160px;}
+.info-modal-eq img{width:56px;height:56px;object-fit:contain;}
+.info-modal-eq span{font-size:13px;font-weight:600;text-align:center;line-height:1.2;}
+.info-modal-vs{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);flex-shrink:0;}
+.info-modal-meta{text-align:center;padding:0 1rem 1rem;border-bottom:1px solid var(--border);font-size:13px;color:#ddd;}
+.info-modal-meta .info-modal-jueces{font-size:11px;color:#999;margin-top:.2rem;}
+.info-modal-h5{display:flex;gap:1rem;padding:1rem;flex-wrap:wrap;}
+.info-modal-h5-col{flex:1 1 260px;min-width:0;}
+.info-h5-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;}
 .plt-pos-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#777;padding:.35rem 0 .25rem;border-bottom:1px solid rgba(255,255,255,.07);margin:.9rem 0 .35rem;}
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
@@ -2056,6 +2073,7 @@ function renderFilaPartido(zona, f, m, meta){
   const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
   const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
   // Always 2 slots: [stream, planilla] — stream left, planilla right
+  const esProgramado = m.estado === "programado";
   let leftBtn, rightBtn;
   if(m.gl !== null && !esEnVivo){
     // Finished: planilla icon left (primary), stream right (secondary)
@@ -2063,8 +2081,12 @@ function renderFilaPartido(zona, f, m, meta){
       ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
       : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
     rightBtn = _streamLink || _filler26;
+  } else if(esProgramado){
+    // Programado: info icon left (primary, mismo lugar que la planilla), stream right (secondary)
+    leftBtn = `<div class="ficha-btn" title="Info del partido" onclick="verInfoPartido('${fichaKey}')" style="cursor:pointer;">ℹ️</div>`;
+    rightBtn = _streamLink || _filler26;
   } else {
-    // Programado o live: stream left, nothing right
+    // En vivo: stream left, nada a la derecha
     leftBtn = _streamLink || _filler26;
     rightBtn = _filler26;
   }
@@ -2085,6 +2107,113 @@ function renderFilaPartido(zona, f, m, meta){
     </div>
     ${goleadoresHTML}
     ${infoBarHTML}
+  </div>`;
+}
+
+// Últimos 5 partidos jugados de un equipo, más reciente primero — recorre FIXTURE en
+// memoria (todas las fases, ZONAS_TODAS) igual que renderPartidosClub, sin pegarle a la DB.
+function last5ForTeam(nombre){
+  const jugados = [];
+  ZONAS_TODAS.forEach(zona => {
+    for(let f=1; f<=18; f++){
+      (FIXTURE[zona]?.[String(f)]||[]).forEach(mm => {
+        if(mm.local!==nombre && mm.visitante!==nombre) return;
+        if(mm.gl===null) return;
+        const esLocal = mm.local===nombre;
+        const rival = esLocal ? mm.visitante : mm.local;
+        const fichaKeyMm = `${zona}_${f}_${mm.local}_${mm.visitante}`;
+        const metaMm = PARTIDO_META[fichaKeyMm]||{};
+        jugados.push({
+          zona, fecha:f, esLocal, rival,
+          gf: esLocal?mm.gl:mm.gv, gc: esLocal?mm.gv:mm.gl,
+          dia: metaMm.dia||''
+        });
+      });
+    }
+  });
+  jugados.sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
+  return jugados.slice(-5).reverse();
+}
+
+// Modal "Info del partido" — solo para partidos con estado "programado" (ver botón ℹ️ en
+// renderFilaPartido). Banner con escudos/fecha/árbitros + últimos 5 de cada equipo.
+async function verInfoPartido(fichaKey){
+  const modal = document.getElementById('info-partido-modal');
+  const cont = document.getElementById('info-partido-cont');
+  if(!modal||!cont) return;
+  cont.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);">Cargando...</div>';
+  modal.style.display = 'flex';
+
+  const zona = fichaKey.split('_')[0];
+  const fecha = parseInt(fichaKey.split('_')[1]);
+  const m = (FIXTURE[zona]?.[String(fecha)]||[]).find(p => `${zona}_${fecha}_${p.local}_${p.visitante}` === fichaKey);
+  if(!m){ cont.innerHTML = '<div style="padding:2rem;color:#e57373;">No se encontró el partido.</div>'; return; }
+
+  const {data:fxRows} = await sb.from('fixture')
+    .select('arbitro,juez1,juez2,cuarto_arbitro,estadio,dia,hora')
+    .eq('zona', zona).eq('fecha', fecha)
+    .eq('equipo_local', m.local).eq('equipo_visitante', m.visitante)
+    .limit(1);
+  const fx = fxRows?.[0] || {};
+
+  const diaDate = fx.dia ? new Date(fx.dia+"T12:00:00") : null;
+  const diaRaw = diaDate ? diaDate.toLocaleDateString("es-AR",{weekday:'long',day:'numeric',month:'long'}) : "Fecha a confirmar";
+  const diaStr = diaRaw.charAt(0).toUpperCase() + diaRaw.slice(1);
+  const horaStr = fx.hora ? ` — ${fx.hora}` : "";
+
+  const juecesLine = [
+    fx.juez1 ? `🚩 ${fx.juez1}` : '',
+    fx.juez2 ? `🚩 ${fx.juez2}` : '',
+    fx.cuarto_arbitro ? `4️⃣ ${fx.cuarto_arbitro}` : '',
+  ].filter(Boolean).join('  ');
+
+  const escLocal = ESCUDOS[m.local];
+  const escVisit = ESCUDOS[m.visitante];
+
+  const banner = `<div class="info-modal-banner">
+    <div class="info-modal-eq">${escLocal?`<img src="${escLocal}" alt="">`:''}<span>${m.local}</span></div>
+    <div class="info-modal-vs">VS</div>
+    <div class="info-modal-eq">${escVisit?`<img src="${escVisit}" alt="">`:''}<span>${m.visitante}</span></div>
+  </div>
+  <div class="info-modal-meta">
+    <div>${diaStr}${horaStr}</div>
+    ${fx.estadio?`<div>🏟️ ${fx.estadio}</div>`:''}
+    ${fx.arbitro?`<div style="margin-top:.2rem;">⚖️ ${fx.arbitro}</div>`:''}
+    ${juecesLine?`<div class="info-modal-jueces">${juecesLine}</div>`:''}
+  </div>`;
+
+  const fmtFechaCorta = dia => {
+    if(!dia) return '';
+    return new Date(dia+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+  };
+  const renderUlt5Row = p => {
+    const res = p.gf>p.gc?'G':p.gf===p.gc?'E':'P';
+    const rivalEsc = ESCUDOS[p.rival];
+    return `<div class="plt-match-row" style="grid-template-columns:1fr auto auto auto;">
+      <div class="plt-rival-cell">
+        ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
+        <span class="plt-rival-name">${p.rival}</span>
+      </div>
+      <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
+      <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+      <span class="plt-fecha-lbl">${fmtFechaCorta(p.dia)}</span>
+    </div>`;
+  };
+  const seccionEquipo = nombre => {
+    const partidos = last5ForTeam(nombre);
+    const rows = partidos.length
+      ? partidos.map(renderUlt5Row).join('')
+      : '<div style="padding:.6rem;color:var(--muted);font-size:12px;">Sin partidos registrados.</div>';
+    return `<div class="info-modal-h5-col">
+      <div class="info-h5-title">${nombre} — últimos 5</div>
+      ${rows}
+    </div>`;
+  };
+
+  cont.innerHTML = `${banner}
+  <div class="info-modal-h5">
+    ${seccionEquipo(m.local)}
+    ${seccionEquipo(m.visitante)}
   </div>`;
 }
 
@@ -6360,6 +6489,16 @@ function _renderCalcResultados(){
   </div>`;
 }
 
+// Cierre con Esc para los modales de overlay fijo (ficha/planilla, cruces del segundo
+// ascenso, detalle de jugador, info del partido) — antes solo se cerraban con la X.
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  ['ficha-modal','merito-modal','jugador-modal','info-partido-modal'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && el.style.display === 'flex') el.style.display = 'none';
+  });
+});
+
 </script>
 <!-- FICHA MODAL -->
 <div id="ficha-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem;">
@@ -6369,6 +6508,16 @@ function _renderCalcResultados(){
       <button onclick="document.getElementById('ficha-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
     </div>
     <div id="ficha-cont" style="padding:1rem;max-height:85vh;overflow-y:auto;"></div>
+  </div>
+</div>
+<!-- MODAL: INFO DEL PARTIDO (partidos programados — banner + últimos 5 de cada equipo) -->
+<div id="info-partido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:680px;margin:auto;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;">INFO DEL PARTIDO</span>
+      <button onclick="document.getElementById('info-partido-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="info-partido-cont" style="max-height:85vh;overflow-y:auto;"></div>
   </div>
 </div>
 <!-- MODAL: CRUCES Y TABLAS DEL SEGUNDO ASCENSO (Tabla de Mérito + cruces parciales) -->
