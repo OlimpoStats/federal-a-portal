@@ -394,6 +394,25 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   #tablas-nonagonal-a thead th,#tablas-nonagonal-b thead th,#tablas-revalida-a thead th,#tablas-revalida-b thead th{font-size:8px;padding:.18rem .1rem;white-space:nowrap;}
   #tablas-zona-a thead th:nth-child(2),#tablas-zona-b thead th:nth-child(2),#tablas-zona-c thead th:nth-child(2),#tablas-zona-d thead th:nth-child(2),#cont-quintos thead th:nth-child(2),
   #tablas-nonagonal-a thead th:nth-child(2),#tablas-nonagonal-b thead th:nth-child(2),#tablas-revalida-a thead th:nth-child(2),#tablas-revalida-b thead th:nth-child(2){width:150px;}
+  /* Ancho explícito de todas las columnas en las 8 tablas de posiciones (Zona/
+     Nonagonal/Reválida) — antes solo "Equipo" tenía ancho fijo (150px, puesto inline
+     por JS) y el resto se acomodaba solo; la suma terminaba en ~418px de tabla contra
+     ~375px de pantalla, dejando "+/-" (y en Reválida, que tiene una 11ª columna "%C"
+     de más, hasta "GC") afuera con scroll horizontal. Con !important porque el ancho
+     original de cada <th> viene puesto inline por JS, que le gana a un CSS externo sin
+     !important. No toca #cont-quintos (tiene una columna "Zona" de más, otro orden) ni
+     goleadores/asistentes (2 columnas nomás) — esas tablas siguen igual que antes. */
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(1){width:16px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(2){width:140px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(3){width:24px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(4){width:20px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(5),
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(6),
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(7){width:14px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(8),
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(9){width:18px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(10){width:24px!important;}
+  :is(#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(11){width:30px!important;}
   #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td,#cont-asistentes-resumen tbody td,
   #tablas-nonagonal-a tbody td,#tablas-nonagonal-b tbody td,#tablas-revalida-a tbody td,#tablas-revalida-b tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
   #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2),
