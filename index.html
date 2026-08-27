@@ -5143,9 +5143,20 @@ async function renderGoleadoresResumen(){
   const aEl = document.getElementById('cont-asistentes-resumen');
   if(!gEl && !aEl) return;
   try {
-    const {data} = await sb.from('eventos')
-      .select('tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))')
-      .in('tipo',['gol','gol_penal','gol_tiro_libre','asistencia']);
+    // Esta consulta no tenía NINGÚN guard — se repetía en cada render, incluso dos veces en la
+    // misma carga de página (pintado instantáneo desde caché + refresco real después). Se cachea
+    // igual que cargarPartidosDesdeDB(), con el mismo umbral (_SKIP_REFRESH_TTL) y guardada en el
+    // mismo objeto de localStorage (campo "gol") para que sobreviva a un reload de la página.
+    let data;
+    if(_GOLEADORES_RAW && _cacheFresco()){
+      data = _GOLEADORES_RAW;
+    } else {
+      const res = await sb.from('eventos')
+        .select('tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))')
+        .in('tipo',['gol','gol_penal','gol_tiro_libre','asistencia']);
+      data = res.data;
+      _GOLEADORES_RAW = data;
+    }
     const golMap = {}, asistMap = {};
     (data||[]).forEach(ev=>{
       const j=ev.planillas?.jugadores, eq=ev.planillas?.equipos?.nombre||'';
@@ -5359,7 +5370,18 @@ window.scrollTo(0, 0);
 
 // ── CACHÉ LOCAL (stale-while-revalidate) ──
 const _CACHE_KEY = 'fa_v3';
-const _CACHE_TTL = 30 * 60 * 1000; // 30 min
+const _CACHE_TTL = 30 * 60 * 1000; // 30 min — hasta acá se pinta instantáneo con el caché viejo
+const _SKIP_REFRESH_TTL = 5 * 60 * 1000; // 5 min — hasta acá, directamente no se vuelve a pedir a Supabase
+let _GOLEADORES_RAW = null; // último resultado crudo de la consulta de renderGoleadoresResumen()
+
+function _cacheFresco(){
+  try {
+    const raw = localStorage.getItem(_CACHE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    return !!(d?.ts && Date.now() - d.ts < _SKIP_REFRESH_TTL);
+  } catch(e){ return false; }
+}
 
 function _guardarCache(){
   try {
@@ -5376,7 +5398,7 @@ function _guardarCache(){
     });
     localStorage.setItem(_CACHE_KEY, JSON.stringify({
       ts: Date.now(), fichas,
-      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA
+      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW
     }));
   } catch(e){}
 }
@@ -5408,6 +5430,7 @@ function _aplicarCache(d){
     Object.assign(PARTIDO_META, d.meta||{});
     Object.assign(ESCUDOS, d.esc||{});
     Object.assign(PLANILLA_CARGADA, d.pl||{});
+    if(d.gol) _GOLEADORES_RAW = d.gol;
   } catch(e){}
 }
 
@@ -5421,13 +5444,25 @@ async function _renderTodo(){
   const grupos = calcularGruposSegundaFase();
   renderSegundaFase(grupos);
   renderGruposSegundaFase(grupos);
-  renderGoleadoresResumen();
+  // await: si no, _guardarCache() (que corre justo después de _renderTodo() en el que llama)
+  // podía disparar antes de que esta consulta terminara, guardando el caché sin ese dato.
+  await renderGoleadoresResumen();
   fechaActual2 = fechaInteligente2();
   renderPartidos2(fechaActual2);
 }
 
 async function _refrescarSilencioso(){
   try {
+    // Si el caché local es reciente (< _SKIP_REFRESH_TTL), NO volver a pedirle a Supabase las
+    // 3 consultas pesadas de cargarPartidosDesdeDB (fixture + partidos "select *" + eventos con
+    // join anidado, ~580KB) — ya se pintó con esos mismos datos en init() vía _aplicarCache().
+    // Esto era el grueso del Egress: se repetía en CADA carga de página sin excepción. No toca
+    // _tickLive() (el polling de 60s de partidos en vivo) porque ese llama a
+    // cargarPartidosDesdeDB() directo, sin pasar por acá — el marcador en vivo sigue igual.
+    if(_cacheFresco()){
+      try { iniciarPollingEnVivo(); } catch(e){}
+      return;
+    }
     const _escPromise = cargarEscudos().catch(()=>{});
     await cargarPartidosDesdeDB();
     await _escPromise;
