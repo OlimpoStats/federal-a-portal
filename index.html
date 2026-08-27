@@ -402,7 +402,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
      original de cada <th> viene puesto inline por JS, que le gana a un CSS externo sin
      !important. No toca #cont-quintos (tiene una columna "Zona" de más, otro orden) ni
      goleadores/asistentes (2 columnas nomás) — esas tablas siguen igual que antes. */
-  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(1){width:16px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(1){width:26px!important;}
+  /* La barra de color de "marca de posición" (bar-wide) se pinta con box-shadow inset de
+     6px sobre esta misma celda — con poco padding-left el número (.pos, 14px bold) queda
+     pegado/superpuesto a la barra. */
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) tbody td:nth-child(1){padding-left:9px!important;}
   :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(2){width:140px!important;}
   :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(3){width:24px!important;}
   :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(4){width:20px!important;}
