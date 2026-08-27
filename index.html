@@ -5552,7 +5552,7 @@ async function _tickLive(){
     const grupos = calcularGruposSegundaFase();
     renderSegundaFase(grupos);
     renderGruposSegundaFase(grupos);
-    renderGoleadoresResumen();
+    await renderGoleadoresResumen();
     _guardarCache();
   } catch(e){}
   _liveTickBusy = false;
