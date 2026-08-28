@@ -133,11 +133,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .me img{width:100%;height:100%;object-fit:contain;}
 .tabla-quintos-hdr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:.9rem 0 .3rem;border-top:1px solid var(--border);padding-top:.75rem;}
 
-/* archivo primera fase toggle */
-#archivo-fase1-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem 1.1rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;margin-bottom:1rem;}
-#archivo-fase1-toggle:hover{opacity:.85;}
-#archivo-fase1-toggle.active{background:var(--accent);color:#111;}
-#archivo-fase1-toggle #archivo-fase1-chevron.rot{transform:rotate(180deg);}
 /* botones "ver detalle de los cruces" (2/3) + "calculalos" (1/3), segundo ascenso */
 #btns-cruces-split{display:flex;gap:.5rem;width:100%;box-sizing:border-box;margin-top:.9rem;}
 #btn-ver-merito,#btn-ir-calc{display:flex;align-items:center;justify-content:center;gap:.4rem;box-sizing:border-box;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:.7rem .6rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);transition:opacity .15s;}
@@ -714,6 +709,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="nav">
     <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
+    <div class="ni" onclick="goPage('primerafase',this)">Primera Fase</div>
     <div class="ni" onclick="goPage('planteles',this)">Equipos</div>
     <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
@@ -744,6 +740,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="drawer-section">Torneo</div>
   <div class="drawer-item active" id="di-inicio" onclick="goPageDrawer('inicio')">🏠 Inicio</div>
   <div class="drawer-item" id="di-fixture" onclick="goPageDrawer('fixture')">📅 Fixture</div>
+  <div class="drawer-item" id="di-primerafase" onclick="goPageDrawer('primerafase')">📄 Primera Fase</div>
   <div class="drawer-item" id="di-planteles" onclick="goPageDrawer('planteles')">🛡️ Equipos</div>
   <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
   <div class="drawer-section">Extra</div>
@@ -934,46 +931,43 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       </div>
     </div>
   </div>
+</div>
 
-  <div style="margin-top:1.5rem;">
-    <div id="archivo-fase1-toggle" onclick="togglePrimeraFaseArchivo(this)">
-      <span>📄 Primera Fase</span>
-      <span id="archivo-fase1-chevron" style="transition:transform .2s;">▾</span>
-    </div>
-    <div id="archivo-fase1-panel" style="display:none;">
-      <div id="archivo-fase1-grid" class="inicio-grid">
-        <div>
-          <p class="sec" style="color:#fff;">Resultados</p>
-          <div style="display:flex;align-items:stretch;gap:.4rem;">
-            <div class="fecha-hdr" style="flex:1;">
-              <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
-              <div class="fi" style="position:relative;">
-                <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-                  <span id="fnum-txt">Fecha 1</span>
-                  <span style="font-size:11px;color:var(--muted);">▼</span>
-                </div>
-                <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-                  <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
-                </div>
-                <div class="fsub">Primera Fase — 2026</div>
-              </div>
-
-              <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
+<!-- PRIMERA FASE (archivo — fase cerrada, no se vuelve a jugar. Datos desde una foto estática,
+     no desde Supabase — ver cargarFase1DesdeSnapshot()). -->
+<div class="page" id="page-primerafase">
+  <p class="sec" style="color:#fff;">📄 Primera Fase — archivo (fase finalizada)</p>
+  <div id="fase1-grid" class="inicio-grid">
+    <div>
+      <p class="sec" style="color:#fff;">Resultados</p>
+      <div style="display:flex;align-items:stretch;gap:.4rem;">
+        <div class="fecha-hdr" style="flex:1;">
+          <div class="fnav dis" id="btn-prev" onclick="cambiar(-1)">&#8592;</div>
+          <div class="fi" style="position:relative;">
+            <div class="fnum" id="fnum" onclick="toggleFechaPicker()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
+              <span id="fnum-txt">Fecha 1</span>
+              <span style="font-size:11px;color:var(--muted);">▼</span>
             </div>
-            <div style="width:32px;flex-shrink:0;"></div>
+            <div id="fecha-picker" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+              <div id="fecha-picker-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+            </div>
+            <div class="fsub">Primera Fase — 2026</div>
           </div>
-          <div id="partidos-cont"></div>
+
+          <div class="fnav" id="btn-next" onclick="cambiar(1)">&#8594;</div>
         </div>
-        <div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div id="tablas-zona-a" style="align-self:start;"></div>
-            <div id="tablas-zona-b" style="align-self:start;"></div>
-            <div id="tablas-zona-c" style="align-self:start;"></div>
-            <div id="tablas-zona-d" style="align-self:start;"></div>
-          </div>
-          <div id="cont-quintos" style="margin-top:1rem;"></div>
-        </div>
+        <div style="width:32px;flex-shrink:0;"></div>
       </div>
+      <div id="partidos-cont"></div>
+    </div>
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+        <div id="tablas-zona-a" style="align-self:start;"></div>
+        <div id="tablas-zona-b" style="align-self:start;"></div>
+        <div id="tablas-zona-c" style="align-self:start;"></div>
+        <div id="tablas-zona-d" style="align-self:start;"></div>
+      </div>
+      <div id="cont-quintos" style="margin-top:1rem;"></div>
     </div>
   </div>
 </div>
@@ -1171,10 +1165,14 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 // Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
   try {
+    // Primera Fase (Zona A-D) ya no se consulta acá — esa fase está cerrada y no vuelve a
+    // jugarse, se carga una sola vez desde una foto estática (ver cargarFase1DesdeSnapshot()).
+    // Excluirla acá achica bastante estas 2 consultas (306 partidos menos de fixture/partidos).
+    const _fase1Filtro = `(${ZONAS.map(z=>`"${z}"`).join(',')})`;
     // Run all independent queries in parallel
     const [fixtureResult, partidosResult, golesResult] = await Promise.all([
-      sb.from("fixture").select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual"),
-      sb.from("partidos").select("*"),
+      sb.from("fixture").select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual").not("zona","in",_fase1Filtro),
+      sb.from("partidos").select("*").not("zona","in",_fase1Filtro),
       sb.from("eventos").select("tipo, minuto, planillas(partido_id, titular, equipos(nombre), jugadores(nombre_display,nombre))").in("tipo", ["gol","gol_penal","gol_tiro_libre","gol_contra"])
     ]);
 
@@ -1325,6 +1323,24 @@ async function cargarPartidosDesdeDB(){
       }
     }
   } catch(e){ console.log("Sin conexión a BD, usando datos locales", e); }
+}
+
+// Primera Fase (Zona A-D): fase cerrada, no se vuelve a jugar — se carga UNA sola foto
+// estática en vez de consultarle nada a Supabase. Vive en el mismo bucket que los escudos
+// (el bucket "docs" tiene RLS que bloquea escritura con la clave pública, "escudos" no).
+// El objeto tiene la MISMA forma que usa _aplicarCache() (fichas/meta/pl), así que se
+// reutiliza esa función tal cual — nada de lógica nueva para aplicar los datos.
+const FASE1_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/primera-fase-snapshot.json";
+let _fase1Cargada = false;
+async function cargarFase1DesdeSnapshot(){
+  if(_fase1Cargada) return;
+  try {
+    const resp = await fetch(FASE1_SNAPSHOT_URL);
+    if(!resp.ok) return;
+    const snapshot = await resp.json();
+    _aplicarCache(snapshot);
+    _fase1Cargada = true;
+  } catch(e){ console.log("No se pudo cargar el archivo de Primera Fase", e); }
 }
 
 // Carga escudos desde Supabase
@@ -3635,6 +3651,7 @@ document.addEventListener('click', e=>{
 const _PATH_MAP = {
   '/': 'inicio',
   '/fixture': 'fixture',
+  '/primera-fase': 'primerafase',
   '/equipos': 'planteles',
   '/estadisticas': 'estadisticas',
   '/reglamento': 'reglamento',
@@ -3905,16 +3922,6 @@ function showJugSubTab(tab, el){
     const c=document.getElementById('jugcont-'+t);
     if(c) c.style.display=t===tab?'':'none';
   });
-}
-
-function togglePrimeraFaseArchivo(el){
-  const panel = document.getElementById('archivo-fase1-panel');
-  if(!panel) return;
-  const abierto = panel.style.display !== 'none';
-  panel.style.display = abierto ? 'none' : '';
-  el.classList.toggle('active', !abierto);
-  const chev = document.getElementById('archivo-fase1-chevron');
-  if(chev) chev.classList.toggle('rot', !abierto);
 }
 
 async function cargarEstadisticas(){
@@ -5337,12 +5344,15 @@ async function _refrescarSilencioso(){
     // _tickLive() (el polling de 60s de partidos en vivo) porque ese llama a
     // cargarPartidosDesdeDB() directo, sin pasar por acá — el marcador en vivo sigue igual.
     if(_cacheFresco()){
+      try { await cargarFase1DesdeSnapshot(); } catch(e){}
       try { iniciarPollingEnVivo(); } catch(e){}
       return;
     }
     const _escPromise = cargarEscudos().catch(()=>{});
+    const _fase1Promise = cargarFase1DesdeSnapshot().catch(()=>{});
     await cargarPartidosDesdeDB();
     await _escPromise;
+    await _fase1Promise;
     try { await diagnosticoIntegridad(); } catch(e){}
     try { await _renderTodo(); } catch(e){}
     _guardarCache();
@@ -5356,6 +5366,7 @@ async function init(){
     // Caché válido (30 min): pintar al instante con esos datos, ya bastante al día,
     // y refrescar en silencio por si cambió algo desde que se guardó.
     _aplicarCache(cached);
+    try { await cargarFase1DesdeSnapshot(); } catch(e){}
     try { await _renderTodo(); } catch(e){}
     _refrescarSilencioso();
   } else {
