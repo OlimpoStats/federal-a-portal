@@ -412,6 +412,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(9){width:18px!important;}
   :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d,#tablas-nonagonal-a,#tablas-nonagonal-b,#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(10){width:24px!important;}
   :is(#tablas-revalida-a,#tablas-revalida-b) thead th:nth-child(11){width:30px!important;}
+  :is(#tablas-zona-a,#tablas-zona-b,#tablas-zona-c,#tablas-zona-d) thead th:nth-child(11){width:18px!important;}
   #tablas-zona-a tbody td,#tablas-zona-b tbody td,#tablas-zona-c tbody td,#tablas-zona-d tbody td,#cont-quintos tbody td,#cont-goleadores-resumen tbody td,#cont-asistentes-resumen tbody td,
   #tablas-nonagonal-a tbody td,#tablas-nonagonal-b tbody td,#tablas-revalida-a tbody td,#tablas-revalida-b tbody td{font-size:10px;padding:.2rem .1rem;white-space:nowrap;}
   #tablas-zona-a tbody td:nth-child(2),#tablas-zona-b tbody td:nth-child(2),#tablas-zona-c tbody td:nth-child(2),#tablas-zona-d tbody td:nth-child(2),#cont-quintos tbody td:nth-child(2),
@@ -2927,6 +2928,7 @@ function renderTablas(){
       </tr>`;
     });
     zh+=`</tbody></table></div>`;
+    zh+=`<p style="font-size:11px;color:var(--muted);margin:.35rem 0 0;">Tocando en cada valor H2H podés ver los resultados que sirven como desempate.</p>`;
     el.innerHTML=zh;
   });
 
@@ -2936,13 +2938,13 @@ function renderTablas(){
     quintosRows.sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf);
     qEl.innerHTML=`<p class="sec-2dafase" style="margin:.5rem 0 .4rem;">🧮 Tabla de quintos</p>
     <div class="tabla-mini"><table><thead><tr>
-      <th style="width:18px">#</th><th style="width:150px;text-align:left">Equipo</th><th>Zona</th>
+      <th style="width:30px">#</th><th style="width:150px;text-align:left">Equipo</th><th>Zona</th>
       <th>Pts</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>+/-</th>
     </tr></thead><tbody>
     ${quintosRows.map((r,i)=>{
       const dif=r.gf-r.gc;
       const posClass = i===0?'clasif':'noclasif';
-      return `<tr><td class="barra-ancha-${posClass}"><span class="pos ${posClass}">${i+1}</span></td>
+      return `<tr><td class="barra-ancha-${posClass}" style="padding-left:9px;"><span class="pos ${posClass}">${i+1}</span></td>
         <td><div class="tr-eq">${escudoHTML(r.n,'me')}<span style="font-size:13px;">${r.n}</span></div></td>
         <td style="font-size:11px;color:var(--muted)">${r.zona.replace('Zona ','')}</td>
         <td><strong class="pts">${r.pts}</strong></td>
