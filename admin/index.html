@@ -1328,7 +1328,24 @@ async function erGuardarInline(){
     await cargarFixture().then(()=>parchearPenalesSinPartido());
     actualizarPartidos();
     showFlash(`✓ ${p.local} ${gl}—${gv} ${p.visitante}`, "ok");
+    regenerarFotoSegundaFase();
   } catch(e){ alert("Error: "+e.message); }
+}
+
+// Dispara la regeneración de la "foto" de Segunda Fase que lee la home pública (ver
+// api/snapshot-segunda-fase.js) — sync-live.js ya la regenera solo cuando FotMob actualiza un
+// resultado, pero acá el admin lo está corrigiendo A MANO (típicamente porque FotMob puso el
+// resultado mal), y sync-live.js no vuelve a tocar un partido que ya está "jugado", así que sin
+// este gancho la corrección no se reflejaría en la home hasta el próximo cambio de OTRO partido.
+// Fire-and-forget: si falla, no debe frenar ni avisar del guardado real, que ya sucedió.
+async function regenerarFotoSegundaFase(){
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    await fetch("/api/snapshot-segunda-fase", {
+      method: "POST",
+      headers: {"Content-Type":"application/json","Authorization": `Bearer ${session?.access_token||""}`},
+    });
+  } catch(e){ console.warn("No se pudo regenerar la foto de Segunda Fase:", e.message); }
 }
 
 function cargarDatosPartidoSeleccionadoEnUI(sel){
