@@ -9,6 +9,11 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
+// Foto de Segunda Fase (Nonagonal/Reválida) que lee la home en vez de consultar la base en
+// cada visita — se regenera acá mismo, apenas termina de sincronizar, si de verdad cambió
+// algo visible (gol, arranque/cierre de partido). Ver api/snapshot-segunda-fase.js.
+const { buildAndUploadSnapshot } = require('./snapshot-segunda-fase.js');
+
 async function sbGet(params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/fixture?${params}`, {
     headers: {
@@ -316,7 +321,16 @@ module.exports = async (req, res) => {
       if (i + CONCURRENCY < toCheck.length) await new Promise(r => setTimeout(r, 500));
     }
 
-    return res.status(200).json({ ok: true, synced: fixtures.length, results, ts: new Date().toISOString() });
+    // "ambiguous" también marca updated:true, pero solo toca el contador interno de lecturas
+    // fallidas (minuto_actual.mc) — no cambia nada de lo que se ve, no amerita regenerar la foto.
+    const huboCambioReal = results.some(r => r.updated === true && !r.ambiguous) || (staleResult?.closed > 0);
+    let snapshot = null;
+    if (huboCambioReal) {
+      try { snapshot = await buildAndUploadSnapshot(); }
+      catch (e) { snapshot = { error: e.message }; }
+    }
+
+    return res.status(200).json({ ok: true, synced: fixtures.length, results, snapshot, ts: new Date().toISOString() });
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }

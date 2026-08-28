@@ -1344,6 +1344,23 @@ async function cargarFase1DesdeSnapshot(){
   } catch(e){ console.log("No se pudo cargar el archivo de Primera Fase", e); }
 }
 
+// Segunda Fase (Nonagonal/Reválida): a diferencia de Primera Fase, esto sigue jugándose — la
+// foto se regenera sola (api/snapshot-segunda-fase.js) cada vez que sync-live.js detecta un
+// cambio real, o cuando el admin corrige un resultado a mano. Acá solo se intenta usar esa
+// foto en vez de cargarPartidosDesdeDB(); si falla (foto vieja/inexistente/sin red), se cae
+// de vuelta a la consulta en vivo de siempre — nunca se rompe el sitio por esto.
+const SEGUNDA_FASE_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/segunda-fase-snapshot.json";
+async function cargarSegundaFaseDesdeSnapshot(){
+  try {
+    const resp = await fetch(SEGUNDA_FASE_SNAPSHOT_URL);
+    if(!resp.ok) return false;
+    const snapshot = await resp.json();
+    if(!snapshot || !Array.isArray(snapshot.fichas)) return false;
+    _aplicarCache(snapshot);
+    return true;
+  } catch(e){ console.log("No se pudo cargar la foto de Segunda Fase, usando consulta en vivo", e); return false; }
+}
+
 // Carga escudos desde Supabase
 let EQUIPOS_LIST = [];
 async function cargarEscudos(){
@@ -5352,10 +5369,15 @@ async function _refrescarSilencioso(){
     }
     const _escPromise = cargarEscudos().catch(()=>{});
     const _fase1Promise = cargarFase1DesdeSnapshot().catch(()=>{});
-    await cargarPartidosDesdeDB();
+    // Segunda Fase: primero la foto (liviana, cacheable); solo si falla, la consulta pesada
+    // de siempre. cargarPartidosDesdeDB() ya excluye Zona A-D (Primera Fase, cubierta arriba).
+    const okSegundaFase = await cargarSegundaFaseDesdeSnapshot().catch(()=>false);
+    if(!okSegundaFase) await cargarPartidosDesdeDB();
     await _escPromise;
     await _fase1Promise;
-    try { await diagnosticoIntegridad(); } catch(e){}
+    // Solo tiene sentido (y solo vale la consulta extra que hace) cuando de verdad se acaba
+    // de leer todo fresco de la base — si vino de la foto, no hay nada nuevo que diagnosticar.
+    if(!okSegundaFase){ try { await diagnosticoIntegridad(); } catch(e){} }
     try { await _renderTodo(); } catch(e){}
     _guardarCache();
   } catch(e){}
