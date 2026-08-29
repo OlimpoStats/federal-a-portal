@@ -1361,6 +1361,24 @@ async function cargarSegundaFaseDesdeSnapshot(){
   } catch(e){ console.log("No se pudo cargar la foto de Segunda Fase, usando consulta en vivo", e); return false; }
 }
 
+// Estadísticas (jugadores/árbitros/penales/goles en contra/tiro libre/vallas/DTs): a diferencia
+// de las dos fotos de arriba, acá se guardan las filas CRUDAS (mismo select que usaba cada
+// consulta en vivo), no el resultado ya procesado — cargarEstadisticas() tiene ~1000 líneas de
+// procesamiento/renderizado fusionadas en un solo bloque, así que la foto solo reemplaza el
+// ORIGEN de los datos (10 consultas + paginación), dejando esa lógica intacta. Se regenera desde
+// el admin cada vez que se confirma o se borra una planilla (ver api/snapshot-estadisticas.js),
+// que es la única acción que modifica estas estadísticas.
+const ESTADISTICAS_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/estadisticas-snapshot.json";
+async function fetchEstadisticasSnapshot(){
+  try {
+    const resp = await fetch(ESTADISTICAS_SNAPSHOT_URL);
+    if(!resp.ok) return null;
+    const snap = await resp.json();
+    if(!snap || !Array.isArray(snap.eventos) || !Array.isArray(snap.jugsDB)) return null;
+    return snap;
+  } catch(e){ console.log("No se pudo cargar la foto de Estadísticas, usando consulta en vivo", e); return null; }
+}
+
 // Carga escudos desde Supabase
 let EQUIPOS_LIST = [];
 async function cargarEscudos(){
@@ -3955,60 +3973,68 @@ async function cargarEstadisticas(){
   try {
     const evSelect = 'tipo,minuto,planilla_id,planillas(partido_id,equipo_id,numero_camiseta,jugadores(id,nombre,nombre_display),equipos(nombre))';
     const jugSelect = 'id,nombre,nombre_display,equipo_id,equipos(nombre)';
-    // Fire page 0 of paginated tables + small tables in parallel
-    const [
-      evRes0, jugsRes0,
-      {data:partidosDB, error:pErr},
-      {data:planillasDB},
-      {data:penalesDB, error:penErr},
-      {data:dtDB},
-      sancionesRes0,
-      {data:transfersDB}
-    ] = await Promise.all([
-      sb.from('eventos').select(evSelect).range(0, 999),
-      sb.from('jugadores').select(jugSelect).range(0, 999),
-      sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante').not('goles_local','is',null),
-      sb.from('planillas').select('id,partido_id,equipo_id'),
-      sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
-      sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
-      sb.from('sanciones').select('*').or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)').order('created_at',{ascending:false}),
-      sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
-    ]);
-    if(evRes0.error) throw evRes0.error;
-    if(jugsRes0.error) throw jugsRes0.error;
-    if(pErr) throw pErr;
-    if(penErr) console.warn('Penales error:', penErr.message);
 
-    // Paginate eventos, jugadores y sanciones
-    let eventos = evRes0.data || [];
-    let evFrom = 1000;
-    while(eventos.length % 1000 === 0 && eventos.length > 0){
-      const {data:evBatch, error:evErr} = await sb.from('eventos').select(evSelect).range(evFrom, evFrom+999);
-      if(evErr) throw evErr;
-      if(!evBatch?.length) break;
-      eventos = eventos.concat(evBatch);
-      if(evBatch.length < 1000) break;
-      evFrom += 1000;
-    }
-    let jugsDB = jugsRes0.data || [];
-    let jugsFrom = 1000;
-    while(jugsDB.length % 1000 === 0 && jugsDB.length > 0){
-      const {data:jugsBatch} = await sb.from('jugadores').select(jugSelect).range(jugsFrom, jugsFrom+999);
-      if(!jugsBatch?.length) break;
-      jugsDB = jugsDB.concat(jugsBatch);
-      if(jugsBatch.length < 1000) break;
-      jugsFrom += 1000;
-    }
-    let sancionesDB = sancionesRes0?.data || [];
-    let sancFrom = 1000;
-    while(sancionesDB.length % 1000 === 0 && sancionesDB.length > 0){
-      const {data:sancBatch} = await sb.from('sanciones').select('*')
-        .or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)')
-        .order('created_at',{ascending:false}).range(sancFrom, sancFrom+999);
-      if(!sancBatch?.length) break;
-      sancionesDB = sancionesDB.concat(sancBatch);
-      if(sancBatch.length < 1000) break;
-      sancFrom += 1000;
+    let eventos, jugsDB, partidosDB, planillasDB, penalesDB, dtDB, sancionesDB, transfersDB;
+    const snap = await fetchEstadisticasSnapshot();
+    if(snap){
+      ({eventos, jugsDB, partidosDB, planillasDB, penalesDB, dtDB, sancionesDB, transfersDB} = snap);
+    } else {
+      let evRes0, jugsRes0, pErr, penErr, sancionesRes0;
+      // Fire page 0 of paginated tables + small tables in parallel
+      [
+        evRes0, jugsRes0,
+        {data:partidosDB, error:pErr},
+        {data:planillasDB},
+        {data:penalesDB, error:penErr},
+        {data:dtDB},
+        sancionesRes0,
+        {data:transfersDB}
+      ] = await Promise.all([
+        sb.from('eventos').select(evSelect).range(0, 999),
+        sb.from('jugadores').select(jugSelect).range(0, 999),
+        sb.from('partidos').select('id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,goles_local,goles_visitante').not('goles_local','is',null),
+        sb.from('planillas').select('id,partido_id,equipo_id'),
+        sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
+        sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
+        sb.from('sanciones').select('*').or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)').order('created_at',{ascending:false}),
+        sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
+      ]);
+      if(evRes0.error) throw evRes0.error;
+      if(jugsRes0.error) throw jugsRes0.error;
+      if(pErr) throw pErr;
+      if(penErr) console.warn('Penales error:', penErr.message);
+
+      // Paginate eventos, jugadores y sanciones
+      eventos = evRes0.data || [];
+      let evFrom = 1000;
+      while(eventos.length % 1000 === 0 && eventos.length > 0){
+        const {data:evBatch, error:evErr} = await sb.from('eventos').select(evSelect).range(evFrom, evFrom+999);
+        if(evErr) throw evErr;
+        if(!evBatch?.length) break;
+        eventos = eventos.concat(evBatch);
+        if(evBatch.length < 1000) break;
+        evFrom += 1000;
+      }
+      jugsDB = jugsRes0.data || [];
+      let jugsFrom = 1000;
+      while(jugsDB.length % 1000 === 0 && jugsDB.length > 0){
+        const {data:jugsBatch} = await sb.from('jugadores').select(jugSelect).range(jugsFrom, jugsFrom+999);
+        if(!jugsBatch?.length) break;
+        jugsDB = jugsDB.concat(jugsBatch);
+        if(jugsBatch.length < 1000) break;
+        jugsFrom += 1000;
+      }
+      sancionesDB = sancionesRes0?.data || [];
+      let sancFrom = 1000;
+      while(sancionesDB.length % 1000 === 0 && sancionesDB.length > 0){
+        const {data:sancBatch} = await sb.from('sanciones').select('*')
+          .or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)')
+          .order('created_at',{ascending:false}).range(sancFrom, sancFrom+999);
+        if(!sancBatch?.length) break;
+        sancionesDB = sancionesDB.concat(sancBatch);
+        if(sancBatch.length < 1000) break;
+        sancFrom += 1000;
+      }
     }
 
     const partidosById = {};
@@ -4195,15 +4221,20 @@ async function cargarEstadisticas(){
 
     // Simpler approach: query planillas with numero_camiseta filter
     const arqSelect = 'id,partido_id,equipo_id,numero_camiseta,titular,jugadores(id,nombre,nombre_display),equipos(nombre)';
-    const {data:arqRes0} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(0,999);
-    let arquerosPlanilla = arqRes0 || [];
-    let arqFrom = 1000;
-    while(arquerosPlanilla.length % 1000 === 0 && arquerosPlanilla.length > 0){
-      const {data:arqBatch} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(arqFrom, arqFrom+999);
-      if(!arqBatch?.length) break;
-      arquerosPlanilla = arquerosPlanilla.concat(arqBatch);
-      if(arqBatch.length < 1000) break;
-      arqFrom += 1000;
+    let arquerosPlanilla;
+    if(snap){
+      arquerosPlanilla = snap.arquerosPlanilla;
+    } else {
+      const {data:arqRes0} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(0,999);
+      arquerosPlanilla = arqRes0 || [];
+      let arqFrom = 1000;
+      while(arquerosPlanilla.length % 1000 === 0 && arquerosPlanilla.length > 0){
+        const {data:arqBatch} = await sb.from('planillas').select(arqSelect).in('numero_camiseta',[1,12]).range(arqFrom, arqFrom+999);
+        if(!arqBatch?.length) break;
+        arquerosPlanilla = arquerosPlanilla.concat(arqBatch);
+        if(arqBatch.length < 1000) break;
+        arqFrom += 1000;
+      }
     }
 
     // Build set of partido_ids where keeper #12 entered (cambio_entra)
@@ -4335,9 +4366,15 @@ async function cargarEstadisticas(){
     });
     // Also use fixtureData directly (already loaded) - it has arbitro field
     // Fetch arbitros directly from fixture table
-    const {data:fixtureArbitros} = await sb.from('fixture')
-      .select('id,zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
-      .not('arbitro','is',null).neq('arbitro','');
+    let fixtureArbitros;
+    if(snap){
+      fixtureArbitros = snap.fixtureArbitros;
+    } else {
+      const {data} = await sb.from('fixture')
+        .select('id,zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro')
+        .not('arbitro','is',null).neq('arbitro','');
+      fixtureArbitros = data;
+    }
     const fixtureIdToArbitro = {};
     (fixtureArbitros||[]).forEach(p=>{
       const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
