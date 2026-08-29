@@ -1348,6 +1348,20 @@ async function regenerarFotoSegundaFase(){
   } catch(e){ console.warn("No se pudo regenerar la foto de Segunda Fase:", e.message); }
 }
 
+// Dispara la regeneración de la "foto" de la pestaña Estadísticas (ver api/snapshot-estadisticas.js)
+// — se llama cada vez que se confirma o se borra una planilla, que es la única acción que
+// modifica estadísticas de jugadores/árbitros/penales/goles en contra/tiro libre/vallas/DTs.
+// Fire-and-forget: si falla, no debe frenar ni avisar del guardado real, que ya sucedió.
+async function regenerarFotoEstadisticas(){
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    await fetch("/api/snapshot-estadisticas", {
+      method: "POST",
+      headers: {"Content-Type":"application/json","Authorization": `Bearer ${session?.access_token||""}`},
+    });
+  } catch(e){ console.warn("No se pudo regenerar la foto de Estadísticas:", e.message); }
+}
+
 function cargarDatosPartidoSeleccionadoEnUI(sel){
   const {zona,fecha,idx,p} = sel;
   partidoActual={zona,fecha,idx,local:p.local,visit:p.visitante,fixtureId:p.id,goles_local:p.goles_local,goles_visitante:p.goles_visitante};
@@ -1531,6 +1545,7 @@ async function borrarPlanilla(){
     FIXTURE_CON_PLANILLA.delete(String(fixtureId));
     actualizarEstadoPlanillaSeleccion();
     actualizarPartidos();
+    regenerarFotoEstadisticas();
     alert("✓ Planilla borrada correctamente.");
   } catch(e){
     alert("Error: " + e.message);
@@ -4088,6 +4103,7 @@ async function confirmarCarga(publicar=true){
     // Ahora que ambos planteles tienen su id real en BD, resolvemos y guardamos los penales
     // que se hayan cargado durante la sesión (en vivo).
     await guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId);
+    regenerarFotoEstadisticas();
 
     document.getElementById("paso3").style.display = "none";
     document.getElementById("paso4").style.display = "";
