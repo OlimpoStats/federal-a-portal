@@ -1161,7 +1161,21 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+// Algunas conexiones móviles (proxies de "ahorro de datos" de operadoras, muy comunes en
+// Argentina) cachean respuestas GET aunque el servidor no lo pida — como Supabase no manda
+// Cache-Control en /rest/v1/*, quedaban expuestas a eso, mostrando datos viejos a algunos
+// visitantes aunque recarguen la página. Forzamos no-store para pedir siempre la versión real.
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  global: {
+    // options.headers puede venir como Headers (no un objeto plano) — spread {...headers} lo
+    // vacía en silencio y se pierde el apikey. new Headers(...) copia bien en los dos casos.
+    fetch: (url, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set('Cache-Control', 'no-cache');
+      return fetch(url, { ...options, cache: 'no-store', headers });
+    },
+  },
+});
 
 // Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
@@ -1352,7 +1366,9 @@ async function cargarFase1DesdeSnapshot(){
 const SEGUNDA_FASE_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/segunda-fase-snapshot.json";
 async function cargarSegundaFaseDesdeSnapshot(){
   try {
-    const resp = await fetch(SEGUNDA_FASE_SNAPSHOT_URL);
+    // Cache-buster (?t=) + no-store: además del Cache-Control:no-cache que ya manda Supabase
+    // Storage, esto evita que un proxy de "ahorro de datos" de operadora sirva una copia vieja.
+    const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}?t=${Date.now()}`, {cache:'no-store'});
     if(!resp.ok) return false;
     const snapshot = await resp.json();
     if(!snapshot || !Array.isArray(snapshot.fichas)) return false;
@@ -1371,7 +1387,8 @@ async function cargarSegundaFaseDesdeSnapshot(){
 const ESTADISTICAS_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/estadisticas-snapshot.json";
 async function fetchEstadisticasSnapshot(){
   try {
-    const resp = await fetch(ESTADISTICAS_SNAPSHOT_URL);
+    // Mismo cache-buster que la foto de Segunda Fase (ver comentario ahí).
+    const resp = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}?t=${Date.now()}`, {cache:'no-store'});
     if(!resp.ok) return null;
     const snap = await resp.json();
     if(!snap || !Array.isArray(snap.eventos) || !Array.isArray(snap.jugsDB)) return null;
