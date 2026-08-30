@@ -885,7 +885,19 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 // ── SUPABASE ──
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+// Mismo fix que en index.html: forzar no-store para no exponerse a proxies móviles de
+// "ahorro de datos" que cachean GET aunque Supabase no mande Cache-Control en /rest/v1/*.
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  global: {
+    // options.headers puede venir como Headers (no un objeto plano) — spread {...headers} lo
+    // vacía en silencio y se pierde el apikey. new Headers(...) copia bien en los dos casos.
+    fetch: (url, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set('Cache-Control', 'no-cache');
+      return fetch(url, { ...options, cache: 'no-store', headers });
+    },
+  },
+});
 
 // ── ACCESO RESTRINGIDO ──
 // Ocultar todo hasta verificar rol
