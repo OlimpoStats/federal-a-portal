@@ -707,9 +707,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <body>
 
 <div class="hdr">
-  <div class="logo" onclick="goPage('inicio',document.querySelector('.ni.active'))" style="cursor:pointer;"><img src="/logo-header.png" alt="Ascenso Federal">ASCENSO <span>FEDERAL</span></div>
+  <div class="logo" onclick="goPage('inicio',document.getElementById('ni-inicio'))" style="cursor:pointer;"><img src="/logo-header.png" alt="Ascenso Federal">ASCENSO <span>FEDERAL</span></div>
   <div class="nav">
-    <div class="ni active" onclick="goPage('inicio',this)">Inicio</div>
+    <div class="ni active" id="ni-inicio" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
     <div class="ni" onclick="goPage('primerafase',this)">Primera Fase</div>
     <div class="ni" onclick="goPage('planteles',this)">Equipos</div>
@@ -5103,10 +5103,14 @@ async function renderGoleadoresResumen(){
   try {
     // Esta consulta no tenía NINGÚN guard — se repetía en cada render, incluso dos veces en la
     // misma carga de página (pintado instantáneo desde caché + refresco real después). Se cachea
-    // igual que cargarPartidosDesdeDB(), con el mismo umbral (_SKIP_REFRESH_TTL) y guardada en el
-    // mismo objeto de localStorage (campo "gol") para que sobreviva a un reload de la página.
+    // con el mismo umbral (_SKIP_REFRESH_TTL) y se guarda en el mismo objeto de localStorage
+    // (campo "gol") para que sobreviva a un reload de la página. OJO: usa su propio timestamp
+    // (_GOLEADORES_TS), NO el "ts" general del caché — ese se resetea cada 60s por _tickLive()
+    // (polling en vivo) vía _guardarCache(), así que si esta consulta dependiera de _cacheFresco()
+    // (que lee ese "ts" general) nunca volvía a pedirse mientras el polling siguiera activo, aunque
+    // se cargaran planillas nuevas con goles (quedaba congelado con la pestaña abierta).
     let data;
-    if(_GOLEADORES_RAW && _cacheFresco()){
+    if(_GOLEADORES_RAW && (Date.now() - _GOLEADORES_TS < _SKIP_REFRESH_TTL)){
       data = _GOLEADORES_RAW;
     } else {
       const res = await sb.from('eventos')
@@ -5114,6 +5118,7 @@ async function renderGoleadoresResumen(){
         .in('tipo',['gol','gol_penal','gol_tiro_libre','asistencia']);
       data = res.data;
       _GOLEADORES_RAW = data;
+      _GOLEADORES_TS = Date.now();
     }
     const golMap = {}, asistMap = {};
     (data||[]).forEach(ev=>{
@@ -5331,6 +5336,7 @@ const _CACHE_KEY = 'fa_v3';
 const _CACHE_TTL = 30 * 60 * 1000; // 30 min — hasta acá se pinta instantáneo con el caché viejo
 const _SKIP_REFRESH_TTL = 5 * 60 * 1000; // 5 min — hasta acá, directamente no se vuelve a pedir a Supabase
 let _GOLEADORES_RAW = null; // último resultado crudo de la consulta de renderGoleadoresResumen()
+let _GOLEADORES_TS = 0; // cuándo se pidió _GOLEADORES_RAW por última vez (propio, no el "ts" general del caché)
 
 function _cacheFresco(){
   try {
@@ -5356,7 +5362,7 @@ function _guardarCache(){
     });
     localStorage.setItem(_CACHE_KEY, JSON.stringify({
       ts: Date.now(), fichas,
-      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW
+      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW, golTs: _GOLEADORES_TS
     }));
   } catch(e){}
 }
@@ -5388,7 +5394,7 @@ function _aplicarCache(d){
     Object.assign(PARTIDO_META, d.meta||{});
     Object.assign(ESCUDOS, d.esc||{});
     Object.assign(PLANILLA_CARGADA, d.pl||{});
-    if(d.gol) _GOLEADORES_RAW = d.gol;
+    if(d.gol){ _GOLEADORES_RAW = d.gol; _GOLEADORES_TS = d.golTs || d.ts || 0; }
   } catch(e){}
 }
 
