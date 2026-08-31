@@ -5102,15 +5102,16 @@ async function renderGoleadoresResumen(){
   if(!gEl && !aEl) return;
   try {
     // Esta consulta no tenía NINGÚN guard — se repetía en cada render, incluso dos veces en la
-    // misma carga de página (pintado instantáneo desde caché + refresco real después). Se cachea
-    // con el mismo umbral (_SKIP_REFRESH_TTL) y se guarda en el mismo objeto de localStorage
-    // (campo "gol") para que sobreviva a un reload de la página. OJO: usa su propio timestamp
-    // (_GOLEADORES_TS), NO el "ts" general del caché — ese se resetea cada 60s por _tickLive()
-    // (polling en vivo) vía _guardarCache(), así que si esta consulta dependiera de _cacheFresco()
-    // (que lee ese "ts" general) nunca volvía a pedirse mientras el polling siguiera activo, aunque
-    // se cargaran planillas nuevas con goles (quedaba congelado con la pestaña abierta).
+    // misma carga de página (pintado instantáneo desde caché + refresco real después), y encima
+    // con un TTL fijo (5 min) quedaba desactualizada mientras un visitante tuviera la pestaña
+    // abierta con el polling en vivo corriendo (cada 60s), porque ese polling pisaba el mismo
+    // reloj de caché sin que hubiera pasado nada nuevo. En vez de un timer, se compara el
+    // Last-Modified de estadisticas-snapshot.json (HEAD, no baja el archivo de ~4MB, solo el
+    // header) contra el último visto — ese archivo se resube únicamente cuando se publica o
+    // borra una planilla (ver regenerarFotoEstadisticas() en admin), así que esto solo vuelve a
+    // pedir los goleadores cuando de verdad cambió algo, sin importar cuánto tiempo pasó.
     let data;
-    if(_GOLEADORES_RAW && (Date.now() - _GOLEADORES_TS < _SKIP_REFRESH_TTL)){
+    if(_GOLEADORES_RAW && !(await _snapshotEstadisticasCambio())){
       data = _GOLEADORES_RAW;
     } else {
       const res = await sb.from('eventos')
@@ -5118,7 +5119,6 @@ async function renderGoleadoresResumen(){
         .in('tipo',['gol','gol_penal','gol_tiro_libre','asistencia']);
       data = res.data;
       _GOLEADORES_RAW = data;
-      _GOLEADORES_TS = Date.now();
     }
     const golMap = {}, asistMap = {};
     (data||[]).forEach(ev=>{
@@ -5336,7 +5336,21 @@ const _CACHE_KEY = 'fa_v3';
 const _CACHE_TTL = 30 * 60 * 1000; // 30 min — hasta acá se pinta instantáneo con el caché viejo
 const _SKIP_REFRESH_TTL = 5 * 60 * 1000; // 5 min — hasta acá, directamente no se vuelve a pedir a Supabase
 let _GOLEADORES_RAW = null; // último resultado crudo de la consulta de renderGoleadoresResumen()
-let _GOLEADORES_TS = 0; // cuándo se pidió _GOLEADORES_RAW por última vez (propio, no el "ts" general del caché)
+let _SNAP_LASTMOD = null; // último Last-Modified visto de estadisticas-snapshot.json (ver _snapshotEstadisticasCambio)
+
+// true si estadisticas-snapshot.json cambió desde la última vez que se miró — HEAD, no baja el
+// archivo entero. Se resube solo al publicar/borrar una planilla (regenerarFotoEstadisticas en
+// admin), así que esto es lo que dispara el reseteo real de renderGoleadoresResumen().
+async function _snapshotEstadisticasCambio(){
+  try {
+    const r = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}?t=${Date.now()}`, {method:'HEAD', cache:'no-store'});
+    const lm = r.headers.get('last-modified');
+    if(!lm) return true; // sin header para comparar: no bloquear el refresco real
+    const cambio = lm !== _SNAP_LASTMOD;
+    _SNAP_LASTMOD = lm;
+    return cambio;
+  } catch(e){ return true; }
+}
 
 function _cacheFresco(){
   try {
@@ -5362,7 +5376,7 @@ function _guardarCache(){
     });
     localStorage.setItem(_CACHE_KEY, JSON.stringify({
       ts: Date.now(), fichas,
-      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW, golTs: _GOLEADORES_TS
+      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW, snapLm: _SNAP_LASTMOD
     }));
   } catch(e){}
 }
@@ -5394,7 +5408,7 @@ function _aplicarCache(d){
     Object.assign(PARTIDO_META, d.meta||{});
     Object.assign(ESCUDOS, d.esc||{});
     Object.assign(PLANILLA_CARGADA, d.pl||{});
-    if(d.gol){ _GOLEADORES_RAW = d.gol; _GOLEADORES_TS = d.golTs || d.ts || 0; }
+    if(d.gol){ _GOLEADORES_RAW = d.gol; _SNAP_LASTMOD = d.snapLm || null; }
   } catch(e){}
 }
 
