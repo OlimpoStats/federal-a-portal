@@ -1953,6 +1953,7 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown ni explicaciones:
     const glVisit = planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores, "visitante");
     document.getElementById("score-local").value = glLocal;
     document.getElementById("score-visit").value = glVisit;
+    autoResolverPenalesImportados();
 
     renderPlanilla("tabla-local", planillaLocal.jugadores||[]);
     renderPlanilla("tabla-visit", planillaVisit.jugadores||[]);
@@ -2079,6 +2080,7 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves: "local" y "vis
     const glVisit=planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores,"visitante");
     document.getElementById("score-local").value=glLocal;
     document.getElementById("score-visit").value=glVisit;
+    autoResolverPenalesImportados();
     renderPlanilla("tabla-local", planillaLocal.jugadores||[]);
     renderPlanilla("tabla-visit", planillaVisit.jugadores||[]);
     document.getElementById("loading-overlay").classList.remove("on");
@@ -2132,6 +2134,7 @@ async function procesarDesdeComet(){
     const glVisit=planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores,"visitante");
     document.getElementById("score-local").value=glLocal;
     document.getElementById("score-visit").value=glVisit;
+    autoResolverPenalesImportados();
     renderPlanilla("tabla-local", planillaLocal.jugadores||[]);
     renderPlanilla("tabla-visit", planillaVisit.jugadores||[]);
     document.getElementById("loading-overlay").classList.remove("on");
@@ -2267,6 +2270,63 @@ function contarGoles(jugadores, side){
   },0);
 }
 
+// Determina qué arquero del plantel rival (marcado "AR" en nota, siempre #1 y/o #12) estaba
+// parado bajo los tres palos en un minuto dado: el titular, salvo que ya haya salido (roja,
+// doble amarilla o cambio_sale) antes de ese minuto, en cuyo caso el suplente "AR" si ya había
+// entrado (cambio_entra) para ese minuto.
+function resolverArqueroEnCancha(rivalArr, minuto){
+  const arqueros = (rivalArr||[]).filter(j=>(j.nota||"").includes("AR"));
+  if(!arqueros.length) return null;
+  const min = parseInt(minuto)||0;
+  const enCancha = arqueros.filter(j=>{
+    const yaSalio = (j.eventos||[]).some(e=>
+      (e.tipo==="cambio_sale"||e.tipo==="roja"||e.tipo==="doble_amarilla") && (parseInt(e.minuto)||0)<=min
+    );
+    if(yaSalio) return false;
+    if(j.titular) return true;
+    return (j.eventos||[]).some(e=>e.tipo==="cambio_entra" && (parseInt(e.minuto)||0)<=min);
+  });
+  if(enCancha.length===1) return enCancha[0];
+  const titulares = enCancha.filter(j=>j.titular);
+  return titulares.length===1 ? titulares[0] : null;
+}
+
+// Las planillas importadas por COMET o por IA (foto) a veces ya traen el evento "gol_penal"
+// cargado directo en el jugador, sin pasar por el modal de detalle (que es lo único que
+// completa _penalesPendientes con ejecutante+arquero). Sin esto, esos penales quedaban sin
+// fila en la tabla "penales" — ver conversación del 2026-08-31 (arqueros faltantes en
+// Estadísticas > Penales). Se corre una sola vez, justo después de tener ambas planillas.
+function autoResolverPenalesImportados(){
+  if(!window._penalesPendientes) window._penalesPendientes = [];
+  // Sacar entradas auto-generadas de una corrida anterior (reintento de import) antes de recalcular.
+  window._penalesPendientes = window._penalesPendientes.filter(p=>!p._auto);
+
+  const lados = [
+    {arr: planillaLocal.jugadores||[], favor: partidoActual?.local||"", contra: partidoActual?.visit||"", rival: planillaVisit.jugadores||[]},
+    {arr: planillaVisit.jugadores||[], favor: partidoActual?.visit||"", contra: partidoActual?.local||"", rival: planillaLocal.jugadores||[]},
+  ];
+  const arbitro = document.getElementById("partido-arbitro")?.value || "";
+  const sinResolver = [];
+
+  lados.forEach(({arr, favor, contra, rival})=>{
+    arr.forEach(jugadorRef=>{
+      (jugadorRef.eventos||[]).forEach(ev=>{
+        if(ev.tipo!=="gol_penal") return;
+        const arqueroRef = resolverArqueroEnCancha(rival, ev.minuto);
+        window._penalesPendientes.push({
+          favor, contra, resultado:"gol", minuto: ev.minuto, arbitro,
+          jugadorRef, arqueroRef, _auto:true,
+        });
+        if(!arqueroRef) sinResolver.push(`${jugadorRef.nombre||"?"} (${favor}) min. ${ev.minuto}`);
+      });
+    });
+  });
+
+  if(sinResolver.length){
+    showFlash(`⚠️ No se pudo identificar automáticamente el arquero rival en ${sinResolver.length} penal(es): ${sinResolver.join(", ")}. Editá esos goles (ícono del evento) para cargarlo a mano antes de publicar.`, "err");
+  }
+}
+
 function calcScoreLocal(){
   const propios = (planillaLocal.jugadores||[]).reduce((a,j)=>
     a+(j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_tiro_libre").length,0);
@@ -2350,10 +2410,19 @@ function editarEvento(containerId, jIdx, eIdx){
   if(!arr || !arr[jIdx]) return;
   const ev = arr[jIdx].eventos[eIdx];
   if(!ev) return;
+  const jugadorRef = arr[jIdx];
 
   // Remove old event first
   arr[jIdx].eventos.splice(eIdx, 1);
   renderPlanilla(containerId, arr);
+
+  // Si era un penal ya resuelto (auto-detectado por COMET/IA o cargado a mano), sacar su
+  // entrada pendiente para no duplicarla cuando se vuelva a cargar desde el modal de detalle.
+  if((ev.tipo==="gol_penal"||ev.tipo==="penal_atajado"||ev.tipo==="penal_desviado") && window._penalesPendientes){
+    window._penalesPendientes = window._penalesPendientes.filter(p=>
+      !(p.jugadorRef===jugadorRef && String(p.minuto)===String(ev.minuto))
+    );
+  }
 
   // Open modal pre-filled with existing event data
   abrirAgregarEvento(containerId, jIdx, ev);
@@ -2917,6 +2986,11 @@ async function guardarPenal(){
   const minuto = document.getElementById("pen-minuto")?.value.trim();
   const arbitro = document.getElementById("pen-arbitro")?.value.trim();
 
+  if(!arqueroIdSel){
+    alert("Falta seleccionar el arquero rival. Es obligatorio para todos los penales (también cuando es gol).");
+    return;
+  }
+
   // Map tipo to resultado
   const resultado = tipo==="gol_penal" ? "gol" : tipo==="penal_atajado" ? "atajado" : "desviado";
 
@@ -3017,6 +3091,10 @@ async function confirmarPenalNuevo(containerId, jIdx){
   if(!minVal){ document.getElementById("pn-min")?.focus(); return; }
   const minuto = parsearMinuto(minVal);
   const arqueroId = document.getElementById("pn-arquero")?.value||"";
+  if(!arqueroId){
+    showFlash("Falta seleccionar el portero rival. Es obligatorio para todos los penales (también cuando es gol).","err");
+    return;
+  }
 
   const arr = containerId==="tabla-local"?planillaLocal.jugadores:planillaVisit.jugadores;
   if(!arr||!arr[jIdx]) return;
