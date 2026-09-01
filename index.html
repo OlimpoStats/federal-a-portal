@@ -1960,6 +1960,12 @@ function diaKey(metaDia){
   if(!metaDia) return "sin_dia";
   return String(metaDia).slice(0,10);
 }
+// Hoy en horario local como "YYYY-MM-DD" (no toISOString: eso da la fecha en UTC, que en
+// Argentina puede ir un día adelantada durante la noche).
+function _hoyLocalISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function diaTitulo(metaDia){
   if(!metaDia) return { dia: "Sin día confirmado", fecha: "" };
   const d = new Date(String(metaDia) + "T00:00:00");
@@ -2193,11 +2199,14 @@ function renderPartidos(f){
     });
   });
 
+  const hoy = _hoyLocalISO();
   rows.sort((a,b)=>{
     // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
+    // Día pasado: la hora ya no importa, directo por zona
+    if(ad < hoy) return a.zona.localeCompare(b.zona) || a.m.local.localeCompare(b.m.local);
     // Por hora
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
@@ -3523,18 +3532,26 @@ function renderPartidos2(f){
     });
   });
 
-  // Orden: sin programar (sin día/hora) → por grupo. Programados → día, hora, grupo,
-  // siempre por la hora REAL de partido, sea que ya arrancó, esté en vivo o haya
-  // terminado — el horario queda "fijo" una vez programado. Así, entrando a las 19,
-  // los partidos de las 14 (ya jugados) quedan arriba, los que se están jugando después,
-  // y los que faltan arrancar al fondo, todo en el mismo orden cronológico. (Antes un
-  // partido con resultado cargado —en vivo o terminado— ignoraba su hora real y usaba
-  // un valor fijo, rompiendo ese orden.)
+  // Orden: sin programar (sin día/hora) → por grupo. Programados, día de HOY en adelante →
+  // día, hora, grupo, siempre por la hora REAL de partido, sea que ya arrancó, esté en vivo o
+  // haya terminado — el horario queda "fijo" una vez programado. Así, entrando a las 19, los
+  // partidos de las 14 (ya jugados) quedan arriba, los que se están jugando después, y los que
+  // faltan arrancar al fondo, todo en el mismo orden cronológico. (Antes un partido con
+  // resultado cargado —en vivo o terminado— ignoraba su hora real y usaba un valor fijo,
+  // rompiendo ese orden.)
+  // Para un día YA PASADO la hora deja de importar (el partido terminó hace rato) — ahí se
+  // ordena directo por grupo, igual que hacía Primera Fase, en vez de mantener el orden de
+  // los horarios de arranque.
+  const hoy = _hoyLocalISO();
   rows.sort((a,b)=>{
     // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
+    if(ad < hoy){
+      // Día pasado: por grupo directo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
+      return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+    }
     // Por hora real programada
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
