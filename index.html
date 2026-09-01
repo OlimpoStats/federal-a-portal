@@ -5664,8 +5664,31 @@ init();
 let _liveInterval = null;
 let _liveTickBusy = false;
 
+// true si hay algo por lo que vale la pena seguir consultando cada 60s: un partido ya en
+// curso, o uno programado para HOY que todavía no arrancó (para agarrar el arranque). Si no
+// hay nada de eso (ningún partido hoy, o ya terminaron todos), no tiene sentido seguir
+// pegándole a cargarPartidosDesdeDB() cada minuto — antes el polling arrancaba solo y nunca
+// se detenía (detenerPolling() existía pero nadie la llamaba), así que una pestaña abierta sin
+// ningún partido en vivo igual gastaba ~280KB por minuto contra Supabase indefinidamente. Esto
+// fue lo que explicó un salto grande de egress detectado el 2026-09-01.
+function hayPartidoRelevanteHoy(){
+  const hoy = _hoyLocalISO();
+  for(const zona in FIXTURE){
+    for(const fecha in FIXTURE[zona]){
+      for(const m of FIXTURE[zona][fecha]){
+        if(m.estado === 'en_curso') return true;
+        if(m.gl !== null) continue; // ya jugado, no aporta
+        const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)];
+        if(meta?.dia === hoy) return true; // programado para hoy, todavía sin resultado
+      }
+    }
+  }
+  return false;
+}
+
 async function iniciarPollingEnVivo(){
-  activarPolling();
+  if(hayPartidoRelevanteHoy()) activarPolling();
+  else detenerPolling();
 }
 
 async function _tickLive(){
@@ -5681,6 +5704,7 @@ async function _tickLive(){
     renderGruposSegundaFase(grupos);
     await renderGoleadoresResumen();
     _guardarCache();
+    if(!hayPartidoRelevanteHoy()) detenerPolling();
   } catch(e){}
   _liveTickBusy = false;
 }
