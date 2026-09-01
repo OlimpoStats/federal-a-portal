@@ -2295,10 +2295,13 @@ function resolverArqueroEnCancha(rivalArr, minuto){
 // cargado directo en el jugador, sin pasar por el modal de detalle (que es lo único que
 // completa _penalesPendientes con ejecutante+arquero). Sin esto, esos penales quedaban sin
 // fila en la tabla "penales" — ver conversación del 2026-08-31 (arqueros faltantes en
-// Estadísticas > Penales). Se corre una sola vez, justo después de tener ambas planillas.
+// Estadísticas > Penales). Se corre justo después de tener ambas planillas Y de nuevo como
+// red de seguridad justo antes de publicar (ver confirmarCarga) — es idempotente: no toca
+// entradas manuales (con arquero elegido a mano) ni duplica un evento que ya tiene pendiente.
 function autoResolverPenalesImportados(){
   if(!window._penalesPendientes) window._penalesPendientes = [];
   // Sacar entradas auto-generadas de una corrida anterior (reintento de import) antes de recalcular.
+  // Las manuales (sin _auto) se dejan intactas.
   window._penalesPendientes = window._penalesPendientes.filter(p=>!p._auto);
 
   const lados = [
@@ -2312,6 +2315,9 @@ function autoResolverPenalesImportados(){
     arr.forEach(jugadorRef=>{
       (jugadorRef.eventos||[]).forEach(ev=>{
         if(ev.tipo!=="gol_penal") return;
+        // Si ya hay un pendiente (manual, o de este mismo evento) para este jugador+minuto, no duplicar.
+        const yaPendiente = window._penalesPendientes.some(p=>p.jugadorRef===jugadorRef && String(p.minuto)===String(ev.minuto));
+        if(yaPendiente) return;
         const arqueroRef = resolverArqueroEnCancha(rival, ev.minuto);
         window._penalesPendientes.push({
           favor, contra, resultado:"gol", minuto: ev.minuto, arbitro,
@@ -3588,8 +3594,20 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
 async function guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId){
   const pendientes = window._penalesPendientes || [];
   if(!pendientes.length) return;
+
+  // Re-publicar un partido ya cargado (editarPlanillaExistente) vuelve a pasar por acá con los
+  // mismos penales reconstruidos desde los eventos — sin este chequeo se duplicaban en la base
+  // cada vez que se guardaba de nuevo. Se pide 1 sola vez lo ya existente para este partido.
+  const {data:existentes} = await sb.from("penales")
+    .select("ejecutante_id,minuto,resultado")
+    .eq("partido_id", partidoId);
+  const yaExiste = (ejecutanteId, minuto, resultado) =>
+    (existentes||[]).some(e => e.ejecutante_id===ejecutanteId && String(e.minuto)===String(minuto) && e.resultado===resultado);
+
+  const fallos = [];
   for(const p of pendientes){
     const ejecutanteDBId = idMapLocal?.get(p.jugadorRef) ?? idMapVisit?.get(p.jugadorRef) ?? null;
+    if(yaExiste(ejecutanteDBId, p.minuto, p.resultado)) continue;
     const arqueroDBId = p.arqueroRef ? (idMapLocal?.get(p.arqueroRef) ?? idMapVisit?.get(p.arqueroRef) ?? null) : null;
     const {error} = await sb.from("penales").insert({
       partido_id: partidoId,
@@ -3602,9 +3620,17 @@ async function guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtu
       minuto: p.minuto,
       arbitro: p.arbitro,
     });
-    if(error) console.warn("[Penales] Error al guardar penal pendiente:", error.message);
+    if(error){
+      console.warn("[Penales] Error al guardar penal pendiente:", error.message);
+      fallos.push(`min. ${p.minuto} (${p.favor})`);
+    }
   }
   window._penalesPendientes = [];
+  // Antes esto era un console.warn silencioso — el admin publicaba igual, sin enterarse de que
+  // el penal había quedado sin guardar. Ver caso real: partido Argentino (MM) vs Juv. Antoniana.
+  if(fallos.length){
+    alert(`⚠️ No se pudieron guardar ${fallos.length} penal(es) en la base: ${fallos.join(", ")}. Revisalos manualmente en Estadísticas > Penales.`);
+  }
 }
 
 function mostrarModalTransfer(nombrePlanilla, jugOtro){
@@ -4190,6 +4216,12 @@ async function confirmarCarga(publicar=true){
       idMapVisit = resVisit.idMap;
     }
 
+    // Red de seguridad: reconstruye _penalesPendientes desde los eventos "gol_penal" que estén
+    // en la planilla FINAL a punto de publicarse, sin importar qué pasó antes en la sesión (ej:
+    // se editó ese evento y se perdió el pendiente, o se entró por editarPlanillaExistente() sin
+    // pasar por el import). autoResolverPenalesImportados() es idempotente (siempre reconstruye
+    // sus propias entradas "_auto" desde cero), así que llamarla acá de nuevo es seguro.
+    autoResolverPenalesImportados();
     // Ahora que ambos planteles tienen su id real en BD, resolvemos y guardamos los penales
     // que se hayan cargado durante la sesión (en vivo).
     await guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId);
