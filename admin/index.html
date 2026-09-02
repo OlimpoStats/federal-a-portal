@@ -1558,6 +1558,7 @@ async function borrarPlanilla(){
     actualizarEstadoPlanillaSeleccion();
     actualizarPartidos();
     regenerarFotoEstadisticas();
+    regenerarFotoSegundaFase();
     alert("✓ Planilla borrada correctamente.");
   } catch(e){
     alert("Error: " + e.message);
@@ -4226,6 +4227,12 @@ async function confirmarCarga(publicar=true){
     // que se hayan cargado durante la sesión (en vivo).
     await guardarPenalesPendientes(idMapLocal, idMapVisit, partidoId, fixtureId);
     regenerarFotoEstadisticas();
+    // regenerarFotoSegundaFase() antes solo se llamaba al corregir un resultado a mano (ver esa
+    // función) — publicar una planilla real nunca la disparaba, así que la home pública seguía
+    // mostrando PLANILLA_CARGADA desactualizado (sin este partido) hasta el próximo evento en
+    // vivo de OTRO partido. Eso hacía que el botón "info del partido" (pensado para partidos sin
+    // planilla) apareciera en partidos que sí la tenían, en vez del ícono de ficha real.
+    regenerarFotoSegundaFase();
 
     document.getElementById("paso3").style.display = "none";
     document.getElementById("paso4").style.display = "";

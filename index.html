@@ -2258,8 +2258,12 @@ function last5ForTeam(nombre){
 // cargado en 2026-09, incluye temporadas 1995/96 en adelante + esta temporada) y devuelve
 // el resumen (PJ/triunfos/empates/goles) y los últimos 5 enfrentamientos, más reciente primero.
 async function cargarHistorialH2H(nombreLocal, nombreVisit){
-  const eqL = EQUIPOS_LIST.find(e=>e.nombre===nombreLocal);
-  const eqV = EQUIPOS_LIST.find(e=>e.nombre===nombreVisit);
+  // Se consulta "equipos" directo acá (no EQUIPOS_LIST en memoria) para no depender de que ya
+  // esté poblada cuando se abre el modal — es una sola consulta liviana, no vale la pena el
+  // riesgo de una carrera con cargarEscudos().
+  const {data:eqRows} = await sb.from('equipos').select('id,nombre').in('nombre',[nombreLocal,nombreVisit]);
+  const eqL = eqRows?.find(e=>e.nombre===nombreLocal);
+  const eqV = eqRows?.find(e=>e.nombre===nombreVisit);
   if(!eqL || !eqV) return {resumen:null, ultimos:[]};
   const {data} = await sb.from('historial_partidos')
     .select('id,temporada,fase,local,gl,gv,visitante')
