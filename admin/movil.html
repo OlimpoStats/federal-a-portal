@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Federal A — Programación</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Programación FA">
+<meta name="theme-color" content="#0a0a0a">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#0a0a0a;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.09);--text:#f0f0f0;--muted:#888;--accent:#e8c44a;--green:#2a7a4a;--red:#c0392b;}
+html,body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;overscroll-behavior-y:contain;}
+body{padding-bottom:env(safe-area-inset-bottom);}
+
+/* ── login ── */
+#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;gap:1rem;}
+#login .logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;color:var(--accent);letter-spacing:.5px;}
+#login .logo span{color:#fff;}
+#login form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;}
+#login input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;color:var(--text);font-size:16px;width:100%;outline:none;}
+#login input:focus{border-color:var(--accent);}
+#login button{background:var(--accent);color:#111;border:none;border-radius:10px;padding:.95rem;font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+#login .err{color:#ff6b6b;font-size:13px;text-align:center;min-height:1em;}
+
+/* ── shell ── */
+#app{display:none;min-height:100vh;flex-direction:column;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;padding-top:calc(.85rem + env(safe-area-inset-top));background:#0d0d0d;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:20;}
+.hdr .logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--accent);}
+.hdr .logo span{color:#fff;}
+.hdr button{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:.4rem .7rem;border-radius:7px;}
+
+.wrap{padding:1rem;flex:1;display:flex;flex-direction:column;gap:1rem;}
+
+/* selects */
+.picker{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.picker select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.85rem .75rem;color:var(--text);font-size:16px;font-family:'Barlow',sans-serif;}
+.picker label{display:block;font-size:11px;color:var(--muted);margin-bottom:.35rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+
+/* chip strip */
+.chips{display:flex;gap:.5rem;overflow-x:auto;padding:.15rem .05rem .5rem;-webkit-overflow-scrolling:touch;}
+.chip{flex:0 0 auto;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.45rem .85rem;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;display:flex;align-items:center;gap:.35rem;}
+.chip.done{border-color:var(--green);color:var(--text);}
+.chip.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:700;}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+/* match card */
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.mcard-hdr{padding:1rem;text-align:center;border-bottom:1px solid var(--border);}
+.mcard-hdr .vs{display:flex;align-items:center;justify-content:center;gap:.6rem;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;}
+.mcard-hdr img{width:26px;height:26px;object-fit:contain;}
+.mcard-hdr .prog{font-size:11px;color:var(--muted);margin-top:.35rem;}
+.mcard-body{padding:1rem;display:flex;flex-direction:column;gap:.9rem;}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.f label{display:block;font-size:11px;color:var(--muted);margin-bottom:.4rem;font-weight:600;}
+.f input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.8rem .8rem;color:var(--text);font-size:16px;font-family:'Barlow',sans-serif;outline:none;}
+.f input:focus{border-color:var(--accent);}
+
+.mas-toggle{display:flex;align-items:center;justify-content:center;gap:.3rem;padding:.6rem;color:var(--accent);font-size:12px;font-weight:600;border-top:1px solid var(--border);}
+.mas{display:none;flex-direction:column;gap:.9rem;padding:1rem;padding-top:0;}
+.mas.open{display:flex;}
+
+/* bottom action bar */
+.actionbar{position:sticky;bottom:0;background:linear-gradient(0deg,var(--bg) 60%,transparent);padding:1rem 0 calc(1rem + env(safe-area-inset-bottom));display:flex;gap:.6rem;}
+.actionbar button{flex:1;border:none;border-radius:12px;padding:1rem;font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+.btn-prev{background:var(--surface2);color:var(--text);border:1px solid var(--border) !important;flex:0 0 auto !important;width:56px;padding:1rem .5rem !important;}
+.btn-save{background:var(--accent);color:#111;}
+.btn-save[disabled]{opacity:.5;}
+
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:2rem 1rem;}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);background:var(--green);color:#fff;font-size:13px;font-weight:600;padding:.65rem 1.1rem;border-radius:20px;opacity:0;pointer-events:none;transition:all .25s;z-index:50;white-space:nowrap;}
+.toast.err{background:var(--red);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.3);border-top-color:#111;border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="logo">FEDERAL <span>A</span></div>
+  <div style="font-size:12px;color:var(--muted);">Programación de partidos — versión móvil</div>
+  <form id="login-form" onsubmit="event.preventDefault();admLogin();">
+    <input type="email" id="lg-email" placeholder="Email" autocomplete="username" autocapitalize="off">
+    <input type="password" id="lg-pass" placeholder="Contraseña" autocomplete="current-password">
+    <button type="submit">Entrar</button>
+    <div class="err" id="lg-err"></div>
+  </form>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="logo">FEDERAL <span>A</span> · Programación</div>
+    <button onclick="cerrarSesion()">Salir</button>
+  </div>
+
+  <div class="wrap">
+    <div class="picker">
+      <div>
+        <label>Zona</label>
+        <select id="p-zona" onchange="cambioZona()"><option value="">—</option></select>
+      </div>
+      <div>
+        <label>Fecha</label>
+        <select id="p-fecha" onchange="cambioFecha()"><option value="">—</option></select>
+      </div>
+    </div>
+
+    <div id="chips-wrap" style="display:none;">
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div id="card-wrap"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  global: {
+    fetch: (url, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set('Cache-Control', 'no-cache');
+      return fetch(url, { ...options, cache: 'no-store', headers });
+    },
+  },
+});
+
+async function admLogin(){
+  const email = document.getElementById("lg-email").value.trim();
+  const pass = document.getElementById("lg-pass").value;
+  const err = document.getElementById("lg-err");
+  err.textContent = "";
+  if(!email||!pass){ err.textContent="Completá los dos campos."; return; }
+  const {error} = await sb.auth.signInWithPassword({email, password: pass});
+  if(error){ err.textContent="Credenciales incorrectas."; return; }
+  await verificarAcceso();
+}
+
+async function verificarAcceso(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ return; }
+  const {data:perfil} = await sb.from("perfiles").select("rol").eq("id", session.user.id).maybeSingle();
+  if(perfil?.rol === "dueno"){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    iniciar();
+  } else {
+    await sb.auth.signOut();
+    document.getElementById("lg-err").textContent = "No tenés permisos para acceder acá.";
+  }
+}
+
+async function cerrarSesion(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// ── estado ──
+let ZONAS_FECHAS = {};      // zona -> Set(fecha)
+let EQUIPOS_INFO = {};      // nombre -> estadio_nombre
+let ESCUDOS = {};           // nombre -> url pública (equipos.escudo_url)
+let CACHE_ARB = [];         // [{id,nombre}]
+let CACHE_EST = [];
+let PARTIDOS = [];          // partidos de la zona+fecha elegida (filas completas de fixture)
+let IDX = 0;                // partido enfocado
+
+async function iniciar(){
+  const [{data:fx}, {data:eq}, {data:arb}, {data:est}] = await Promise.all([
+    sb.from("fixture").select("zona,fecha"),
+    sb.from("equipos").select("nombre,escudo_url,estadios(nombre)"),
+    sb.from("arbitros").select("id,nombre").order("nombre"),
+    sb.from("estadios").select("id,nombre").order("nombre"),
+  ]);
+  (fx||[]).forEach(f=>{
+    if(!f.zona || !f.fecha) return;
+    (ZONAS_FECHAS[f.zona] ||= new Set()).add(String(f.fecha));
+  });
+  (eq||[]).forEach(e=>{
+    EQUIPOS_INFO[e.nombre] = e.estadios?.nombre || "";
+    if(e.escudo_url) ESCUDOS[e.nombre] = e.escudo_url;
+  });
+  CACHE_ARB = arb||[];
+  CACHE_EST = est||[];
+  poblarDatalists();
+
+  const selZona = document.getElementById("p-zona");
+  selZona.innerHTML = '<option value="">— Elegí —</option>' +
+    Object.keys(ZONAS_FECHAS).sort().map(z=>`<option>${z}</option>`).join("");
+}
+
+function escudoImg(nombreEquipo){
+  const url = ESCUDOS[nombreEquipo];
+  return url ? `<img src="${url}">` : "";
+}
+
+function poblarDatalists(){
+  let dlA = document.getElementById("dl-arbitros");
+  if(!dlA){ dlA = document.createElement("datalist"); dlA.id="dl-arbitros"; document.body.appendChild(dlA); }
+  dlA.innerHTML = CACHE_ARB.map(a=>`<option value="${a.nombre.replace(/"/g,'&quot;')}">`).join("");
+  let dlE = document.getElementById("dl-estadios");
+  if(!dlE){ dlE = document.createElement("datalist"); dlE.id="dl-estadios"; document.body.appendChild(dlE); }
+  dlE.innerHTML = CACHE_EST.map(e=>`<option value="${e.nombre.replace(/"/g,'&quot;')}">`).join("");
+}
+
+function cambioZona(){
+  const zona = document.getElementById("p-zona").value;
+  const selFecha = document.getElementById("p-fecha");
+  document.getElementById("chips-wrap").style.display = "none";
+  document.getElementById("card-wrap").innerHTML = "";
+  if(!zona){ selFecha.innerHTML='<option value="">—</option>'; return; }
+  const fechas = [...(ZONAS_FECHAS[zona]||[])].sort((a,b)=>Number(a)-Number(b));
+  selFecha.innerHTML = '<option value="">— Elegí —</option>' + fechas.map(f=>`<option>${f}</option>`).join("");
+}
+
+async function cambioFecha(){
+  const zona = document.getElementById("p-zona").value;
+  const fecha = document.getElementById("p-fecha").value;
+  const cardWrap = document.getElementById("card-wrap");
+  const chipsWrap = document.getElementById("chips-wrap");
+  if(!zona||!fecha){ chipsWrap.style.display="none"; cardWrap.innerHTML=""; return; }
+  cardWrap.innerHTML = `<div class="empty">Cargando partidos…</div>`;
+  const {data, error} = await sb.from("fixture")
+    .select("id,zona,fecha,equipo_local,equipo_visitante,dia,hora,estadio,arbitro,juez1,juez2,cuarto_arbitro,stream_url,fotmob_url")
+    .eq("zona", zona).eq("fecha", fecha)
+    .order("equipo_local");
+  if(error || !data?.length){
+    cardWrap.innerHTML = `<div class="empty">No se pudo cargar. Probá de nuevo.</div>`;
+    return;
+  }
+  PARTIDOS = data;
+  IDX = 0;
+  chipsWrap.style.display = "";
+  renderChips();
+  renderCard();
+}
+
+function estaProgramado(p){ return !!(p.dia || p.hora); }
+
+function renderChips(){
+  const chips = document.getElementById("chips");
+  chips.innerHTML = PARTIDOS.map((p,i)=>{
+    const done = estaProgramado(p);
+    return `<div class="chip ${done?'done':''} ${i===IDX?'active':''}" onclick="irAPartido(${i})" title="${p.equipo_local} vs ${p.equipo_visitante}">
+      ${done?'<span class="dot"></span>':''}${p.equipo_local} vs ${p.equipo_visitante}
+    </div>`;
+  }).join("");
+}
+
+function irAPartido(i){ IDX=i; renderCard(); renderChips(); }
+
+function renderCard(){
+  const p = PARTIDOS[IDX];
+  const cardWrap = document.getElementById("card-wrap");
+  if(!p){ cardWrap.innerHTML=""; return; }
+  const estadioDefault = p.estadio || EQUIPOS_INFO[p.equipo_local] || "";
+  const tieneExtra = p.juez1||p.juez2||p.cuarto_arbitro||p.stream_url||p.fotmob_url;
+  cardWrap.innerHTML = `
+    <div class="mcard">
+      <div class="mcard-hdr">
+        <div class="vs">
+          ${escudoImg(p.equipo_local)}
+          ${p.equipo_local}
+          <span style="color:var(--muted);font-size:14px;">vs</span>
+          ${p.equipo_visitante}
+          ${escudoImg(p.equipo_visitante)}
+        </div>
+        <div class="prog">Partido ${IDX+1} de ${PARTIDOS.length} · Fecha ${p.fecha}</div>
+      </div>
+      <div class="mcard-body">
+        <div class="f-row">
+          <div class="f"><label>Día</label><input type="date" id="c-dia" value="${p.dia||''}"></div>
+          <div class="f"><label>Hora</label><input type="time" id="c-hora" value="${p.hora||''}"></div>
+        </div>
+        <div class="f"><label>Estadio</label><input type="text" id="c-estadio" list="dl-estadios" value="${(estadioDefault||'').replace(/"/g,'&quot;')}" placeholder="Estadio" autocomplete="off"></div>
+        <div class="f"><label>Árbitro principal</label><input type="text" id="c-arbitro" list="dl-arbitros" value="${(p.arbitro||'').replace(/"/g,'&quot;')}" placeholder="Nombre y apellido" autocomplete="off"></div>
+      </div>
+      <div class="mas-toggle" onclick="toggleMas()"><span id="mas-arrow">${tieneExtra?'▲':'▼'}</span> Jueces de línea, cuarto árbitro y streaming</div>
+      <div class="mas ${tieneExtra?'open':''}" id="mas-block">
+        <div class="f-row">
+          <div class="f"><label>Juez de línea 1</label><input type="text" id="c-j1" list="dl-arbitros" value="${(p.juez1||'').replace(/"/g,'&quot;')}" autocomplete="off"></div>
+          <div class="f"><label>Juez de línea 2</label><input type="text" id="c-j2" list="dl-arbitros" value="${(p.juez2||'').replace(/"/g,'&quot;')}" autocomplete="off"></div>
+        </div>
+        <div class="f"><label>Cuarto árbitro</label><input type="text" id="c-c4" list="dl-arbitros" value="${(p.cuarto_arbitro||'').replace(/"/g,'&quot;')}" autocomplete="off"></div>
+        <div class="f"><label>Link de transmisión</label><input type="text" id="c-stream" value="${(p.stream_url||'').replace(/"/g,'&quot;')}" placeholder="https://youtube.com/live/..."></div>
+        <div class="f"><label>FotMob (en vivo)</label><input type="text" id="c-fotmob" value="${(p.fotmob_url||'').replace(/"/g,'&quot;')}" placeholder="https://www.fotmob.com/..."></div>
+      </div>
+    </div>
+    <div class="actionbar">
+      <button class="btn-prev" onclick="anterior()" ${IDX===0?'disabled':''}>‹</button>
+      <button class="btn-save" id="btn-save" onclick="guardarActual()">💾 Guardar${IDX<PARTIDOS.length-1?' y siguiente':''}</button>
+    </div>
+  `;
+}
+
+function toggleMas(){
+  const b = document.getElementById("mas-block");
+  const a = document.getElementById("mas-arrow");
+  b.classList.toggle("open");
+  a.textContent = b.classList.contains("open") ? "▲" : "▼";
+}
+
+function anterior(){ if(IDX>0){ IDX--; renderCard(); renderChips(); } }
+
+async function upsertSiNuevo(tabla, nombre, cacheArr){
+  if(!nombre) return;
+  const existe = cacheArr.find(i=>i.nombre.toLowerCase()===nombre.toLowerCase());
+  if(!existe){
+    const {data} = await sb.from(tabla).upsert({nombre},{onConflict:"nombre"}).select("id,nombre").single();
+    if(data){ cacheArr.push(data); cacheArr.sort((a,b)=>a.nombre.localeCompare(b.nombre)); poblarDatalists(); }
+  }
+}
+
+function mostrarToast(msg, esError){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (esError?" err":"");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ t.classList.remove("show"); }, 2200);
+}
+
+async function guardarActual(){
+  const btn = document.getElementById("btn-save");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>';
+
+  const p = PARTIDOS[IDX];
+  const dia = document.getElementById("c-dia").value || null;
+  const hora = document.getElementById("c-hora").value || null;
+  const estadio = document.getElementById("c-estadio").value.trim() || null;
+  const arbitro = document.getElementById("c-arbitro").value.trim() || null;
+  const juez1 = document.getElementById("c-j1").value.trim() || null;
+  const juez2 = document.getElementById("c-j2").value.trim() || null;
+  const cuarto = document.getElementById("c-c4").value.trim() || null;
+  const stream = document.getElementById("c-stream").value.trim() || null;
+  const fotmob = document.getElementById("c-fotmob").value.trim() || null;
+
+  const payload = { dia, hora, estadio, arbitro, juez1, juez2, cuarto_arbitro:cuarto, stream_url:stream, fotmob_url:fotmob, estado:"programado" };
+  const {error} = await sb.from("fixture").update(payload).eq("id", p.id);
+
+  if(error){
+    mostrarToast("No se pudo guardar. Revisá tu conexión.", true);
+    btn.disabled = false;
+    btn.innerHTML = `💾 Guardar${IDX<PARTIDOS.length-1?' y siguiente':''}`;
+    return;
+  }
+
+  Object.assign(p, payload);
+  await Promise.all([
+    upsertSiNuevo("arbitros", arbitro, CACHE_ARB),
+    upsertSiNuevo("arbitros", juez1, CACHE_ARB),
+    upsertSiNuevo("arbitros", juez2, CACHE_ARB),
+    upsertSiNuevo("arbitros", cuarto, CACHE_ARB),
+    upsertSiNuevo("estadios", estadio, CACHE_EST),
+  ]);
+
+  mostrarToast("Guardado ✓");
+  renderChips();
+
+  if(IDX < PARTIDOS.length-1){
+    IDX++;
+    renderCard();
+    renderChips();
+  } else {
+    btn.disabled = false;
+    btn.textContent = "💾 Guardar";
+    mostrarToast("¡Listo! Programaste toda la fecha ✓");
+  }
+}
+
+// Si ya había sesión activa (mismo Safari), entrar directo
+sb.auth.getSession().then(({data:{session}})=>{ if(session) verificarAcceso(); });
+</script>
+</body>
+</html>
