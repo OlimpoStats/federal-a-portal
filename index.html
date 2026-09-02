@@ -614,6 +614,33 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .info-modal-h5{display:flex;gap:1rem;padding:1rem;flex-wrap:wrap;}
 .info-modal-h5-col{flex:1 1 260px;min-width:0;}
 .info-h5-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;}
+/* Historial en la categoría + últimos enfrentamientos (dentro del modal "Info del partido") */
+.im-sec{padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
+.im-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.4rem;}
+.im-two-col{display:flex;gap:1.6rem;flex-wrap:wrap;}
+.im-col-hist{width:290px;flex-shrink:0;display:flex;flex-direction:column;}
+.im-col-h2h{flex:1;min-width:260px;border-left:1px solid var(--border);padding-left:1.4rem;}
+.im-hist-sub{font-size:13.5px;color:var(--text);margin:-.1rem 0 1.15rem;}
+.im-hist-list{flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:.75rem;}
+.im-hist-stat{display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;border-radius:10px;background:rgba(255,255,255,.04);}
+.im-hist-icon{width:36px;height:36px;flex-shrink:0;object-fit:contain;}
+.im-hist-icon.im-emoji{display:flex;align-items:center;justify-content:center;font-size:20px;}
+.im-hist-div{width:1px;height:22px;background:rgba(255,255,255,.14);flex-shrink:0;}
+.im-hist-part{display:inline-flex;align-items:center;height:26px;font-size:15px;color:#ddd;white-space:nowrap;}
+.im-hist-num{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:#f0f0f0;margin-right:.35rem;}
+.im-h2h-item{position:relative;display:flex;align-items:center;padding:.85rem 0;min-height:30px;border-bottom:1px solid var(--border);}
+.im-h2h-item:last-child{border-bottom:none;}
+.im-h2h-when{width:66px;flex-shrink:0;line-height:1.2;}
+.im-h2h-temp{font-size:12.5px;font-weight:700;color:var(--text);}
+.im-h2h-fase{font-size:10px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.im-h2h-score{position:absolute;left:calc(50% + 36px);top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:.6rem;}
+.im-h2h-score img{width:30px;height:30px;object-fit:contain;}
+.im-h2h-n{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);min-width:36px;text-align:center;}
+.im-h2h-tag{margin-left:auto;font-size:10px;color:var(--muted);text-align:right;white-space:nowrap;}
+@media(max-width:700px){
+  .im-col-hist{width:100%;}
+  .im-col-h2h{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:1rem;}
+}
 .plt-pos-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#777;padding:.35rem 0 .25rem;border-bottom:1px solid rgba(255,255,255,.07);margin:.9rem 0 .35rem;}
 .plt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.5rem;}
 .plt-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
@@ -2165,15 +2192,16 @@ function renderFilaPartido(zona, f, m, meta){
   const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
   // Always 2 slots: [stream, planilla] — stream left, planilla right
   const esProgramado = m.estado === "programado";
+  // Info del partido: partidos programados, Y partidos ya jugados que todavía no tienen
+  // planilla cargada (mismo cartel, banner cambia VS por el marcador — ver verInfoPartido()).
+  const mostrarInfo = esProgramado || (m.gl !== null && !esEnVivo && !tienePlanilla);
   let leftBtn, rightBtn;
-  if(m.gl !== null && !esEnVivo){
-    // Finished: planilla icon left (primary), stream right (secondary)
-    leftBtn = tienePlanilla
-      ? `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`
-      : `<div class="ficha-btn" title="Planilla próxima a cargarse" style="opacity:.35;cursor:default;filter:grayscale(1);">📄</div>`;
+  if(m.gl !== null && !esEnVivo && tienePlanilla){
+    // Finished con planilla: ficha real (primary), stream right (secondary)
+    leftBtn = `<div class="ficha-btn" title="Ver ficha del partido" onclick="verFicha('${fichaKey}',true)" style="cursor:pointer;">📄</div>`;
     rightBtn = _streamLink || _filler26;
-  } else if(esProgramado){
-    // Programado: info icon left (primary, mismo lugar que la planilla), stream right (secondary)
+  } else if(mostrarInfo){
+    // Programado, o jugado sin planilla todavía: info icon left (primary), stream right (secondary)
     leftBtn = `<div class="ficha-btn" title="Info del partido" onclick="verInfoPartido('${fichaKey}')" style="cursor:pointer;">ℹ️</div>`;
     rightBtn = _streamLink || _filler26;
   } else {
@@ -2226,8 +2254,84 @@ function last5ForTeam(nombre){
   return jugados.slice(-5).reverse();
 }
 
-// Modal "Info del partido" — solo para partidos con estado "programado" (ver botón ℹ️ en
-// renderFilaPartido). Banner con escudos/fecha/árbitros + últimos 5 de cada equipo.
+// Trae el historial completo entre dos equipos actuales desde historial_partidos (archivo
+// cargado en 2026-09, incluye temporadas 1995/96 en adelante + esta temporada) y devuelve
+// el resumen (PJ/triunfos/empates/goles) y los últimos 5 enfrentamientos, más reciente primero.
+async function cargarHistorialH2H(nombreLocal, nombreVisit){
+  const eqL = EQUIPOS_LIST.find(e=>e.nombre===nombreLocal);
+  const eqV = EQUIPOS_LIST.find(e=>e.nombre===nombreVisit);
+  if(!eqL || !eqV) return {resumen:null, ultimos:[]};
+  const {data} = await sb.from('historial_partidos')
+    .select('id,temporada,fase,local,gl,gv,visitante')
+    .or(`and(equipo_local_id.eq.${eqL.id},equipo_visitante_id.eq.${eqV.id}),and(equipo_local_id.eq.${eqV.id},equipo_visitante_id.eq.${eqL.id})`);
+  const rows = data||[];
+  if(!rows.length) return {resumen:null, ultimos:[]};
+
+  let ganoLocal=0, ganoVisit=0, empates=0, golLocal=0, golVisit=0;
+  rows.forEach(r=>{
+    const esRLocal = r.local===nombreLocal;
+    const gLocal = esRLocal ? r.gl : r.gv;
+    const gVisit = esRLocal ? r.gv : r.gl;
+    golLocal += gLocal; golVisit += gVisit;
+    if(gLocal>gVisit) ganoLocal++; else if(gLocal<gVisit) ganoVisit++; else empates++;
+  });
+  // Temporada como año (soporta "1995/96" y "2026") + id como desempate dentro del mismo año
+  // (temporadas viejas no tienen fecha exacta; entre partidos del mismo año actual, el id
+  // sigue el orden en que se cargaron, razonablemente cronológico).
+  const sortKey = r => {
+    const anio = parseInt(String(r.temporada).match(/\d{4}/)?.[0]) || 0;
+    return anio*100000 + r.id;
+  };
+  const ultimos = [...rows].sort((a,b)=>sortKey(b)-sortKey(a)).slice(0,5);
+  return {resumen:{pj:rows.length, ganoLocal, empates, ganoVisit, golLocal, golVisit}, ultimos};
+}
+
+function renderHistorialCategoriaHTML(nombreLocal, nombreVisit, resumen){
+  if(!resumen) return '';
+  const escL = ESCUDOS[nombreLocal], escV = ESCUDOS[nombreVisit];
+  const iconoEq = esc => esc ? `<img class="im-hist-icon" src="${esc}" alt="">` : '<span class="im-hist-icon"></span>';
+  const filaEquipo = (esc, triunfos, goles) => `<div class="im-hist-stat">
+      ${iconoEq(esc)}
+      <span class="im-hist-div"></span>
+      <span class="im-hist-part"><span class="im-hist-num">${triunfos}</span>triunfos</span>
+      <span class="im-hist-div"></span>
+      <span class="im-hist-part">${goles} goles</span>
+    </div>`;
+  return `<div class="im-col-hist">
+    <div class="im-sec-title">Historial en la categoría</div>
+    <div class="im-hist-sub">${resumen.pj} partido${resumen.pj===1?'':'s'} disputado${resumen.pj===1?'':'s'}</div>
+    <div class="im-hist-list">
+      ${filaEquipo(escL, resumen.ganoLocal, resumen.golLocal)}
+      <div class="im-hist-stat"><span class="im-hist-icon im-emoji">🤝</span><span class="im-hist-part"><span class="im-hist-num">${resumen.empates}</span>empates</span></div>
+      ${filaEquipo(escV, resumen.ganoVisit, resumen.golVisit)}
+    </div>
+  </div>`;
+}
+
+function renderUltimosH2HHTML(ultimos){
+  if(!ultimos.length) return '';
+  const rows = ultimos.map(r=>{
+    const escL = ESCUDOS[r.local], escV = ESCUDOS[r.visitante];
+    return `<div class="im-h2h-item">
+      <div class="im-h2h-when"><div class="im-h2h-temp">${r.temporada}</div><div class="im-h2h-fase">${r.fase||''}</div></div>
+      <div class="im-h2h-score">
+        ${escL?`<img src="${escL}" alt="">`:''}
+        <span class="im-h2h-n">${r.gl}&ndash;${r.gv}</span>
+        ${escV?`<img src="${escV}" alt="">`:''}
+      </div>
+      <div class="im-h2h-tag"></div>
+    </div>`;
+  }).join('');
+  return `<div class="im-col-h2h">
+    <div class="im-sec-title">Últimos ${ultimos.length} enfrentamientos</div>
+    ${rows}
+  </div>`;
+}
+
+// Modal "Info del partido": partidos programados, y partidos ya jugados que todavía no
+// tienen planilla cargada (ver mostrarInfo en renderFilaPartido). Banner con escudos +
+// VS (o el marcador, si ya se jugó) + fecha/árbitros, historial entre ambos + últimos
+// enfrentamientos directos, y últimos 5 de cada equipo.
 async function verInfoPartido(fichaKey){
   const modal = document.getElementById('info-partido-modal');
   const cont = document.getElementById('info-partido-cont');
@@ -2260,10 +2364,12 @@ async function verInfoPartido(fichaKey){
 
   const escLocal = ESCUDOS[m.local];
   const escVisit = ESCUDOS[m.visitante];
+  const yaJugado = m.gl !== null;
+  const centroBanner = yaJugado ? `${m.gl}&ndash;${m.gv}` : 'VS';
 
   const banner = `<div class="info-modal-banner">
     <div class="info-modal-eq">${escLocal?`<img src="${escLocal}" alt="">`:''}<span>${m.local}</span></div>
-    <div class="info-modal-vs">VS</div>
+    <div class="info-modal-vs">${centroBanner}</div>
     <div class="info-modal-eq">${escVisit?`<img src="${escVisit}" alt="">`:''}<span>${m.visitante}</span></div>
   </div>
   <div class="info-modal-meta">
@@ -2271,6 +2377,7 @@ async function verInfoPartido(fichaKey){
     ${fx.estadio?`<div>🏟️ ${fx.estadio}</div>`:''}
     ${fx.arbitro?`<div style="margin-top:.2rem;">⚖️ ${fx.arbitro}</div>`:''}
     ${juecesLine?`<div class="info-modal-jueces">${juecesLine}</div>`:''}
+    ${yaJugado?`<div style="margin-top:.4rem;color:var(--accent);font-weight:600;">📝 Planilla en proceso de carga</div>`:''}
   </div>`;
 
   const fmtFechaCorta = dia => {
@@ -2301,7 +2408,14 @@ async function verInfoPartido(fichaKey){
     </div>`;
   };
 
+  const {resumen, ultimos} = await cargarHistorialH2H(m.local, m.visitante);
+  const histSecHTML = resumen ? `<div class="im-sec"><div class="im-two-col">
+    ${renderHistorialCategoriaHTML(m.local, m.visitante, resumen)}
+    ${renderUltimosH2HHTML(ultimos)}
+  </div></div>` : '';
+
   cont.innerHTML = `${banner}
+  ${histSecHTML}
   <div class="info-modal-h5">
     ${seccionEquipo(m.local)}
     ${seccionEquipo(m.visitante)}
