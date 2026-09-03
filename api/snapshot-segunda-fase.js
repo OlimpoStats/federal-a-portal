@@ -51,11 +51,11 @@ async function buildAndUploadSnapshot() {
   const [fixtureRows, partidosRows, eventosGoles, eventosResumen] = await Promise.all([
     sbGet(
       "fixture",
-      `select=zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual&zona=in.${ZONAS_FILTRO}`
+      `select=zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro,estado,fotmob_url,minuto_actual&zona=in.${ZONAS_FILTRO}`
     ),
     sbGet(
       "partidos",
-      `select=id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id,dia,hora,stream_url,estadio,arbitro&zona=in.${ZONAS_FILTRO}`
+      `select=id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro&zona=in.${ZONAS_FILTRO}`
     ),
     sbGet(
       "eventos",
@@ -109,16 +109,19 @@ async function buildAndUploadSnapshot() {
       fotmob_url: f.fotmob_url || null,
     });
 
-    // dia/hora/estadio/arbitro: fixture primero, "partidos" como respaldo (mismo criterio
-    // de compat que cargarPartidosDesdeDB() en index.html).
+    // dia/hora/estadio/arbitro/jueces: fixture primero, "partidos" como respaldo (mismo
+    // criterio de compat que cargarPartidosDesdeDB() en index.html).
     const overlay = partidoById[partidoId] || {};
     const dia = f.dia || overlay.dia || "";
     const hora = f.hora || overlay.hora || "";
     const stream = f.stream_url || overlay.stream_url || "";
     const estadio = f.estadio || overlay.estadio || "";
     const arbitro = f.arbitro || overlay.arbitro || "";
+    const juez1 = f.juez1 || overlay.juez1 || "";
+    const juez2 = f.juez2 || overlay.juez2 || "";
+    const cuarto_arbitro = f.cuarto_arbitro || overlay.cuarto_arbitro || "";
     if (dia || hora || stream || estadio || arbitro) {
-      meta[key] = { dia, hora, stream, estadio, arbitro };
+      meta[key] = { dia, hora, stream, estadio, arbitro, juez1, juez2, cuarto_arbitro };
     }
     if (partidoId) pl[key] = true;
   });

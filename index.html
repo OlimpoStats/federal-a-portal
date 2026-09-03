@@ -1231,7 +1231,7 @@ async function cargarPartidosDesdeDB(){
     const _fase1Filtro = `(${ZONAS.map(z=>`"${z}"`).join(',')})`;
     // Run all independent queries in parallel
     const [fixtureResult, partidosResult, golesResult] = await Promise.all([
-      sb.from("fixture").select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,estado,fotmob_url,minuto_actual").not("zona","in",_fase1Filtro),
+      sb.from("fixture").select("zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,ht_local,ht_visitante,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro,estado,fotmob_url,minuto_actual").not("zona","in",_fase1Filtro),
       sb.from("partidos").select("*").not("zona","in",_fase1Filtro),
       sb.from("eventos").select("tipo, minuto, planillas(partido_id, titular, equipos(nombre), jugadores(nombre_display,nombre))").in("tipo", ["gol","gol_penal","gol_tiro_libre","gol_contra"])
     ]);
@@ -1274,7 +1274,8 @@ async function cargarPartidosDesdeDB(){
         if(p.minuto_actual && match.estado !== 'jugado') match.minuto_actual = p.minuto_actual;
         if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
-          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || ""};
+          PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || "",
+            juez1: p.juez1 || "", juez2: p.juez2 || "", cuarto_arbitro: p.cuarto_arbitro || ""};
         }
       });
     }
@@ -1300,7 +1301,10 @@ async function cargarPartidosDesdeDB(){
             hora: prev.hora || p.hora || "",
             stream: prev.stream || p.stream_url || "",
             estadio: prev.estadio || p.estadio || "",
-            arbitro: prev.arbitro || p.arbitro || ""
+            arbitro: prev.arbitro || p.arbitro || "",
+            juez1: prev.juez1 || p.juez1 || "",
+            juez2: prev.juez2 || p.juez2 || "",
+            cuarto_arbitro: prev.cuarto_arbitro || p.cuarto_arbitro || ""
           };
         }
       });
@@ -2257,19 +2261,32 @@ function last5ForTeam(nombre){
 // Trae el historial completo entre dos equipos actuales desde historial_partidos (archivo
 // cargado en 2026-09, incluye temporadas 1995/96 en adelante + esta temporada) y devuelve
 // el resumen (PJ/triunfos/empates/goles) y los últimos 5 enfrentamientos, más reciente primero.
+const _h2hCache = {}; // "idLocal_idVisitante" -> resultado, para no repetir la consulta si se reabre el mismo cruce.
+// OJO: sin ordenar (no idMenor_idMayor) porque el resumen (ganoLocal/ganoVisit) es relativo a
+// quién es local EN ESTE partido — si el mismo par jugó de visitante la vuelta anterior, cachear
+// por par de IDs sin orden invertiría esos conteos. Como mucho es un cache-miss extra, nunca un
+// dato mal mostrado.
 async function cargarHistorialH2H(nombreLocal, nombreVisit){
-  // Se consulta "equipos" directo acá (no EQUIPOS_LIST en memoria) para no depender de que ya
-  // esté poblada cuando se abre el modal — es una sola consulta liviana, no vale la pena el
-  // riesgo de una carrera con cargarEscudos().
-  const {data:eqRows} = await sb.from('equipos').select('id,nombre').in('nombre',[nombreLocal,nombreVisit]);
-  const eqL = eqRows?.find(e=>e.nombre===nombreLocal);
-  const eqV = eqRows?.find(e=>e.nombre===nombreVisit);
+  // EQUIPOS_LIST ya está cargada para cuando alguien llega a tocar el ícono ℹ️ (requiere que la
+  // página ya haya renderizado los partidos) — se usa esa en vez de volver a consultar "equipos".
+  // Si por algo raro todavía no está poblada, se cae a una consulta liviana como respaldo.
+  let eqL = EQUIPOS_LIST.find(e=>e.nombre===nombreLocal);
+  let eqV = EQUIPOS_LIST.find(e=>e.nombre===nombreVisit);
+  if(!eqL || !eqV){
+    const {data:eqRows} = await sb.from('equipos').select('id,nombre').in('nombre',[nombreLocal,nombreVisit]);
+    eqL = eqRows?.find(e=>e.nombre===nombreLocal);
+    eqV = eqRows?.find(e=>e.nombre===nombreVisit);
+  }
   if(!eqL || !eqV) return {resumen:null, ultimos:[]};
+
+  const cacheKey = `${eqL.id}_${eqV.id}`;
+  if(_h2hCache[cacheKey]) return _h2hCache[cacheKey];
+
   const {data} = await sb.from('historial_partidos')
     .select('id,temporada,fase,local,gl,gv,visitante')
     .or(`and(equipo_local_id.eq.${eqL.id},equipo_visitante_id.eq.${eqV.id}),and(equipo_local_id.eq.${eqV.id},equipo_visitante_id.eq.${eqL.id})`);
   const rows = data||[];
-  if(!rows.length) return {resumen:null, ultimos:[]};
+  if(!rows.length){ const vacio={resumen:null, ultimos:[]}; _h2hCache[cacheKey]=vacio; return vacio; }
 
   let ganoLocal=0, ganoVisit=0, empates=0, golLocal=0, golVisit=0;
   rows.forEach(r=>{
@@ -2287,7 +2304,9 @@ async function cargarHistorialH2H(nombreLocal, nombreVisit){
     return anio*100000 + r.id;
   };
   const ultimos = [...rows].sort((a,b)=>sortKey(b)-sortKey(a)).slice(0,5);
-  return {resumen:{pj:rows.length, ganoLocal, empates, ganoVisit, golLocal, golVisit}, ultimos};
+  const resultado = {resumen:{pj:rows.length, ganoLocal, empates, ganoVisit, golLocal, golVisit}, ultimos};
+  _h2hCache[cacheKey] = resultado;
+  return resultado;
 }
 
 function renderHistorialCategoriaHTML(nombreLocal, nombreVisit, resumen){
@@ -2348,12 +2367,9 @@ async function verInfoPartido(fichaKey){
   const m = (FIXTURE[zona]?.[String(fecha)]||[]).find(p => `${zona}_${fecha}_${p.local}_${p.visitante}` === fichaKey);
   if(!m){ cont.innerHTML = '<div style="padding:2rem;color:#e57373;">No se encontró el partido.</div>'; return; }
 
-  const {data:fxRows} = await sb.from('fixture')
-    .select('arbitro,juez1,juez2,cuarto_arbitro,estadio,dia,hora')
-    .eq('zona', zona).eq('fecha', fecha)
-    .eq('equipo_local', m.local).eq('equipo_visitante', m.visitante)
-    .limit(1);
-  const fx = fxRows?.[0] || {};
+  // dia/hora/estadio/arbitro/jueces ya están en memoria (PARTIDO_META, poblado al cargar la
+  // página desde la foto o la consulta en vivo) — no hace falta volver a pedirlos acá.
+  const fx = PARTIDO_META[fichaKey] || {};
 
   const diaDate = fx.dia ? new Date(fx.dia+"T12:00:00") : null;
   const diaRaw = diaDate ? diaDate.toLocaleDateString("es-AR",{weekday:'long',day:'numeric',month:'long'}) : "Fecha a confirmar";
