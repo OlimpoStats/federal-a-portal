@@ -4496,6 +4496,7 @@ async function hsGuardarTodo(){
 
   if(saved > 0){
     _hsModificados.clear();
+    regenerarFotoSegundaFase();
     alert(`✓ ${saved} partido${saved!==1?"s":""} guardado${saved!==1?"s":""}.`);
     await cargarFixture();
     hsActualizar();
@@ -4566,6 +4567,7 @@ async function hsGuardar(){
     const key=`${zona}_${fecha}_${p.local}_${p.visitante}`;
     HORARIOS[key]={hora:hora||"",dia:dia||"",stream:stream||""};
     actualizarPreviewStream();
+    regenerarFotoSegundaFase();
     alert("✓ Guardado: "+p.local+" vs "+p.visitante);
   } catch (error){
     alert("Error: " + error.message);
