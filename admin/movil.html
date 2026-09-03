@@ -309,6 +309,16 @@ function toggleMas(){
 
 function anterior(){ if(IDX>0){ IDX--; renderCard(); renderChips(); } }
 
+async function regenerarFotoSegundaFase(){
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    await fetch("/api/snapshot-segunda-fase", {
+      method: "POST",
+      headers: {"Content-Type":"application/json","Authorization": `Bearer ${session?.access_token||""}`},
+    });
+  } catch(e){ console.warn("No se pudo regenerar la foto de Segunda Fase:", e.message); }
+}
+
 async function upsertSiNuevo(tabla, nombre, cacheArr){
   if(!nombre) return;
   const existe = cacheArr.find(i=>i.nombre.toLowerCase()===nombre.toLowerCase());
@@ -360,6 +370,7 @@ async function guardarActual(){
     upsertSiNuevo("arbitros", cuarto, CACHE_ARB),
     upsertSiNuevo("estadios", estadio, CACHE_EST),
   ]);
+  regenerarFotoSegundaFase();
 
   mostrarToast("Guardado ✓");
   renderChips();
