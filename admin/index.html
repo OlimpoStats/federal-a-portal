@@ -1949,9 +1949,9 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown ni explicaciones:
       throw new Error("La IA no devolvió jugadores válidos. Revisá nitidez/recorte y probá de nuevo.");
     }
 
-    // Auto-calculate score from events
-    const glLocal = planillaLocal.goles_equipo ?? contarGoles(planillaLocal.jugadores, "local");
-    const glVisit = planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores, "visitante");
+    // Auto-calculate score from events (incluye goles en contra a favor del rival)
+    const glLocal = planillaLocal.goles_equipo ?? calcScoreLocal();
+    const glVisit = planillaVisit.goles_equipo ?? calcScoreVisit();
     document.getElementById("score-local").value = glLocal;
     document.getElementById("score-visit").value = glVisit;
     autoResolverPenalesImportados();
@@ -2077,8 +2077,8 @@ Respondé ÚNICAMENTE con JSON válido, sin markdown. Dos claves: "local" y "vis
     if(!(planillaLocal.jugadores?.length) && !(planillaVisit.jugadores?.length)){
       throw new Error("La IA no devolvió jugadores válidos. Revisá la imagen y probá de nuevo.");
     }
-    const glLocal=planillaLocal.goles_equipo ?? contarGoles(planillaLocal.jugadores,"local");
-    const glVisit=planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores,"visitante");
+    const glLocal=planillaLocal.goles_equipo ?? calcScoreLocal();
+    const glVisit=planillaVisit.goles_equipo ?? calcScoreVisit();
     document.getElementById("score-local").value=glLocal;
     document.getElementById("score-visit").value=glVisit;
     autoResolverPenalesImportados();
@@ -2131,8 +2131,8 @@ async function procesarDesdeComet(){
       throw new Error("COMET no devolvió jugadores válidos para ese partido.");
     }
 
-    const glLocal=planillaLocal.goles_equipo ?? contarGoles(planillaLocal.jugadores,"local");
-    const glVisit=planillaVisit.goles_equipo ?? contarGoles(planillaVisit.jugadores,"visitante");
+    const glLocal=planillaLocal.goles_equipo ?? calcScoreLocal();
+    const glVisit=planillaVisit.goles_equipo ?? calcScoreVisit();
     document.getElementById("score-local").value=glLocal;
     document.getElementById("score-visit").value=glVisit;
     autoResolverPenalesImportados();
@@ -2262,13 +2262,6 @@ function normalizarPlanilla(planilla, equipo){
     goles_equipo: Number.isFinite(planilla.goles_equipo) ? planilla.goles_equipo : null,
     jugadores: normalizados,
   };
-}
-
-function contarGoles(jugadores, side){
-  if(!jugadores)return 0;
-  return jugadores.reduce((acc,j)=>{
-    return acc + (j.eventos||[]).filter(e=>e.tipo==="gol"||e.tipo==="gol_penal"||e.tipo==="gol_tiro_libre").length;
-  },0);
 }
 
 // Determina qué arquero del plantel rival (marcado "AR" en nota, siempre #1 y/o #12) estaba
@@ -3421,7 +3414,7 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
     .select("id, id_federal, nombre, nombre_display")
     .eq("equipo_id", equipoId);
   const {data: plantelOtros} = await sb.from("jugadores")
-    .select("id, nombre, nombre_display, equipo_id, equipos!left(nombre)")
+    .select("id, id_federal, nombre, nombre_display, equipo_id, equipos!left(nombre)")
     .neq("equipo_id", equipoId);
 
   // Copia mutable local para detectar dupes dentro del mismo batch
@@ -3440,19 +3433,34 @@ async function guardarPlanilla(jugadores, equipoId, partidoId, equipoNombre=""){
       if(jExist){
         resoluciones.push({ accion: "actualizar_equipo", jExistente: jExist, jugadorDatos: j });
       } else if(nombreRaw){
-        // id_federal no encontrado → intentar por nombre antes de crear uno nuevo
+        // id_federal no encontrado en el plantel propio → intentar por nombre antes de crear uno nuevo
         const { jugador: jugNombre, candidatos: candsNombre } = buscarEnPlantel(nombreRaw, plantelLocal);
         if(jugNombre){
           resoluciones.push({ accion: "existente", jExistente: jugNombre, jugadorDatos: j });
-        } else if(candsNombre.length && candsNombre[0].score >= 30){
-          pendientesRevision.push({ tipo:"gris", nombrePlanilla:nombreRaw, camiseta:j.numero, candidato:candsNombre[0].jugador, candidatos:candsNombre, score:candsNombre[0].score, jugadorDatos:j });
         } else {
-          const datosInsert = {
-            id_federal: idFederal, nombre: nombreRaw,
-            nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
-          };
-          resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
-          plantelLocal.push({ id: "_p_"+idFederal, id_federal: idFederal, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+          // Tampoco matcheó por nombre en el plantel propio: antes de tirarlo a zona gris o
+          // crear un jugador nuevo, ver si ese id_federal (real, ej. de COMET) ya pertenece a
+          // alguien en OTRO club. Es señal inequívoca de un traspaso todavía no reflejado acá
+          // (el registro del club destino, si ya existe por traspaso manual, quedó con
+          // id_federal "TRANS_...", por eso el ID real no aparece en el plantel propio).
+          const jugOtroPorId = (plantelOtros||[]).find(p => p.id_federal === idFederal);
+          if(jugOtroPorId){
+            const datosInsert = {
+              nombre: jugOtroPorId.nombre, nombre_display: jugOtroPorId.nombre_display,
+              equipo_id: equipoId, id_federal: "TRANS_" + Date.now(),
+            };
+            resoluciones.push({ accion: "transferencia", datosInsert, transferInfo: { jugOrigenId: jugOtroPorId.id, equipoOrigenId: jugOtroPorId.equipo_id }, jugadorDatos: j });
+            plantelLocal.push({ id: "_p_trans", id_federal: datosInsert.id_federal, nombre: datosInsert.nombre, nombre_display: datosInsert.nombre_display });
+          } else if(candsNombre.length && candsNombre[0].score >= 30){
+            pendientesRevision.push({ tipo:"gris", nombrePlanilla:nombreRaw, camiseta:j.numero, candidato:candsNombre[0].jugador, candidatos:candsNombre, score:candsNombre[0].score, jugadorDatos:j });
+          } else {
+            const datosInsert = {
+              id_federal: idFederal, nombre: nombreRaw,
+              nombre_display: generarCommonName(nombreRaw), equipo_id: equipoId,
+            };
+            resoluciones.push({ accion: "insertar", datosInsert, jugadorDatos: j });
+            plantelLocal.push({ id: "_p_"+idFederal, id_federal: idFederal, nombre: nombreRaw, nombre_display: datosInsert.nombre_display });
+          }
         }
       }
     } else if(nombreRaw){

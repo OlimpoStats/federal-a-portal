@@ -6187,6 +6187,7 @@ const _PLT_ICONS = {
   sal: `<svg viewBox="0 0 14 14" width="13" height="13"><path d="M7 3v8M3.5 7.5L7 11l3.5-3.5" fill="none" stroke="#ef5350" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   min: `⏱️`,
   c90: `<svg viewBox="0 0 26 15" width="26" height="15"><rect x=".5" y=".5" width="25" height="14" rx="3" fill="rgba(232,196,74,.12)" stroke="#e8c44a" stroke-width="1"/><text x="13" y="10.8" text-anchor="middle" fill="#e8c44a" font-family="Barlow Condensed,sans-serif" font-weight="700" font-size="10">90'</text></svg>`,
+  amarillas: `🟨`,
 };
 const _PLT_COLS = [
   {key:'nombre',            label:'Jugador',           stat:false, defaultDir:'asc'},
@@ -6201,6 +6202,7 @@ const _PLT_COLS = [
   {key:'bnc', label:_PLT_ICONS.bnc, title:'Banco sin ingresar',  stat:true, defaultDir:'desc'},
   {key:'gol', label:_PLT_ICONS.gol, title:'Goles',               stat:true, defaultDir:'desc'},
   {key:'ast', label:_PLT_ICONS.ast, title:'Asistencias',         stat:true, defaultDir:'desc'},
+  {key:'amarillas', label:_PLT_ICONS.amarillas, title:'Tarjetas amarillas', stat:true, defaultDir:'desc'},
   {key:'ent', label:_PLT_ICONS.ent, title:'Ingresos',            stat:true, defaultDir:'desc'},
   {key:'sal', label:_PLT_ICONS.sal, title:'Salidas',             stat:true, defaultDir:'desc'},
   {key:'min', label:_PLT_ICONS.min, title:'Minutos',             stat:true, defaultDir:'desc'},
@@ -6258,7 +6260,7 @@ function _fnToISO(fn){ // DD.MM.YYYY → YYYY-MM-DD for proper sort
 }
 
 function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
-  const STAT_KEYS=['pj','tit','bnc','gol','ast','ent','sal','min','c90'];
+  const STAT_KEYS=['pj','tit','bnc','gol','ast','amarillas','ent','sal','min','c90'];
   const sorted=[...jugadores].sort((a,b)=>{
     const k=_pltSort.col; const isStat=STAT_KEYS.includes(k);
     let va,vb;
@@ -6286,7 +6288,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
   }).join('');
   const cards=[];
   const tbody=sorted.map(j=>{
-    const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0};
+    const s=stats[j.id]||{pj:0,tit:0,bnc:0,gol:0,ast:0,amarillas:0,ent:0,sal:0,min:0};
     const name=j.nombre||j.nombre_display||'—';
     const nameParts=name.split(',');
     const apellidos=(nameParts[0]||name).trim();
@@ -6327,6 +6329,7 @@ function _renderPlantelTable(cont, jugadores, stats, clubColor, transferMap={}){
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.bnc)}</td>
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.gol,'plt-gol-hi')}</td>
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.ast,'plt-ast-hi')}</td>
+      <td style="border-bottom:1px solid ${rowColor}">${sv(s.amarillas)}</td>
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.ent)}</td>
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.sal)}</td>
       <td style="border-bottom:1px solid ${rowColor}">${sv(s.min)}</td>
@@ -6370,7 +6373,7 @@ async function cargarPlantelClub(equipoId, clubColor){
       return;
     }
     const stats={};
-    jugadores.forEach(j=>{stats[j.id]={pj:0,tit:0,bnc:0,gol:0,ast:0,ent:0,sal:0,min:0,c90:0};});
+    jugadores.forEach(j=>{stats[j.id]={pj:0,tit:0,bnc:0,gol:0,ast:0,amarillas:0,ent:0,sal:0,min:0,c90:0};});
     (planillas||[]).forEach(pl=>{
       const s=stats[pl.jugador_id]; if(!s) return;
       const evs=pl.eventos||[];
@@ -6397,6 +6400,7 @@ async function cargarPlantelClub(equipoId, clubColor){
       evs.forEach(e=>{
         if(e.tipo==='gol'||e.tipo==='gol_penal'||e.tipo==='gol_tiro_libre') s.gol++;
         if(e.tipo==='asistencia') s.ast++;
+        if(e.tipo==='amarilla'||e.tipo==='doble_amarilla') s.amarillas++;
       });
     });
     _pltData={jugadores,stats,clubColor:clubColor||null,transferMap,origenMap,equipoId};
