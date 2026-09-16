@@ -179,6 +179,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+.llave-marc{display:flex;gap:.25rem;flex-shrink:0;}
+.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:20px;}
+.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#ccc;}
+.llave-marc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.llave-marc-glob .llave-marc-val{font-size:13px;color:#fff;}
+.llave-marc-glob-gano .llave-marc-val{color:#4caf50;}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
    ni en mobile ni en desktop. */
@@ -951,6 +957,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="bracket-nonagonal-wrap">
           <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
+          <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
           <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
           <div id="preview16-cont" class="preview16-cont"></div>
           <div id="preview16-leyenda" class="leyenda-colores"></div>
@@ -3381,7 +3388,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
-  renderBracketNonagonalEspejo(grupos);
+  renderBracketNonagonal(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
@@ -3412,14 +3419,34 @@ function _cardVacia(soloEscudo){
   return `<div class="llave-card${soloEscudo?' llave-card-mini':''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
 }
 
-// Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
-// (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
+// Una celda de marcador (Ida/Vuelta/Global) — "–" mientras no haya resultado cargado.
+function _marcCell(val, label, extraClass){
+  return `<div class="llave-marc-cell${extraClass?' '+extraClass:''}"><span class="llave-marc-val">${val==null?'–':val}</span><span class="llave-marc-lbl">${label}</span></div>`;
+}
+// Ida/Vuelta/Global de UN lado de la llave — espejado en el lado derecho (Global/Vuelta/Ida)
+// para que quede pegado a la tarjeta igual que el nombre en _ladoLlave.
+function _marcadorLado(golIda, golVuelta, global, esGanador, lado){
+  const ida = _marcCell(golIda, 'I');
+  const vta = _marcCell(golVuelta, 'V');
+  const glob = _marcCell(global, 'G', 'llave-marc-glob'+(esGanador?' llave-marc-glob-gano':''));
+  return `<div class="llave-marc">${lado==='der' ? glob+vta+ida : ida+vta+glob}</div>`;
+}
+// Cada llave es una sola fila horizontal (equipo — marcador — vs — marcador — equipo), sin
+// label de ronda/número (ya lo dice el título de la columna). El marcador de ida/vuelta/global
+// (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce — no tiene sentido
+// mostrar espacios de gol para un cruce que todavía dice "A Definir".
 function _cardLlave(tie, soloEscudo){
   if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
+  const conMarcador = !soloEscudo && tie.mejor && tie.peor && PLAYOFF_NONA[tie.id];
+  const pj = conMarcador ? PLAYOFF_NONA[tie.id] : null;
+  const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true, 'izq') : '';
+  const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false, 'der') : '';
   return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
     ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo, 'izq')}
+    ${marcMejor}
     <div class="llave-vs-sep">vs</div>
+    ${marcPeor}
     ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo, 'der')}
   </div>`;
 }
