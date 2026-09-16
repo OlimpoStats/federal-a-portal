@@ -143,6 +143,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* leyenda de colores */
 .leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
+.descendidos-cont{display:flex;flex-wrap:wrap;gap:.5rem;padding:.6rem;}
+.descendido-chip{display:flex;align-items:center;gap:.4rem;background:rgba(229,57,53,.08);border-left:3px solid #e53935;border-radius:4px;padding:.35rem .6rem;}
+.descendido-nombre{font-size:13px;font-weight:600;color:#e53935;}
+.descendido-grupo{font-size:10px;color:var(--muted);white-space:nowrap;}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
@@ -970,6 +974,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           </div>
         </div>
         <div id="cont-descenso"></div>
+        <div id="cont-descendidos"></div>
         <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
           <div id="cont-goleadores-resumen" style="align-self:start;"></div>
           <div id="cont-asistentes-resumen" style="align-self:start;"></div>
@@ -5523,6 +5528,26 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     </table>${hayNaranja?`<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`:''}</div>`;
 }
 
+// Resumen chico con los equipos que descienden (temporada completa) de cada grupo de Reválida —
+// reusa calcDescensoInfo, mismo criterio con el que renderTablaDescenso pinta las filas en rojo,
+// solo que acá se filtran y se listan explícitamente en vez de quedar como color dentro de la tabla.
+function renderDescendidosResumen(revA, revB){
+  const el = document.getElementById('cont-descendidos');
+  if(!el) return;
+  const descA = calcDescensoInfo(revA, 'Reválida A', 'promedio').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida A'}, r));
+  const descB = calcDescensoInfo(revB, 'Reválida B', 'suma').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida B'}, r));
+  const todos = [...descA, ...descB];
+  if(!todos.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<p class="sec-2dafase" style="color:#e53935;">⬇ Equipos descendidos</p>
+    <div class="descendidos-cont">
+      ${todos.map(r=>`<div class="descendido-chip">
+        ${escudoHTML(r.n,'me')}
+        <span class="descendido-nombre">${r.n}</span>
+        <span class="descendido-grupo">${r._grupo}</span>
+      </div>`).join('')}
+    </div>`;
+}
+
 function renderSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
   const {quintos, topQ, tied, topQTied, revA, revB} = datos;
@@ -5607,6 +5632,7 @@ function renderSegundaFase(grupos){
     renderTablaDescenso('cont-descenso-a', revA, 'Reválida A', 'promedio', 'Tabla de descenso A');
     renderTablaDescenso('cont-descenso-b', revB, 'Reválida B', 'suma', 'Tabla de descenso B');
   }
+  renderDescendidosResumen(revA, revB);
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
