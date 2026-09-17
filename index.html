@@ -179,7 +179,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
-.llave-marc{display:flex;gap:.25rem;flex-shrink:0;}
+.llave-card-v{flex-direction:column;align-items:stretch;gap:0;}
+.llave-fila{display:flex;align-items:center;gap:.5rem;padding:.15rem 0;}
+.llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.3rem;padding-top:.35rem;}
+.llave-marc{display:flex;gap:.25rem;flex-shrink:0;margin-left:auto;}
 .llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:20px;}
 .llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#ccc;}
 .llave-marc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
@@ -254,14 +257,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-espejo-lado:last-child{padding-left:0;padding-right:14px;}
   .bracket-espejo-lado:last-child::before{left:auto;right:0;top:-.65rem;border-left:none;border-right:2px solid #4fc3f7;border-radius:0 8px 8px 0;}
 }
-/* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
-   desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
-   (home + calculadora), no atada a un id. */
-.preview16-cont{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;}
-@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(3,1fr);} }
-.preview16-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:.25rem;display:flex;align-items:center;justify-content:center;gap:.2rem;}
-.preview16-lado{display:flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:15px;flex-shrink:0;}
-.preview16-vs{font-size:7px;color:var(--muted);flex-shrink:0;}
+/* preview de 16vos (segundo ascenso) — tarjetas con el mismo lenguaje visual que las llaves del
+   primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
+   bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
+   Clase reusable (home + calculadora), no atada a un id. */
+.preview16-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;}
+@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:600px){ .preview16-cont{grid-template-columns:1fr;} }
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -957,7 +959,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="bracket-nonagonal-wrap">
           <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
-          <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
+          <p class="llave-nota">El equipo de arriba en cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
           <div id="preview16-cont" class="preview16-cont"></div>
           <div id="preview16-leyenda" class="leyenda-colores"></div>
@@ -3423,31 +3425,41 @@ function _cardVacia(soloEscudo){
 function _marcCell(val, label, extraClass){
   return `<div class="llave-marc-cell${extraClass?' '+extraClass:''}"><span class="llave-marc-val">${val==null?'–':val}</span><span class="llave-marc-lbl">${label}</span></div>`;
 }
-// Ida/Vuelta/Global de UN lado de la llave — espejado en el lado derecho (Global/Vuelta/Ida)
-// para que quede pegado a la tarjeta igual que el nombre en _ladoLlave.
-function _marcadorLado(golIda, golVuelta, global, esGanador, lado){
+// Ida/Vuelta/Global de UN equipo, siempre en el mismo orden (izq→der) — ya no se espeja porque
+// ahora cada equipo tiene su propia fila (ver _filaLlave/_cardLlave), no comparten renglón.
+function _marcadorLado(golIda, golVuelta, global, esGanador){
   const ida = _marcCell(golIda, 'I');
   const vta = _marcCell(golVuelta, 'V');
   const glob = _marcCell(global, 'G', 'llave-marc-glob'+(esGanador?' llave-marc-glob-gano':''));
-  return `<div class="llave-marc">${lado==='der' ? glob+vta+ida : ida+vta+glob}</div>`;
+  return `<div class="llave-marc">${ida}${vta}${glob}</div>`;
 }
-// Cada llave es una sola fila horizontal (equipo — marcador — vs — marcador — equipo), sin
-// label de ronda/número (ya lo dice el título de la columna). El marcador de ida/vuelta/global
-// (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce — no tiene sentido
-// mostrar espacios de gol para un cruce que todavía dice "A Definir".
+// Una fila de la tarjeta apilada: equipo a la izquierda, marcador (si corresponde) desplegado
+// a la derecha de esa misma fila — así se lee "Equipo — su Ida/Vuelta/Global" de un vistazo,
+// en vez de tener los 2 equipos + 4 marcadores todos en la misma línea horizontal.
+function _filaLlave(equipo, esGanador, marcHTML){
+  const eq = _ladoLlave(equipo, esGanador, true, false, 'izq');
+  return `<div class="llave-fila">${eq}${marcHTML||''}</div>`;
+}
+// Cada llave son 2 filas apiladas (un equipo arriba, el otro abajo), sin "vs" — el marcador de
+// ida/vuelta/global (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce,
+// no tiene sentido mostrar espacios de gol para un cruce que todavía dice "A Definir".
 function _cardLlave(tie, soloEscudo){
   if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
-  const conMarcador = !soloEscudo && tie.mejor && tie.peor && PLAYOFF_NONA[tie.id];
+  if(soloEscudo){
+    return `<div class="llave-card llave-card-mini">
+      ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, true, 'izq')}
+      <div class="llave-vs-sep">vs</div>
+      ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, true, 'der')}
+    </div>`;
+  }
+  const conMarcador = tie.mejor && tie.peor && PLAYOFF_NONA[tie.id];
   const pj = conMarcador ? PLAYOFF_NONA[tie.id] : null;
-  const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true, 'izq') : '';
-  const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false, 'der') : '';
-  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
-    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo, 'izq')}
-    ${marcMejor}
-    <div class="llave-vs-sep">vs</div>
-    ${marcPeor}
-    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo, 'der')}
+  const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true) : '';
+  const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false) : '';
+  return `<div class="llave-card llave-card-v">
+    ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor)}
+    ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor)}
   </div>`;
 }
 
@@ -3665,14 +3677,22 @@ function armarCrucesDesdeOrden(lista){
   return cruces;
 }
 
-// Preview de los cruces de 16vos en la home — solo escudos (o ícono si el lugar todavía no
-// tiene equipo real: ⬇️ para los 4 que caen del primer ascenso, 🎲 para los que dependen de
-// un sorteo). El nombre real queda como tooltip (title) para no escribir texto en la tarjeta.
+// Fila de un equipo (o placeholder) en el preview de 16vos del segundo ascenso — mismo lenguaje
+// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda), sin marcador propio:
+// acá no hay ronda siguiente conocida todavía, así que no tiene sentido ni un cuadro con líneas
+// de conexión (no sabemos quién se cruza después) ni cargar resultados de un cruce que todavía
+// puede cambiar de rival según sorteo/quién caiga del primer ascenso.
 function _ladoPreview16(item){
-  if(!item) return `<div class="preview16-lado">?</div>`;
-  if(item.tipo==='pendiente') return `<div class="preview16-lado" title="${item.label} — Eliminado del 1er Ascenso">⬇️</div>`;
-  if(item.tipo==='sorteo') return `<div class="preview16-lado" title="Sorteo: ${item.candidatos.map(c=>c.n).join(' / ')}">🎲</div>`;
-  return `<div class="preview16-lado" title="${item.n}">${escudoHTML(item.n,'me')}</div>`;
+  if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
+  if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend" title="Eliminado del 1er Ascenso">⬇️ ${item.label}</div>`;
+  if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend">🎲 ${item.candidatos.map(c=>c.n).join(' / ')}</div>`;
+  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+}
+function _cardPreview16(mejor, peor){
+  return `<div class="llave-card llave-card-v">
+    <div class="llave-fila">${_ladoPreview16(mejor)}</div>
+    <div class="llave-fila">${_ladoPreview16(peor)}</div>
+  </div>`;
 }
 
 function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont', leyendaId='preview16-leyenda'){
@@ -3682,9 +3702,7 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
   const lista16vos = calcLista16vos(tablaMerito);
   const cruces = armarCrucesDesdeOrden(lista16vos);
-  cont.innerHTML = cruces.map(c =>
-    `<div class="preview16-card">${_ladoPreview16(c.mejor)}<span class="preview16-vs">vs</span>${_ladoPreview16(c.peor)}</div>`
-  ).join('');
+  cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
   if(leyenda){
     leyenda.innerHTML = `<span>⬇️ Eliminado del 1er Ascenso</span><span>🎲 Sorteo</span>`;
   }
