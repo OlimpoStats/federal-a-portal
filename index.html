@@ -180,13 +180,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
 .llave-card-v{flex-direction:column;align-items:stretch;gap:0;}
-.llave-fila{display:flex;align-items:center;gap:.5rem;padding:.15rem 0;}
+.llave-fila{display:flex;align-items:center;gap:.35rem;padding:.15rem 0;}
 .llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.3rem;padding-top:.35rem;}
-.llave-marc{display:flex;gap:.25rem;flex-shrink:0;margin-left:auto;}
-.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:20px;}
-.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#ccc;}
-.llave-marc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.llave-marc-glob .llave-marc-val{font-size:13px;color:#fff;}
+/* Dentro de una fila apilada, el nombre NO crece a flex:1 (eso dejaba el marcador pegado al
+   borde de la tarjeta con un hueco enorme si el nombre era corto) — toma un ancho fijo (mismo
+   % en las 2 filas, así los marcadores quedan alineados en columna igual) y el marcador va
+   pegado justo después, con un gap chico. */
+.llave-fila .llave-eq-simple{flex:0 1 56%;}
+.llave-marc{display:flex;gap:.15rem;flex-shrink:0;}
+.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:15px;}
+.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:#ccc;}
+.llave-marc-lbl{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.llave-marc-glob .llave-marc-val{font-size:12px;color:#fff;}
 .llave-marc-glob-gano .llave-marc-val{color:#4caf50;}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
@@ -3678,20 +3683,24 @@ function armarCrucesDesdeOrden(lista){
 }
 
 // Fila de un equipo (o placeholder) en el preview de 16vos del segundo ascenso — mismo lenguaje
-// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda), sin marcador propio:
-// acá no hay ronda siguiente conocida todavía, así que no tiene sentido ni un cuadro con líneas
-// de conexión (no sabemos quién se cruza después) ni cargar resultados de un cruce que todavía
-// puede cambiar de rival según sorteo/quién caiga del primer ascenso.
+// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda). Sin líneas de bracket
+// conectando rondas (no sabemos quién se cruza después), pero SÍ con los mismos espacios de
+// marcador Ida/Vuelta/Global — todavía en null (no hay mecanismo de carga para esta ronda), así
+// que se ven en "–" igual que en el primer ascenso, y solo cuando los 2 lados son equipos reales
+// (no tiene sentido un marcador para un cruce que dice "A Definir" o "Sorteo").
 function _ladoPreview16(item){
   if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
   if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend" title="Eliminado del 1er Ascenso">⬇️ ${item.label}</div>`;
   if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend">🎲 ${item.candidatos.map(c=>c.n).join(' / ')}</div>`;
   return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
 }
+function _esRealPreview16(item){ return !!item && item.tipo!=='pendiente' && item.tipo!=='sorteo'; }
 function _cardPreview16(mejor, peor){
+  const conMarcador = _esRealPreview16(mejor) && _esRealPreview16(peor);
+  const marc = conMarcador ? _marcadorLado(null, null, null, false) : '';
   return `<div class="llave-card llave-card-v">
-    <div class="llave-fila">${_ladoPreview16(mejor)}</div>
-    <div class="llave-fila">${_ladoPreview16(peor)}</div>
+    <div class="llave-fila">${_ladoPreview16(mejor)}${marc}</div>
+    <div class="llave-fila">${_ladoPreview16(peor)}${marc}</div>
   </div>`;
 }
 
