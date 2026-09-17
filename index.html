@@ -150,7 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
-.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:2rem;align-items:stretch;}
+.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:1.2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 /* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
    (align-items:stretch arriba). El título NO participa del reparto vertical (si no, con
@@ -175,26 +175,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-eq-simple.llave-eq-der{justify-content:flex-end;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
-.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+.llave-nombre{font-size:14px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
-/* max-width: el % de ancho de columna del bracket (pesoQ 2.4fr) hacía que la tarjeta entera
-   fuera mucho más ancha que su contenido — de ahí el "cuadro gigante". Con esto se achica a un
-   tamaño fijo razonable sin tocar el reparto de columnas del cuadro. */
-.llave-card-v{flex-direction:column;align-items:stretch;gap:0;max-width:280px;}
-.llave-fila{display:flex;align-items:center;gap:.35rem;padding:.15rem 0;}
-.llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.3rem;padding-top:.35rem;}
-/* Dentro de una fila apilada, el nombre NO crece a flex:1 ni a un % fijo del recuadro — eso
-   seguía dejando hueco si el nombre era corto, porque el % se calcula sobre el ancho de la
-   tarjeta, no sobre el largo del texto. flex:0 1 auto = achica al tamaño real del contenido,
-   así el marcador queda pegado justo después del nombre. */
+/* Se sacó el max-width: dejaba mucho hueco muerto adentro de la tarjeta Y agrandaba el gap
+   visual entre columnas del cuadro (Cuartos/Semis quedaban con un canal vacío enorme al medio).
+   En vez de pelear con el ancho del recuadro, se agranda el contenido (nombre + marcador) para
+   que use ese espacio en vez de dejarlo vacío. */
+.llave-card-v{flex-direction:column;align-items:stretch;gap:0;}
+.llave-fila{display:flex;align-items:center;gap:.5rem;padding:.2rem 0;}
+.llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.35rem;padding-top:.4rem;}
 .llave-fila .llave-eq-simple{flex:0 1 auto;}
-.llave-marc{display:flex;gap:.25rem;flex-shrink:0;}
-.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:20px;}
-.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#ccc;}
-.llave-marc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.llave-marc-glob .llave-marc-val{font-size:13px;color:#fff;}
+.llave-marc{display:flex;gap:.45rem;flex-shrink:0;}
+.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:26px;}
+.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
+.llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
 .llave-marc-glob-gano .llave-marc-val{color:#4caf50;}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
