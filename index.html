@@ -217,22 +217,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    Semi a la altura del punto medio de sus 2 Cuartos, y el borde dibuja el gancho) — ya
    probado y andando bien ahí, así que acá solo se reacomoda en grid de 2 mitades + Final en
    el medio (centrada con align-items:center, a la altura de ambas semis). */
-.bnc-mirror-cont{display:grid;grid-template-columns:1fr auto 1fr;gap:1.2rem;align-items:center;}
-.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:.8rem;align-items:stretch;max-width:340px;position:relative;}
+/* Ancho FIJO (no 1fr) en las 2 mitades + justify-content:center en el grid: con 1fr, el
+   espacio sobrante se repartía distinto en cada lado (una quedaba pegada a su gancho, la otra
+   no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
+.bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
+.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:300px;position:relative;}
 .bnc-mini-bracket .bracket-pair::after{
-  content:'';position:absolute;top:25%;bottom:25%;right:-.8rem;width:.8rem;
+  content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:.9rem;
   border:1px solid var(--border);border-left:none;border-radius:0 4px 4px 0;
 }
 /* Mitad derecha espejada: la Semi queda pegada al centro (a la izquierda de su mini-cuadro) y
    los Cuartos afuera (a la derecha) — el gancho se invierte para seguir apuntando hacia la Semi. */
-.bnc-mini-bracket-der{grid-template-columns:auto 1fr;justify-self:end;}
-.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-.8rem;border-left:1px solid var(--border);border-right:none;border-radius:4px 0 0 4px;}
+.bnc-mini-bracket-der{grid-template-columns:auto 1fr;}
+.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-1rem;border-left:1px solid var(--border);border-right:none;border-radius:4px 0 0 4px;}
 /* Gancho chiquito de cada mini-cuadro hacia la Final, en el hueco entre columnas del grid
-   principal — se encuentran a mitad de camino, a la misma altura que las Semis (ver nota de
-   arriba sobre por qué coincide). */
-.bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.7rem;height:1px;background:var(--border);}
-.bnc-mini-bracket:not(.bnc-mini-bracket-der)::before{right:-1.2rem;}
-.bnc-mini-bracket-der::before{left:-1.2rem;}
+   principal — con margen de sobra antes de tocar la tarjeta de la Final (no llega pegado). */
+.bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.8rem;height:1px;background:var(--border);}
+.bnc-mini-bracket:not(.bnc-mini-bracket-der)::before{right:-1.4rem;}
+.bnc-mini-bracket-der::before{left:-1.4rem;}
 .bnc-mirror-final{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:170px;}
 /* Semis y Final: recuadro más chico que el de Cuartos (menos padding/ancho) — SIN tocar el
    tamaño de fuente (ya se probó antes achicar la fuente del marcador y no era lo pedido). */
@@ -241,8 +243,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
 .llave-card-sm .llave-marc-cell{min-width:22px;}
 @media (max-width:900px){
-  .bnc-mirror-cont{grid-template-columns:1fr;}
-  .bnc-mini-bracket,.bnc-mini-bracket-der{grid-template-columns:1fr;max-width:none;justify-self:stretch;}
+  .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
+  .bnc-mini-bracket,.bnc-mini-bracket-der{grid-template-columns:1fr;width:auto;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
   /* En la mitad derecha la Semi va primero en el HTML (pegada al centro en desktop) — apilado
      en mobile se reordena para leer Cuartos → Semi, igual que la mitad izquierda. */
