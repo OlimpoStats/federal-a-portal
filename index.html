@@ -963,7 +963,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           </div>
         </div>
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
+          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso — Nonagonal</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
           <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
           <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
@@ -3396,7 +3396,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
-  renderBracketNonagonalEspejo(grupos);
+  renderBracketNonagonal(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
