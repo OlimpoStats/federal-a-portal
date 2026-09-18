@@ -210,6 +210,37 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
 }
+/* Cuadro del Nonagonal en espejo (home) — mismo lenguaje de tarjeta que .llave-card-v de
+   arriba, pero acomodado en 2 mitades (izq/der) en vez de 3 columnas secuenciales, para que
+   no quede tan ancho. align-items:center ubica la Final sola en el medio, a la altura de las
+   2 mitades, sin necesitar grid-row-span. */
+.bnc-mirror-cont{display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:center;}
+/* Tope de ancho en cada mitad: las tarjetas de Cuartos no tienen max-width propio (se sacó a
+   propósito en otro lugar para que llenen el ancho de SU columna) — acá esa columna es 1fr dentro
+   de un grid de 3, que sin este tope se estira tanto como sobre en la pantalla. */
+.bnc-mirror-lado{display:flex;flex-direction:column;gap:1rem;max-width:320px;}
+.bnc-mirror-cont>.bnc-mirror-lado:last-child{justify-self:end;}
+.bnc-lado-qfpair{display:flex;flex-direction:column;gap:.6rem;position:relative;}
+/* Conector vertical hacia la semi que sigue debajo — mismo truco de borde que .bracket-pair
+   ::after de arriba, rotado 90° (ahí conecta hacia la derecha, acá hacia abajo). */
+.bnc-lado-qfpair::after{
+  content:'';position:absolute;left:25%;right:25%;bottom:-1rem;height:1rem;
+  border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;
+}
+.bnc-mirror-final{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:190px;}
+/* Semis y Final: recuadro más chico que el de Cuartos (menos padding/ancho) — SIN tocar el
+   tamaño de fuente (ya se probó antes achicar la fuente del marcador y no era lo pedido). */
+.llave-card-sm{padding:.35rem .5rem;max-width:220px;}
+.llave-card-sm .llave-fila{padding:.15rem 0;}
+.llave-card-sm .llave-fila .llave-eq-simple{min-width:100px;}
+.llave-card-sm .llave-marc-cell{min-width:22px;}
+@media (max-width:900px){
+  .bnc-mirror-cont{grid-template-columns:1fr;}
+  .bnc-lado-qfpair::after{display:none;}
+  .bnc-mirror-final{min-width:0;}
+  .bnc-mirror-lado{max-width:none;}
+  .bnc-mirror-cont>.bnc-mirror-lado:last-child{justify-self:stretch;}
+}
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
    semi 1 a la izquierda, 2 del lado de la semi 2 a la derecha. Cada tarjeta apila los 2
@@ -3396,7 +3427,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
-  renderBracketNonagonal(grupos);
+  renderBracketNonagonalMirror(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
 }
 
@@ -3423,8 +3454,8 @@ function _ladoLlave(equipo, esGanador, conSeed, soloEscudo, lado){
 
 // Cuando ningún lado está definido todavía, una sola tarjeta "A Definir" centrada en vez de
 // "A Definir vs A Definir" (no aporta nada mostrar el "vs" contra sí mismo).
-function _cardVacia(soloEscudo){
-  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
+function _cardVacia(soloEscudo, extraClass){
+  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}${extraClass?' '+extraClass:''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
 }
 
 // Una celda de marcador (Ida/Vuelta/Global) — "–" mientras no haya resultado cargado.
@@ -3449,11 +3480,11 @@ function _filaLlave(equipo, esGanador, marcHTML){
 // Cada llave son 2 filas apiladas (un equipo arriba, el otro abajo), sin "vs" — el marcador de
 // ida/vuelta/global (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce,
 // no tiene sentido mostrar espacios de gol para un cruce que todavía dice "A Definir".
-function _cardLlave(tie, soloEscudo){
-  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
+function _cardLlave(tie, soloEscudo, extraClass){
+  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo, extraClass);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   if(soloEscudo){
-    return `<div class="llave-card llave-card-mini">
+    return `<div class="llave-card llave-card-mini${extraClass?' '+extraClass:''}">
       ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, true, 'izq')}
       <div class="llave-vs-sep">vs</div>
       ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, true, 'der')}
@@ -3463,15 +3494,15 @@ function _cardLlave(tie, soloEscudo){
   const pj = conMarcador ? PLAYOFF_NONA[tie.id] : null;
   const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true) : '';
   const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false) : '';
-  return `<div class="llave-card llave-card-v">
+  return `<div class="llave-card llave-card-v${extraClass?' '+extraClass:''}">
     ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor)}
     ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor)}
   </div>`;
 }
 
-function _cardFinalNonagonal(final){
-  if(!final.equipo1 && !final.equipo2) return _cardVacia();
-  return `<div class="llave-card">
+function _cardFinalNonagonal(final, extraClass){
+  if(!final.equipo1 && !final.equipo2) return _cardVacia(false, extraClass);
+  return `<div class="llave-card${extraClass?' '+extraClass:''}">
     ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false, false, 'izq')}
     <div class="llave-vs-sep">vs</div>
     ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false, false, 'der')}
@@ -3518,6 +3549,35 @@ function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElI
       <p class="llave-col-title">Final</p>
       <div class="llave-col-body">${_cardFinalNonagonal(bracket.final)}</div>
     </div>`;
+}
+
+// ── CUADRO DEL NONAGONAL "EN ESPEJO" — SOLO PARA LA HOME ──
+// Mismo formato de tarjeta que renderBracketNonagonal de arriba (.llave-card-v + marcador
+// I/V/G) — no se toca esa función porque la sigue usando la Calculadora tal cual. Acá la
+// diferencia es el ACOMODO: en vez de 3 columnas secuenciales (Cuartos/Semis/Final, muy ancho),
+// una llave completa (2 cuartos + su semi) a la izquierda, la otra a la derecha, y la Final
+// chica centrada en el medio (align-items:center la ubica sola, sin grid-row-span). Semis y
+// Final llevan la clase .llave-card-sm (menos padding/ancho, MISMA fuente — ya se probó antes
+// achicar la fuente del marcador por error y no era lo pedido).
+function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
+  const el = document.getElementById(elId);
+  const tituloEl = document.getElementById(tituloElId);
+  if(!el) return;
+  const bracket = calcBracketNonagonal(grupos);
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso — Nonagonal';
+  el.className = 'bnc-mirror-cont';
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  const [sf1,sf2] = bracket.semis;
+  const lado = (qfA,qfB,sf) => `<div class="bnc-mirror-lado">
+      <div class="bnc-lado-qfpair">${_cardLlave(qfA)}${_cardLlave(qfB)}</div>
+      ${_cardLlave(sf, false, 'llave-card-sm')}
+    </div>`;
+  el.innerHTML = `${lado(qf1,qf2,sf1)}
+    <div class="bnc-mirror-final">
+      <p class="llave-col-title">Final</p>
+      ${_cardFinalNonagonal(bracket.final, 'llave-card-sm')}
+    </div>
+    ${lado(qf3,qf4,sf2)}`;
 }
 
 // ── CUADRO "ESPEJO" DEL NONAGONAL — SOLO PARA LA HOME ──
