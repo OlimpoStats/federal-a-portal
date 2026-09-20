@@ -1417,7 +1417,10 @@ async function cargarSegundaFaseDesdeSnapshot(){
   try {
     // Cache-buster (?t=) + no-store: además del Cache-Control:no-cache que ya manda Supabase
     // Storage, esto evita que un proxy de "ahorro de datos" de operadora sirva una copia vieja.
-    const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}?t=${Date.now()}`, {cache:'no-store'});
+    const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}?t=${Date.now()}`, {
+      cache:'no-store',
+      signal: AbortSignal.timeout(3000)
+    });
     if(!resp.ok) return false;
     const snapshot = await resp.json();
     if(!snapshot || !Array.isArray(snapshot.fichas)) return false;
