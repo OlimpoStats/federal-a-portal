@@ -1095,11 +1095,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div class="fecha-hdr" style="justify-content:center;">
+      <div class="fecha-hdr" style="justify-content:space-between;">
+        <div style="width:110px;flex-shrink:0;"></div>
         <div style="text-align:center;">
           <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos de Final</div>
           <div class="fsub">Ida y vuelta — 2026</div>
         </div>
+        <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin función,
+             solo ocupa el espacio hasta que esté lista esa pantalla. -->
+        <div title="Próximamente" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
@@ -4041,9 +4045,8 @@ function renderOrdenCruces(bracket, tablaMerito){
   cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
 
-// Desplegable "Orden para cruces" — arranca cerrado (achica la home) salvo que el visitante ya
-// lo haya abierto antes en este navegador (conveniencia liviana, no estado real: si no hay
-// localStorage disponible, simplemente arranca cerrado siempre).
+// Desplegable "Orden para cruces" — SIEMPRE arranca cerrado (achica la home), sin recordar si
+// se abrió antes (pedido explícito: nada de estado persistido acá, cerrado es el default fijo).
 function toggleOrdenCruces(){
   const collapse = document.getElementById('oc-collapse');
   const toggle = document.querySelector('#orden-cruces-wrap .oc-toggle');
@@ -4051,11 +4054,7 @@ function toggleOrdenCruces(){
   const open = !collapse.classList.contains('open');
   collapse.classList.toggle('open', open);
   toggle.classList.toggle('open', open);
-  try{ localStorage.setItem('oc_open', open ? '1' : '0'); }catch(e){}
 }
-(function _restaurarOrdenCrucesAbierto(){
-  try{ if(localStorage.getItem('oc_open') === '1') toggleOrdenCruces(); }catch(e){}
-})();
 
 // Clasificados a Copa Argentina: 1°-5° de cada Nonagonal — mismo lenguaje visual que
 // "Equipos descendidos" (chip con solapa de color + nombre), pero azul y en grilla fija de
