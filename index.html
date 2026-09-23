@@ -222,6 +222,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    grande, evitando que la Semi de al lado se desborde de su propio contenedor. */
 .llave-fila-compacta{gap:.35rem;}
 .llave-fila-compacta .llave-marc{gap:.45rem;}
+/* La columna de Cuartos es 1fr — el ancho real que le queda depende de cuánto ocupe la Semi
+   de al lado (nombres largos como "San Martín (F)" le dejan menos lugar que nombres cortos
+   como "Alvarado"), así que .llave-card-v con width:100% (heredado de .llave-card) se estiraba
+   distinto en cada mitad del cuadro espejado, dejando un hueco vacío entre escudo y marcador
+   más grande de un lado que del otro (se veía "centrado" en un lado y "tirado a la izquierda"
+   en el otro). La tarjeta compacta ahora se ajusta a su contenido real (no al 1fr completo) y
+   se centra dentro de esa columna — mismo aspecto de los dos lados sin importar el nombre de
+   la Semi vecina. */
+.llave-card-compacta{width:auto;align-self:center;}
 /* Línea antes de I para delimitar todo el sector de marcador (no solo entre celdas) — hay
    espacio de sobra (ningún nombre de club es tan largo), aprovechado para un poco más de
    ancho/aire en vez de dejarlo vacío. */
@@ -3741,7 +3750,7 @@ function _cardLlave(tie, soloEscudo, extraClass, compacto){
   const pj = conMarcador ? PLAYOFF_NONA[tie.id] : null;
   const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true) : '';
   const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false) : '';
-  return `<div class="llave-card llave-card-v${extraClass?' '+extraClass:''}">
+  return `<div class="llave-card llave-card-v${extraClass?' '+extraClass:''}${compacto?' llave-card-compacta':''}">
     ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor, compacto)}
     ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor, compacto)}
   </div>`;
