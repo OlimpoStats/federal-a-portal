@@ -198,13 +198,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    reservaba lugar para el nombre — el escudo queda pegado a la izquierda y el marcador al
    resto del ancho disponible, en vez de dejar un hueco vacío en el medio. */
 .llave-fila-compacta .llave-eq-simple{min-width:0;flex:0 0 auto;}
-.llave-marc{display:flex;gap:.45rem;flex-shrink:0;margin-left:auto;}
-.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:26px;}
+/* Línea antes de I para delimitar todo el sector de marcador (no solo entre celdas) — hay
+   espacio de sobra (ningún nombre de club es tan largo), aprovechado para un poco más de
+   ancho/aire en vez de dejarlo vacío. */
+.llave-marc{display:flex;gap:.6rem;flex-shrink:0;margin-left:auto;padding-left:.5rem;border-left:1px solid rgba(255,255,255,.12);}
+.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:30px;}
 /* Mini separador entre I|V y V|G — el de antes de G (el marcador que importa, el que dice
    quién pasa) un poco más grueso/visible; el de antes de V más fino/apagado, para no competir
    en jerarquía visual con el de G. */
-.llave-marc-cell:not(:first-child){padding-left:.4rem;border-left:1px solid rgba(255,255,255,.12);}
-.llave-marc-cell.llave-marc-glob{padding-left:.45rem;border-left:1.5px solid rgba(255,255,255,.32);}
+.llave-marc-cell:not(:first-child){padding-left:.5rem;border-left:1px solid rgba(255,255,255,.12);}
+.llave-marc-cell.llave-marc-glob{padding-left:.55rem;border-left:1.5px solid rgba(255,255,255,.32);}
 .llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
 .llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
@@ -313,7 +316,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-card-sm{padding:.35rem .5rem;max-width:200px;}
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
-.llave-card-sm .llave-marc-cell{min-width:22px;}
+.llave-card-sm .llave-marc-cell{min-width:24px;}
 /* Cruces del Segundo Ascenso (preview16) — con marcador agregado, "Cuartofinalista N" no
    entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
    tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
@@ -321,9 +324,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-card-p16{padding:.35rem .5rem;}
 .llave-card-p16 .llave-fila{padding:.15rem 0;}
 .llave-card-p16 .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;}
-.llave-card-p16 .llave-marc{gap:.3rem;}
-.llave-card-p16 .llave-marc-cell{min-width:19px;}
-.llave-card-p16 .llave-marc-cell:not(:first-child){padding-left:.3rem;}
+.llave-card-p16 .llave-marc{gap:.35rem;padding-left:.4rem;}
+.llave-card-p16 .llave-marc-cell{min-width:21px;}
+.llave-card-p16 .llave-marc-cell:not(:first-child){padding-left:.35rem;}
 @media (max-width:600px){
   .llave-card-p16{padding:.25rem .4rem;}
   .llave-card-p16 .llave-fila{padding:.1rem 0;}
@@ -332,7 +335,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:14px;}
   .llave-card-p16 .llave-marc-lbl{font-size:8px;}
 }
-@media (max-width:900px){
+/* 1560px y no 900px a propósito: con las 2 mitades a 360px de ancho fijo + el ensanche del
+   marcador (línea antes de I, celdas más anchas), el cuadro necesita ~954px reales — con la
+   columna de Resultados al lado (mínimo 480px) más el padding de la página, eso no entra hasta
+   pasado ~1530px de viewport. Entre 900 y 1530 quedaba desbordando (verificado con
+   getBoundingClientRect: overflow real desde 1440px hacia abajo, resoluciones de laptop muy
+   comunes) — se extiende el mismo layout apilado que ya funcionaba bien en mobile. */
+@media (max-width:1560px){
   .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
   .bnc-mini-bracket,.bnc-mini-bracket-der{grid-template-columns:1fr;width:auto;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
@@ -4038,15 +4047,17 @@ function renderCopaArgentina(nonARows, nonBRows){
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
 // (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
 // de los 20 puestos de la Tabla de Mérito. 24 en total.
-// Numeración de las etiquetas "Cuartofinalista N" (corregida por el usuario): coincide con la
-// posición real que ocupa ese cruce en "Orden para cruces" (puestos 4-7, los 3 primeros son
-// FINALISTA/SEMIFINALISTA y no participan de esta ronda). El reenganche que enfrenta al PEOR
-// de todos los clasificados (índice 0 acá, emparejado con el último de la lista en
-// armarCrucesDesdeOrden — hoy Defensores (PV)) es el mejor ubicado de los 4 reservados =
-// "Cuartofinalista 4"; el que enfrenta al MEJOR de esos 4 rivales posibles (hoy FADEP) es
-// "Cuartofinalista 7" — de ahí el `4+idx` (crece, no decrece).
+// Número de las etiquetas "Cuartofinalista #N" (corregido por el usuario): el N es la
+// POSICIÓN real en "Orden para cruces" (puestos 4-7, los 3 primeros son FINALISTA/
+// SEMIFINALISTA y no participan de esta ronda) — con el "#" adelante a propósito, para que
+// quede claro que es un número de posición y NO un conteo ("Cuartofinalista 7" se leía como si
+// existieran 7 cuartofinalistas, cuando solo hay 4). El reenganche que enfrenta al PEOR de
+// todos los clasificados (índice 0 acá, emparejado con el último de la lista en
+// armarCrucesDesdeOrden — hoy Defensores (PV)) es el mejor ubicado de los 4 reservados = "#4";
+// el que enfrenta al MEJOR de esos 4 rivales posibles (hoy FADEP) es "#7" — de ahí el `4+idx`
+// (crece, no decrece).
 function calcLista16vos(tablaMerito){
-  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista ${4+idx}`}));
+  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista #${4+idx}`}));
   return [...reenganches, ...tablaMerito];
 }
 
