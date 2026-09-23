@@ -214,20 +214,26 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
 }
-/* "Orden para cruces" (home) — listado plano 1-27, una fila por equipo. Los primeros 7
-   puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase antes del
-   nombre; el resto (Tabla de Mérito) no. En mobile, el detalle (fase/pts/DG/GF) pasa a una
-   segunda línea para no forzar scroll horizontal con nombres largos. */
-.oc-fila{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-.oc-fila:last-child{border-bottom:none;}
-.oc-pos{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent);min-width:24px;text-align:center;flex-shrink:0;}
-.oc-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e8c44a;background:rgba(232,196,74,.12);border-radius:4px;padding:.15rem .4rem;flex-shrink:0;}
-.oc-eq{display:flex;align-items:center;gap:.4rem;min-width:0;flex:1 1 160px;overflow:hidden;}
-.oc-nombre{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.oc-pend{font-size:12px;color:var(--muted);font-style:italic;}
-.oc-detalle{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-left:auto;}
-@media (max-width:700px){
-  .oc-detalle{margin-left:0;flex-basis:100%;white-space:normal;}
+/* "Orden para cruces" (home) — 27 equipos en 3 columnas de 9 (una fila por equipo). Los
+   primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
+   antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
+   SIN empujarlo al borde derecho como antes — eso era lo que dejaba tanto espacio muerto). */
+#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:0 1.2rem;align-items:start;}
+.oc-col{min-width:0;}
+.oc-fila{display:flex;align-items:baseline;gap:.35rem;padding:.4rem 0;border-bottom:1px solid var(--border);min-width:0;}
+.oc-col .oc-fila:last-child{border-bottom:none;}
+.oc-pos{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--accent);min-width:20px;text-align:center;flex-shrink:0;}
+.oc-label{font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#e8c44a;background:rgba(232,196,74,.12);border-radius:4px;padding:.1rem .3rem;flex-shrink:0;}
+.oc-eq{display:flex;align-items:center;gap:.3rem;min-width:0;flex:0 1 auto;overflow:hidden;}
+.oc-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;}
+.oc-pend{font-size:11px;color:var(--muted);font-style:italic;}
+.oc-detalle{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+@media (max-width:900px){
+  #orden-cruces-cont{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:600px){
+  #orden-cruces-cont{grid-template-columns:1fr;}
+  .oc-nombre{max-width:none;}
 }
 /* Clasificados a Copa Argentina — solo escudos, sin tabla. */
 #copa-argentina-cont{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:.5rem 0;}
@@ -243,18 +249,20 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    espacio sobrante se repartía distinto en cada lado (una quedaba pegada a su gancho, la otra
    no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
 .bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
-.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:300px;position:relative;}
+.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:360px;position:relative;}
+/* Color propio de las líneas del cuadro (más visible que --border, que a 8% de opacidad
+   quedaba invisible contra el fondo oscuro — se veían tarjetas sueltas sin conexión). */
 .bnc-mini-bracket .bracket-pair::after{
   content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:.9rem;
-  border:1px solid var(--border);border-left:none;border-radius:0 4px 4px 0;
+  border:1.5px solid rgba(255,255,255,.28);border-left:none;border-radius:0 4px 4px 0;
 }
 /* Mitad derecha espejada: la Semi queda pegada al centro (a la izquierda de su mini-cuadro) y
    los Cuartos afuera (a la derecha) — el gancho se invierte para seguir apuntando hacia la Semi. */
 .bnc-mini-bracket-der{grid-template-columns:auto 1fr;}
-.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-1rem;border-left:1px solid var(--border);border-right:none;border-radius:4px 0 0 4px;}
+.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-1rem;border-left:1.5px solid rgba(255,255,255,.28);border-right:none;border-radius:4px 0 0 4px;}
 /* Gancho chiquito de cada mini-cuadro hacia la Final, en el hueco entre columnas del grid
    principal — con margen de sobra antes de tocar la tarjeta de la Final (no llega pegado). */
-.bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.8rem;height:1px;background:var(--border);}
+.bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.8rem;height:1.5px;background:rgba(255,255,255,.28);}
 .bnc-mini-bracket:not(.bnc-mini-bracket-der)::before{right:-1.4rem;}
 .bnc-mini-bracket-der::before{left:-1.4rem;}
 .bnc-mirror-final{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:170px;}
@@ -1027,7 +1035,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div id="orden-cruces-cont"></div>
         </div>
         <div id="copa-argentina-wrap">
-          <p class="sec" style="color:#fff;">Clasificados a Copa Argentina</p>
+          <p class="sec" style="color:#fff;display:flex;align-items:center;gap:.5rem;"><img src="/copa-argentina-logo.png" alt="Copa Argentina" style="width:22px;height:22px;object-fit:contain;">Clasificados a Copa Argentina</p>
           <div id="copa-argentina-cont"></div>
         </div>
         <div id="cont-descendidos"></div>
@@ -3695,17 +3703,17 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   el.className = 'bnc-mirror-cont';
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
-  // Ronda resuelta = le cede el protagonismo (tamaño + nombres) a la siguiente: Cuartos se
-  // achica a escudo+marcador apenas se conocen los 4 semifinalistas; Semis hace lo mismo
-  // apenas se conocen los 2 finalistas. La Final nunca se achica (siempre nombre completo).
+  // Ronda resuelta = se achica a escudo+marcador (sin nombres), dejando lugar/protagonismo a
+  // la siguiente. Cuartos y Semis viven en la misma grilla angosta (.bnc-mini-bracket, ancho
+  // fijo) junto a su ronda vecina, así que agrandar una tarjeta ahí (en vez de solo achicar la
+  // otra) desborda ese ancho fijo — se probó y se descartó (ver commit). La Final, en cambio,
+  // tiene su propia columna suelta y sí puede quedarse siempre grande.
   const cuartosResueltos = bracket.cuartos.every(c=>c.resultado.resuelto);
   const semisResueltas = bracket.semis.every(s=>s.resultado.resuelto);
-  const claseQF = cuartosResueltos ? 'llave-card-sm' : '';
-  const claseSF = semisResueltas ? 'llave-card-sm' : (cuartosResueltos ? '' : 'llave-card-sm');
   const colQF = (qfA,qfB) => `<div class="llave-col"><div class="llave-col-body">
-      <div class="bracket-pair">${_cardLlave(qfA,false,claseQF,cuartosResueltos)}${_cardLlave(qfB,false,claseQF,cuartosResueltos)}</div>
+      <div class="bracket-pair">${_cardLlave(qfA,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}${_cardLlave(qfB,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}</div>
     </div></div>`;
-  const colSF = sf => `<div class="llave-col"><div class="llave-col-body">${_cardLlave(sf, false, claseSF, semisResueltas)}</div></div>`;
+  const colSF = sf => `<div class="llave-col"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
   // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
   // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
   el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
@@ -3901,6 +3909,11 @@ function calcOrdenParaCruces(bracket, tablaMerito){
   return items; // 27 items
 }
 
+// Fila compacta: la etiqueta (si hay) va pegada al nombre, y el detalle también pegado —
+// nada de empujarlo al borde derecho (eso era lo que dejaba tanto espacio muerto en el medio
+// con nombres cortos). Los de Reválida (tablaMerito) solo muestran posición + %C ("X,xxx
+// prom."), a diferencia de los del Nonagonal (reservados + tablaMerito 5°-9°) que sí muestran
+// pts/DG/GF — pedido explícito del usuario, para no repetir toda la cascada de desempate acá.
 function _filaOrdenCruces(it, pos){
   if(it.tipo==='reservado'){
     const eq = it.equipo;
@@ -3908,7 +3921,7 @@ function _filaOrdenCruces(it, pos){
       return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-label">${it.label}</span><span class="oc-pend">A Definir</span></div>`;
     }
     const dif = eq.gf-eq.gc;
-    const detalle = `Nonagonal, ${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
+    const detalle = `${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
     return `<div class="oc-fila">
       <span class="oc-pos">${pos}</span>
       <span class="oc-label">${it.label}</span>
@@ -3919,8 +3932,10 @@ function _filaOrdenCruces(it, pos){
   if(it.tipo==='sorteo'){
     return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-pend">🎲 Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
   }
-  const dif = it.dif;
-  const detalle = `${it.origen}, ${it.pos}° — ${it.pts!=null?it.pts+'pts, ':''}${it.pctC?('%C:'+it.pctC+', '):''}DG:${dif>=0?'+':''}${dif}${it.gf!=null?(', GF:'+it.gf):''}`;
+  const esRevalida = it.origen && it.origen.startsWith('Reválida');
+  const detalle = esRevalida
+    ? `${it.pos}° — ${it.pctC} prom.`
+    : (()=>{ const dif=it.dif; return `${it.pos}° — ${it.pts!=null?it.pts+'pts, ':''}DG:${dif>=0?'+':''}${dif}${it.gf!=null?(', GF:'+it.gf):''}`; })();
   return `<div class="oc-fila">
     <span class="oc-pos">${pos}</span>
     <div class="oc-eq">${escudoHTML(it.n,'me')}<span class="oc-nombre">${it.n}</span></div>
@@ -3928,11 +3943,13 @@ function _filaOrdenCruces(it, pos){
   </div>`;
 }
 
+// 3 columnas de 9 (27 = 3×9), apiladas en mobile.
 function renderOrdenCruces(bracket, tablaMerito){
   const cont = document.getElementById('orden-cruces-cont');
   if(!cont) return;
   const items = calcOrdenParaCruces(bracket, tablaMerito);
-  cont.innerHTML = items.map((it,i)=>_filaOrdenCruces(it, i+1)).join('');
+  const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1)).join('');
+  cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
 
 // Clasificados a Copa Argentina: 1°-5° de cada Nonagonal, solo escudo (sin tabla). El logo del
