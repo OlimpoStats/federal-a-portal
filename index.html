@@ -217,13 +217,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Desplegable de "Orden para cruces" — técnica de grid-template-rows 0fr→1fr (en vez de
    height/max-height medido a mano en JS, que es lo que había quedado "tosco" en el primer
    intento con Primera Fase): anima la altura real del contenido sin tener que calcularla,
-   funciona con cualquier alto de contenido y no salta ni recorta de golpe. */
-.oc-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
-.oc-chevron{color:var(--muted);font-size:13px;transition:transform .3s ease;flex-shrink:0;}
+   funciona con cualquier alto de contenido y no salta ni recorta de golpe.
+   El toggle en sí va recuadrado y con color propio (antes era un título de texto plano, no se
+   notaba que era clickeable) — mismo lenguaje que .fecha-hdr (tarjeta con borde) pero con
+   acento dorado para diferenciarlo de un simple encabezado de sección. */
+.oc-toggle{display:flex;align-items:center;justify-content:space-between;gap:.75rem;cursor:pointer;user-select:none;background:var(--surface);border:1px solid rgba(232,196,74,.35);border-radius:8px;padding:.85rem 1.1rem;transition:border-color .2s ease,background .2s ease;}
+.oc-toggle:hover{border-color:var(--accent);background:var(--surface2);}
+.oc-toggle .sec{margin-bottom:0;color:#fff;}
+.oc-chevron{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(232,196,74,.14);color:var(--accent);font-size:15px;transition:transform .3s ease;flex-shrink:0;}
 .oc-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.4,0,.2,1);}
 .oc-collapse.open{grid-template-rows:1fr;}
+.oc-toggle.open{border-radius:8px 8px 0 0;border-bottom-color:transparent;}
 .oc-toggle.open .oc-chevron{transform:rotate(180deg);}
-.oc-collapse-inner{overflow:hidden;min-height:0;}
+.oc-collapse-inner{overflow:hidden;min-height:0;background:var(--surface);border:1px solid rgba(232,196,74,.35);border-top:none;border-radius:0 0 8px 8px;padding:0 1.1rem .5rem;}
 /* "Orden para cruces" (home) — 27 equipos en 3 columnas de 9 (una fila por equipo). Los
    primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
    antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
