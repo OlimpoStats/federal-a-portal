@@ -39,7 +39,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 
 /* inicio: two columns */
-.inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) 1fr;gap:3rem;align-items:start;}
+.inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) minmax(0,1fr);gap:3rem;align-items:start;}
 
 .sec{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin-bottom:.6rem;}
 
@@ -251,7 +251,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
    antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
    SIN empujarlo al borde derecho como antes — eso era lo que dejaba tanto espacio muerto). */
-#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:0 1.2rem;align-items:start;padding-top:.75rem;}
+#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 1.2rem;align-items:start;padding-top:.75rem;}
 .oc-col{min-width:0;}
 .oc-fila{display:flex;align-items:center;gap:.35rem;padding:.4rem 0;border-bottom:1px solid var(--border);min-width:0;}
 .oc-col .oc-fila:last-child{border-bottom:none;}
@@ -262,10 +262,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .oc-pend{font-size:11px;color:var(--muted);font-style:italic;}
 .oc-detalle{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 @media (max-width:900px){
-  #orden-cruces-cont{grid-template-columns:1fr 1fr;}
+  #orden-cruces-cont{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 }
 @media (max-width:600px){
-  #orden-cruces-cont{grid-template-columns:1fr;}
+  #orden-cruces-cont{grid-template-columns:minmax(0,1fr);}
   .oc-nombre{max-width:none;}
   /* Apiladas en 1 columna, el corte entre el puesto 9→10 y 18→19 (fin de una .oc-col, arranque
      de la siguiente) quedaba sin línea — se nota como si faltara separación entre esos dos
@@ -277,11 +277,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Mismo lenguaje que .descendido-chip (solapa + fondo tenue) pero azul, y en grilla fija
    (no flex-wrap) para que los 10 chips queden todos del mismo tamaño en vez de ajustarse
    al largo de cada nombre. */
-#copa-argentina-cont{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;padding:.6rem;}
+#copa-argentina-cont{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem;padding:.6rem;}
 .ca-chip{display:flex;align-items:center;gap:.4rem;background:rgba(79,195,247,.1);border-left:3px solid #4fc3f7;border-radius:4px;padding:.35rem .6rem;min-width:0;}
 .ca-nombre{font-size:13px;font-weight:600;color:#4fc3f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 @media (max-width:700px){
-  #copa-argentina-cont{grid-template-columns:repeat(2,1fr);}
+  #copa-argentina-cont{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 /* Cuadro del Nonagonal en espejo (home) — mismo lenguaje de tarjeta que .llave-card-v de
    arriba, pero acomodado en 2 mini-cuadros (izq/der) en vez de 3 columnas secuenciales, para
@@ -414,9 +414,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
    bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
    Clase reusable (home + calculadora), no atada a un id. */
-.preview16-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;}
-@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,1fr);} }
-@media (max-width:600px){ .preview16-cont{grid-template-columns:1fr;} }
+.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3rem;}
+@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -453,6 +453,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* ── HAMBURGER + DRAWER ── */
 .hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:36px;height:36px;cursor:pointer;padding:4px;border-radius:6px;transition:background .15s;flex-shrink:0;}
+/* Bloque nuevo y separado (NO edita el @media(max-width:700px) existente, que está marcado
+   como "no tocar"): el menú completo (Inicio/Fixture/.../Calculadora) necesita ~1178px para
+   entrar en una sola línea — entre 700 y esos ~1178px se desbordaba, sin pasar a hamburguesa
+   todavía. Mismo criterio que el bloque de 700px (nav oculto, hamburguesa visible) pero sin
+   tocar tamaño de logo/user-btn, que a este ancho todavía entran bien. */
+@media(max-width:1200px){
+  .nav{display:none;}
+  .hamburger{display:flex;}
+}
 .hamburger:hover{background:rgba(255,255,255,.06);}
 .hamburger span{display:block;height:2px;background:var(--muted);border-radius:2px;transition:all .25s;}
 .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);background:var(--accent);}
