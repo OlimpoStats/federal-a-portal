@@ -1419,7 +1419,7 @@ async function cargarSegundaFaseDesdeSnapshot(){
     // Storage, esto evita que un proxy de "ahorro de datos" de operadora sirva una copia vieja.
     const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}?t=${Date.now()}`, {
       cache:'no-store',
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(8000)
     });
     if(!resp.ok) return false;
     const snapshot = await resp.json();
