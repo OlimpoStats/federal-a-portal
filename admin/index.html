@@ -1093,6 +1093,11 @@ async function seedCuartosPlayoff(){
   if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
   alert("Listo — se cargaron los 9 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
   await cargarFixture();
+  // Sin esto, la home pública (que lee la "foto" de Segunda Fase, no la base en vivo) no ve
+  // estos partidos hasta el primer gol en vivo o hasta que se les cargue día/hora — se dispara
+  // ya mismo para que, aunque falte programarlos, la zona ya aparezca (partidos sin día/hora
+  // igual se muestran, solo no tienen horario todavía).
+  regenerarFotoSegundaFase();
 }
 
 function poblarSelectoresZona(){
