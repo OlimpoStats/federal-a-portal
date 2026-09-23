@@ -14,7 +14,17 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-const GRUPOS2 = ["Nonagonal A", "Nonagonal B", "Reválida A", "Reválida B"];
+// Nonagonal/Reválida (grupos) + las zonas de playoff del Primer Ascenso que se van sembrando
+// desde el admin (ver seedCuartosPlayoff() en admin/index.html) — sin agregarlas acá, la foto
+// las descarta aunque ya estén cargadas y programadas en Supabase, y la home nunca las ve
+// (el fallback en vivo solo se dispara si la foto FALLA, no si simplemente le faltan zonas).
+const GRUPOS2 = [
+  "Nonagonal A", "Nonagonal B", "Reválida A", "Reválida B",
+  "Cuartos Primer Ascenso - Ida", "Cuartos Primer Ascenso - Vuelta",
+  "Semifinal Primer Ascenso - Ida", "Semifinal Primer Ascenso - Vuelta",
+  "Final Primer Ascenso",
+  "Desempate Descenso",
+];
 const ZONAS_FILTRO = `(${GRUPOS2.map(z => `"${z}"`).join(",")})`;
 const SNAPSHOT_PATH = "segunda-fase-snapshot.json";
 
