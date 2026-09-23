@@ -194,6 +194,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-fila-compacta .llave-eq-simple{min-width:0;flex:0 0 auto;}
 .llave-marc{display:flex;gap:.45rem;flex-shrink:0;margin-left:auto;}
 .llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:26px;}
+/* Mini separador entre I|V y V|G — el de antes de G (el marcador que importa, el que dice
+   quién pasa) un poco más grueso/visible; el de antes de V más fino/apagado, para no competir
+   en jerarquía visual con el de G. */
+.llave-marc-cell:not(:first-child){padding-left:.4rem;border-left:1px solid rgba(255,255,255,.12);}
+.llave-marc-cell.llave-marc-glob{padding-left:.45rem;border-left:1.5px solid rgba(255,255,255,.32);}
 .llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
 .llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
@@ -229,7 +234,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .oc-collapse.open{grid-template-rows:1fr;}
 .oc-toggle.open{border-radius:8px 8px 0 0;border-bottom-color:transparent;}
 .oc-toggle.open .oc-chevron{transform:rotate(180deg);}
-.oc-collapse-inner{overflow:hidden;min-height:0;background:var(--surface);border:1px solid rgba(232,196,74,.35);border-top:none;border-radius:0 0 8px 8px;padding:0 1.1rem .5rem;}
+/* El borde de abajo solo se ve con .open — si quedaba siempre puesto, con el desplegable
+   cerrado (altura 0) se veía como una doble línea pegada al borde inferior de .oc-toggle. */
+.oc-collapse-inner{overflow:hidden;min-height:0;background:var(--surface);border:1px solid transparent;border-top:none;border-radius:0 0 8px 8px;padding:0 1.1rem .5rem;}
+.oc-collapse.open .oc-collapse-inner{border-color:rgba(232,196,74,.35);}
 /* "Orden para cruces" (home) — 27 equipos en 3 columnas de 9 (una fila por equipo). Los
    primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
    antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
@@ -250,6 +258,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media (max-width:600px){
   #orden-cruces-cont{grid-template-columns:1fr;}
   .oc-nombre{max-width:none;}
+  /* Apiladas en 1 columna, el corte entre el puesto 9→10 y 18→19 (fin de una .oc-col, arranque
+     de la siguiente) quedaba sin línea — se nota como si faltara separación entre esos dos
+     equipos. En desktop (3 columnas lado a lado) no hace falta, cada .oc-col ya es visualmente
+     su propio bloque. */
+  .oc-col:not(:last-child) .oc-fila:last-child{border-bottom:1px solid var(--border);}
 }
 /* Clasificados a Copa Argentina — solo escudos, sin tabla. */
 /* Mismo lenguaje que .descendido-chip (solapa + fondo tenue) pero azul, y en grilla fija
@@ -295,6 +308,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
 .llave-card-sm .llave-marc-cell{min-width:22px;}
+/* Cruces del Segundo Ascenso (preview16) — con marcador agregado, "Cuartofinalista N" no
+   entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
+   tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
+   las 12). */
+.llave-card-p16{padding:.35rem .5rem;}
+.llave-card-p16 .llave-fila{padding:.15rem 0;}
+.llave-card-p16 .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;}
+.llave-card-p16 .llave-marc{gap:.3rem;}
+.llave-card-p16 .llave-marc-cell{min-width:19px;}
+.llave-card-p16 .llave-marc-cell:not(:first-child){padding-left:.3rem;}
+@media (max-width:600px){
+  .llave-card-p16{padding:.25rem .4rem;}
+  .llave-card-p16 .llave-fila{padding:.1rem 0;}
+  .llave-card-p16 .llave-nombre{font-size:12px;}
+  .llave-card-p16 .llave-marc-val{font-size:13px;}
+  .llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:14px;}
+  .llave-card-p16 .llave-marc-lbl{font-size:8px;}
+}
 @media (max-width:900px){
   .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
   .bnc-mini-bracket,.bnc-mini-bracket-der{grid-template-columns:1fr;width:auto;}
@@ -1038,14 +1069,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso — Nonagonal</p>
+          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
-          <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
+          <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
         </div>
         <div id="segundo-ascenso-wrap">
-          <p class="sec" style="color:#fff;">16vos — Segundo Ascenso</p>
+          <p class="sec" style="color:#fff;">Segundo Ascenso - Dieciseisavos de Final</p>
           <div id="preview16-cont" class="preview16-cont"></div>
           <div id="preview16-leyenda" class="leyenda-colores"></div>
+          <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
         </div>
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
@@ -3718,7 +3750,7 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   const tituloEl = document.getElementById(tituloElId);
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  if(tituloEl) tituloEl.textContent = 'Primer Ascenso — Nonagonal';
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso - Cuartos de Final';
   el.className = 'bnc-mirror-cont';
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
@@ -4001,8 +4033,13 @@ function renderCopaArgentina(nonARows, nonBRows){
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
 // (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
 // de los 20 puestos de la Tabla de Mérito. 24 en total.
+// Numeración de las etiquetas "Cuartofinalista N" (pedido del usuario): NO sigue el orden
+// QF1-QF4 del bracket del Nonagonal — sigue el orden del CRUCE que le toca. El reenganche que
+// termina enfrentando al peor de todos (índice 0 acá, emparejado con el último de la lista en
+// armarCrucesDesdeOrden) es "Cuartofinalista 4"; el que enfrenta al mejor de los 4 rivales
+// posibles es "Cuartofinalista 1" — de ahí el `4-idx`.
 function calcLista16vos(tablaMerito){
-  const reenganches = [1,2,3,4].map(i=>({tipo:'pendiente', label:`Perdedor QF${i}`}));
+  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista ${4-idx}`}));
   return [...reenganches, ...tablaMerito];
 }
 
@@ -4016,13 +4053,11 @@ function armarCrucesDesdeOrden(lista){
 }
 
 // Fila de un equipo (o placeholder) en el preview de 16vos del segundo ascenso — mismo lenguaje
-// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda). Sin líneas de bracket
-// conectando rondas (no sabemos quién se cruza después) y sin marcador Ida/Vuelta/Global —se
-// probó mostrarlo solo cuando los 2 lados ya eran equipos reales, pero eso hacía esas tarjetas
-// más altas que las de "Perdedor QFx" (sin marcador), quedando todas desparejas entre sí. Todas
-// las tarjetas de esta grilla usan el mismo tamaño (sin marcador) a propósito.
+// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda), AHORA con el mismo
+// marcador I/V/G (en "–" — todavía no hay zona de Supabase para esta ronda, es solo el mismo
+// lenguaje visual que el cuadro del Nonagonal, a la espera de que se pueda cargar de verdad).
 // El ícono de los placeholders (⬇️/🎲) va en una caja ".me" del mismo tamaño que un escudo real
-// (22px) — sin eso, la fila de "Perdedor QF1" quedaba mucho más angosta que la de un equipo real
+// (22px) — sin eso, la fila de un placeholder quedaba mucho más angosta que la de un equipo real
 // (escudo+nombre), se veían desparejas dentro de la misma tarjeta.
 function _ladoPreview16(item){
   if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
@@ -4031,9 +4066,10 @@ function _ladoPreview16(item){
   return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
 }
 function _cardPreview16(mejor, peor){
-  return `<div class="llave-card llave-card-v">
-    <div class="llave-fila">${_ladoPreview16(mejor)}</div>
-    <div class="llave-fila">${_ladoPreview16(peor)}</div>
+  const marc = _marcadorLado(null, null, null, false);
+  return `<div class="llave-card llave-card-v llave-card-p16">
+    <div class="llave-fila">${_ladoPreview16(mejor)}${marc}</div>
+    <div class="llave-fila">${_ladoPreview16(peor)}${marc}</div>
   </div>`;
 }
 
