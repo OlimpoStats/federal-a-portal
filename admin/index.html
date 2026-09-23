@@ -1677,6 +1677,11 @@ async function borrarResultado(){
     if(fixtureId) FIXTURE_CON_PLANILLA.delete(String(fixtureId));
     actualizarEstadoPlanillaSeleccion();
     actualizarPartidos();
+    // Mismo gancho que al corregir un resultado a mano (ver regenerarFotoSegundaFase) — faltaba
+    // acá, así que borrar un resultado nunca se reflejaba en la home pública hasta el próximo
+    // evento en vivo de OTRO partido (la "foto" seguía con el resultado viejo).
+    regenerarFotoEstadisticas();
+    regenerarFotoSegundaFase();
     alert(`✓ Resultado borrado. El partido quedó como "${estadoDestino}".`);
   } catch(e){
     alert("Error al borrar: " + e.message);
