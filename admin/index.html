@@ -542,6 +542,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <div id="hs-seed-cuartos-wrap" style="margin-bottom:1rem;">
         <button class="btn btn-primary" onclick="seedCuartosPlayoff()">⚡ Cargar Cuartos de Final (playoff) + Desempate Descenso</button>
         <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Cuartos Primer Ascenso - Ida/Vuelta" y "Desempate Descenso" con los cruces ya definidos. No hace nada si ya existen.</p>
+        <button class="btn btn-primary" style="margin-top:.5rem;background:#ff9800;" onclick="cargarResultadosPruebaCuartos()">🧪 Cargar resultados de PRUEBA en Cuartos</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Solo para probar cómo reacciona el sitio — pisa los goles de los 4 cruces de Cuartos con resultados de prueba (San Martín, Olimpo, Alvarado y Cipolletti avanzan). Se puede volver a correr para resetear a estos mismos valores.</p>
       </div>
       <div class="card">
         <div class="card-body">
@@ -1097,6 +1099,37 @@ async function seedCuartosPlayoff(){
   // estos partidos hasta el primer gol en vivo o hasta que se les cargue día/hora — se dispara
   // ya mismo para que, aunque falte programarlos, la zona ya aparezca (partidos sin día/hora
   // igual se muestran, solo no tienen horario todavía).
+  regenerarFotoSegundaFase();
+}
+
+// Botón de uso único (prueba pedida por el usuario, rama privada): carga resultados de prueba
+// en los 4 cruces de Cuartos para ver cómo reacciona el sitio (quién avanza, ventaja deportiva
+// en empates, el cuadro achicándose, "Orden para cruces" con los caídos reales). Solo pisa
+// goles_local/goles_visitante/estado — no toca día/hora/árbitro ya cargados.
+async function cargarResultadosPruebaCuartos(){
+  if(!confirm("Esto va a cargar resultados de PRUEBA en los 4 cruces de Cuartos (San Martín, Olimpo, Alvarado y Cipolletti avanzan). ¿Continuar?")) return;
+  const resultados = [
+    {zona:"Cuartos Primer Ascenso - Ida", local:"Atenas (RC)", visitante:"San Martín (F)", gl:0, gv:1},
+    {zona:"Cuartos Primer Ascenso - Vuelta", local:"San Martín (F)", visitante:"Atenas (RC)", gl:1, gv:0},
+    {zona:"Cuartos Primer Ascenso - Ida", local:"Olimpo", visitante:"Gimnasia (Ch)", gl:1, gv:0},
+    {zona:"Cuartos Primer Ascenso - Vuelta", local:"Gimnasia (Ch)", visitante:"Olimpo", gl:1, gv:1},
+    {zona:"Cuartos Primer Ascenso - Ida", local:"Defensores (VR)", visitante:"Alvarado", gl:0, gv:1},
+    {zona:"Cuartos Primer Ascenso - Vuelta", local:"Alvarado", visitante:"Defensores (VR)", gl:1, gv:2},
+    {zona:"Cuartos Primer Ascenso - Ida", local:"Sol de América (F)", visitante:"Cipolletti", gl:1, gv:1},
+    {zona:"Cuartos Primer Ascenso - Vuelta", local:"Cipolletti", visitante:"Sol de América (F)", gl:1, gv:1},
+  ];
+  let ok = 0;
+  for(const r of resultados){
+    try{
+      const id = await buscarFixtureId(r.zona, 1, r.local, r.visitante);
+      if(!id){ console.warn("No se encontró fixture para", r.zona, r.local, "vs", r.visitante); continue; }
+      const {error} = await sb.from("fixture").update({goles_local:r.gl, goles_visitante:r.gv, estado:"jugado"}).eq("id", id);
+      if(error){ console.error(error); continue; }
+      ok++;
+    } catch(e){ console.error(e); }
+  }
+  alert(`Listo — ${ok}/${resultados.length} partidos actualizados.`);
+  await cargarFixture();
   regenerarFotoSegundaFase();
 }
 
