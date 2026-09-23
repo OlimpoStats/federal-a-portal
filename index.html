@@ -178,7 +178,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-nombre{font-size:14px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
-.llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+/* Subtítulo de fase, bajo el título — antes iba al final del cuadro, chico y gris (se
+   perdía). Ahora en dorado y más grande, con más aire en mobile (título y subtítulo quedaban
+   pegados si el margen era el mismo que en desktop). */
+.llave-nota{font-size:14px;color:var(--accent);margin:0 0 1rem;font-weight:600;}
+@media (max-width:700px){
+  .llave-nota{margin:.5rem 0 1.1rem;font-size:13px;}
+}
 /* Tarjeta apilada (1 equipo por fila) — hoy solo la usa el preview de 16vos del segundo
    ascenso (el cuadro del primer ascenso volvió al formato "espejo" de antes). El nombre tiene
    un min-width para que la fila de un placeholder ("Perdedor QF1", sin escudo) no quede mucho
@@ -1069,15 +1075,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
-          <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
+          <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
         </div>
         <div id="segundo-ascenso-wrap">
-          <p class="sec" style="color:#fff;">Segundo Ascenso - Dieciseisavos de Final</p>
-          <div id="preview16-cont" class="preview16-cont"></div>
-          <div id="preview16-leyenda" class="leyenda-colores"></div>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Segundo Ascenso - Dieciseisavos de Final</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
+          <div id="preview16-cont" class="preview16-cont"></div>
         </div>
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
@@ -4033,13 +4038,15 @@ function renderCopaArgentina(nonARows, nonBRows){
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
 // (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
 // de los 20 puestos de la Tabla de Mérito. 24 en total.
-// Numeración de las etiquetas "Cuartofinalista N" (pedido del usuario): NO sigue el orden
-// QF1-QF4 del bracket del Nonagonal — sigue el orden del CRUCE que le toca. El reenganche que
-// termina enfrentando al peor de todos (índice 0 acá, emparejado con el último de la lista en
-// armarCrucesDesdeOrden) es "Cuartofinalista 4"; el que enfrenta al mejor de los 4 rivales
-// posibles es "Cuartofinalista 1" — de ahí el `4-idx`.
+// Numeración de las etiquetas "Cuartofinalista N" (corregida por el usuario): coincide con la
+// posición real que ocupa ese cruce en "Orden para cruces" (puestos 4-7, los 3 primeros son
+// FINALISTA/SEMIFINALISTA y no participan de esta ronda). El reenganche que enfrenta al PEOR
+// de todos los clasificados (índice 0 acá, emparejado con el último de la lista en
+// armarCrucesDesdeOrden — hoy Defensores (PV)) es el mejor ubicado de los 4 reservados =
+// "Cuartofinalista 4"; el que enfrenta al MEJOR de esos 4 rivales posibles (hoy FADEP) es
+// "Cuartofinalista 7" — de ahí el `4+idx` (crece, no decrece).
 function calcLista16vos(tablaMerito){
-  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista ${4-idx}`}));
+  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista ${4+idx}`}));
   return [...reenganches, ...tablaMerito];
 }
 
@@ -4073,17 +4080,13 @@ function _cardPreview16(mejor, peor){
   </div>`;
 }
 
-function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont', leyendaId='preview16-leyenda'){
+function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont'){
   const cont = document.getElementById(contId);
-  const leyenda = document.getElementById(leyendaId);
   if(!cont) return;
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
   const lista16vos = calcLista16vos(tablaMerito);
   const cruces = armarCrucesDesdeOrden(lista16vos);
   cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
-  if(leyenda){
-    leyenda.innerHTML = `<span>⬇️ Eliminado del 1er Ascenso</span><span>🎲 Sorteo</span>`;
-  }
 }
 
 // Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
@@ -6970,7 +6973,7 @@ function renderEstadoActualCalc(){
   renderTablaSimple('calc-real-tabla-rev-b', _ultimoRevBRows, 'Reválida B', zonaConfig('Reválida B').color);
   const grupos = calcularGruposSegundaFase();
   renderBracketNonagonal(grupos, 'calc-real-bracket-nona', 'calc-real-bracket-nona-title');
-  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16', 'calc-real-preview16-leyenda-inexistente');
+  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16');
 }
 
 // Cruces de 16vos "cómodos" para la calculadora (nombre completo + candidatos de sorteo bien
