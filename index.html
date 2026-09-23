@@ -1873,7 +1873,10 @@ const CRUCES_SEMIS_NONAGONAL = [
   { id:'SF1', qfA:'QF1', qfB:'QF2' },
   { id:'SF2', qfA:'QF3', qfB:'QF4' },
 ];
-// Resultados de playoffs — en null hasta que exista un mecanismo de carga (admin, pendiente).
+// Resultados de playoffs — se rellenan solos leyendo las zonas reales de `fixture` (ver
+// refrescarPlayoffNona()) cuando el admin las carga. FINAL queda aparte: es partido único y
+// la definición por penales (si hace falta) todavía no tiene de dónde leerse (no existe
+// vínculo a la tabla `penales` para este caso) — pendiente para cuando se llegue a esa ronda.
 const PLAYOFF_NONA = {
   QF1:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
   QF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
@@ -1883,6 +1886,62 @@ const PLAYOFF_NONA = {
   SF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
   FINAL:{gl:null, gv:null, penalesA:null, penalesB:null},
 };
+// Zonas reales de `fixture` para cada llave (ver seedCuartosPlayoff() en admin/index.html
+// para Cuartos; Semifinal se siembra con el mismo criterio cuando llegue esa ronda).
+const PLAYOFF_NONA_ZONAS = {
+  QF1:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF2:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF3:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF4:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  SF1:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+  SF2:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+};
+// Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
+// nombreMejor/nombrePeor dentro de esas zonas, sin asumir quién quedó como local/visitante
+// (más robusto que depender del orden exacto en que se cargó cada fila).
+function _golesLlaveDesdeFixture(zonaIda, zonaVuelta, fecha, nombreMejor, nombrePeor){
+  const buscar = (zona) => {
+    const lista = (FIXTURE[zona] && FIXTURE[zona][String(fecha)]) || [];
+    return lista.find(m =>
+      (m.local===nombrePeor && m.visitante===nombreMejor) || (m.local===nombreMejor && m.visitante===nombrePeor)
+    );
+  };
+  const golDe = (row, nombre) => {
+    if(!row || row.gl==null || row.gv==null) return null;
+    return row.local===nombre ? row.gl : row.gv;
+  };
+  const idaRow = buscar(zonaIda), vueltaRow = buscar(zonaVuelta);
+  return {
+    ida: { golMejor: golDe(idaRow, nombreMejor), golPeor: golDe(idaRow, nombrePeor) },
+    vuelta: { golMejor: golDe(vueltaRow, nombreMejor), golPeor: golDe(vueltaRow, nombrePeor) },
+  };
+}
+// Releer PLAYOFF_NONA (cuartos y semis) desde el FIXTURE real antes de cada cálculo del
+// cuadro — así, apenas el admin carga un resultado, el cuadro lo refleja sin tocar código de
+// nuevo. Necesita los equipos reales de cada llave (nombreMejor/nombrePeor), que dependen de
+// la tabla vigente del Nonagonal (cuartos) o de a quién eliminó cada cuarto (semis) — por eso
+// recibe `cuartosResueltos` opcional para poder resolver semis en la misma pasada.
+function refrescarPlayoffNona(cuartosPorId){
+  CRUCES_NONAGONAL.forEach(cr=>{
+    if(!cuartosPorId) return;
+    const c = cuartosPorId[cr.id];
+    if(!c || !c.mejor || !c.peor) return;
+    const z = PLAYOFF_NONA_ZONAS[cr.id];
+    const res = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, c.mejor.n, c.peor.n);
+    PLAYOFF_NONA[cr.id].ida = res.ida;
+    PLAYOFF_NONA[cr.id].vuelta = res.vuelta;
+  });
+}
+function refrescarPlayoffNonaSemis(semisPorId){
+  CRUCES_SEMIS_NONAGONAL.forEach(sf=>{
+    const s = semisPorId && semisPorId[sf.id];
+    if(!s || !s.mejor || !s.peor) return;
+    const z = PLAYOFF_NONA_ZONAS[sf.id];
+    const res = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, s.mejor.n, s.peor.n);
+    PLAYOFF_NONA[sf.id].ida = res.ida;
+    PLAYOFF_NONA[sf.id].vuelta = res.vuelta;
+  });
+}
 
 // Suma ida+vuelta; en empate global (puntos y goles, es decir el aggregate) avanza el mejor
 // ubicado (ventaja deportiva). Cuartos y semis usan la misma regla.
@@ -1907,20 +1966,33 @@ function calcBracketNonagonal(datos){
     return r ? { n:r.n, zona, pos } : null;
   };
 
+  const cuartosPares = {};
+  CRUCES_NONAGONAL.forEach(cr=>{
+    cuartosPares[cr.id] = { mejor: equipoDe(cr.mejor.zona, cr.mejor.pos), peor: equipoDe(cr.peor.zona, cr.peor.pos) };
+  });
+  refrescarPlayoffNona(cuartosPares);
+
   const cuartos = CRUCES_NONAGONAL.map(cr=>{
-    const mejor = equipoDe(cr.mejor.zona, cr.mejor.pos);
-    const peor  = equipoDe(cr.peor.zona, cr.peor.pos);
+    const {mejor, peor} = cuartosPares[cr.id];
     const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[cr.id].ida, PLAYOFF_NONA[cr.id].vuelta);
     const ganador = resultado.resuelto ? (resultado.ganadorEsMejor ? mejor : peor) : null;
     return { id:cr.id, mejor, peor, resultado, ganador };
   });
   const porId = {}; cuartos.forEach(c=>porId[c.id]=c);
 
-  const semis = CRUCES_SEMIS_NONAGONAL.map(sf=>{
+  const semisPares = {};
+  CRUCES_SEMIS_NONAGONAL.forEach(sf=>{
     const qA = porId[sf.qfA], qB = porId[sf.qfB];
     const eqA = qA.ganador, eqB = qB.ganador;
     let mejor=null, peor=null;
     if(eqA && eqB){ [mejor,peor] = eqA.pos <= eqB.pos ? [eqA,eqB] : [eqB,eqA]; }
+    semisPares[sf.id] = { mejor, peor };
+  });
+  refrescarPlayoffNonaSemis(semisPares);
+
+  const semis = CRUCES_SEMIS_NONAGONAL.map(sf=>{
+    const qA = porId[sf.qfA], qB = porId[sf.qfB];
+    const {mejor, peor} = semisPares[sf.id];
     const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[sf.id].ida, PLAYOFF_NONA[sf.id].vuelta);
     const ganador = (resultado.resuelto && mejor) ? (resultado.ganadorEsMejor ? mejor : peor) : null;
     return { id:sf.id, origen:[qA,qB], mejor, peor, resultado, ganador };
