@@ -147,6 +147,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .descendido-chip{display:flex;align-items:center;gap:.4rem;background:rgba(229,57,53,.08);border-left:3px solid #e53935;border-radius:4px;padding:.35rem .6rem;}
 .descendido-nombre{font-size:13px;font-weight:600;color:#e53935;}
 .descendido-grupo{font-size:10px;color:var(--muted);white-space:nowrap;}
+/* 4to descendido (desempate de descenso) mientras no se juega: mismo lenguaje que los otros
+   3 chips pero en naranja (el mismo tono que ya usa el sitio para "zona de riesgo, desempate
+   pendiente" en otras tablas) en vez de rojo — todavía no es un descenso confirmado. Los 2
+   escudos con una línea diagonal blanca en el medio, en vez de un solo escudo. */
+.descendido-chip-pendiente{background:rgba(255,152,0,.08);border-left-color:#ff9800;}
+.descendido-chip-pendiente .descendido-nombre{color:#ff9800;}
+.descendido-split{display:flex;align-items:center;gap:.5rem;position:relative;padding:0 .4rem;}
+.descendido-split::after{content:'';position:absolute;left:50%;top:-5px;bottom:-5px;width:1.5px;background:#fff;transform:rotate(20deg);}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
@@ -5925,20 +5933,49 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
 // Resumen chico con los equipos que descienden (temporada completa) de cada grupo de Reválida —
 // reusa calcDescensoInfo, mismo criterio con el que renderTablaDescenso pinta las filas en rojo,
 // solo que acá se filtran y se listan explícitamente en vez de quedar como color dentro de la tabla.
+// El 4to descenso (último puesto de Reválida B) depende del partido de desempate — mientras
+// no esté jugado, no se sabe cuál de los 2 equipos cae. Lee directo la zona "Desempate
+// Descenso" (sembrada desde el admin, ver seedCuartosPlayoff()) en vez de tener los nombres
+// hardcodeados, para que ande solo aunque cambien los equipos en otra temporada.
+function calcDescensoDesempatePendiente(){
+  const fila = ((FIXTURE['Desempate Descenso'] || {})['1'] || [])[0];
+  if(!fila) return null;
+  if(fila.gl!=null && fila.gv!=null && fila.gl!==fila.gv){
+    const perdedor = fila.gl>fila.gv ? fila.visitante : fila.local;
+    return { resuelto:true, n:perdedor };
+  }
+  // Empate (o todavía sin jugar): con penales no implementados aún, sigue "pendiente" hasta
+  // que haya un ganador claro por gol.
+  return { resuelto:false, equipoA:fila.local, equipoB:fila.visitante };
+}
+
 function renderDescendidosResumen(revA, revB){
   const el = document.getElementById('cont-descendidos');
   if(!el) return;
   const descA = calcDescensoInfo(revA, 'Reválida A', 'promedio').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida A'}, r));
   const descB = calcDescensoInfo(revB, 'Reválida B', 'suma').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida B'}, r));
   const todos = [...descA, ...descB];
-  if(!todos.length){ el.innerHTML=''; return; }
+  const desempate = calcDescensoDesempatePendiente();
+  if(!todos.length && !desempate){ el.innerHTML=''; return; }
+
+  const chipNormal = (n, grupo) => `<div class="descendido-chip">
+        ${escudoHTML(n,'me')}
+        <span class="descendido-nombre">${n}</span>
+        <span class="descendido-grupo">${grupo}</span>
+      </div>`;
+  const chipPendiente = (a, b) => `<div class="descendido-chip descendido-chip-pendiente">
+        <div class="descendido-split">${escudoHTML(a,'me')}${escudoHTML(b,'me')}</div>
+        <span class="descendido-nombre">${a} o ${b}</span>
+        <span class="descendido-grupo">Reválida B</span>
+      </div>`;
+
+  let extra = '';
+  if(desempate) extra = desempate.resuelto ? chipNormal(desempate.n, 'Reválida B') : chipPendiente(desempate.equipoA, desempate.equipoB);
+
   el.innerHTML = `<p class="sec-2dafase" style="color:#e53935;">⬇ Equipos descendidos</p>
     <div class="descendidos-cont">
-      ${todos.map(r=>`<div class="descendido-chip">
-        ${escudoHTML(r.n,'me')}
-        <span class="descendido-nombre">${r.n}</span>
-        <span class="descendido-grupo">${r._grupo}</span>
-      </div>`).join('')}
+      ${todos.map(r=>chipNormal(r.n, r._grupo)).join('')}
+      ${extra}
     </div>`;
 }
 
