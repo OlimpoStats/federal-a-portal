@@ -236,8 +236,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .oc-nombre{max-width:none;}
 }
 /* Clasificados a Copa Argentina — solo escudos, sin tabla. */
-#copa-argentina-cont{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:.5rem 0;}
-.ca-escudo{display:flex;flex-direction:column;align-items:center;}
+/* Mismo lenguaje que .descendido-chip (solapa + fondo tenue) pero azul, y en grilla fija
+   (no flex-wrap) para que los 10 chips queden todos del mismo tamaño en vez de ajustarse
+   al largo de cada nombre. */
+#copa-argentina-cont{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;padding:.6rem;}
+.ca-chip{display:flex;align-items:center;gap:.4rem;background:rgba(79,195,247,.1);border-left:3px solid #4fc3f7;border-radius:4px;padding:.35rem .6rem;min-width:0;}
+.ca-nombre{font-size:13px;font-weight:600;color:#4fc3f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+@media (max-width:700px){
+  #copa-argentina-cont{grid-template-columns:repeat(2,1fr);}
+}
 /* Cuadro del Nonagonal en espejo (home) — mismo lenguaje de tarjeta que .llave-card-v de
    arriba, pero acomodado en 2 mini-cuadros (izq/der) en vez de 3 columnas secuenciales, para
    que no quede tan ancho. Cada mini-cuadro reusa el mismo truco de .llave-col/.bracket-pair/
@@ -1009,13 +1016,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div class="fnav dis" id="btn-prev2" onclick="cambiar2(-1)">&#8592;</div>
           <div style="position:relative;flex:1;text-align:center;">
             <div class="fnum" id="fnum2" onclick="toggleFechaPicker2()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-              <span id="fnum2-txt">Fecha 1</span>
+              <span id="fnum2-txt">Ida</span>
               <span style="font-size:11px;color:var(--muted);">▼</span>
             </div>
             <div id="fecha-picker2" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-              <div id="fecha-picker2-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
+              <div id="fecha-picker2-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:.3rem;width:120px;"></div>
             </div>
-            <div class="fsub">Segunda Fase — 2026</div>
+            <div class="fsub">Cuartos de Final — 2026</div>
           </div>
           <div class="fnav" id="btn-next2" onclick="cambiar2(1)">&#8594;</div>
         </div>
@@ -1029,6 +1036,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso — Nonagonal</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
           <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
+        </div>
+        <div id="segundo-ascenso-wrap">
+          <p class="sec" style="color:#fff;">16vos — Segundo Ascenso</p>
+          <div id="preview16-cont" class="preview16-cont"></div>
+          <div id="preview16-leyenda" class="leyenda-colores"></div>
         </div>
         <div id="orden-cruces-wrap">
           <p class="sec" style="color:#fff;">Orden para cruces</p>
@@ -1935,6 +1947,18 @@ const PLAYOFF_NONA_ZONAS = {
   SF1:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
   SF2:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
 };
+// Panel de "Resultados" de la home: reemplaza a las 9 fechas de Segunda Fase (fase cerrada,
+// archivada en /segunda-fase) por 2 estados de Cuartos de Final — Ida (incluye el desempate de
+// descenso, mismo fin de semana) y Vuelta. Cuando se llegue a Semis, sumar sus zonas acá.
+const CUARTOS_ESTADOS = {
+  1: { label:'Ida', fuentes: [
+        {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
+        {zona:'Desempate Descenso', fecha:1},
+      ]},
+  2: { label:'Vuelta', fuentes: [
+        {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+      ]},
+};
 // Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
 // nombreMejor/nombrePeor dentro de esas zonas, sin asumir quién quedó como local/visitante
 // (más robusto que depender del orden exacto en que se cargó cada fila).
@@ -2170,6 +2194,9 @@ const ZONA_COLORES = {
   "Nonagonal B": { color: "#1b5e20", text: "#e8f5e9", code: "NB", pillLabel: "NONA. B" },
   "Reválida A": { color: "#e0507a", text: "#2a0714", code: "RA", pillLabel: "REV. A" },
   "Reválida B": { color: "#c0504d", text: "#fbe4e4", code: "RB", pillLabel: "REV. B" },
+  "Cuartos Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "CI" },
+  "Cuartos Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "CV" },
+  "Desempate Descenso": { color: "#e53935", text: "#ffffff", code: "DD" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -2223,23 +2250,22 @@ function fechaInteligente(){
   // fallbackstrar la última
 }
 
-// Igual que fechaInteligente() pero para los grupos de Segunda Fase (Nonagonal/Reválida,
-// fechas 1-9) — sin esto, el widget de resultados de Segunda Fase queda fijo en la Fecha 1
-// en cada carga de página, sin importar qué fecha esté realmente en curso.
+// Igual que fechaInteligente() pero para el widget de "Resultados" de la home, que ahora
+// muestra Cuartos de Final (Ida/Vuelta) en vez de las fechas de Segunda Fase — sin esto,
+// quedaría fijo en "Ida" en cada carga de página, sin importar qué instancia esté en curso.
 function fechaInteligente2(){
-  for(let f=1;f<=9;f++){
-    const tieneProgramado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>{
-      const key = `${z}_${f}_${m.local}_${m.visitante}`;
-      const meta = PARTIDO_META[key];
+  for(const f of [1,2]){
+    const tieneProgramado = CUARTOS_ESTADOS[f].fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>{
+      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)];
       return m.gl===null && (meta?.dia || meta?.hora);
     }));
     if(tieneProgramado) return f;
   }
   let ultimaJugada = 1;
-  for(let f=1;f<=9;f++){
-    const tieneJugado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>m.gl!==null));
+  [1,2].forEach(f=>{
+    const tieneJugado = CUARTOS_ESTADOS[f].fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>m.gl!==null));
     if(tieneJugado) ultimaJugada = f;
-  }
+  });
   return ultimaJugada;
 }
 
@@ -3556,6 +3582,7 @@ function renderGruposSegundaFase(grupos){
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
   renderBracketNonagonalMirror(grupos);
+  renderPreview16(nonARows, nonBRows, revARows, revBRows);
   const bracketParaCruces = calcBracketNonagonal(grupos);
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
   renderOrdenCruces(bracketParaCruces, tablaMerito);
@@ -3952,13 +3979,15 @@ function renderOrdenCruces(bracket, tablaMerito){
   cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
 
-// Clasificados a Copa Argentina: 1°-5° de cada Nonagonal, solo escudo (sin tabla). El logo del
-// torneo lo agrega el usuario más adelante — por ahora el título ya lo deja claro.
+// Clasificados a Copa Argentina: 1°-5° de cada Nonagonal — mismo lenguaje visual que
+// "Equipos descendidos" (chip con solapa de color + nombre), pero azul y en grilla fija de
+// 5 columnas (2 filas de 5, ordenadas por grupo: fila 1 = Nonagonal A, fila 2 = Nonagonal B)
+// en vez de flex-wrap de ancho variable — así los 10 chips quedan todos del mismo tamaño.
 function renderCopaArgentina(nonARows, nonBRows){
   const cont = document.getElementById('copa-argentina-cont');
   if(!cont) return;
   const equipos = [...nonARows.slice(0,5), ...nonBRows.slice(0,5)];
-  cont.innerHTML = equipos.map(r=>`<div class="ca-escudo" title="${r.n}">${escudoHTML(r.n)}</div>`).join('');
+  cont.innerHTML = equipos.map(r=>`<div class="ca-chip">${escudoHTML(r.n,'me')}<span class="ca-nombre">${r.n}</span></div>`).join('');
 }
 
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
@@ -4128,58 +4157,55 @@ document.addEventListener("click", e=>{
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
-// ── SEGUNDA FASE: widget de resultados propio (fechas 1-9) ──
+// ── CUARTOS DE FINAL: widget de resultados propio (Ida / Vuelta, ver CUARTOS_ESTADOS) ──
+// Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
+// archivada en /segunda-fase). f acá es 1 (Ida) o 2 (Vuelta), NO una fecha real de Supabase —
+// cada fuente de CUARTOS_ESTADOS[f] trae su propia fecha real (fecha:1 para las 3 zonas
+// actuales), que es la que hay que usar para las fichaKey (fecha real distinta del estado de
+// navegación rompería el link a planillas/en vivo apenas se sume la Vuelta).
 function renderPartidos2(f){
-  document.getElementById("fnum2-txt").textContent = "Fecha " + f;
-  for(let i=1;i<=9;i++){
+  const estado = CUARTOS_ESTADOS[f];
+  document.getElementById("fnum2-txt").textContent = estado.label;
+  [1,2].forEach(i=>{
     const el = document.getElementById("fp2-"+i);
     if(el){
       el.style.color = i===f ? "var(--accent)" : "";
       el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
     }
-  }
+  });
   document.getElementById("btn-prev2").classList.toggle("dis", f<=1);
-  document.getElementById("btn-next2").classList.toggle("dis", f>=9);
+  document.getElementById("btn-next2").classList.toggle("dis", f>=2);
 
   const rows = [];
-  GRUPOS2.forEach(g => {
-    const ms = FIXTURE[g]?.[String(f)] || [];
+  estado.fuentes.forEach(({zona,fecha}) => {
+    const ms = FIXTURE[zona]?.[String(fecha)] || [];
     ms.forEach(m => {
-      const meta = PARTIDO_META[getMetaKey(g,f,m.local,m.visitante)] || {};
-      rows.push({ zona: g, m, meta });
+      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
+      rows.push({ zona, fecha, m, meta });
     });
   });
 
-  // Orden: sin programar (sin día/hora) → por grupo. Programados, día de HOY en adelante →
-  // día, hora, grupo, siempre por la hora REAL de partido, sea que ya arrancó, esté en vivo o
-  // haya terminado — el horario queda "fijo" una vez programado. Así, entrando a las 19, los
-  // partidos de las 14 (ya jugados) quedan arriba, los que se están jugando después, y los que
-  // faltan arrancar al fondo, todo en el mismo orden cronológico. (Antes un partido con
-  // resultado cargado —en vivo o terminado— ignoraba su hora real y usaba un valor fijo,
-  // rompiendo ese orden.)
-  // Para un día YA PASADO la hora deja de importar (el partido terminó hace rato) — ahí se
-  // ordena directo por grupo, igual que hacía Primera Fase, en vez de mantener el orden de
-  // los horarios de arranque.
+  // Orden: sin programar (sin día/hora) → orden de fuentes. Programados, día de HOY en
+  // adelante → día, hora, siempre por la hora REAL de partido (mismo criterio que ya usaba
+  // Segunda Fase — ver comentario histórico en el resto del archivo). Día ya pasado → sin
+  // ordenar por hora, la fuente ya alcanza.
   const hoy = _hoyLocalISO();
+  const fuenteIdx = (zona) => estado.fuentes.findIndex(x=>x.zona===zona);
   rows.sort((a,b)=>{
-    // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
     if(ad < hoy){
-      // Día pasado: por grupo directo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
-      return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+      return (fuenteIdx(a.zona)-fuenteIdx(b.zona)) || a.m.local.localeCompare(b.m.local);
     }
-    // Por hora real programada
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
-    // Por grupo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
-    return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+    return (fuenteIdx(a.zona)-fuenteIdx(b.zona)) || a.m.local.localeCompare(b.m.local);
   });
 
   let html = "";
   let diaActual = null;
-  rows.forEach(({zona, m, meta}) => {
+  rows.forEach(({zona, fecha, m, meta}) => {
     const dKey = diaKey(meta.dia);
     if(dKey !== diaActual){
       diaActual = dKey;
@@ -4188,31 +4214,18 @@ function renderPartidos2(f){
         ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
-    html += renderFilaPartido(zona, f, m, meta);
+    html += renderFilaPartido(zona, fecha, m, meta);
   });
-
-  const libresFecha = GRUPOS2
-    .map(g => LIBRES2[g]?.[String(f)])
-    .filter(Boolean);
-  if(libresFecha.length){
-    html += `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:.5rem;">
-      <div style="flex:1;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
-        ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
-      </div>
-      <div style="width:56px;flex-shrink:0;"></div>
-    </div>`;
-  }
 
   document.getElementById("partidos-cont2").innerHTML = html || '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin partidos programados.</div>';
 }
 
-function cambiar2(d){ const n=fechaActual2+d; if(n<1||n>9) return; fechaActual2=n; renderPartidos2(n); }
+function cambiar2(d){ const n=fechaActual2+d; if(n<1||n>2) return; fechaActual2=n; renderPartidos2(n); }
 
 function irAFecha2(n){
   const picker = document.getElementById("fecha-picker2");
   if(picker) picker.style.display = "none";
-  if(n<1||n>9) return;
+  if(n<1||n>2) return;
   fechaActual2 = n;
   renderPartidos2(n);
 }
@@ -4221,10 +4234,9 @@ function toggleFechaPicker2(){
   const picker = document.getElementById("fecha-picker2");
   if(!picker) return;
   const grid = document.getElementById("fecha-picker2-grid");
-  if(grid && !grid.children.length){
-    grid.innerHTML = Array.from({length:9},(_,i)=>{
-      const n = i+1;
-      return `<div onclick="irAFecha2(${n})" id="fp2-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual2?'var(--accent)':'var(--text)'};border-color:${n===fechaActual2?'var(--accent)':'var(--border)'};">${n}</div>`;
+  if(grid){
+    grid.innerHTML = [1,2].map(n=>{
+      return `<div onclick="irAFecha2(${n})" id="fp2-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual2?'var(--accent)':'var(--text)'};border-color:${n===fechaActual2?'var(--accent)':'var(--border)'};">${CUARTOS_ESTADOS[n].label}</div>`;
     }).join("");
   }
   picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
