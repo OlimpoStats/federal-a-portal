@@ -205,7 +205,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Fila compacta (ronda resuelta, solo escudo+marcador): sin el min-width de 140px que
    reservaba lugar para el nombre — el escudo queda pegado a la izquierda y el marcador al
    resto del ancho disponible, en vez de dejar un hueco vacío en el medio. */
-.llave-fila-compacta .llave-eq-simple{min-width:0;flex:0 0 auto;}
+/* !important necesario: .llave-card-sm .llave-fila .llave-eq-simple (min-width:90px, 3
+   clases) le gana por especificidad a esta regla (2 clases) desde que la tarjeta compacta
+   también lleva la clase llave-card-sm — por eso el escudo no se achicaba y quedaba en una
+   caja ancha y chata en vez de ajustarse a su tamaño real. También se fuerza el tamaño del
+   escudo a 22px (iba a 32px, tamaño pensado para el modo horizontal sin marcador que comparte
+   esta misma función — acá con marcador al lado hace falta más chico). */
+.llave-fila-compacta .llave-eq-simple{min-width:0!important;flex:0 0 auto!important;}
+.llave-fila-compacta img{width:22px!important;height:22px!important;}
+/* Bonus (opcional, pedido "si se puede"): el equipo que NO ganó en una llave ya resuelta
+   (compacta) se ve en blanco y negro — se identifica por NO tener la clase .llave-gano, que
+   solo se agrega al ganador; en modo compacto siempre hay un ganador definido. */
+.llave-fila-compacta .llave-eq-simple.llave-solo-escudo:not(.llave-gano) img{filter:grayscale(1);opacity:.55;}
 /* Línea antes de I para delimitar todo el sector de marcador (no solo entre celdas) — hay
    espacio de sobra (ningún nombre de club es tan largo), aprovechado para un poco más de
    ancho/aire en vez de dejarlo vacío. */
@@ -219,7 +230,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
 .llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
-.llave-marc-glob-gano .llave-marc-val{color:#4caf50;}
+.llave-marc-glob-gano .llave-marc-val{color:var(--accent);}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
    ni en mobile ni en desktop. */
@@ -322,6 +333,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Semis y Final: recuadro más chico que el de Cuartos (menos padding/ancho) — SIN tocar el
    tamaño de fuente (ya se probó antes achicar la fuente del marcador y no era lo pedido). */
 .llave-card-sm{padding:.35rem .5rem;max-width:200px;}
+/* La Semi dentro del mini-cuadro necesita más ancho que el tope genérico de 200px — con
+   nombres reales (no "A Definir") el nombre quedaba cortado a unos pocos caracteres. Solo
+   para la Semi ahí adentro (.llave-col-sf), no toca la Final (sigue en 200px) ni los Cuartos
+   compactos (tienen su propio ancho vía .llave-fila-compacta, no este tope). */
+.bnc-mini-bracket .llave-col-sf .llave-card-sm{max-width:258px;}
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
 .llave-card-sm .llave-marc-cell{min-width:24px;}
@@ -3983,6 +3999,17 @@ function ordenarCaidosNonagonal(equipos){
   });
 }
 
+// Perdedores de Cuartos del Nonagonal, ya ordenados (mejor ubicado primero) — se usa tanto acá
+// (para reservarles los puestos 4-7 de "Orden para cruces") como en calcLista16vos (para
+// rellenar los reenganches del cuadro del Segundo Ascenso con el equipo real apenas cae).
+function calcCuartofinalistasCaidos(bracket){
+  const loserOfTie = (tie) => {
+    if(!tie.resultado.resuelto || !tie.mejor || !tie.peor) return null;
+    return tie.ganador===tie.mejor ? tie.peor : tie.mejor;
+  };
+  return ordenarCaidosNonagonal(bracket.cuartos.map(loserOfTie).filter(Boolean));
+}
+
 function calcOrdenParaCruces(bracket, tablaMerito){
   const loserOfTie = (tie) => {
     if(!tie.resultado.resuelto || !tie.mejor || !tie.peor) return null;
@@ -3992,7 +4019,7 @@ function calcOrdenParaCruces(bracket, tablaMerito){
     ? (bracket.final.ganador===bracket.final.equipo1 ? bracket.final.equipo2 : bracket.final.equipo1)
     : null;
   const sfLosers = ordenarCaidosNonagonal(bracket.semis.map(loserOfTie).filter(Boolean));
-  const qfLosers = ordenarCaidosNonagonal(bracket.cuartos.map(loserOfTie).filter(Boolean));
+  const qfLosers = calcCuartofinalistasCaidos(bracket);
 
   const items = [];
   items.push({tipo:'reservado', label:'FINALISTA', equipo: finalLoser});
@@ -4017,7 +4044,6 @@ function _filaOrdenCruces(it, pos){
     const detalle = `${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
     return `<div class="oc-fila">
       <span class="oc-pos">${pos}</span>
-      <span class="oc-label">${it.label}</span>
       <div class="oc-eq">${escudoHTML(eq.n,'me')}<span class="oc-nombre">${eq.n}</span></div>
       <span class="oc-detalle">${detalle}</span>
     </div>`;
@@ -4068,8 +4094,10 @@ function renderCopaArgentina(nonARows, nonBRows){
 }
 
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
-// (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
-// de los 20 puestos de la Tabla de Mérito. 24 en total.
+// toman los primeros 4 lugares, seguidos de los 20 puestos de la Tabla de Mérito. 24 en total.
+// Apenas se resuelve una llave de cuartos, ese lugar pasa a mostrar al equipo real (escudo+
+// nombre, vía calcCuartofinalistasCaidos) en vez del placeholder — el placeholder "Cuartofinalista
+// #N" solo queda para los puestos todavía sin resolver.
 // Número de las etiquetas "Cuartofinalista #N" (corregido por el usuario): el N es la
 // POSICIÓN real en "Orden para cruces" (puestos 4-7, los 3 primeros son FINALISTA/
 // SEMIFINALISTA y no participan de esta ronda) — con el "#" adelante a propósito, para que
@@ -4079,8 +4107,9 @@ function renderCopaArgentina(nonARows, nonBRows){
 // armarCrucesDesdeOrden — hoy Defensores (PV)) es el mejor ubicado de los 4 reservados = "#4";
 // el que enfrenta al MEJOR de esos 4 rivales posibles (hoy FADEP) es "#7" — de ahí el `4+idx`
 // (crece, no decrece).
-function calcLista16vos(tablaMerito){
-  const reenganches = [1,2,3,4].map((_,idx)=>({tipo:'pendiente', label:`Cuartofinalista #${4+idx}`}));
+function calcLista16vos(tablaMerito, bracket){
+  const caidos = bracket ? calcCuartofinalistasCaidos(bracket) : [];
+  const reenganches = [1,2,3,4].map((_,idx)=> caidos[idx] || {tipo:'pendiente', label:`Cuartofinalista #${4+idx}`});
   return [...reenganches, ...tablaMerito];
 }
 
@@ -4118,7 +4147,7 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
   const cont = document.getElementById(contId);
   if(!cont) return;
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
   cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
 }
@@ -4193,7 +4222,7 @@ function abrirModalMerito(){
     return;
   }
   const tablaMerito = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces16vos = armarCrucesDesdeOrden(lista16vos);
 
   cont.innerHTML = `
@@ -7047,7 +7076,7 @@ function renderCruces16vosRoomy(elId, nonARows, nonBRows, revARows, revBRows){
   const el = document.getElementById(elId);
   if(!el) return null;
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
   el.innerHTML = cruces.map(c => _cardCruceMerito(c.mejor, c.peor)).join('');
   return tablaMerito;
