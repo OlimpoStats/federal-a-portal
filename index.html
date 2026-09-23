@@ -214,13 +214,23 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
 }
+/* Desplegable de "Orden para cruces" — técnica de grid-template-rows 0fr→1fr (en vez de
+   height/max-height medido a mano en JS, que es lo que había quedado "tosco" en el primer
+   intento con Primera Fase): anima la altura real del contenido sin tener que calcularla,
+   funciona con cualquier alto de contenido y no salta ni recorta de golpe. */
+.oc-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.oc-chevron{color:var(--muted);font-size:13px;transition:transform .3s ease;flex-shrink:0;}
+.oc-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.4,0,.2,1);}
+.oc-collapse.open{grid-template-rows:1fr;}
+.oc-toggle.open .oc-chevron{transform:rotate(180deg);}
+.oc-collapse-inner{overflow:hidden;min-height:0;}
 /* "Orden para cruces" (home) — 27 equipos en 3 columnas de 9 (una fila por equipo). Los
    primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
    antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
    SIN empujarlo al borde derecho como antes — eso era lo que dejaba tanto espacio muerto). */
-#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:0 1.2rem;align-items:start;}
+#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,1fr);gap:0 1.2rem;align-items:start;padding-top:.75rem;}
 .oc-col{min-width:0;}
-.oc-fila{display:flex;align-items:baseline;gap:.35rem;padding:.4rem 0;border-bottom:1px solid var(--border);min-width:0;}
+.oc-fila{display:flex;align-items:center;gap:.35rem;padding:.4rem 0;border-bottom:1px solid var(--border);min-width:0;}
 .oc-col .oc-fila:last-child{border-bottom:none;}
 .oc-pos{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--accent);min-width:20px;text-align:center;flex-shrink:0;}
 .oc-label{font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#e8c44a;background:rgba(232,196,74,.12);border-radius:4px;padding:.1rem .3rem;flex-shrink:0;}
@@ -1032,8 +1042,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div id="preview16-leyenda" class="leyenda-colores"></div>
         </div>
         <div id="orden-cruces-wrap">
-          <p class="sec" style="color:#fff;">Orden para cruces</p>
-          <div id="orden-cruces-cont"></div>
+          <div class="oc-toggle" onclick="toggleOrdenCruces()">
+            <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
+            <span class="oc-chevron" id="oc-chevron">▾</span>
+          </div>
+          <div class="oc-collapse" id="oc-collapse">
+            <div class="oc-collapse-inner">
+              <div id="orden-cruces-cont"></div>
+            </div>
+          </div>
         </div>
         <div id="copa-argentina-wrap">
           <p class="sec" style="color:#fff;display:flex;align-items:center;gap:.5rem;"><img src="/copa-argentina-logo.png" alt="Copa Argentina" style="width:22px;height:22px;object-fit:contain;">Clasificados a Copa Argentina</p>
@@ -3947,6 +3964,22 @@ function renderOrdenCruces(bracket, tablaMerito){
   const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1)).join('');
   cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
+
+// Desplegable "Orden para cruces" — arranca cerrado (achica la home) salvo que el visitante ya
+// lo haya abierto antes en este navegador (conveniencia liviana, no estado real: si no hay
+// localStorage disponible, simplemente arranca cerrado siempre).
+function toggleOrdenCruces(){
+  const collapse = document.getElementById('oc-collapse');
+  const toggle = document.querySelector('#orden-cruces-wrap .oc-toggle');
+  if(!collapse || !toggle) return;
+  const open = !collapse.classList.contains('open');
+  collapse.classList.toggle('open', open);
+  toggle.classList.toggle('open', open);
+  try{ localStorage.setItem('oc_open', open ? '1' : '0'); }catch(e){}
+}
+(function _restaurarOrdenCrucesAbierto(){
+  try{ if(localStorage.getItem('oc_open') === '1') toggleOrdenCruces(); }catch(e){}
+})();
 
 // Clasificados a Copa Argentina: 1°-5° de cada Nonagonal — mismo lenguaje visual que
 // "Equipos descendidos" (chip con solapa de color + nombre), pero azul y en grilla fija de
