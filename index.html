@@ -188,6 +188,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-fila{display:flex;align-items:center;gap:.5rem;padding:.2rem 0;}
 .llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.35rem;padding-top:.4rem;}
 .llave-fila .llave-eq-simple{flex:0 1 auto;min-width:140px;}
+/* Fila compacta (ronda resuelta, solo escudo+marcador): sin el min-width de 140px que
+   reservaba lugar para el nombre — el escudo queda pegado a la izquierda y el marcador al
+   resto del ancho disponible, en vez de dejar un hueco vacío en el medio. */
+.llave-fila-compacta .llave-eq-simple{min-width:0;flex:0 0 auto;}
 .llave-marc{display:flex;gap:.45rem;flex-shrink:0;margin-left:auto;}
 .llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:26px;}
 .llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
@@ -3592,14 +3596,18 @@ function _marcadorLado(golIda, golVuelta, global, esGanador){
 // Una fila de la tarjeta apilada: equipo a la izquierda, marcador (si corresponde) desplegado
 // a la derecha de esa misma fila — así se lee "Equipo — su Ida/Vuelta/Global" de un vistazo,
 // en vez de tener los 2 equipos + 4 marcadores todos en la misma línea horizontal.
-function _filaLlave(equipo, esGanador, marcHTML){
-  const eq = _ladoLlave(equipo, esGanador, true, false, 'izq');
-  return `<div class="llave-fila">${eq}${marcHTML||''}</div>`;
+// compacto=true: sin nombre, solo escudo (para una ronda ya resuelta que le cede protagonismo
+// a la siguiente — ver renderBracketNonagonalMirror) pero MANTIENE el marcador I/V/G, a
+// diferencia del modo soloEscudo de _cardLlave (que es horizontal, sin marcador, para el
+// estado "parcial" de una ronda que todavía no se sabe quién juega).
+function _filaLlave(equipo, esGanador, marcHTML, compacto){
+  const eq = _ladoLlave(equipo, esGanador, !compacto, !!compacto, 'izq');
+  return `<div class="llave-fila${compacto?' llave-fila-compacta':''}">${eq}${marcHTML||''}</div>`;
 }
 // Cada llave son 2 filas apiladas (un equipo arriba, el otro abajo), sin "vs" — el marcador de
 // ida/vuelta/global (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce,
 // no tiene sentido mostrar espacios de gol para un cruce que todavía dice "A Definir".
-function _cardLlave(tie, soloEscudo, extraClass){
+function _cardLlave(tie, soloEscudo, extraClass, compacto){
   if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo, extraClass);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
   if(soloEscudo){
@@ -3614,8 +3622,8 @@ function _cardLlave(tie, soloEscudo, extraClass){
   const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true) : '';
   const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false) : '';
   return `<div class="llave-card llave-card-v${extraClass?' '+extraClass:''}">
-    ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor)}
-    ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor)}
+    ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor, compacto)}
+    ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor, compacto)}
   </div>`;
 }
 
@@ -3687,10 +3695,17 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   el.className = 'bnc-mirror-cont';
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
+  // Ronda resuelta = le cede el protagonismo (tamaño + nombres) a la siguiente: Cuartos se
+  // achica a escudo+marcador apenas se conocen los 4 semifinalistas; Semis hace lo mismo
+  // apenas se conocen los 2 finalistas. La Final nunca se achica (siempre nombre completo).
+  const cuartosResueltos = bracket.cuartos.every(c=>c.resultado.resuelto);
+  const semisResueltas = bracket.semis.every(s=>s.resultado.resuelto);
+  const claseQF = cuartosResueltos ? 'llave-card-sm' : '';
+  const claseSF = semisResueltas ? 'llave-card-sm' : (cuartosResueltos ? '' : 'llave-card-sm');
   const colQF = (qfA,qfB) => `<div class="llave-col"><div class="llave-col-body">
-      <div class="bracket-pair">${_cardLlave(qfA)}${_cardLlave(qfB)}</div>
+      <div class="bracket-pair">${_cardLlave(qfA,false,claseQF,cuartosResueltos)}${_cardLlave(qfB,false,claseQF,cuartosResueltos)}</div>
     </div></div>`;
-  const colSF = sf => `<div class="llave-col"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm')}</div></div>`;
+  const colSF = sf => `<div class="llave-col"><div class="llave-col-body">${_cardLlave(sf, false, claseSF, semisResueltas)}</div></div>`;
   // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
   // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
   el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
