@@ -210,6 +210,24 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
 }
+/* "Orden para cruces" (home) — listado plano 1-27, una fila por equipo. Los primeros 7
+   puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase antes del
+   nombre; el resto (Tabla de Mérito) no. En mobile, el detalle (fase/pts/DG/GF) pasa a una
+   segunda línea para no forzar scroll horizontal con nombres largos. */
+.oc-fila{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.oc-fila:last-child{border-bottom:none;}
+.oc-pos{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent);min-width:24px;text-align:center;flex-shrink:0;}
+.oc-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#e8c44a;background:rgba(232,196,74,.12);border-radius:4px;padding:.15rem .4rem;flex-shrink:0;}
+.oc-eq{display:flex;align-items:center;gap:.4rem;min-width:0;flex:1 1 160px;overflow:hidden;}
+.oc-nombre{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.oc-pend{font-size:12px;color:var(--muted);font-style:italic;}
+.oc-detalle{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-left:auto;}
+@media (max-width:700px){
+  .oc-detalle{margin-left:0;flex-basis:100%;white-space:normal;}
+}
+/* Clasificados a Copa Argentina — solo escudos, sin tabla. */
+#copa-argentina-cont{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:.5rem 0;}
+.ca-escudo{display:flex;flex-direction:column;align-items:center;}
 /* Cuadro del Nonagonal en espejo (home) — mismo lenguaje de tarjeta que .llave-card-v de
    arriba, pero acomodado en 2 mini-cuadros (izq/der) en vez de 3 columnas secuenciales, para
    que no quede tan ancho. Cada mini-cuadro reusa el mismo truco de .llave-col/.bracket-pair/
@@ -816,6 +834,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni active" id="ni-inicio" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
     <div class="ni" onclick="goPage('primerafase',this)">Primera Fase</div>
+    <div class="ni" onclick="goPage('segundafase',this)">Segunda Fase</div>
     <div class="ni" onclick="goPage('planteles',this)">Equipos</div>
     <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
@@ -847,6 +866,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="drawer-item active" id="di-inicio" onclick="goPageDrawer('inicio')">🏠 Inicio</div>
   <div class="drawer-item" id="di-fixture" onclick="goPageDrawer('fixture')">📅 Fixture</div>
   <div class="drawer-item" id="di-primerafase" onclick="goPageDrawer('primerafase')">📄 Primera Fase</div>
+  <div class="drawer-item" id="di-segundafase" onclick="goPageDrawer('segundafase')">📄 Segunda Fase</div>
   <div class="drawer-item" id="di-planteles" onclick="goPageDrawer('planteles')">🛡️ Equipos</div>
   <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
   <div class="drawer-section">Extra</div>
@@ -993,51 +1013,58 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     </div>
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
-        <div id="nonagonales-wrap">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div id="tablas-nonagonal-a" style="align-self:start;"></div>
-            <div id="tablas-nonagonal-b" style="align-self:start;"></div>
-          </div>
-          <div id="leyenda-nonagonal" class="leyenda-colores">
-            <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
-            <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
-            <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
-          </div>
-        </div>
         <div id="bracket-nonagonal-wrap">
           <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Primer Ascenso — Nonagonal</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
           <p class="llave-nota">Los equipos de la izquierda son locales en la vuelta y avanzan en caso de empate global.</p>
-          <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
-          <div id="preview16-cont" class="preview16-cont"></div>
-          <div id="preview16-leyenda" class="leyenda-colores"></div>
-          <div id="btns-cruces-split">
-            <div id="btn-ver-merito" onclick="abrirModalMerito()">🔍 Detalle de los cruces</div>
-            <div id="btn-ir-calc" onclick="goPage('calculadora')">Calculalos</div>
-          </div>
         </div>
-        <div id="revalidas-wrap">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div style="align-self:start;">
-              <div id="tablas-revalida-a"></div>
-              <div id="leyenda-revalida" class="leyenda-colores">
-                <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
-                <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
-                <span><b style="color:#e53935;">●</b> En descenso</span>
-                <span>%C = Promedio para clasif. a siguiente fase</span>
-              </div>
-            </div>
-            <div id="tablas-revalida-b" style="align-self:start;"></div>
-          </div>
+        <div id="orden-cruces-wrap">
+          <p class="sec" style="color:#fff;">Orden para cruces</p>
+          <div id="orden-cruces-cont"></div>
         </div>
-        <div id="cont-descenso"></div>
+        <div id="copa-argentina-wrap">
+          <p class="sec" style="color:#fff;">Clasificados a Copa Argentina</p>
+          <div id="copa-argentina-cont"></div>
+        </div>
         <div id="cont-descendidos"></div>
-        <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-          <div id="cont-goleadores-resumen" style="align-self:start;"></div>
-          <div id="cont-asistentes-resumen" style="align-self:start;"></div>
-        </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- SEGUNDA FASE (archivo — Nonagonal/Reválida como grupo ya cerraron su fase de tabla; lo
+     que sigue jugándose de ahí en más son los cuadros de playoff, que viven en Inicio). -->
+<div class="page" id="page-segundafase">
+  <p class="sec" style="color:#fff;">📄 Segunda Fase — archivo (fase de grupos finalizada)</p>
+  <div id="nonagonales-wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div id="tablas-nonagonal-a" style="align-self:start;"></div>
+      <div id="tablas-nonagonal-b" style="align-self:start;"></div>
+    </div>
+    <div id="leyenda-nonagonal" class="leyenda-colores">
+      <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
+      <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
+      <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
+    </div>
+  </div>
+  <div id="revalidas-wrap" style="margin-top:1.5rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div style="align-self:start;">
+        <div id="tablas-revalida-a"></div>
+        <div id="leyenda-revalida" class="leyenda-colores">
+          <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
+          <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
+          <span><b style="color:#e53935;">●</b> En descenso</span>
+          <span>%C = Promedio para clasif. a siguiente fase</span>
+        </div>
+      </div>
+      <div id="tablas-revalida-b" style="align-self:start;"></div>
+    </div>
+  </div>
+  <div id="cont-descenso" style="margin-top:1.5rem;"></div>
+  <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+    <div id="cont-goleadores-resumen" style="align-self:start;"></div>
+    <div id="cont-asistentes-resumen" style="align-self:start;"></div>
   </div>
 </div>
 
@@ -1961,9 +1988,12 @@ function calcBracketNonagonal(datos){
   const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortNonagonal);
   const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortNonagonal);
   const rowsPorZona = {'Nonagonal A': nonARows, 'Nonagonal B': nonBRows};
+  // pts/gf/gc/gfVisit del Nonagonal viajan en el objeto para que, si este equipo termina
+  // cayendo, "Orden para cruces" pueda ordenarlo contra otros caídos sin tener que rebuscar
+  // la fila de nuevo (ver ordenarCaidosNonagonal()).
   const equipoDe = (zona,pos) => {
     const r = rowsPorZona[zona][pos-1];
-    return r ? { n:r.n, zona, pos } : null;
+    return r ? { n:r.n, zona, pos, pts:r.pts, gf:r.gf, gc:r.gc, gfVisit:r.gfVisit } : null;
   };
 
   const cuartosPares = {};
@@ -3514,7 +3544,10 @@ function renderGruposSegundaFase(grupos){
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
   renderBracketNonagonalMirror(grupos);
-  renderPreview16(nonARows, nonBRows, revARows, revBRows);
+  const bracketParaCruces = calcBracketNonagonal(grupos);
+  const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
+  renderOrdenCruces(bracketParaCruces, tablaMerito);
+  renderCopaArgentina(nonARows, nonBRows);
 }
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
@@ -3762,7 +3795,7 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   // (se marca en LOS DOS equipos del par cuando ese fue el que los diferenció), rol:
   // 'win'|'lose' para saber a cuál de los dos le tocó el verde/amarillo y a cuál el rojo.
   const itemNona = (r, pos, origen, criterio, rol) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, criterio:criterio||null, rol:rol||null});
-  const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:r._pctCLabel});
+  const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, pctC:r._pctCLabel});
 
   for(let tier=4; tier<=8; tier++){
     const a = nonARows[tier], b = nonBRows[tier];
@@ -3812,6 +3845,88 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
     }
   }
   return items; // 20 items, posición en la Tabla de Mérito = índice+1
+}
+
+// ── "Orden para cruces" (home): los 27 equipos que siguen en competencia por el segundo
+// ascenso, en un solo listado 1-27. Puestos 1-7 reservados para los caídos del camino del
+// primer ascenso (1=FINALISTA, 2-3=SEMIFINALISTA, 4-7=CUARTOFINALISTA), quedan "A Definir"
+// hasta que se juegue esa ronda. Puestos 8-27 = la Tabla de Mérito (calcTablaMerito), fija
+// desde que cerró la Segunda Fase.
+
+// Orden de los caídos de UNA MISMA ronda (confirmado por el usuario, no está en el
+// reglamento): 1° posición en su Nonagonal (1°>2°>3°>4°) → puntos del Nonagonal → diferencia
+// de gol del Nonagonal → goles a favor del Nonagonal. La ronda en sí (cuartos/semis/final) no
+// se compara acá — ese orden ya lo da dónde se los ubica en la lista (ver calcOrdenParaCruces).
+function ordenarCaidosNonagonal(equipos){
+  return [...equipos].sort((a,b)=>{
+    if(a.pos!==b.pos) return a.pos-b.pos;
+    if(a.pts!==b.pts) return b.pts-a.pts;
+    const da=a.gf-a.gc, db=b.gf-b.gc;
+    if(da!==db) return db-da;
+    return b.gf-a.gf;
+  });
+}
+
+function calcOrdenParaCruces(bracket, tablaMerito){
+  const loserOfTie = (tie) => {
+    if(!tie.resultado.resuelto || !tie.mejor || !tie.peor) return null;
+    return tie.ganador===tie.mejor ? tie.peor : tie.mejor;
+  };
+  const finalLoser = (bracket.final.resuelto && bracket.final.ganador)
+    ? (bracket.final.ganador===bracket.final.equipo1 ? bracket.final.equipo2 : bracket.final.equipo1)
+    : null;
+  const sfLosers = ordenarCaidosNonagonal(bracket.semis.map(loserOfTie).filter(Boolean));
+  const qfLosers = ordenarCaidosNonagonal(bracket.cuartos.map(loserOfTie).filter(Boolean));
+
+  const items = [];
+  items.push({tipo:'reservado', label:'FINALISTA', equipo: finalLoser});
+  for(let i=0;i<2;i++) items.push({tipo:'reservado', label:'SEMIFINALISTA', equipo: sfLosers[i]||null});
+  for(let i=0;i<4;i++) items.push({tipo:'reservado', label:'CUARTOFINALISTA', equipo: qfLosers[i]||null});
+  tablaMerito.forEach(it=>items.push(it));
+  return items; // 27 items
+}
+
+function _filaOrdenCruces(it, pos){
+  if(it.tipo==='reservado'){
+    const eq = it.equipo;
+    if(!eq){
+      return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-label">${it.label}</span><span class="oc-pend">A Definir</span></div>`;
+    }
+    const dif = eq.gf-eq.gc;
+    const detalle = `Nonagonal, ${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
+    return `<div class="oc-fila">
+      <span class="oc-pos">${pos}</span>
+      <span class="oc-label">${it.label}</span>
+      <div class="oc-eq">${escudoHTML(eq.n,'me')}<span class="oc-nombre">${eq.n}</span></div>
+      <span class="oc-detalle">${detalle}</span>
+    </div>`;
+  }
+  if(it.tipo==='sorteo'){
+    return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-pend">🎲 Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
+  }
+  const dif = it.dif;
+  const detalle = `${it.origen}, ${it.pos}° — ${it.pts!=null?it.pts+'pts, ':''}${it.pctC?('%C:'+it.pctC+', '):''}DG:${dif>=0?'+':''}${dif}${it.gf!=null?(', GF:'+it.gf):''}`;
+  return `<div class="oc-fila">
+    <span class="oc-pos">${pos}</span>
+    <div class="oc-eq">${escudoHTML(it.n,'me')}<span class="oc-nombre">${it.n}</span></div>
+    <span class="oc-detalle">${detalle}</span>
+  </div>`;
+}
+
+function renderOrdenCruces(bracket, tablaMerito){
+  const cont = document.getElementById('orden-cruces-cont');
+  if(!cont) return;
+  const items = calcOrdenParaCruces(bracket, tablaMerito);
+  cont.innerHTML = items.map((it,i)=>_filaOrdenCruces(it, i+1)).join('');
+}
+
+// Clasificados a Copa Argentina: 1°-5° de cada Nonagonal, solo escudo (sin tabla). El logo del
+// torneo lo agrega el usuario más adelante — por ahora el título ya lo deja claro.
+function renderCopaArgentina(nonARows, nonBRows){
+  const cont = document.getElementById('copa-argentina-cont');
+  if(!cont) return;
+  const equipos = [...nonARows.slice(0,5), ...nonBRows.slice(0,5)];
+  cont.innerHTML = equipos.map(r=>`<div class="ca-escudo" title="${r.n}">${escudoHTML(r.n)}</div>`).join('');
 }
 
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
@@ -4195,6 +4310,7 @@ const _PATH_MAP = {
   '/': 'inicio',
   '/fixture': 'fixture',
   '/primera-fase': 'primerafase',
+  '/segunda-fase': 'segundafase',
   '/equipos': 'planteles',
   '/estadisticas': 'estadisticas',
   '/reglamento': 'reglamento',
