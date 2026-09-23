@@ -539,6 +539,10 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="panel" id="panel-horarios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
+      <div id="hs-seed-cuartos-wrap" style="margin-bottom:1rem;">
+        <button class="btn btn-primary" onclick="seedCuartosPlayoff()">⚡ Cargar Cuartos de Final (playoff) + Desempate Descenso</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Cuartos Primer Ascenso - Ida/Vuelta" y "Desempate Descenso" con los cruces ya definidos. No hace nada si ya existen.</p>
+      </div>
       <div class="card">
         <div class="card-body">
           <div class="form-row two">
@@ -1061,6 +1065,34 @@ async function cargarMapaPlanillas(){
     if(paErr || !partidosRows?.length) return;
     partidosRows.forEach(r => { if(r.fixture_id) FIXTURE_CON_PLANILLA.add(String(r.fixture_id)); });
   } catch(e){}
+}
+
+// Botón de uso único (Programación) para sembrar los cruces de Cuartos del Primer Ascenso
+// (ida/vuelta, ventaja deportiva: el mejor ubicado visita en ida) y el partido de desempate
+// por el último puesto de descenso (Círculo Dep. local / Sol de Mayo visitante, transitorio
+// por el link de FotMob — ver nota del usuario). No reordena ni recalcula nada más: los 4
+// cruces salen de la tabla final del Nonagonal ya cerrada.
+async function seedCuartosPlayoff(){
+  if(FIXTURE["Cuartos Primer Ascenso - Ida"]){
+    alert("Ya existe la zona 'Cuartos Primer Ascenso - Ida', no se vuelve a insertar.");
+    return;
+  }
+  if(!confirm("Esto va a cargar los 4 cruces de Cuartos (ida y vuelta) del Primer Ascenso y el partido de desempate por el último puesto de descenso. ¿Continuar?")) return;
+  const filas = [
+    {zona:"Cuartos Primer Ascenso - Ida", fecha:1, equipo_local:"Atenas (RC)", equipo_visitante:"San Martín (F)"},
+    {zona:"Cuartos Primer Ascenso - Ida", fecha:1, equipo_local:"Olimpo", equipo_visitante:"Gimnasia (Ch)"},
+    {zona:"Cuartos Primer Ascenso - Ida", fecha:1, equipo_local:"Defensores (VR)", equipo_visitante:"Alvarado"},
+    {zona:"Cuartos Primer Ascenso - Ida", fecha:1, equipo_local:"Sol de América (F)", equipo_visitante:"Cipolletti"},
+    {zona:"Cuartos Primer Ascenso - Vuelta", fecha:1, equipo_local:"San Martín (F)", equipo_visitante:"Atenas (RC)"},
+    {zona:"Cuartos Primer Ascenso - Vuelta", fecha:1, equipo_local:"Gimnasia (Ch)", equipo_visitante:"Olimpo"},
+    {zona:"Cuartos Primer Ascenso - Vuelta", fecha:1, equipo_local:"Alvarado", equipo_visitante:"Defensores (VR)"},
+    {zona:"Cuartos Primer Ascenso - Vuelta", fecha:1, equipo_local:"Cipolletti", equipo_visitante:"Sol de América (F)"},
+    {zona:"Desempate Descenso", fecha:1, equipo_local:"Círculo Dep.", equipo_visitante:"Sol de Mayo"},
+  ];
+  const {error} = await sb.from("fixture").insert(filas);
+  if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
+  alert("Listo — se cargaron los 9 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
+  await cargarFixture();
 }
 
 function poblarSelectoresZona(){
