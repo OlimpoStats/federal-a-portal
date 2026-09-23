@@ -294,7 +294,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    espacio sobrante se repartía distinto en cada lado (una quedaba pegada a su gancho, la otra
    no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
 .bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
-.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:360px;position:relative;}
+.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:400px;position:relative;}
 /* Color propio de las líneas del cuadro (más visible que --border, que a 8% de opacidad
    quedaba invisible contra el fondo oscuro — se veían tarjetas sueltas sin conexión). */
 .bnc-mini-bracket .bracket-pair::after{
@@ -350,6 +350,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mini-bracket-der>.llave-col:first-child{order:2;}
   .bnc-mini-bracket-der>.llave-col:last-child{order:1;}
   .bnc-mirror-final{min-width:0;}
+  /* En el HTML la Final va en el medio (tiene sentido en el layout de escritorio, conecta las
+     2 mitades) — apilada quedaba entre la 1ra semifinal y la 2da, con la 2da semifinal sola
+     al final sin nada que la siga. Reordenada para que la Final cierre todo el cuadro. */
+  .bnc-mirror-cont > .bnc-mini-bracket:first-child{order:1;}
+  .bnc-mirror-cont > .bnc-mini-bracket-der{order:2;}
+  .bnc-mirror-cont > .bnc-mirror-final{order:3;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
