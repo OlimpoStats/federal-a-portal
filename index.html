@@ -343,19 +343,21 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    comunes) — se extiende el mismo layout apilado que ya funcionaba bien en mobile. */
 @media (max-width:1560px){
   .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
-  .bnc-mini-bracket,.bnc-mini-bracket-der{grid-template-columns:1fr;width:auto;}
+  /* Aplana los 2 mini-cuadros (display:contents): sus 2 hijos (par de Cuartos + Semi) pasan a
+     competir por orden directamente con la Final dentro de .bnc-mirror-cont, en vez de quedar
+     atados a la mitad en la que viven en el HTML de escritorio — así se puede reordenar cada
+     pieza por separado (ver más abajo) en vez de solo las 2 mitades enteras como antes. */
+  .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
-  /* En la mitad derecha la Semi va primero en el HTML (pegada al centro en desktop) — apilado
-     en mobile se reordena para leer Cuartos → Semi, igual que la mitad izquierda. */
-  .bnc-mini-bracket-der>.llave-col:first-child{order:2;}
-  .bnc-mini-bracket-der>.llave-col:last-child{order:1;}
   .bnc-mirror-final{min-width:0;}
-  /* En el HTML la Final va en el medio (tiene sentido en el layout de escritorio, conecta las
-     2 mitades) — apilada quedaba entre la 1ra semifinal y la 2da, con la 2da semifinal sola
-     al final sin nada que la siga. Reordenada para que la Final cierre todo el cuadro. */
-  .bnc-mirror-cont > .bnc-mini-bracket:first-child{order:1;}
-  .bnc-mirror-cont > .bnc-mini-bracket-der{order:2;}
-  .bnc-mirror-cont > .bnc-mirror-final{order:3;}
+  /* Orden pedido: 1ra llave de Cuartos, después las 2 semis Y la Final juntas (todavía "A
+     Definir" las 3, tiene sentido agruparlas), y al final la 2da llave de Cuartos — en vez del
+     orden del HTML (Cuartos-1, Semi-1, Final, Semi-2, Cuartos-2), que dejaba a la Semi-2 sola
+     después de la Final sin nada que la siguiera. */
+  .llave-col-qf{order:1;}
+  .llave-col-sf{order:2;}
+  .bnc-mirror-final{order:3;}
+  .bnc-mini-bracket-der>.llave-col-qf{order:4;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
@@ -3790,10 +3792,12 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   // tiene su propia columna suelta y sí puede quedarse siempre grande.
   const cuartosResueltos = bracket.cuartos.every(c=>c.resultado.resuelto);
   const semisResueltas = bracket.semis.every(s=>s.resultado.resuelto);
-  const colQF = (qfA,qfB) => `<div class="llave-col"><div class="llave-col-body">
+  // Clases llave-col-qf/llave-col-sf: permiten reordenar cada una por separado en la vista
+  // apilada (ver @media 1560px) sin depender de que sigan anidadas dentro de su .bnc-mini-bracket.
+  const colQF = (qfA,qfB) => `<div class="llave-col llave-col-qf"><div class="llave-col-body">
       <div class="bracket-pair">${_cardLlave(qfA,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}${_cardLlave(qfB,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}</div>
     </div></div>`;
-  const colSF = sf => `<div class="llave-col"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
+  const colSF = sf => `<div class="llave-col llave-col-sf"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
   // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
   // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
   el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
