@@ -212,11 +212,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    escudo a 22px (iba a 32px, tamaño pensado para el modo horizontal sin marcador que comparte
    esta misma función — acá con marcador al lado hace falta más chico). */
 .llave-fila-compacta .llave-eq-simple{min-width:0!important;flex:0 0 auto!important;}
-.llave-fila-compacta img{width:22px!important;height:22px!important;}
+.llave-fila-compacta img{width:18px!important;height:18px!important;}
 /* Bonus (opcional, pedido "si se puede"): el equipo que NO ganó en una llave ya resuelta
    (compacta) se ve en blanco y negro — se identifica por NO tener la clase .llave-gano, que
    solo se agrega al ganador; en modo compacto siempre hay un ganador definido. */
 .llave-fila-compacta .llave-eq-simple.llave-solo-escudo:not(.llave-gano) img{filter:grayscale(1);opacity:.55;}
+/* Fila y marcador más angostos en modo compacto (escudo más chico ya no necesita tanto gap) —
+   libera ancho para que el mini-cuadro entero (ver .bnc-mini-bracket) no tenga que ser tan
+   grande, evitando que la Semi de al lado se desborde de su propio contenedor. */
+.llave-fila-compacta{gap:.35rem;}
+.llave-fila-compacta .llave-marc{gap:.45rem;}
 /* Línea antes de I para delimitar todo el sector de marcador (no solo entre celdas) — hay
    espacio de sobra (ningún nombre de club es tan largo), aprovechado para un poco más de
    ancho/aire en vez de dejarlo vacío. */
@@ -313,7 +318,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    espacio sobrante se repartía distinto en cada lado (una quedaba pegada a su gancho, la otra
    no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
 .bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
-.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:400px;position:relative;}
+.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:408px;position:relative;}
 /* Color propio de las líneas del cuadro (más visible que --border, que a 8% de opacidad
    quedaba invisible contra el fondo oscuro — se veían tarjetas sueltas sin conexión). */
 .bnc-mini-bracket .bracket-pair::after{
@@ -340,7 +345,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .bnc-mini-bracket .llave-col-sf .llave-card-sm{max-width:258px;}
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
-.llave-card-sm .llave-marc-cell{min-width:24px;}
+.llave-card-sm .llave-marc-cell{min-width:20px;}
 /* Cruces del Segundo Ascenso (preview16) — con marcador agregado, "Cuartofinalista N" no
    entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
    tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
