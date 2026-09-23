@@ -1011,22 +1011,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div style="display:flex;align-items:stretch;gap:.4rem;">
-        <div class="fecha-hdr" style="flex:1;">
-          <div class="fnav dis" id="btn-prev2" onclick="cambiar2(-1)">&#8592;</div>
-          <div style="position:relative;flex:1;text-align:center;">
-            <div class="fnum" id="fnum2" onclick="toggleFechaPicker2()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-              <span id="fnum2-txt">Ida</span>
-              <span style="font-size:11px;color:var(--muted);">▼</span>
-            </div>
-            <div id="fecha-picker2" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-              <div id="fecha-picker2-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:.3rem;width:120px;"></div>
-            </div>
-            <div class="fsub">Cuartos de Final — 2026</div>
-          </div>
-          <div class="fnav" id="btn-next2" onclick="cambiar2(1)">&#8594;</div>
+      <div class="fecha-hdr" style="justify-content:center;">
+        <div style="text-align:center;">
+          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos de Final</div>
+          <div class="fsub">Ida y vuelta — 2026</div>
         </div>
-        <div style="width:32px;flex-shrink:0;"></div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
@@ -1908,7 +1897,6 @@ function fechaAbsoluta(zona, fecha){
   const rank = zona ? faseRank(zona) : 0;
   return rank*1000 + f;
 }
-let fechaActual2 = 1;
 
 // ── FASE CAMPEONATO: bracket de playoffs del Nonagonal (cuartos/semis/final) ──
 // Cruces fijos entre Nonagonal A y B. "mejor" = menor número de posición (ventaja deportiva:
@@ -2248,25 +2236,6 @@ function fechaInteligente(){
   }
   return ultimaJugada;
   // fallbackstrar la última
-}
-
-// Igual que fechaInteligente() pero para el widget de "Resultados" de la home, que ahora
-// muestra Cuartos de Final (Ida/Vuelta) en vez de las fechas de Segunda Fase — sin esto,
-// quedaría fijo en "Ida" en cada carga de página, sin importar qué instancia esté en curso.
-function fechaInteligente2(){
-  for(const f of [1,2]){
-    const tieneProgramado = CUARTOS_ESTADOS[f].fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>{
-      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)];
-      return m.gl===null && (meta?.dia || meta?.hora);
-    }));
-    if(tieneProgramado) return f;
-  }
-  let ultimaJugada = 1;
-  [1,2].forEach(f=>{
-    const tieneJugado = CUARTOS_ESTADOS[f].fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>m.gl!==null));
-    if(tieneJugado) ultimaJugada = f;
-  });
-  return ultimaJugada;
 }
 
 function escudoHTML(nombre, size='esc'){
@@ -4159,48 +4128,32 @@ function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;rend
 
 // ── CUARTOS DE FINAL: widget de resultados propio (Ida / Vuelta, ver CUARTOS_ESTADOS) ──
 // Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
-// archivada en /segunda-fase). f acá es 1 (Ida) o 2 (Vuelta), NO una fecha real de Supabase —
-// cada fuente de CUARTOS_ESTADOS[f] trae su propia fecha real (fecha:1 para las 3 zonas
-// actuales), que es la que hay que usar para las fichaKey (fecha real distinta del estado de
-// navegación rompería el link a planillas/en vivo apenas se sume la Vuelta).
-function renderPartidos2(f){
-  const estado = CUARTOS_ESTADOS[f];
-  document.getElementById("fnum2-txt").textContent = estado.label;
-  [1,2].forEach(i=>{
-    const el = document.getElementById("fp2-"+i);
-    if(el){
-      el.style.color = i===f ? "var(--accent)" : "";
-      el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
-    }
-  });
-  document.getElementById("btn-prev2").classList.toggle("dis", f<=1);
-  document.getElementById("btn-next2").classList.toggle("dis", f>=2);
-
+// archivada en /segunda-fase). Ida, vuelta y el desempate de descenso van TODOS juntos en una
+// sola solapa (el usuario lo pidió explícito: "ida y vuelta van en la misma solapa") — no hay
+// navegación entre estados, la separación entre el fin de semana de ida y el de vuelta ya la
+// da el agrupado por día (cada fuente de CUARTOS_ESTADOS trae su propia fecha real de
+// Supabase, que es la que hay que usar para las fichaKey, no el número de estado).
+function renderPartidos2(){
   const rows = [];
-  estado.fuentes.forEach(({zona,fecha}) => {
-    const ms = FIXTURE[zona]?.[String(fecha)] || [];
-    ms.forEach(m => {
-      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
-      rows.push({ zona, fecha, m, meta });
+  Object.values(CUARTOS_ESTADOS).forEach(estado=>{
+    estado.fuentes.forEach(({zona,fecha}) => {
+      const ms = FIXTURE[zona]?.[String(fecha)] || [];
+      ms.forEach(m => {
+        const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
+        rows.push({ zona, fecha, m, meta });
+      });
     });
   });
 
-  // Orden: sin programar (sin día/hora) → orden de fuentes. Programados, día de HOY en
-  // adelante → día, hora, siempre por la hora REAL de partido (mismo criterio que ya usaba
-  // Segunda Fase — ver comentario histórico en el resto del archivo). Día ya pasado → sin
-  // ordenar por hora, la fuente ya alcanza.
-  const hoy = _hoyLocalISO();
-  const fuenteIdx = (zona) => estado.fuentes.findIndex(x=>x.zona===zona);
+  // Orden: sin programar (sin día/hora) → al final, por zona. Programados → día, luego hora
+  // real programada (mismo criterio que ya usaba Segunda Fase).
   rows.sort((a,b)=>{
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
-    if(ad < hoy){
-      return (fuenteIdx(a.zona)-fuenteIdx(b.zona)) || a.m.local.localeCompare(b.m.local);
-    }
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
-    return (fuenteIdx(a.zona)-fuenteIdx(b.zona)) || a.m.local.localeCompare(b.m.local);
+    return a.m.local.localeCompare(b.m.local);
   });
 
   let html = "";
@@ -4219,36 +4172,6 @@ function renderPartidos2(f){
 
   document.getElementById("partidos-cont2").innerHTML = html || '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin partidos programados.</div>';
 }
-
-function cambiar2(d){ const n=fechaActual2+d; if(n<1||n>2) return; fechaActual2=n; renderPartidos2(n); }
-
-function irAFecha2(n){
-  const picker = document.getElementById("fecha-picker2");
-  if(picker) picker.style.display = "none";
-  if(n<1||n>2) return;
-  fechaActual2 = n;
-  renderPartidos2(n);
-}
-
-function toggleFechaPicker2(){
-  const picker = document.getElementById("fecha-picker2");
-  if(!picker) return;
-  const grid = document.getElementById("fecha-picker2-grid");
-  if(grid){
-    grid.innerHTML = [1,2].map(n=>{
-      return `<div onclick="irAFecha2(${n})" id="fp2-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual2?'var(--accent)':'var(--text)'};border-color:${n===fechaActual2?'var(--accent)':'var(--border)'};">${CUARTOS_ESTADOS[n].label}</div>`;
-    }).join("");
-  }
-  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
-}
-
-// Close picker2 on outside click
-document.addEventListener("click", e=>{
-  if(!e.target.closest("#fnum2") && !e.target.closest("#fecha-picker2")){
-    const picker2 = document.getElementById("fecha-picker2");
-    if(picker2) picker2.style.display = "none";
-  }
-});
 
 function renderFxTabs(){
   const maxF = fxFase==='segunda' ? 9 : 18;
@@ -6094,8 +6017,7 @@ async function _renderTodo(){
   // await: si no, _guardarCache() (que corre justo después de _renderTodo() en el que llama)
   // podía disparar antes de que esta consulta terminara, guardando el caché sin ese dato.
   await renderGoleadoresResumen();
-  fechaActual2 = fechaInteligente2();
-  renderPartidos2(fechaActual2);
+  renderPartidos2();
 }
 
 async function _refrescarSilencioso(){
@@ -6226,7 +6148,7 @@ async function _tickLive(){
   try {
     await cargarPartidosDesdeDB();
     renderPartidos(fechaActual);
-    renderPartidos2(fechaActual2);
+    renderPartidos2();
     renderTablas();
     const grupos = calcularGruposSegundaFase();
     renderSegundaFase(grupos);
