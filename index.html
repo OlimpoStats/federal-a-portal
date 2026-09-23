@@ -352,20 +352,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media (max-width:1560px){
   .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
   /* Aplana los 2 mini-cuadros (display:contents): sus 2 hijos (par de Cuartos + Semi) pasan a
-     competir por orden directamente con la Final dentro de .bnc-mirror-cont, en vez de quedar
-     atados a la mitad en la que viven en el HTML de escritorio — así se puede reordenar cada
-     pieza por separado (ver más abajo) en vez de solo las 2 mitades enteras como antes. */
+     apilarse directamente dentro de .bnc-mirror-cont, en el mismo orden en que aparecen en el
+     HTML — Cuartos-1, Semi-1, Final, Semi-2, Cuartos-2 — que es el orden correcto (confirmado
+     por el usuario: "llave, semifinales, final, semifinales, llave"). Antes esto se reordenaba
+     con `order` para juntar las 2 semis antes de la Final, pero esa no era la idea — la Final
+     va en el medio. Sin ningún `order` acá, el único cambio real es que la mitad derecha
+     (`.bnc-mini-bracket-der`, donde la Semi va primero en el HTML porque en escritorio queda
+     pegada al centro) YA NO se reordena para leer "Cuartos→Semi" — se deja Semi→Cuartos, que es
+     lo que da Semi-2 antes de Cuartos-2, cerrando el orden pedido. */
   .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
   .bnc-mirror-final{min-width:0;}
-  /* Orden pedido: 1ra llave de Cuartos, después las 2 semis Y la Final juntas (todavía "A
-     Definir" las 3, tiene sentido agruparlas), y al final la 2da llave de Cuartos — en vez del
-     orden del HTML (Cuartos-1, Semi-1, Final, Semi-2, Cuartos-2), que dejaba a la Semi-2 sola
-     después de la Final sin nada que la siguiera. */
-  .llave-col-qf{order:1;}
-  .llave-col-sf{order:2;}
-  .bnc-mirror-final{order:3;}
-  .bnc-mini-bracket-der>.llave-col-qf{order:4;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
