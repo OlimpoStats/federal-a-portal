@@ -39,7 +39,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 
 /* inicio: two columns */
-.inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) 1fr;gap:3rem;align-items:start;}
+.inicio-grid{display:grid;grid-template-columns:minmax(480px,520px) minmax(0,1fr);gap:3rem;align-items:start;}
 
 .sec{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin-bottom:.6rem;}
 
@@ -143,10 +143,22 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* leyenda de colores */
 .leyenda-colores{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:12px;color:#ccc;margin:.2rem 0 0;}
 .leyenda-colores b{font-size:14px;margin-right:.2rem;}
+.descendidos-cont{display:flex;flex-wrap:wrap;gap:.5rem;padding:.6rem;}
+.descendido-chip{display:flex;align-items:center;gap:.4rem;background:rgba(229,57,53,.08);border-left:3px solid #e53935;border-radius:4px;padding:.35rem .6rem;}
+.descendido-nombre{font-size:13px;font-weight:600;color:#e53935;}
+.descendido-grupo{font-size:10px;color:var(--muted);white-space:nowrap;}
+/* 4to descendido (desempate de descenso) mientras no se juega: mismo lenguaje que los otros
+   3 chips pero en naranja (el mismo tono que ya usa el sitio para "zona de riesgo, desempate
+   pendiente" en otras tablas) en vez de rojo — todavía no es un descenso confirmado. Los 2
+   escudos con una línea diagonal blanca en el medio, en vez de un solo escudo. */
+.descendido-chip-pendiente{background:rgba(255,152,0,.08);border-left-color:#ff9800;}
+.descendido-chip-pendiente .descendido-nombre{color:#ff9800;}
+.descendido-split{display:flex;align-items:center;gap:.5rem;position:relative;padding:0 .4rem;}
+.descendido-split::after{content:'';position:absolute;left:50%;top:-5px;bottom:-5px;width:1.5px;background:#fff;transform:rotate(20deg);}
 #tablas-nonagonal-a .tabla-mini,#tablas-nonagonal-b .tabla-mini,#tablas-revalida-a .tabla-mini{margin-bottom:0;}
 /* bracket Fase Campeonato (Nonagonal) — clase reusable (no atada a un id) para poder
    renderizar el mismo cuadro en más de un lugar (home + calculadora). */
-.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:2rem;align-items:stretch;}
+.bracket-nona-cont{display:grid;grid-template-columns:var(--bnc-cols,repeat(3,1fr));gap:1.2rem;align-items:stretch;}
 .llave-col-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;text-align:center;}
 /* Cuadro tipo llave real: las 3 columnas (Cuartos/Semis/Final) quedan de igual altura
    (align-items:stretch arriba). El título NO participa del reparto vertical (si no, con
@@ -171,10 +183,68 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-eq-simple.llave-eq-der{justify-content:flex-end;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
-.llave-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+.llave-nombre{font-size:14px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
 .llave-vs-sep{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
-.llave-nota{font-size:11px;color:var(--muted);margin:.4rem 0 0;}
+/* Subtítulo de fase, bajo el título — antes iba al final del cuadro, chico y gris (se
+   perdía). Ahora en dorado y más grande, con más aire en mobile (título y subtítulo quedaban
+   pegados si el margen era el mismo que en desktop). */
+.llave-nota{font-size:14px;color:var(--accent);margin:0 0 1rem;font-weight:600;}
+@media (max-width:700px){
+  .llave-nota{margin:.5rem 0 1.1rem;font-size:13px;}
+}
+/* Tarjeta apilada (1 equipo por fila) — hoy solo la usa el preview de 16vos del segundo
+   ascenso (el cuadro del primer ascenso volvió al formato "espejo" de antes). El nombre tiene
+   un min-width para que la fila de un placeholder ("Perdedor QF1", sin escudo) no quede mucho
+   más angosta que la de un equipo real — así las 2 filas de una misma tarjeta quedan parejas.
+   El marcador se empuja a la derecha (margin-left:auto) para no quedar pegado al nombre. */
+.llave-card-v{flex-direction:column;align-items:stretch;gap:0;}
+.llave-fila{display:flex;align-items:center;gap:.5rem;padding:.2rem 0;}
+.llave-fila+.llave-fila{border-top:1px solid var(--border);margin-top:.35rem;padding-top:.4rem;}
+.llave-fila .llave-eq-simple{flex:0 1 auto;min-width:140px;}
+/* Fila compacta (ronda resuelta, solo escudo+marcador): sin el min-width de 140px que
+   reservaba lugar para el nombre — el escudo queda pegado a la izquierda y el marcador al
+   resto del ancho disponible, en vez de dejar un hueco vacío en el medio. */
+/* !important necesario: .llave-card-sm .llave-fila .llave-eq-simple (min-width:90px, 3
+   clases) le gana por especificidad a esta regla (2 clases) desde que la tarjeta compacta
+   también lleva la clase llave-card-sm — por eso el escudo no se achicaba y quedaba en una
+   caja ancha y chata en vez de ajustarse a su tamaño real. También se fuerza el tamaño del
+   escudo a 22px (iba a 32px, tamaño pensado para el modo horizontal sin marcador que comparte
+   esta misma función — acá con marcador al lado hace falta más chico). */
+.llave-fila-compacta .llave-eq-simple{min-width:0!important;flex:0 0 auto!important;}
+.llave-fila-compacta img{width:18px!important;height:18px!important;}
+/* Bonus (opcional, pedido "si se puede"): el equipo que NO ganó en una llave ya resuelta
+   (compacta) se ve en blanco y negro — se identifica por NO tener la clase .llave-gano, que
+   solo se agrega al ganador; en modo compacto siempre hay un ganador definido. */
+.llave-fila-compacta .llave-eq-simple.llave-solo-escudo:not(.llave-gano) img{filter:grayscale(1);opacity:.55;}
+/* Fila y marcador más angostos en modo compacto (escudo más chico ya no necesita tanto gap) —
+   libera ancho para que el mini-cuadro entero (ver .bnc-mini-bracket) no tenga que ser tan
+   grande, evitando que la Semi de al lado se desborde de su propio contenedor. */
+.llave-fila-compacta{gap:.35rem;}
+.llave-fila-compacta .llave-marc{gap:.45rem;}
+/* La columna de Cuartos es 1fr — el ancho real que le queda depende de cuánto ocupe la Semi
+   de al lado (nombres largos como "San Martín (F)" le dejan menos lugar que nombres cortos
+   como "Alvarado"), así que .llave-card-v con width:100% (heredado de .llave-card) se estiraba
+   distinto en cada mitad del cuadro espejado, dejando un hueco vacío entre escudo y marcador
+   más grande de un lado que del otro (se veía "centrado" en un lado y "tirado a la izquierda"
+   en el otro). La tarjeta compacta ahora se ajusta a su contenido real (no al 1fr completo) y
+   se centra dentro de esa columna — mismo aspecto de los dos lados sin importar el nombre de
+   la Semi vecina. */
+.llave-card-compacta{width:auto;align-self:center;}
+/* Línea antes de I para delimitar todo el sector de marcador (no solo entre celdas) — hay
+   espacio de sobra (ningún nombre de club es tan largo), aprovechado para un poco más de
+   ancho/aire en vez de dejarlo vacío. */
+.llave-marc{display:flex;gap:.6rem;flex-shrink:0;margin-left:auto;padding-left:.5rem;border-left:1px solid rgba(255,255,255,.12);}
+.llave-marc-cell{display:flex;flex-direction:column;align-items:center;min-width:30px;}
+/* Mini separador entre I|V y V|G — el de antes de G (el marcador que importa, el que dice
+   quién pasa) un poco más grueso/visible; el de antes de V más fino/apagado, para no competir
+   en jerarquía visual con el de G. */
+.llave-marc-cell:not(:first-child){padding-left:.5rem;border-left:1px solid rgba(255,255,255,.12);}
+.llave-marc-cell.llave-marc-glob{padding-left:.55rem;border-left:1.5px solid rgba(255,255,255,.32);}
+.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
+.llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
+.llave-marc-glob-gano .llave-marc-val{color:var(--accent);}
 /* cruces del camino por el segundo ascenso (modal de mérito) — bloque apilado, sin columnas
    fijas, para que los textos largos (sorteos con varios candidatos) no fuercen scroll lateral
    ni en mobile ni en desktop. */
@@ -190,6 +260,139 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media (max-width:900px){
   .bracket-nona-cont{grid-template-columns:1fr;}
   .bracket-pair::after{display:none;}
+}
+/* Desplegable de "Orden para cruces" — técnica de grid-template-rows 0fr→1fr (en vez de
+   height/max-height medido a mano en JS, que es lo que había quedado "tosco" en el primer
+   intento con Primera Fase): anima la altura real del contenido sin tener que calcularla,
+   funciona con cualquier alto de contenido y no salta ni recorta de golpe.
+   El toggle en sí va recuadrado y con color propio (antes era un título de texto plano, no se
+   notaba que era clickeable) — mismo lenguaje que .fecha-hdr (tarjeta con borde) pero con
+   acento dorado para diferenciarlo de un simple encabezado de sección. */
+.oc-toggle{display:flex;align-items:center;justify-content:space-between;gap:.75rem;cursor:pointer;user-select:none;background:var(--surface);border:1px solid rgba(232,196,74,.35);border-radius:8px;padding:.85rem 1.1rem;transition:border-color .2s ease,background .2s ease;}
+.oc-toggle:hover{border-color:var(--accent);background:var(--surface2);}
+.oc-toggle .sec{margin-bottom:0;color:#fff;}
+.oc-chevron{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(232,196,74,.14);color:var(--accent);font-size:15px;transition:transform .3s ease;flex-shrink:0;}
+.oc-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.4,0,.2,1);}
+.oc-collapse.open{grid-template-rows:1fr;}
+.oc-toggle.open{border-radius:8px 8px 0 0;border-bottom-color:transparent;}
+.oc-toggle.open .oc-chevron{transform:rotate(180deg);}
+/* El borde de abajo solo se ve con .open — si quedaba siempre puesto, con el desplegable
+   cerrado (altura 0) se veía como una doble línea pegada al borde inferior de .oc-toggle. */
+.oc-collapse-inner{overflow:hidden;min-height:0;background:var(--surface);border:1px solid transparent;border-top:none;border-radius:0 0 8px 8px;padding:0 1.1rem .5rem;}
+.oc-collapse.open .oc-collapse-inner{border-color:rgba(232,196,74,.35);}
+/* "Orden para cruces" (home) — 27 equipos en 3 columnas de 9 (una fila por equipo). Los
+   primeros 7 puestos (reservados para los caídos del Nonagonal) llevan una etiqueta de fase
+   antes del nombre; el resto (Tabla de Mérito) no. El detalle va pegado al nombre (gap chico,
+   SIN empujarlo al borde derecho como antes — eso era lo que dejaba tanto espacio muerto). */
+#orden-cruces-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 1.2rem;align-items:start;padding-top:.75rem;}
+.oc-col{min-width:0;}
+.oc-fila{display:flex;align-items:center;gap:.35rem;padding:.4rem 0;border-bottom:1px solid var(--border);min-width:0;}
+.oc-col .oc-fila:last-child{border-bottom:none;}
+.oc-pos{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--accent);min-width:20px;text-align:center;flex-shrink:0;}
+.oc-label{font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#e8c44a;background:rgba(232,196,74,.12);border-radius:4px;padding:.1rem .3rem;flex-shrink:0;}
+.oc-eq{display:flex;align-items:center;gap:.3rem;min-width:0;flex:0 1 auto;overflow:hidden;}
+.oc-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;}
+.oc-pend{font-size:11px;color:var(--muted);font-style:italic;}
+.oc-detalle{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+@media (max-width:900px){
+  #orden-cruces-cont{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+}
+@media (max-width:600px){
+  #orden-cruces-cont{grid-template-columns:minmax(0,1fr);}
+  .oc-nombre{max-width:none;}
+  /* Apiladas en 1 columna, el corte entre el puesto 9→10 y 18→19 (fin de una .oc-col, arranque
+     de la siguiente) quedaba sin línea — se nota como si faltara separación entre esos dos
+     equipos. En desktop (3 columnas lado a lado) no hace falta, cada .oc-col ya es visualmente
+     su propio bloque. */
+  .oc-col:not(:last-child) .oc-fila:last-child{border-bottom:1px solid var(--border);}
+}
+/* Clasificados a Copa Argentina — solo escudos, sin tabla. */
+/* Mismo lenguaje que .descendido-chip (solapa + fondo tenue) pero azul, y en grilla fija
+   (no flex-wrap) para que los 10 chips queden todos del mismo tamaño en vez de ajustarse
+   al largo de cada nombre. */
+#copa-argentina-cont{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem;padding:.6rem;}
+.ca-chip{display:flex;align-items:center;gap:.4rem;background:rgba(79,195,247,.1);border-left:3px solid #4fc3f7;border-radius:4px;padding:.35rem .6rem;min-width:0;}
+.ca-nombre{font-size:13px;font-weight:600;color:#4fc3f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+@media (max-width:700px){
+  #copa-argentina-cont{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+/* Cuadro del Nonagonal en espejo (home) — mismo lenguaje de tarjeta que .llave-card-v de
+   arriba, pero acomodado en 2 mini-cuadros (izq/der) en vez de 3 columnas secuenciales, para
+   que no quede tan ancho. Cada mini-cuadro reusa el mismo truco de .llave-col/.bracket-pair/
+   ::after de la Calculadora (align-items:stretch + justify-content:space-around centra la
+   Semi a la altura del punto medio de sus 2 Cuartos, y el borde dibuja el gancho) — ya
+   probado y andando bien ahí, así que acá solo se reacomoda en grid de 2 mitades + Final en
+   el medio (centrada con align-items:center, a la altura de ambas semis). */
+/* Ancho FIJO (no 1fr) en las 2 mitades + justify-content:center en el grid: con 1fr, el
+   espacio sobrante se repartía distinto en cada lado (una quedaba pegada a su gancho, la otra
+   no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
+.bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
+.bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:408px;position:relative;}
+/* Color propio de las líneas del cuadro (más visible que --border, que a 8% de opacidad
+   quedaba invisible contra el fondo oscuro — se veían tarjetas sueltas sin conexión). */
+.bnc-mini-bracket .bracket-pair::after{
+  content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:.9rem;
+  border:1.5px solid rgba(255,255,255,.28);border-left:none;border-radius:0 4px 4px 0;
+}
+/* Mitad derecha espejada: la Semi queda pegada al centro (a la izquierda de su mini-cuadro) y
+   los Cuartos afuera (a la derecha) — el gancho se invierte para seguir apuntando hacia la Semi. */
+.bnc-mini-bracket-der{grid-template-columns:auto 1fr;}
+.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-1rem;border-left:1.5px solid rgba(255,255,255,.28);border-right:none;border-radius:4px 0 0 4px;}
+/* Gancho chiquito de cada mini-cuadro hacia la Final, en el hueco entre columnas del grid
+   principal — con margen de sobra antes de tocar la tarjeta de la Final (no llega pegado). */
+.bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.8rem;height:1.5px;background:rgba(255,255,255,.28);}
+.bnc-mini-bracket:not(.bnc-mini-bracket-der)::before{right:-1.4rem;}
+.bnc-mini-bracket-der::before{left:-1.4rem;}
+.bnc-mirror-final{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:170px;}
+/* Semis y Final: recuadro más chico que el de Cuartos (menos padding/ancho) — SIN tocar el
+   tamaño de fuente (ya se probó antes achicar la fuente del marcador y no era lo pedido). */
+.llave-card-sm{padding:.35rem .5rem;max-width:200px;}
+/* La Semi dentro del mini-cuadro necesita más ancho que el tope genérico de 200px — con
+   nombres reales (no "A Definir") el nombre quedaba cortado a unos pocos caracteres. Solo
+   para la Semi ahí adentro (.llave-col-sf), no toca la Final (sigue en 200px) ni los Cuartos
+   compactos (tienen su propio ancho vía .llave-fila-compacta, no este tope). */
+.bnc-mini-bracket .llave-col-sf .llave-card-sm{max-width:258px;}
+.llave-card-sm .llave-fila{padding:.15rem 0;}
+.llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
+.llave-card-sm .llave-marc-cell{min-width:20px;}
+/* Cruces del Segundo Ascenso (preview16) — con marcador agregado, "Cuartofinalista N" no
+   entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
+   tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
+   las 12). */
+.llave-card-p16{padding:.35rem .5rem;}
+.llave-card-p16 .llave-fila{padding:.15rem 0;}
+.llave-card-p16 .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;}
+.llave-card-p16 .llave-marc{gap:.35rem;padding-left:.4rem;}
+.llave-card-p16 .llave-marc-cell{min-width:21px;}
+.llave-card-p16 .llave-marc-cell:not(:first-child){padding-left:.35rem;}
+@media (max-width:600px){
+  .llave-card-p16{padding:.25rem .4rem;}
+  .llave-card-p16 .llave-fila{padding:.1rem 0;}
+  .llave-card-p16 .llave-nombre{font-size:12px;}
+  .llave-card-p16 .llave-marc-val{font-size:13px;}
+  .llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:14px;}
+  .llave-card-p16 .llave-marc-lbl{font-size:8px;}
+}
+/* 1560px y no 900px a propósito: con las 2 mitades a 360px de ancho fijo + el ensanche del
+   marcador (línea antes de I, celdas más anchas), el cuadro necesita ~954px reales — con la
+   columna de Resultados al lado (mínimo 480px) más el padding de la página, eso no entra hasta
+   pasado ~1530px de viewport. Entre 900 y 1530 quedaba desbordando (verificado con
+   getBoundingClientRect: overflow real desde 1440px hacia abajo, resoluciones de laptop muy
+   comunes) — se extiende el mismo layout apilado que ya funcionaba bien en mobile. */
+@media (max-width:1560px){
+  .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
+  /* Aplana los 2 mini-cuadros (display:contents): sus 2 hijos (par de Cuartos + Semi) pasan a
+     apilarse directamente dentro de .bnc-mirror-cont, en el mismo orden en que aparecen en el
+     HTML — Cuartos-1, Semi-1, Final, Semi-2, Cuartos-2 — que es el orden correcto (confirmado
+     por el usuario: "llave, semifinales, final, semifinales, llave"). Antes esto se reordenaba
+     con `order` para juntar las 2 semis antes de la Final, pero esa no era la idea — la Final
+     va en el medio. Sin ningún `order` acá, el único cambio real es que la mitad derecha
+     (`.bnc-mini-bracket-der`, donde la Semi va primero en el HTML porque en escritorio queda
+     pegada al centro) YA NO se reordena para leer "Cuartos→Semi" — se deja Semi→Cuartos, que es
+     lo que da Semi-2 antes de Cuartos-2, cerrando el orden pedido. */
+  .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
+  .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
+  .bnc-mirror-final{min-width:0;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
@@ -244,14 +447,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bracket-espejo-lado:last-child{padding-left:0;padding-right:14px;}
   .bracket-espejo-lado:last-child::before{left:auto;right:0;top:-.65rem;border-left:none;border-right:2px solid #4fc3f7;border-radius:0 8px 8px 0;}
 }
-/* preview de 16vos (segundo ascenso) — solo escudos, tarjetas chicas: 6 columnas x 2 filas en
-   desktop, 3 columnas x 4 filas en mobile (los 12 cruces siempre entran igual). Clase reusable
-   (home + calculadora), no atada a un id. */
-.preview16-cont{display:grid;grid-template-columns:repeat(6,1fr);gap:.4rem;}
-@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(3,1fr);} }
-.preview16-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:.25rem;display:flex;align-items:center;justify-content:center;gap:.2rem;}
-.preview16-lado{display:flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:15px;flex-shrink:0;}
-.preview16-vs{font-size:7px;color:var(--muted);flex-shrink:0;}
+/* preview de 16vos (segundo ascenso) — tarjetas con el mismo lenguaje visual que las llaves del
+   primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
+   bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
+   Clase reusable (home + calculadora), no atada a un id. */
+.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3rem;}
+@media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
 /* zona tabs */
 .ztabs{display:flex;gap:.6rem;margin-bottom:.85rem;flex-wrap:wrap;}
 .ztab{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;padding:7px 18px;border-radius:8px;border:1px solid var(--accent);cursor:pointer;color:#111;background:var(--accent);transition:all .15s;text-transform:uppercase;}
@@ -288,6 +490,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 /* ── HAMBURGER + DRAWER ── */
 .hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:36px;height:36px;cursor:pointer;padding:4px;border-radius:6px;transition:background .15s;flex-shrink:0;}
+/* Bloque nuevo y separado (NO edita el @media(max-width:700px) existente, que está marcado
+   como "no tocar"): el menú completo (Inicio/Fixture/.../Calculadora) necesita ~1178px para
+   entrar en una sola línea — entre 700 y esos ~1178px se desbordaba, sin pasar a hamburguesa
+   todavía. Mismo criterio que el bloque de 700px (nav oculto, hamburguesa visible) pero sin
+   tocar tamaño de logo/user-btn, que a este ancho todavía entran bien. */
+@media(max-width:1200px){
+  .nav{display:none;}
+  .hamburger{display:flex;}
+}
 .hamburger:hover{background:rgba(255,255,255,.06);}
 .hamburger span{display:block;height:2px;background:var(--muted);border-radius:2px;transition:all .25s;}
 .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);background:var(--accent);}
@@ -756,6 +967,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni active" id="ni-inicio" onclick="goPage('inicio',this)">Inicio</div>
     <div class="ni" onclick="goPage('fixture',this)">Fixture</div>
     <div class="ni" onclick="goPage('primerafase',this)">Primera Fase</div>
+    <div class="ni" onclick="goPage('segundafase',this)">Segunda Fase</div>
     <div class="ni" onclick="goPage('planteles',this)">Equipos</div>
     <div class="ni" onclick="goPage('estadisticas',this)">Estadísticas</div>
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
@@ -787,6 +999,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="drawer-item active" id="di-inicio" onclick="goPageDrawer('inicio')">🏠 Inicio</div>
   <div class="drawer-item" id="di-fixture" onclick="goPageDrawer('fixture')">📅 Fixture</div>
   <div class="drawer-item" id="di-primerafase" onclick="goPageDrawer('primerafase')">📄 Primera Fase</div>
+  <div class="drawer-item" id="di-segundafase" onclick="goPageDrawer('segundafase')">📄 Segunda Fase</div>
   <div class="drawer-item" id="di-planteles" onclick="goPageDrawer('planteles')">🛡️ Equipos</div>
   <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
   <div class="drawer-section">Extra</div>
@@ -912,70 +1125,85 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div style="display:flex;align-items:stretch;gap:.4rem;">
-        <div class="fecha-hdr" style="flex:1;">
-          <div class="fnav dis" id="btn-prev2" onclick="cambiar2(-1)">&#8592;</div>
-          <div style="position:relative;flex:1;text-align:center;">
-            <div class="fnum" id="fnum2" onclick="toggleFechaPicker2()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
-              <span id="fnum2-txt">Fecha 1</span>
-              <span style="font-size:11px;color:var(--muted);">▼</span>
-            </div>
-            <div id="fecha-picker2" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
-              <div id="fecha-picker2-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:.3rem;width:210px;"></div>
-            </div>
-            <div class="fsub">Segunda Fase — 2026</div>
-          </div>
-          <div class="fnav" id="btn-next2" onclick="cambiar2(1)">&#8594;</div>
+      <div class="fecha-hdr" style="justify-content:space-between;">
+        <div style="width:110px;flex-shrink:0;"></div>
+        <div style="text-align:center;">
+          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos de Final</div>
+          <div class="fsub">Ida y vuelta — 2026</div>
         </div>
-        <div style="width:32px;flex-shrink:0;"></div>
+        <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin función,
+             solo ocupa el espacio hasta que esté lista esa pantalla. -->
+        <div title="Próximamente" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
-        <div id="nonagonales-wrap">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div id="tablas-nonagonal-a" style="align-self:start;"></div>
-            <div id="tablas-nonagonal-b" style="align-self:start;"></div>
-          </div>
-          <div id="leyenda-nonagonal" class="leyenda-colores">
-            <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
-            <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
-            <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
-          </div>
-        </div>
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;" id="bracket-nonagonal-title">Cuartos de Final — Primer Ascenso</p>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
+          <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
-          <p class="sec" style="color:#fff;margin-top:.9rem;">16vos — Segundo Ascenso</p>
+        </div>
+        <div id="segundo-ascenso-wrap">
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Segundo Ascenso - Dieciseisavos de Final</p>
+          <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="preview16-cont" class="preview16-cont"></div>
-          <div id="preview16-leyenda" class="leyenda-colores"></div>
-          <div id="btns-cruces-split">
-            <div id="btn-ver-merito" onclick="abrirModalMerito()">🔍 Detalle de los cruces</div>
-            <div id="btn-ir-calc" onclick="goPage('calculadora')">Calculalos</div>
-          </div>
         </div>
-        <div id="revalidas-wrap">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div style="align-self:start;">
-              <div id="tablas-revalida-a"></div>
-              <div id="leyenda-revalida" class="leyenda-colores">
-                <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
-                <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
-                <span><b style="color:#e53935;">●</b> En descenso</span>
-                <span>%C = Promedio para clasif. a siguiente fase</span>
-              </div>
+        <div id="orden-cruces-wrap">
+          <div class="oc-toggle" onclick="toggleOrdenCruces()">
+            <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
+            <span class="oc-chevron" id="oc-chevron">▾</span>
+          </div>
+          <div class="oc-collapse" id="oc-collapse">
+            <div class="oc-collapse-inner">
+              <div id="orden-cruces-cont"></div>
             </div>
-            <div id="tablas-revalida-b" style="align-self:start;"></div>
           </div>
         </div>
-        <div id="cont-descenso"></div>
-        <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-          <div id="cont-goleadores-resumen" style="align-self:start;"></div>
-          <div id="cont-asistentes-resumen" style="align-self:start;"></div>
+        <div id="copa-argentina-wrap">
+          <p class="sec" style="color:#fff;display:flex;align-items:center;gap:.5rem;"><img src="/copa-argentina-logo.png" alt="Copa Argentina" style="width:22px;height:22px;object-fit:contain;">Clasificados a Copa Argentina</p>
+          <div id="copa-argentina-cont"></div>
         </div>
+        <div id="cont-descendidos"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- SEGUNDA FASE (archivo — Nonagonal/Reválida como grupo ya cerraron su fase de tabla; lo
+     que sigue jugándose de ahí en más son los cuadros de playoff, que viven en Inicio). -->
+<div class="page" id="page-segundafase">
+  <p class="sec" style="color:#fff;">📄 Segunda Fase — archivo (fase de grupos finalizada)</p>
+  <div id="nonagonales-wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div id="tablas-nonagonal-a" style="align-self:start;"></div>
+      <div id="tablas-nonagonal-b" style="align-self:start;"></div>
+    </div>
+    <div id="leyenda-nonagonal" class="leyenda-colores">
+      <span><b style="color:#4caf50;">●</b> Primer Ascenso + Copa Argentina</span>
+      <span><b style="color:#4fc3f7;">●</b> Reválida + Copa Argentina</span>
+      <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
+    </div>
+  </div>
+  <div id="revalidas-wrap" style="margin-top:1.5rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div style="align-self:start;">
+        <div id="tablas-revalida-a"></div>
+        <div id="leyenda-revalida" class="leyenda-colores">
+          <span><b style="color:#cc9933;">●</b> Reválida: 2da fase</span>
+          <span><b style="color:#f8bbd0;">●</b> Eliminado</span>
+          <span><b style="color:#e53935;">●</b> En descenso</span>
+          <span>%C = Promedio para clasif. a siguiente fase</span>
+        </div>
+        <div style="width:32px;flex-shrink:0;"></div>
+      </div>
+      <div id="tablas-revalida-b" style="align-self:start;"></div>
+    </div>
+  </div>
+  <div id="cont-descenso" style="margin-top:1.5rem;"></div>
+  <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+    <div id="cont-goleadores-resumen" style="align-self:start;"></div>
+    <div id="cont-asistentes-resumen" style="align-self:start;"></div>
   </div>
 </div>
 
@@ -1795,7 +2023,6 @@ function fechaAbsoluta(zona, fecha){
   const rank = zona ? faseRank(zona) : 0;
   return rank*1000 + f;
 }
-let fechaActual2 = 1;
 
 // ── FASE CAMPEONATO: bracket de playoffs del Nonagonal (cuartos/semis/final) ──
 // Cruces fijos entre Nonagonal A y B. "mejor" = menor número de posición (ventaja deportiva:
@@ -1811,7 +2038,10 @@ const CRUCES_SEMIS_NONAGONAL = [
   { id:'SF1', qfA:'QF1', qfB:'QF2' },
   { id:'SF2', qfA:'QF3', qfB:'QF4' },
 ];
-// Resultados de playoffs — en null hasta que exista un mecanismo de carga (admin, pendiente).
+// Resultados de playoffs — se rellenan solos leyendo las zonas reales de `fixture` (ver
+// refrescarPlayoffNona()) cuando el admin las carga. FINAL queda aparte: es partido único y
+// la definición por penales (si hace falta) todavía no tiene de dónde leerse (no existe
+// vínculo a la tabla `penales` para este caso) — pendiente para cuando se llegue a esa ronda.
 const PLAYOFF_NONA = {
   QF1:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
   QF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
@@ -1821,6 +2051,74 @@ const PLAYOFF_NONA = {
   SF2:{ida:{golMejor:null,golPeor:null},vuelta:{golMejor:null,golPeor:null}},
   FINAL:{gl:null, gv:null, penalesA:null, penalesB:null},
 };
+// Zonas reales de `fixture` para cada llave (ver seedCuartosPlayoff() en admin/index.html
+// para Cuartos; Semifinal se siembra con el mismo criterio cuando llegue esa ronda).
+const PLAYOFF_NONA_ZONAS = {
+  QF1:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF2:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF3:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  QF4:{ida:'Cuartos Primer Ascenso - Ida', vuelta:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+  SF1:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+  SF2:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+};
+// Panel de "Resultados" de la home: reemplaza a las 9 fechas de Segunda Fase (fase cerrada,
+// archivada en /segunda-fase) por 2 estados de Cuartos de Final — Ida (incluye el desempate de
+// descenso, mismo fin de semana) y Vuelta. Cuando se llegue a Semis, sumar sus zonas acá.
+const CUARTOS_ESTADOS = {
+  1: { label:'Ida', fuentes: [
+        {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
+        {zona:'Desempate Descenso', fecha:1},
+      ]},
+  2: { label:'Vuelta', fuentes: [
+        {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+      ]},
+};
+// Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
+// nombreMejor/nombrePeor dentro de esas zonas, sin asumir quién quedó como local/visitante
+// (más robusto que depender del orden exacto en que se cargó cada fila).
+function _golesLlaveDesdeFixture(zonaIda, zonaVuelta, fecha, nombreMejor, nombrePeor){
+  const buscar = (zona) => {
+    const lista = (FIXTURE[zona] && FIXTURE[zona][String(fecha)]) || [];
+    return lista.find(m =>
+      (m.local===nombrePeor && m.visitante===nombreMejor) || (m.local===nombreMejor && m.visitante===nombrePeor)
+    );
+  };
+  const golDe = (row, nombre) => {
+    if(!row || row.gl==null || row.gv==null) return null;
+    return row.local===nombre ? row.gl : row.gv;
+  };
+  const idaRow = buscar(zonaIda), vueltaRow = buscar(zonaVuelta);
+  return {
+    ida: { golMejor: golDe(idaRow, nombreMejor), golPeor: golDe(idaRow, nombrePeor) },
+    vuelta: { golMejor: golDe(vueltaRow, nombreMejor), golPeor: golDe(vueltaRow, nombrePeor) },
+  };
+}
+// Releer PLAYOFF_NONA (cuartos y semis) desde el FIXTURE real antes de cada cálculo del
+// cuadro — así, apenas el admin carga un resultado, el cuadro lo refleja sin tocar código de
+// nuevo. Necesita los equipos reales de cada llave (nombreMejor/nombrePeor), que dependen de
+// la tabla vigente del Nonagonal (cuartos) o de a quién eliminó cada cuarto (semis) — por eso
+// recibe `cuartosResueltos` opcional para poder resolver semis en la misma pasada.
+function refrescarPlayoffNona(cuartosPorId){
+  CRUCES_NONAGONAL.forEach(cr=>{
+    if(!cuartosPorId) return;
+    const c = cuartosPorId[cr.id];
+    if(!c || !c.mejor || !c.peor) return;
+    const z = PLAYOFF_NONA_ZONAS[cr.id];
+    const res = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, c.mejor.n, c.peor.n);
+    PLAYOFF_NONA[cr.id].ida = res.ida;
+    PLAYOFF_NONA[cr.id].vuelta = res.vuelta;
+  });
+}
+function refrescarPlayoffNonaSemis(semisPorId){
+  CRUCES_SEMIS_NONAGONAL.forEach(sf=>{
+    const s = semisPorId && semisPorId[sf.id];
+    if(!s || !s.mejor || !s.peor) return;
+    const z = PLAYOFF_NONA_ZONAS[sf.id];
+    const res = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, s.mejor.n, s.peor.n);
+    PLAYOFF_NONA[sf.id].ida = res.ida;
+    PLAYOFF_NONA[sf.id].vuelta = res.vuelta;
+  });
+}
 
 // Suma ida+vuelta; en empate global (puntos y goles, es decir el aggregate) avanza el mejor
 // ubicado (ventaja deportiva). Cuartos y semis usan la misma regla.
@@ -1840,25 +2138,41 @@ function calcBracketNonagonal(datos){
   const nonARows = armarFilasTemporada(d.nonA, 'Nonagonal A').sort(sortNonagonal);
   const nonBRows = armarFilasTemporada(d.nonB, 'Nonagonal B').sort(sortNonagonal);
   const rowsPorZona = {'Nonagonal A': nonARows, 'Nonagonal B': nonBRows};
+  // pts/gf/gc/gfVisit del Nonagonal viajan en el objeto para que, si este equipo termina
+  // cayendo, "Orden para cruces" pueda ordenarlo contra otros caídos sin tener que rebuscar
+  // la fila de nuevo (ver ordenarCaidosNonagonal()).
   const equipoDe = (zona,pos) => {
     const r = rowsPorZona[zona][pos-1];
-    return r ? { n:r.n, zona, pos } : null;
+    return r ? { n:r.n, zona, pos, pts:r.pts, gf:r.gf, gc:r.gc, gfVisit:r.gfVisit } : null;
   };
 
+  const cuartosPares = {};
+  CRUCES_NONAGONAL.forEach(cr=>{
+    cuartosPares[cr.id] = { mejor: equipoDe(cr.mejor.zona, cr.mejor.pos), peor: equipoDe(cr.peor.zona, cr.peor.pos) };
+  });
+  refrescarPlayoffNona(cuartosPares);
+
   const cuartos = CRUCES_NONAGONAL.map(cr=>{
-    const mejor = equipoDe(cr.mejor.zona, cr.mejor.pos);
-    const peor  = equipoDe(cr.peor.zona, cr.peor.pos);
+    const {mejor, peor} = cuartosPares[cr.id];
     const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[cr.id].ida, PLAYOFF_NONA[cr.id].vuelta);
     const ganador = resultado.resuelto ? (resultado.ganadorEsMejor ? mejor : peor) : null;
     return { id:cr.id, mejor, peor, resultado, ganador };
   });
   const porId = {}; cuartos.forEach(c=>porId[c.id]=c);
 
-  const semis = CRUCES_SEMIS_NONAGONAL.map(sf=>{
+  const semisPares = {};
+  CRUCES_SEMIS_NONAGONAL.forEach(sf=>{
     const qA = porId[sf.qfA], qB = porId[sf.qfB];
     const eqA = qA.ganador, eqB = qB.ganador;
     let mejor=null, peor=null;
     if(eqA && eqB){ [mejor,peor] = eqA.pos <= eqB.pos ? [eqA,eqB] : [eqB,eqA]; }
+    semisPares[sf.id] = { mejor, peor };
+  });
+  refrescarPlayoffNonaSemis(semisPares);
+
+  const semis = CRUCES_SEMIS_NONAGONAL.map(sf=>{
+    const qA = porId[sf.qfA], qB = porId[sf.qfB];
+    const {mejor, peor} = semisPares[sf.id];
     const resultado = resolverLlaveIdaVuelta(PLAYOFF_NONA[sf.id].ida, PLAYOFF_NONA[sf.id].vuelta);
     const ganador = (resultado.resuelto && mejor) ? (resultado.ganadorEsMejor ? mejor : peor) : null;
     return { id:sf.id, origen:[qA,qB], mejor, peor, resultado, ganador };
@@ -1994,6 +2308,9 @@ const ZONA_COLORES = {
   "Nonagonal B": { color: "#1b5e20", text: "#e8f5e9", code: "NB", pillLabel: "NONA. B" },
   "Reválida A": { color: "#e0507a", text: "#2a0714", code: "RA", pillLabel: "REV. A" },
   "Reválida B": { color: "#c0504d", text: "#fbe4e4", code: "RB", pillLabel: "REV. B" },
+  "Cuartos Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "CI" },
+  "Cuartos Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "CV" },
+  "Desempate Descenso": { color: "#e53935", text: "#ffffff", code: "DD" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -2045,26 +2362,6 @@ function fechaInteligente(){
   }
   return ultimaJugada;
   // fallbackstrar la última
-}
-
-// Igual que fechaInteligente() pero para los grupos de Segunda Fase (Nonagonal/Reválida,
-// fechas 1-9) — sin esto, el widget de resultados de Segunda Fase queda fijo en la Fecha 1
-// en cada carga de página, sin importar qué fecha esté realmente en curso.
-function fechaInteligente2(){
-  for(let f=1;f<=9;f++){
-    const tieneProgramado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>{
-      const key = `${z}_${f}_${m.local}_${m.visitante}`;
-      const meta = PARTIDO_META[key];
-      return m.gl===null && (meta?.dia || meta?.hora);
-    }));
-    if(tieneProgramado) return f;
-  }
-  let ultimaJugada = 1;
-  for(let f=1;f<=9;f++){
-    const tieneJugado = GRUPOS2.some(z=>(FIXTURE[z]?.[String(f)]||[]).some(m=>m.gl!==null));
-    if(tieneJugado) ultimaJugada = f;
-  }
-  return ultimaJugada;
 }
 
 function escudoHTML(nombre, size='esc'){
@@ -3379,8 +3676,12 @@ function renderGruposSegundaFase(grupos){
   _ultimoNonARows = nonARows; _ultimoNonBRows = nonBRows;
   _ultimoRevARows = revARows; _ultimoRevBRows = revBRows;
 
-  renderBracketNonagonalEspejo(grupos);
+  renderBracketNonagonalMirror(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
+  const bracketParaCruces = calcBracketNonagonal(grupos);
+  const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
+  renderOrdenCruces(bracketParaCruces, tablaMerito);
+  renderCopaArgentina(nonARows, nonBRows);
 }
 
 function _seedLabelLlave(equipo){ return `${equipo.pos}°${equipo.zona.slice(-1)}`; }
@@ -3406,25 +3707,59 @@ function _ladoLlave(equipo, esGanador, conSeed, soloEscudo, lado){
 
 // Cuando ningún lado está definido todavía, una sola tarjeta "A Definir" centrada en vez de
 // "A Definir vs A Definir" (no aporta nada mostrar el "vs" contra sí mismo).
-function _cardVacia(soloEscudo){
-  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
+function _cardVacia(soloEscudo, extraClass){
+  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}${extraClass?' '+extraClass:''}"><div class="llave-eq-simple pend" style="justify-content:center;">A Definir</div></div>`;
 }
 
-// Cada llave es una sola fila horizontal (equipo — vs — equipo), sin label de ronda/número
-// (ya lo dice el título de la columna) para que la tarjeta ocupe lo mínimo posible.
-function _cardLlave(tie, soloEscudo){
-  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo);
+// Una celda de marcador (Ida/Vuelta/Global) — "–" mientras no haya resultado cargado.
+function _marcCell(val, label, extraClass){
+  return `<div class="llave-marc-cell${extraClass?' '+extraClass:''}"><span class="llave-marc-val">${val==null?'–':val}</span><span class="llave-marc-lbl">${label}</span></div>`;
+}
+// Ida/Vuelta/Global de UN equipo, siempre en el mismo orden (izq→der) — ya no se espeja porque
+// ahora cada equipo tiene su propia fila (ver _filaLlave/_cardLlave), no comparten renglón.
+function _marcadorLado(golIda, golVuelta, global, esGanador){
+  const ida = _marcCell(golIda, 'I');
+  const vta = _marcCell(golVuelta, 'V');
+  const glob = _marcCell(global, 'G', 'llave-marc-glob'+(esGanador?' llave-marc-glob-gano':''));
+  return `<div class="llave-marc">${ida}${vta}${glob}</div>`;
+}
+// Una fila de la tarjeta apilada: equipo a la izquierda, marcador (si corresponde) desplegado
+// a la derecha de esa misma fila — así se lee "Equipo — su Ida/Vuelta/Global" de un vistazo,
+// en vez de tener los 2 equipos + 4 marcadores todos en la misma línea horizontal.
+// compacto=true: sin nombre, solo escudo (para una ronda ya resuelta que le cede protagonismo
+// a la siguiente — ver renderBracketNonagonalMirror) pero MANTIENE el marcador I/V/G, a
+// diferencia del modo soloEscudo de _cardLlave (que es horizontal, sin marcador, para el
+// estado "parcial" de una ronda que todavía no se sabe quién juega).
+function _filaLlave(equipo, esGanador, marcHTML, compacto){
+  const eq = _ladoLlave(equipo, esGanador, !compacto, !!compacto, 'izq');
+  return `<div class="llave-fila${compacto?' llave-fila-compacta':''}">${eq}${marcHTML||''}</div>`;
+}
+// Cada llave son 2 filas apiladas (un equipo arriba, el otro abajo), sin "vs" — el marcador de
+// ida/vuelta/global (PLAYOFF_NONA) solo se muestra si YA se conocen los dos equipos del cruce,
+// no tiene sentido mostrar espacios de gol para un cruce que todavía dice "A Definir".
+function _cardLlave(tie, soloEscudo, extraClass, compacto){
+  if(!tie.mejor && !tie.peor) return _cardVacia(soloEscudo, extraClass);
   const ganadorEsMejor = tie.resultado.resuelto ? tie.resultado.ganadorEsMejor : null;
-  return `<div class="llave-card${soloEscudo?' llave-card-mini':''}">
-    ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, soloEscudo, 'izq')}
-    <div class="llave-vs-sep">vs</div>
-    ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, soloEscudo, 'der')}
+  if(soloEscudo){
+    return `<div class="llave-card llave-card-mini${extraClass?' '+extraClass:''}">
+      ${_ladoLlave(tie.mejor, ganadorEsMejor===true, true, true, 'izq')}
+      <div class="llave-vs-sep">vs</div>
+      ${_ladoLlave(tie.peor, ganadorEsMejor===false, true, true, 'der')}
+    </div>`;
+  }
+  const conMarcador = tie.mejor && tie.peor && PLAYOFF_NONA[tie.id];
+  const pj = conMarcador ? PLAYOFF_NONA[tie.id] : null;
+  const marcMejor = pj ? _marcadorLado(pj.ida.golMejor, pj.vuelta.golMejor, tie.resultado.resuelto?tie.resultado.globalMejor:null, ganadorEsMejor===true) : '';
+  const marcPeor  = pj ? _marcadorLado(pj.ida.golPeor,  pj.vuelta.golPeor,  tie.resultado.resuelto?tie.resultado.globalPeor:null,  ganadorEsMejor===false) : '';
+  return `<div class="llave-card llave-card-v${extraClass?' '+extraClass:''}${compacto?' llave-card-compacta':''}">
+    ${_filaLlave(tie.mejor, ganadorEsMejor===true, marcMejor, compacto)}
+    ${_filaLlave(tie.peor, ganadorEsMejor===false, marcPeor, compacto)}
   </div>`;
 }
 
-function _cardFinalNonagonal(final){
-  if(!final.equipo1 && !final.equipo2) return _cardVacia();
-  return `<div class="llave-card">
+function _cardFinalNonagonal(final, extraClass){
+  if(!final.equipo1 && !final.equipo2) return _cardVacia(false, extraClass);
+  return `<div class="llave-card${extraClass?' '+extraClass:''}">
     ${_ladoLlave(final.equipo1, final.ganador===final.equipo1, false, false, 'izq')}
     <div class="llave-vs-sep">vs</div>
     ${_ladoLlave(final.equipo2, final.ganador===final.equipo2, false, false, 'der')}
@@ -3471,6 +3806,46 @@ function renderBracketNonagonal(grupos, elId='bracket-nonagonal-cont', tituloElI
       <p class="llave-col-title">Final</p>
       <div class="llave-col-body">${_cardFinalNonagonal(bracket.final)}</div>
     </div>`;
+}
+
+// ── CUADRO DEL NONAGONAL "EN ESPEJO" — SOLO PARA LA HOME ──
+// Mismo formato de tarjeta que renderBracketNonagonal de arriba (.llave-card-v + marcador
+// I/V/G) — no se toca esa función porque la sigue usando la Calculadora tal cual. Acá la
+// diferencia es el ACOMODO: en vez de 3 columnas secuenciales (Cuartos/Semis/Final, muy ancho),
+// 2 mini-cuadros (2 cuartos + su semi, con el gancho real conectándolos) uno a la izquierda y
+// otro a la derecha, con la Final chica centrada en el medio (align-items:center la ubica sola,
+// a la altura de las 2 semis). Semis y Final llevan la clase .llave-card-sm (menos padding/
+// ancho, MISMA fuente — ya se probó antes achicar la fuente del marcador y no era lo pedido).
+function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tituloElId='bracket-nonagonal-title'){
+  const el = document.getElementById(elId);
+  const tituloEl = document.getElementById(tituloElId);
+  if(!el) return;
+  const bracket = calcBracketNonagonal(grupos);
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso - Cuartos de Final';
+  el.className = 'bnc-mirror-cont';
+  const [qf1,qf2,qf3,qf4] = bracket.cuartos;
+  const [sf1,sf2] = bracket.semis;
+  // Ronda resuelta = se achica a escudo+marcador (sin nombres), dejando lugar/protagonismo a
+  // la siguiente. Cuartos y Semis viven en la misma grilla angosta (.bnc-mini-bracket, ancho
+  // fijo) junto a su ronda vecina, así que agrandar una tarjeta ahí (en vez de solo achicar la
+  // otra) desborda ese ancho fijo — se probó y se descartó (ver commit). La Final, en cambio,
+  // tiene su propia columna suelta y sí puede quedarse siempre grande.
+  const cuartosResueltos = bracket.cuartos.every(c=>c.resultado.resuelto);
+  const semisResueltas = bracket.semis.every(s=>s.resultado.resuelto);
+  // Clases llave-col-qf/llave-col-sf: permiten reordenar cada una por separado en la vista
+  // apilada (ver @media 1560px) sin depender de que sigan anidadas dentro de su .bnc-mini-bracket.
+  const colQF = (qfA,qfB) => `<div class="llave-col llave-col-qf"><div class="llave-col-body">
+      <div class="bracket-pair">${_cardLlave(qfA,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}${_cardLlave(qfB,false,cuartosResueltos?'llave-card-sm':'',cuartosResueltos)}</div>
+    </div></div>`;
+  const colSF = sf => `<div class="llave-col llave-col-sf"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
+  // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
+  // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
+  el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
+    <div class="bnc-mirror-final">
+      <p class="llave-col-title">Final</p>
+      ${_cardFinalNonagonal(bracket.final, 'llave-card-sm')}
+    </div>
+    <div class="bnc-mini-bracket bnc-mini-bracket-der">${colSF(sf2)}${colQF(qf3,qf4)}</div>`;
 }
 
 // ── CUADRO "ESPEJO" DEL NONAGONAL — SOLO PARA LA HOME ──
@@ -3567,7 +3942,7 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   // (se marca en LOS DOS equipos del par cuando ese fue el que los diferenció), rol:
   // 'win'|'lose' para saber a cuál de los dos le tocó el verde/amarillo y a cuál el rojo.
   const itemNona = (r, pos, origen, criterio, rol) => ({n:r.n, pos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, gfVisit:r.gfVisit, pctC:null, criterio:criterio||null, rol:rol||null});
-  const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, pctC:r._pctCLabel});
+  const itemRev = (r, origen) => ({n:r.n, pos:r._rawPos, origen, pts:r.pts, dif:r.gf-r.gc, gf:r.gf, pctC:r._pctCLabel});
 
   for(let tier=4; tier<=8; tier++){
     const a = nonARows[tier], b = nonBRows[tier];
@@ -3619,11 +3994,137 @@ function calcTablaMerito(nonARows, nonBRows, revARows, revBRows){
   return items; // 20 items, posición en la Tabla de Mérito = índice+1
 }
 
+// ── "Orden para cruces" (home): los 27 equipos que siguen en competencia por el segundo
+// ascenso, en un solo listado 1-27. Puestos 1-7 reservados para los caídos del camino del
+// primer ascenso (1=FINALISTA, 2-3=SEMIFINALISTA, 4-7=CUARTOFINALISTA), quedan "A Definir"
+// hasta que se juegue esa ronda. Puestos 8-27 = la Tabla de Mérito (calcTablaMerito), fija
+// desde que cerró la Segunda Fase.
+
+// Orden de los caídos de UNA MISMA ronda (confirmado por el usuario, no está en el
+// reglamento): 1° posición en su Nonagonal (1°>2°>3°>4°) → puntos del Nonagonal → diferencia
+// de gol del Nonagonal → goles a favor del Nonagonal. La ronda en sí (cuartos/semis/final) no
+// se compara acá — ese orden ya lo da dónde se los ubica en la lista (ver calcOrdenParaCruces).
+function ordenarCaidosNonagonal(equipos){
+  return [...equipos].sort((a,b)=>{
+    if(a.pos!==b.pos) return a.pos-b.pos;
+    if(a.pts!==b.pts) return b.pts-a.pts;
+    const da=a.gf-a.gc, db=b.gf-b.gc;
+    if(da!==db) return db-da;
+    return b.gf-a.gf;
+  });
+}
+
+// Perdedores de Cuartos del Nonagonal, ya ordenados (mejor ubicado primero) — se usa tanto acá
+// (para reservarles los puestos 4-7 de "Orden para cruces") como en calcLista16vos (para
+// rellenar los reenganches del cuadro del Segundo Ascenso con el equipo real apenas cae).
+function calcCuartofinalistasCaidos(bracket){
+  const loserOfTie = (tie) => {
+    if(!tie.resultado.resuelto || !tie.mejor || !tie.peor) return null;
+    return tie.ganador===tie.mejor ? tie.peor : tie.mejor;
+  };
+  return ordenarCaidosNonagonal(bracket.cuartos.map(loserOfTie).filter(Boolean));
+}
+
+function calcOrdenParaCruces(bracket, tablaMerito){
+  const loserOfTie = (tie) => {
+    if(!tie.resultado.resuelto || !tie.mejor || !tie.peor) return null;
+    return tie.ganador===tie.mejor ? tie.peor : tie.mejor;
+  };
+  const finalLoser = (bracket.final.resuelto && bracket.final.ganador)
+    ? (bracket.final.ganador===bracket.final.equipo1 ? bracket.final.equipo2 : bracket.final.equipo1)
+    : null;
+  const sfLosers = ordenarCaidosNonagonal(bracket.semis.map(loserOfTie).filter(Boolean));
+  const qfLosers = calcCuartofinalistasCaidos(bracket);
+
+  const items = [];
+  items.push({tipo:'reservado', label:'FINALISTA', equipo: finalLoser});
+  for(let i=0;i<2;i++) items.push({tipo:'reservado', label:'SEMIFINALISTA', equipo: sfLosers[i]||null});
+  for(let i=0;i<4;i++) items.push({tipo:'reservado', label:'CUARTOFINALISTA', equipo: qfLosers[i]||null});
+  tablaMerito.forEach(it=>items.push(it));
+  return items; // 27 items
+}
+
+// Fila compacta: la etiqueta (si hay) va pegada al nombre, y el detalle también pegado —
+// nada de empujarlo al borde derecho (eso era lo que dejaba tanto espacio muerto en el medio
+// con nombres cortos). Los de Reválida (tablaMerito) solo muestran posición + %C ("X,xxx
+// prom."), a diferencia de los del Nonagonal (reservados + tablaMerito 5°-9°) que sí muestran
+// pts/DG/GF — pedido explícito del usuario, para no repetir toda la cascada de desempate acá.
+function _filaOrdenCruces(it, pos){
+  if(it.tipo==='reservado'){
+    const eq = it.equipo;
+    if(!eq){
+      return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-label">${it.label}</span><span class="oc-pend">A Definir</span></div>`;
+    }
+    const dif = eq.gf-eq.gc;
+    const detalle = `${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
+    return `<div class="oc-fila">
+      <span class="oc-pos">${pos}</span>
+      <div class="oc-eq">${escudoHTML(eq.n,'me')}<span class="oc-nombre">${eq.n}</span></div>
+      <span class="oc-detalle">${detalle}</span>
+    </div>`;
+  }
+  if(it.tipo==='sorteo'){
+    return `<div class="oc-fila"><span class="oc-pos">${pos}</span><span class="oc-pend">🎲 Sorteo: ${it.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
+  }
+  const esRevalida = it.origen && it.origen.startsWith('Reválida');
+  const detalle = esRevalida
+    ? `${it.pos}° — ${it.pctC} prom.`
+    : (()=>{ const dif=it.dif; return `${it.pos}° — ${it.pts!=null?it.pts+'pts, ':''}DG:${dif>=0?'+':''}${dif}${it.gf!=null?(', GF:'+it.gf):''}`; })();
+  return `<div class="oc-fila">
+    <span class="oc-pos">${pos}</span>
+    <div class="oc-eq">${escudoHTML(it.n,'me')}<span class="oc-nombre">${it.n}</span></div>
+    <span class="oc-detalle">${detalle}</span>
+  </div>`;
+}
+
+// 3 columnas de 9 (27 = 3×9), apiladas en mobile.
+function renderOrdenCruces(bracket, tablaMerito){
+  const cont = document.getElementById('orden-cruces-cont');
+  if(!cont) return;
+  const items = calcOrdenParaCruces(bracket, tablaMerito);
+  const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1)).join('');
+  cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
+}
+
+// Desplegable "Orden para cruces" — SIEMPRE arranca cerrado (achica la home), sin recordar si
+// se abrió antes (pedido explícito: nada de estado persistido acá, cerrado es el default fijo).
+function toggleOrdenCruces(){
+  const collapse = document.getElementById('oc-collapse');
+  const toggle = document.querySelector('#orden-cruces-wrap .oc-toggle');
+  if(!collapse || !toggle) return;
+  const open = !collapse.classList.contains('open');
+  collapse.classList.toggle('open', open);
+  toggle.classList.toggle('open', open);
+}
+
+// Clasificados a Copa Argentina: 1°-5° de cada Nonagonal — mismo lenguaje visual que
+// "Equipos descendidos" (chip con solapa de color + nombre), pero azul y en grilla fija de
+// 5 columnas (2 filas de 5, ordenadas por grupo: fila 1 = Nonagonal A, fila 2 = Nonagonal B)
+// en vez de flex-wrap de ancho variable — así los 10 chips quedan todos del mismo tamaño.
+function renderCopaArgentina(nonARows, nonBRows){
+  const cont = document.getElementById('copa-argentina-cont');
+  if(!cont) return;
+  const equipos = [...nonARows.slice(0,5), ...nonBRows.slice(0,5)];
+  cont.innerHTML = equipos.map(r=>`<div class="ca-chip">${escudoHTML(r.n,'me')}<span class="ca-nombre">${r.n}</span></div>`).join('');
+}
+
 // Ronda de 16vos del camino por el segundo ascenso: los 4 perdedores de cuartos del Nonagonal
-// (todavía desconocidos hasta que se jueguen esas llaves) toman los primeros 4 lugares, seguidos
-// de los 20 puestos de la Tabla de Mérito. 24 en total.
-function calcLista16vos(tablaMerito){
-  const reenganches = [1,2,3,4].map(i=>({tipo:'pendiente', label:`Perdedor QF${i}`}));
+// toman los primeros 4 lugares, seguidos de los 20 puestos de la Tabla de Mérito. 24 en total.
+// Apenas se resuelve una llave de cuartos, ese lugar pasa a mostrar al equipo real (escudo+
+// nombre, vía calcCuartofinalistasCaidos) en vez del placeholder — el placeholder "Cuartofinalista
+// #N" solo queda para los puestos todavía sin resolver.
+// Número de las etiquetas "Cuartofinalista #N" (corregido por el usuario): el N es la
+// POSICIÓN real en "Orden para cruces" (puestos 4-7, los 3 primeros son FINALISTA/
+// SEMIFINALISTA y no participan de esta ronda) — con el "#" adelante a propósito, para que
+// quede claro que es un número de posición y NO un conteo ("Cuartofinalista 7" se leía como si
+// existieran 7 cuartofinalistas, cuando solo hay 4). El reenganche que enfrenta al PEOR de
+// todos los clasificados (índice 0 acá, emparejado con el último de la lista en
+// armarCrucesDesdeOrden — hoy Defensores (PV)) es el mejor ubicado de los 4 reservados = "#4";
+// el que enfrenta al MEJOR de esos 4 rivales posibles (hoy FADEP) es "#7" — de ahí el `4+idx`
+// (crece, no decrece).
+function calcLista16vos(tablaMerito, bracket){
+  const caidos = bracket ? calcCuartofinalistasCaidos(bracket) : [];
+  const reenganches = [1,2,3,4].map((_,idx)=> caidos[idx] || {tipo:'pendiente', label:`Cuartofinalista #${4+idx}`});
   return [...reenganches, ...tablaMerito];
 }
 
@@ -3636,29 +4137,34 @@ function armarCrucesDesdeOrden(lista){
   return cruces;
 }
 
-// Preview de los cruces de 16vos en la home — solo escudos (o ícono si el lugar todavía no
-// tiene equipo real: ⬇️ para los 4 que caen del primer ascenso, 🎲 para los que dependen de
-// un sorteo). El nombre real queda como tooltip (title) para no escribir texto en la tarjeta.
+// Fila de un equipo (o placeholder) en el preview de 16vos del segundo ascenso — mismo lenguaje
+// visual que _filaLlave del primer ascenso (escudo+nombre a la izquierda), AHORA con el mismo
+// marcador I/V/G (en "–" — todavía no hay zona de Supabase para esta ronda, es solo el mismo
+// lenguaje visual que el cuadro del Nonagonal, a la espera de que se pueda cargar de verdad).
+// El ícono de los placeholders (⬇️/🎲) va en una caja ".me" del mismo tamaño que un escudo real
+// (22px) — sin eso, la fila de un placeholder quedaba mucho más angosta que la de un equipo real
+// (escudo+nombre), se veían desparejas dentro de la misma tarjeta.
 function _ladoPreview16(item){
-  if(!item) return `<div class="preview16-lado">?</div>`;
-  if(item.tipo==='pendiente') return `<div class="preview16-lado" title="${item.label} — Eliminado del 1er Ascenso">⬇️</div>`;
-  if(item.tipo==='sorteo') return `<div class="preview16-lado" title="Sorteo: ${item.candidatos.map(c=>c.n).join(' / ')}">🎲</div>`;
-  return `<div class="preview16-lado" title="${item.n}">${escudoHTML(item.n,'me')}</div>`;
+  if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
+  if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend" title="Eliminado del 1er Ascenso"><div class="me" style="font-size:15px;">⬇️</div><span class="llave-nombre">${item.label}</span></div>`;
+  if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend"><div class="me" style="font-size:15px;">🎲</div><span class="llave-nombre">${item.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
+  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+}
+function _cardPreview16(mejor, peor){
+  const marc = _marcadorLado(null, null, null, false);
+  return `<div class="llave-card llave-card-v llave-card-p16">
+    <div class="llave-fila">${_ladoPreview16(mejor)}${marc}</div>
+    <div class="llave-fila">${_ladoPreview16(peor)}${marc}</div>
+  </div>`;
 }
 
-function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont', leyendaId='preview16-leyenda'){
+function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview16-cont'){
   const cont = document.getElementById(contId);
-  const leyenda = document.getElementById(leyendaId);
   if(!cont) return;
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
-  cont.innerHTML = cruces.map(c =>
-    `<div class="preview16-card">${_ladoPreview16(c.mejor)}<span class="preview16-vs">vs</span>${_ladoPreview16(c.peor)}</div>`
-  ).join('');
-  if(leyenda){
-    leyenda.innerHTML = `<span>⬇️ Eliminado del 1er Ascenso</span><span>🎲 Sorteo</span>`;
-  }
+  cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
 }
 
 // Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
@@ -3731,7 +4237,7 @@ function abrirModalMerito(){
     return;
   }
   const tablaMerito = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces16vos = armarCrucesDesdeOrden(lista16vos);
 
   cont.innerHTML = `
@@ -3776,25 +4282,22 @@ document.addEventListener("click", e=>{
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
-// ── SEGUNDA FASE: widget de resultados propio (fechas 1-9) ──
-function renderPartidos2(f){
-  document.getElementById("fnum2-txt").textContent = "Fecha " + f;
-  for(let i=1;i<=9;i++){
-    const el = document.getElementById("fp2-"+i);
-    if(el){
-      el.style.color = i===f ? "var(--accent)" : "";
-      el.style.borderColor = i===f ? "var(--accent)" : "var(--border)";
-    }
-  }
-  document.getElementById("btn-prev2").classList.toggle("dis", f<=1);
-  document.getElementById("btn-next2").classList.toggle("dis", f>=9);
-
+// ── CUARTOS DE FINAL: widget de resultados propio (Ida / Vuelta, ver CUARTOS_ESTADOS) ──
+// Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
+// archivada en /segunda-fase). Ida, vuelta y el desempate de descenso van TODOS juntos en una
+// sola solapa (el usuario lo pidió explícito: "ida y vuelta van en la misma solapa") — no hay
+// navegación entre estados, la separación entre el fin de semana de ida y el de vuelta ya la
+// da el agrupado por día (cada fuente de CUARTOS_ESTADOS trae su propia fecha real de
+// Supabase, que es la que hay que usar para las fichaKey, no el número de estado).
+function renderPartidos2(){
   const rows = [];
-  GRUPOS2.forEach(g => {
-    const ms = FIXTURE[g]?.[String(f)] || [];
-    ms.forEach(m => {
-      const meta = PARTIDO_META[getMetaKey(g,f,m.local,m.visitante)] || {};
-      rows.push({ zona: g, m, meta });
+  Object.values(CUARTOS_ESTADOS).forEach(estado=>{
+    estado.fuentes.forEach(({zona,fecha}) => {
+      const ms = FIXTURE[zona]?.[String(fecha)] || [];
+      ms.forEach(m => {
+        const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
+        rows.push({ zona, fecha, m, meta });
+      });
     });
   });
 
@@ -3810,7 +4313,6 @@ function renderPartidos2(f){
   // los horarios de arranque.
   const hoy = _hoyLocalISO();
   rows.sort((a,b)=>{
-    // Sin día van al final
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
@@ -3821,13 +4323,12 @@ function renderPartidos2(f){
     // Por hora real programada
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
     if(kh !== 0) return kh;
-    // Por grupo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
-    return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+    return a.m.local.localeCompare(b.m.local);
   });
 
   let html = "";
   let diaActual = null;
-  rows.forEach(({zona, m, meta}) => {
+  rows.forEach(({zona, fecha, m, meta}) => {
     const dKey = diaKey(meta.dia);
     if(dKey !== diaActual){
       diaActual = dKey;
@@ -3836,55 +4337,11 @@ function renderPartidos2(f){
         ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
         : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
     }
-    html += renderFilaPartido(zona, f, m, meta);
+    html += renderFilaPartido(zona, fecha, m, meta);
   });
-
-  const libresFecha = GRUPOS2
-    .map(g => LIBRES2[g]?.[String(f)])
-    .filter(Boolean);
-  if(libresFecha.length){
-    html += `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:.5rem;">
-      <div style="flex:1;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;">Libres:</span>
-        ${libresFecha.map(t=>`<span style="display:flex;align-items:center;gap:.3rem;">${escudoHTML(t,'me')}<span style="font-size:13px;">${t}</span></span>`).join('')}
-      </div>
-      <div style="width:56px;flex-shrink:0;"></div>
-    </div>`;
-  }
 
   document.getElementById("partidos-cont2").innerHTML = html || '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin partidos programados.</div>';
 }
-
-function cambiar2(d){ const n=fechaActual2+d; if(n<1||n>9) return; fechaActual2=n; renderPartidos2(n); }
-
-function irAFecha2(n){
-  const picker = document.getElementById("fecha-picker2");
-  if(picker) picker.style.display = "none";
-  if(n<1||n>9) return;
-  fechaActual2 = n;
-  renderPartidos2(n);
-}
-
-function toggleFechaPicker2(){
-  const picker = document.getElementById("fecha-picker2");
-  if(!picker) return;
-  const grid = document.getElementById("fecha-picker2-grid");
-  if(grid && !grid.children.length){
-    grid.innerHTML = Array.from({length:9},(_,i)=>{
-      const n = i+1;
-      return `<div onclick="irAFecha2(${n})" id="fp2-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaActual2?'var(--accent)':'var(--text)'};border-color:${n===fechaActual2?'var(--accent)':'var(--border)'};">${n}</div>`;
-    }).join("");
-  }
-  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
-}
-
-// Close picker2 on outside click
-document.addEventListener("click", e=>{
-  if(!e.target.closest("#fnum2") && !e.target.closest("#fecha-picker2")){
-    const picker2 = document.getElementById("fecha-picker2");
-    if(picker2) picker2.style.display = "none";
-  }
-});
 
 function renderFxTabs(){
   const maxF = fxFase==='segunda' ? 9 : 18;
@@ -3990,6 +4447,7 @@ const _PATH_MAP = {
   '/': 'inicio',
   '/fixture': 'fixture',
   '/primera-fase': 'primerafase',
+  '/segunda-fase': 'segundafase',
   '/equipos': 'planteles',
   '/estadisticas': 'estadisticas',
   '/reglamento': 'reglamento',
@@ -5526,6 +5984,55 @@ function renderTablaDescenso(elId, equipos, grupo, criterioTipo, titulo){
     </table>${hayNaranja?`<div style="font-size:11px;color:#ff9800;padding:.5rem .6rem;display:flex;align-items:flex-start;gap:.4rem;border-top:1px solid rgba(255,255,255,.06);"><span>⚖️</span><span>Desempate permanencia</span></div>`:''}</div>`;
 }
 
+// Resumen chico con los equipos que descienden (temporada completa) de cada grupo de Reválida —
+// reusa calcDescensoInfo, mismo criterio con el que renderTablaDescenso pinta las filas en rojo,
+// solo que acá se filtran y se listan explícitamente en vez de quedar como color dentro de la tabla.
+// El 4to descenso (último puesto de Reválida B) depende del partido de desempate — mientras
+// no esté jugado, no se sabe cuál de los 2 equipos cae. Lee directo la zona "Desempate
+// Descenso" (sembrada desde el admin, ver seedCuartosPlayoff()) en vez de tener los nombres
+// hardcodeados, para que ande solo aunque cambien los equipos en otra temporada.
+function calcDescensoDesempatePendiente(){
+  const fila = ((FIXTURE['Desempate Descenso'] || {})['1'] || [])[0];
+  if(!fila) return null;
+  if(fila.gl!=null && fila.gv!=null && fila.gl!==fila.gv){
+    const perdedor = fila.gl>fila.gv ? fila.visitante : fila.local;
+    return { resuelto:true, n:perdedor };
+  }
+  // Empate (o todavía sin jugar): con penales no implementados aún, sigue "pendiente" hasta
+  // que haya un ganador claro por gol.
+  return { resuelto:false, equipoA:fila.local, equipoB:fila.visitante };
+}
+
+function renderDescendidosResumen(revA, revB){
+  const el = document.getElementById('cont-descendidos');
+  if(!el) return;
+  const descA = calcDescensoInfo(revA, 'Reválida A', 'promedio').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida A'}, r));
+  const descB = calcDescensoInfo(revB, 'Reválida B', 'suma').filter(r=>r._danger==='red').map(r=>Object.assign({_grupo:'Reválida B'}, r));
+  const todos = [...descA, ...descB];
+  const desempate = calcDescensoDesempatePendiente();
+  if(!todos.length && !desempate){ el.innerHTML=''; return; }
+
+  const chipNormal = (n, grupo) => `<div class="descendido-chip">
+        ${escudoHTML(n,'me')}
+        <span class="descendido-nombre">${n}</span>
+        <span class="descendido-grupo">${grupo}</span>
+      </div>`;
+  const chipPendiente = (a, b) => `<div class="descendido-chip descendido-chip-pendiente">
+        <div class="descendido-split">${escudoHTML(a,'me')}${escudoHTML(b,'me')}</div>
+        <span class="descendido-nombre">${a} o ${b}</span>
+        <span class="descendido-grupo">Reválida B</span>
+      </div>`;
+
+  let extra = '';
+  if(desempate) extra = desempate.resuelto ? chipNormal(desempate.n, 'Reválida B') : chipPendiente(desempate.equipoA, desempate.equipoB);
+
+  el.innerHTML = `<p class="sec-2dafase" style="color:#e53935;">⬇ Equipos descendidos</p>
+    <div class="descendidos-cont">
+      ${todos.map(r=>chipNormal(r.n, r._grupo)).join('')}
+      ${extra}
+    </div>`;
+}
+
 function renderSegundaFase(grupos){
   const datos = grupos || calcularGruposSegundaFase();
   const {quintos, topQ, tied, topQTied, revA, revB} = datos;
@@ -5610,6 +6117,7 @@ function renderSegundaFase(grupos){
     renderTablaDescenso('cont-descenso-a', revA, 'Reválida A', 'promedio', 'Tabla de descenso A');
     renderTablaDescenso('cont-descenso-b', revB, 'Reválida B', 'suma', 'Tabla de descenso B');
   }
+  renderDescendidosResumen(revA, revB);
 }
 if('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
@@ -5708,8 +6216,7 @@ async function _renderTodo(){
   // await: si no, _guardarCache() (que corre justo después de _renderTodo() en el que llama)
   // podía disparar antes de que esta consulta terminara, guardando el caché sin ese dato.
   await renderGoleadoresResumen();
-  fechaActual2 = fechaInteligente2();
-  renderPartidos2(fechaActual2);
+  renderPartidos2();
 }
 
 async function _refrescarSilencioso(){
@@ -5840,7 +6347,7 @@ async function _tickLive(){
   try {
     await cargarPartidosDesdeDB();
     renderPartidos(fechaActual);
-    renderPartidos2(fechaActual2);
+    renderPartidos2();
     renderTablas();
     const grupos = calcularGruposSegundaFase();
     renderSegundaFase(grupos);
@@ -6587,7 +7094,7 @@ function renderEstadoActualCalc(){
   renderTablaSimple('calc-real-tabla-rev-b', _ultimoRevBRows, 'Reválida B', zonaConfig('Reválida B').color);
   const grupos = calcularGruposSegundaFase();
   renderBracketNonagonal(grupos, 'calc-real-bracket-nona', 'calc-real-bracket-nona-title');
-  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16', 'calc-real-preview16-leyenda-inexistente');
+  renderPreview16(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows, 'calc-real-preview16');
 }
 
 // Cruces de 16vos "cómodos" para la calculadora (nombre completo + candidatos de sorteo bien
@@ -6598,7 +7105,7 @@ function renderCruces16vosRoomy(elId, nonARows, nonBRows, revARows, revBRows){
   const el = document.getElementById(elId);
   if(!el) return null;
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
-  const lista16vos = calcLista16vos(tablaMerito);
+  const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
   el.innerHTML = cruces.map(c => _cardCruceMerito(c.mejor, c.peor)).join('');
   return tablaMerito;
