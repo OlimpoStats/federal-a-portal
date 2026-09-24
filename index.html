@@ -1125,15 +1125,11 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div class="fecha-hdr" style="justify-content:space-between;">
-        <div style="width:110px;flex-shrink:0;"></div>
+      <div class="fecha-hdr" style="justify-content:center;">
         <div style="text-align:center;">
-          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos de Final</div>
+          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos y descenso</div>
           <div class="fsub">Ida y vuelta — 2026</div>
         </div>
-        <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin función,
-             solo ocupa el espacio hasta que esté lista esa pantalla. -->
-        <div title="Próximamente" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
@@ -1152,7 +1148,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
             <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
-            <span class="oc-chevron" id="oc-chevron">▾</span>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin
+                   función, solo ocupa el espacio hasta que esté lista esa pantalla. stopPropagation
+                   para que no dispare el toggle del desplegable al clickearlo. -->
+              <div title="Próximamente" onclick="event.stopPropagation();" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
+              <span class="oc-chevron" id="oc-chevron">▾</span>
+            </div>
           </div>
           <div class="oc-collapse" id="oc-collapse">
             <div class="oc-collapse-inner">
