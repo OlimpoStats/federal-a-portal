@@ -1399,7 +1399,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:1rem;color:var(--accent);">📋 Reglamento Federal A 2026</h2>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
       <iframe 
-        src="https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/docs/reglamento-federal-a-2026.pdf"
+        src="/api/f?p=docs%2Freglamento-federal-a-2026.pdf"
         id="reglamento-iframe"
         style="width:100%;height:80vh;border:none;display:none;"
         title="Reglamento Federal A 2026">
@@ -1408,7 +1408,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div style="font-size:48px;margin-bottom:1rem;">📄</div>
         <div style="font-size:16px;font-weight:600;margin-bottom:.5rem;">Reglamento Federal A 2026</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Descargá el reglamento oficial del torneo</div>
-        <a href="https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/docs/reglamento-federal-a-2026.pdf" 
+        <a href="/api/f?p=docs%2Freglamento-federal-a-2026.pdf" 
            target="_blank"
            style="display:inline-flex;align-items:center;gap:.5rem;background:var(--accent);color:#111;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;padding:.6rem 1.25rem;border-radius:6px;text-decoration:none;">
           📄 Abrir reglamento
@@ -1451,6 +1451,20 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
     },
   },
 });
+
+// Los archivos públicos de Storage (escudos, fotos .json, foto del admin) se piden a través del
+// puente de Vercel (api/f.js), que los guarda en su CDN — así Supabase los entrega una vez cada
+// tanto en vez de una vez por visitante (el Egress del plan gratis se agotaba por esto).
+const _STORAGE_PUB = SUPA_URL + "/storage/v1/object/public/";
+function viaVercel(url){
+  return (typeof url === 'string' && url.startsWith(_STORAGE_PUB))
+    ? "/api/f?p=" + encodeURIComponent(url.slice(_STORAGE_PUB.length))
+    : url;
+}
+// Cache-buster de las fotos .json: cambia cada 20s (lo mismo que las guarda el CDN de Vercel).
+// Un proxy de operadora no puede servir una copia de más de 20s, y todos los visitantes de esa
+// ventana comparten la misma URL, que el CDN responde sin volver a pedirle nada a Supabase.
+function _tFoto(){ return Math.floor(Date.now() / 20000); }
 
 // Carga datos reales desde Supabase y los mezcla con el fixture local
 async function cargarPartidosDesdeDB(){
@@ -1624,7 +1638,7 @@ async function cargarPartidosDesdeDB(){
 // (el bucket "docs" tiene RLS que bloquea escritura con la clave pública, "escudos" no).
 // El objeto tiene la MISMA forma que usa _aplicarCache() (fichas/meta/pl), así que se
 // reutiliza esa función tal cual — nada de lógica nueva para aplicar los datos.
-const FASE1_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/primera-fase-snapshot.json";
+const FASE1_SNAPSHOT_URL = viaVercel("https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/primera-fase-snapshot.json");
 let _fase1Cargada = false;
 async function cargarFase1DesdeSnapshot(){
   if(_fase1Cargada) return;
@@ -1642,12 +1656,12 @@ async function cargarFase1DesdeSnapshot(){
 // cambio real, o cuando el admin corrige un resultado a mano. Acá solo se intenta usar esa
 // foto en vez de cargarPartidosDesdeDB(); si falla (foto vieja/inexistente/sin red), se cae
 // de vuelta a la consulta en vivo de siempre — nunca se rompe el sitio por esto.
-const SEGUNDA_FASE_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/segunda-fase-snapshot.json";
+const SEGUNDA_FASE_SNAPSHOT_URL = viaVercel("https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/segunda-fase-snapshot.json");
 async function cargarSegundaFaseDesdeSnapshot(){
   try {
     // Cache-buster (?t=) + no-store: además del Cache-Control:no-cache que ya manda Supabase
     // Storage, esto evita que un proxy de "ahorro de datos" de operadora sirva una copia vieja.
-    const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}?t=${Date.now()}`, {
+    const resp = await fetch(`${SEGUNDA_FASE_SNAPSHOT_URL}&t=${_tFoto()}`, {
       cache:'no-store',
       signal: AbortSignal.timeout(8000)
     });
@@ -1655,6 +1669,7 @@ async function cargarSegundaFaseDesdeSnapshot(){
     const snapshot = await resp.json();
     if(!snapshot || !Array.isArray(snapshot.fichas)) return false;
     _aplicarCache(snapshot);
+    _GOL_DE_FOTO = Array.isArray(snapshot.gol);
     return true;
   } catch(e){ console.log("No se pudo cargar la foto de Segunda Fase, usando consulta en vivo", e); return false; }
 }
@@ -1666,11 +1681,11 @@ async function cargarSegundaFaseDesdeSnapshot(){
 // ORIGEN de los datos (10 consultas + paginación), dejando esa lógica intacta. Se regenera desde
 // el admin cada vez que se confirma o se borra una planilla (ver api/snapshot-estadisticas.js),
 // que es la única acción que modifica estas estadísticas.
-const ESTADISTICAS_SNAPSHOT_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/estadisticas-snapshot.json";
+const ESTADISTICAS_SNAPSHOT_URL = viaVercel("https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/estadisticas-snapshot.json");
 async function fetchEstadisticasSnapshot(){
   try {
     // Mismo cache-buster que la foto de Segunda Fase (ver comentario ahí).
-    const resp = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}?t=${Date.now()}`, {cache:'no-store'});
+    const resp = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}&t=${_tFoto()}`, {cache:'no-store'});
     if(!resp.ok) return null;
     const snap = await resp.json();
     if(!snap || !Array.isArray(snap.eventos) || !Array.isArray(snap.jugsDB)) return null;
@@ -1685,7 +1700,7 @@ async function cargarEscudos(){
     const {data} = await sb.from("equipos").select("id, nombre, escudo_url").order("nombre");
     if(!data) return;
     EQUIPOS_LIST = data.map(eq => ({id: eq.id, nombre: eq.nombre}));
-    data.forEach(eq => { if(eq.escudo_url) ESCUDOS[eq.nombre] = eq.escudo_url; });
+    data.forEach(eq => { if(eq.escudo_url) ESCUDOS[eq.nombre] = viaVercel(eq.escudo_url); });
   } catch(e){}
 }
 
@@ -1852,7 +1867,7 @@ async function cerrarSesion(){
 // Foro desde Supabase
 let FORO_PAGINA = 0;
 const FORO_POR_PAGINA = 15;
-const ADMIN_PHOTO_URL = "https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/LogoAdmin/adminphoto.png";
+const ADMIN_PHOTO_URL = viaVercel("https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/LogoAdmin/adminphoto.png");
 
 async function cargarMensajesForo(pagina=0){
   FORO_PAGINA = pagina;
@@ -5854,7 +5869,7 @@ async function renderGoleadoresResumen(){
     // borra una planilla (ver regenerarFotoEstadisticas() en admin), así que esto solo vuelve a
     // pedir los goleadores cuando de verdad cambió algo, sin importar cuánto tiempo pasó.
     let data;
-    if(_GOLEADORES_RAW && !(await _snapshotEstadisticasCambio())){
+    if(_GOLEADORES_RAW && (_GOL_DE_FOTO || !(await _snapshotEstadisticasCambio()))){
       data = _GOLEADORES_RAW;
     } else {
       const res = await sb.from('eventos')
@@ -6129,6 +6144,9 @@ const _CACHE_KEY = 'fa_v3';
 const _CACHE_TTL = 30 * 60 * 1000; // 30 min — hasta acá se pinta instantáneo con el caché viejo
 const _SKIP_REFRESH_TTL = 5 * 60 * 1000; // 5 min — hasta acá, directamente no se vuelve a pedir a Supabase
 let _GOLEADORES_RAW = null; // último resultado crudo de la consulta de renderGoleadoresResumen()
+// true si _GOLEADORES_RAW vino recién de la foto de Segunda Fase — esa foto se regenera también al
+// cargar/borrar planillas (admin), así que ya está al día y no hace falta volver a consultar.
+let _GOL_DE_FOTO = false;
 let _SNAP_LASTMOD = null; // último Last-Modified visto de estadisticas-snapshot.json (ver _snapshotEstadisticasCambio)
 
 // true si estadisticas-snapshot.json cambió desde la última vez que se miró — HEAD, no baja el
@@ -6136,7 +6154,7 @@ let _SNAP_LASTMOD = null; // último Last-Modified visto de estadisticas-snapsho
 // admin), así que esto es lo que dispara el reseteo real de renderGoleadoresResumen().
 async function _snapshotEstadisticasCambio(){
   try {
-    const r = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}?t=${Date.now()}`, {method:'HEAD', cache:'no-store'});
+    const r = await fetch(`${ESTADISTICAS_SNAPSHOT_URL}&t=${_tFoto()}`, {method:'HEAD', cache:'no-store'});
     const lm = r.headers.get('last-modified');
     if(!lm) return true; // sin header para comparar: no bloquear el refresco real
     const cambio = lm !== _SNAP_LASTMOD;
@@ -6199,7 +6217,8 @@ function _aplicarCache(d){
       if(fotmob_url) m.fotmob_url = fotmob_url;
     });
     Object.assign(PARTIDO_META, d.meta||{});
-    Object.assign(ESCUDOS, d.esc||{});
+    // viaVercel: el caché local de visitas anteriores puede traer las URLs viejas (directo a Supabase).
+    Object.entries(d.esc||{}).forEach(([n,u]) => { ESCUDOS[n] = viaVercel(u); });
     Object.assign(PLANILLA_CARGADA, d.pl||{});
     if(d.gol){ _GOLEADORES_RAW = d.gol; _SNAP_LASTMOD = d.snapLm || null; }
   } catch(e){}
@@ -6347,7 +6366,11 @@ async function _tickLive(){
   if(_liveTickBusy) return;
   _liveTickBusy = true;
   try {
-    await cargarPartidosDesdeDB();
+    // Primero la foto de Segunda Fase (sync-live.js la regenera con cada cambio en vivo y pasa
+    // por el CDN de Vercel): antes cada visitante le pedía a Supabase las 3 consultas pesadas de
+    // cargarPartidosDesdeDB() cada 60s. Esas quedan solo como respaldo si la foto falla.
+    const okFoto = await cargarSegundaFaseDesdeSnapshot().catch(()=>false);
+    if(!okFoto) await cargarPartidosDesdeDB();
     renderPartidos(fechaActual);
     renderPartidos2();
     renderTablas();
