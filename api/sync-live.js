@@ -281,6 +281,13 @@ module.exports = async (req, res) => {
         const finalRln = isClosing && (existingMa.rln||[]).length > eventos.rojasLocalNames.length ? existingMa.rln : eventos.rojasLocalNames;
         const finalRvn = isClosing && (existingMa.rvn||[]).length > eventos.rojasVisitNames.length ? existingMa.rvn : eventos.rojasVisitNames;
 
+        // Definición por penales (desempate de descenso, finales): FotMob la trae resuelta en
+        // header.status.reason.penalties = [local, visitante]. Se guarda como "pen" dentro de
+        // minuto_actual (sin columnas nuevas en fixture); index.html la lee con penalesDe().
+        const penFotmob = data?.header?.status?.reason?.penalties;
+        const pen = Array.isArray(penFotmob) && penFotmob.length === 2 ? penFotmob
+          : (isClosing && Array.isArray(existingMa.pen) ? existingMa.pen : null);
+
         const eventData = JSON.stringify({
           m: implicitFinished ? null : minuto,
           rl: rojasLocal, rv: rojasVisit,
@@ -288,6 +295,7 @@ module.exports = async (req, res) => {
           gv: finalGv,
           rln: finalRln,
           rvn: finalRvn,
+          ...(pen ? { pen } : {}),
           ...(liveSince ? { ls: liveSince.toISOString() } : {})
         });
 
