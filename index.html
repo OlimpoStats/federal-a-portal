@@ -1516,6 +1516,7 @@ async function cargarPartidosDesdeDB(){
         if(p.estado) match.estado = p.estado;
         if(p.fotmob_url) match.fotmob_url = p.fotmob_url;
         if(p.minuto_actual && match.estado !== 'jugado') match.minuto_actual = p.minuto_actual;
+        { const _pd = parseLiveData(p.minuto_actual); if(_pd.pen) match.pen = _pd.pen; }
         if(p.dia || p.hora || p.stream_url || p.estadio || p.arbitro){
           const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
           PARTIDO_META[key] = {dia: p.dia || "", hora: p.hora || "", stream: p.stream_url || "", estadio: p.estadio || "", arbitro: p.arbitro || "",
@@ -2391,16 +2392,23 @@ function escudoHTML(nombre, size='esc'){
 }
 
 function parseLiveData(raw) {
-  const empty = {min:null,rl:0,rv:0,gl:[],gv:[],rln:[],rvn:[]};
+  const empty = {min:null,rl:0,rv:0,gl:[],gv:[],rln:[],rvn:[],pen:null};
   if(!raw) return empty;
   if(raw.startsWith('{')){
     try{
       const d=JSON.parse(raw);
-      return {min:d.m||null,rl:d.rl||0,rv:d.rv||0,gl:d.gl||[],gv:d.gv||[],rln:d.rln||[],rvn:d.rvn||[]};
+      return {min:d.m||null,rl:d.rl||0,rv:d.rv||0,gl:d.gl||[],gv:d.gv||[],rln:d.rln||[],rvn:d.rvn||[],pen:Array.isArray(d.pen)?d.pen:null};
     }catch(e){}
   }
   const p=raw.split('|');
-  return {min:p[0]||null,rl:parseInt(p[1]||'0'),rv:parseInt(p[2]||'0'),gl:[],gv:[],rln:[],rvn:[]};
+  return {min:p[0]||null,rl:parseInt(p[1]||'0'),rv:parseInt(p[2]||'0'),gl:[],gv:[],rln:[],rvn:[],pen:null};
+}
+
+// Definición por penales [local, visitante], o null si no hubo. sync-live.js la guarda dentro de
+// minuto_actual (campo "pen", sacado de FotMob) — sin columnas nuevas en la tabla fixture.
+function penalesDe(m){
+  if(Array.isArray(m?.pen)) return m.pen;
+  return parseLiveData(m?.minuto_actual).pen;
 }
 
 // Arma la ficha completa de UN partido (resultado/en vivo/hora, goleadores, streaming,
@@ -2426,7 +2434,9 @@ function renderFilaPartido(zona, f, m, meta){
   let centro;
   if(m.gl!==null){
     const scoreClass = esEnVivo ? "score score-live" : "score";
-    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+    const _pen = !esEnVivo ? penalesDe(m) : null;
+    const penDiv = _pen ? `<div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.5px;margin-top:1px;">Penales ${_pen[0]}-${_pen[1]}</div>` : "";
+    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div>${penDiv}</div>`;
   } else if(meta.hora){
     centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
   } else {
@@ -6015,8 +6025,12 @@ function calcDescensoDesempatePendiente(){
     const perdedor = fila.gl>fila.gv ? fila.visitante : fila.local;
     return { resuelto:true, n:perdedor };
   }
-  // Empate (o todavía sin jugar): con penales no implementados aún, sigue "pendiente" hasta
-  // que haya un ganador claro por gol.
+  // Empate en los 90'/alargue: lo define la tanda de penales (ver penalesDe).
+  const pen = fila.gl!=null && fila.gl===fila.gv && fila.estado==='jugado' ? penalesDe(fila) : null;
+  if(pen && pen[0]!==pen[1]){
+    return { resuelto:true, n: pen[0]>pen[1] ? fila.visitante : fila.local };
+  }
+  // Todavía sin jugar (o empatado sin penales cargados): sigue "pendiente".
   return { resuelto:false, equipoA:fila.local, equipoB:fila.visitante };
 }
 
