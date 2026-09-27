@@ -2432,9 +2432,7 @@ function renderFilaPartido(zona, f, m, meta){
   let centro;
   if(m.gl!==null){
     const scoreClass = esEnVivo ? "score score-live" : "score";
-    const _pen = !esEnVivo ? penalesDe(m) : null;
-    const penDiv = _pen ? `<div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.5px;margin-top:1px;">Penales ${_pen[0]}-${_pen[1]}</div>` : "";
-    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div>${penDiv}</div>`;
+    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
   } else if(meta.hora){
     centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
   } else {
@@ -2516,6 +2514,22 @@ function renderFilaPartido(zona, f, m, meta){
   </div>`
       : "";
 
+  // Definición por penales: segundo banner inferior, mismo color/tamaño que el de goleadores.
+  // Nombre corto del club = sin la abreviatura final ("Círculo Dep." → "Círculo").
+  const _pen = m.gl !== null && !esEnVivo ? penalesDe(m) : null;
+  let penalesHTML = "";
+  if(_pen && _pen[0] !== _pen[1]){
+    const _corto = n => n.replace(/\s+\S+\.$/, '');
+    const ganaLocal = _pen[0] > _pen[1];
+    const ganador = ganaLocal ? m.local : m.visitante, perdedor = ganaLocal ? m.visitante : m.local;
+    let txt = `Penales: ${_corto(ganador)} ${Math.max(..._pen)}-${Math.min(..._pen)}.`;
+    if(zona === 'Desempate Descenso') txt += ` ${_corto(ganador)} mantiene la categoría, ${perdedor} descendió.`;
+    penalesHTML = `<div style="display:flex;align-items:stretch;gap:.4rem;">
+    <div style="flex:1;background:${_zc.color}18;border:1px solid ${_zc.color}33;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:11px;">📝 ${txt}</div>
+    <div style="width:56px;flex-shrink:0;"></div>
+  </div>`;
+  }
+
   const _streamSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="#e8453a"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`;
   const _filler26 = `<div style="width:26px;flex-shrink:0;"></div>`;
   const _streamLink = meta.stream ? `<a href="${meta.stream}" target="_blank" class="stream-btn" title="Ver transmisión en vivo">${_streamSvg}</a>` : '';
@@ -2554,6 +2568,7 @@ function renderFilaPartido(zona, f, m, meta){
       </div>
     </div>
     ${goleadoresHTML}
+    ${penalesHTML}
     ${infoBarHTML}
   </div>`;
 }
