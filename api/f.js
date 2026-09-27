@@ -17,14 +17,16 @@ module.exports = async (req, res) => {
   const p = String(req.query.p || "");
   if (!PERMITIDO.test(p) || p.includes("..")) return res.status(400).end();
 
+  const esFoto = p.endsWith(".json");
   let upstream;
   try {
-    upstream = await fetch(BASE + p);
+    // Las fotos .json se piden con cache-buster: el CDN de Supabase a veces sigue sirviendo una
+    // copia vieja después de que se resube el archivo. Igual es a lo sumo 1 pedido cada 20s.
+    upstream = await fetch(BASE + p + (esFoto ? `?v=${Date.now()}` : ""), esFoto ? { cache: "no-store" } : undefined);
   } catch (e) {
     return res.status(502).end();
   }
 
-  const esFoto = p.endsWith(".json");
   if (!upstream.ok) {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Vercel-CDN-Cache-Control", "max-age=10");
