@@ -499,6 +499,22 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           </div>
         </div>
 
+        <!-- tanda de penales (solo Desempate Descenso y finales) -->
+        <div class="card" id="tanda-card" style="display:none;margin-top:1rem;">
+          <div class="card-hdr" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+            <span>Tanda de penales <span id="tanda-resultado" style="color:var(--accent);margin-left:.4rem;"></span></span>
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:.4rem;">Abre la tanda
+              <select id="tanda-abre" onchange="tandaState.abre=this.value" style="width:auto;padding:.2rem .4rem;font-size:12px;">
+                <option value="L">Local</option><option value="V">Visitante</option>
+              </select>
+            </label>
+          </div>
+          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div id="tanda-L"></div>
+            <div id="tanda-V"></div>
+          </div>
+        </div>
+
         <div class="confirm-bar">
           <div class="confirm-info">Revisá los datos antes de confirmar. Una vez guardado, las stats de cada jugador se actualizan automáticamente.</div>
           <div style="display:flex;gap:.6rem;">
@@ -992,6 +1008,7 @@ async function cargarFixture(){
         juez1: p.juez1,
         juez2: p.juez2,
         cuarto_arbitro: p.cuarto_arbitro,
+        minuto_actual: p.minuto_actual,
       });
     });
 
@@ -1366,7 +1383,7 @@ async function erGuardarInline(){
   try {
     const fixtureId = p.id;
     if(fixtureId){
-      const {error:fxErr} = await sb.from("fixture").update({goles_local:gl, goles_visitante:gv, estado:'jugado', minuto_actual:null}).eq("id", fixtureId);
+      const {error:fxErr} = await sb.from("fixture").update({goles_local:gl, goles_visitante:gv, estado:'jugado', minuto_actual: await minutoActualAlCerrar(fixtureId)}).eq("id", fixtureId);
       if(fxErr) throw new Error("Error actualizando fixture: " + fxErr.message);
     }
     await upsertPartido({
@@ -1688,6 +1705,112 @@ function setStep(n){
     if(i<n) el.classList.add("done");
     else if(i===n) el.classList.add("active-step");
   });
+  if(n===3) tandaPrepararUI();
+}
+
+// ── TANDA DE PENALES ──
+// Solo para el Desempate Descenso y las finales. Se guarda dentro de fixture.minuto_actual
+// (campo "tanda", junto al "pen" que ya lee index.html con penalesDe()) — sin columnas ni
+// eventos nuevos, así no toca estadísticas de goles/penales. Formato: [{e:'L'|'V', n:camiseta,
+// r:'g'|'a'|'d'}] en orden de ejecución.
+let tandaState = {fixtureId:null, abre:"L", L:[], V:[]};
+
+function tandaHabilitada(zona){
+  return zona === "Desempate Descenso" || /(^|\s)Final(\s|$)/i.test(zona||"");
+}
+
+function tandaPrepararUI(){
+  const card = document.getElementById("tanda-card");
+  if(!card) return;
+  if(!partidoActual || !tandaHabilitada(partidoActual.zona)){ card.style.display = "none"; return; }
+  card.style.display = "";
+  if(tandaState.fixtureId !== partidoActual.fixtureId){
+    const p = (FIXTURE[partidoActual.zona]?.[String(partidoActual.fecha)]||[]).find(x=>x.id===partidoActual.fixtureId);
+    let tanda = [];
+    try { tanda = JSON.parse(p?.minuto_actual||"{}")?.tanda || []; } catch(e){}
+    tandaCargar(partidoActual.fixtureId, tanda);
+  }
+  tandaRender();
+}
+
+function tandaCargar(fixtureId, tanda){
+  tandaState = {
+    fixtureId,
+    abre: tanda[0]?.e || "L",
+    L: tanda.filter(t=>t.e==="L").map(t=>({n:String(t.n??""), r:t.r||"g"})),
+    V: tanda.filter(t=>t.e==="V").map(t=>({n:String(t.n??""), r:t.r||"g"})),
+  };
+}
+
+// Intercala los 2 lados en orden de ejecución, arrancando por el que abrió la tanda.
+function tandaArmar(){
+  const [a, b] = tandaState.abre === "V" ? ["V","L"] : ["L","V"];
+  const out = [];
+  const max = Math.max(tandaState.L.length, tandaState.V.length);
+  for(let i=0;i<max;i++){
+    [a,b].forEach(e=>{
+      const t = tandaState[e][i];
+      if(t && String(t.n).trim()) out.push({e, n:parseInt(t.n,10)||String(t.n).trim(), r:t.r});
+    });
+  }
+  return out;
+}
+
+function tandaRender(){
+  document.getElementById("tanda-abre").value = tandaState.abre;
+  ["L","V"].forEach(lado=>{
+    const equipo = lado==="L" ? partidoActual?.local : partidoActual?.visit;
+    const filas = tandaState[lado].map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem;">
+        <span style="font-size:11px;color:var(--muted);width:16px;text-align:right;">${i+1}°</span>
+        <input type="number" min="1" value="${t.n}" placeholder="N°" oninput="tandaState.${lado}[${i}].n=this.value;this.nextElementSibling.textContent=tandaNombre('${lado}',this.value)" style="width:56px;padding:.25rem .4rem;">
+        <span style="flex:1;font-size:12px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tandaNombre(lado,t.n)}</span>
+        <select onchange="tandaState.${lado}[${i}].r=this.value;tandaResultado()" style="width:auto;padding:.25rem .4rem;">
+          <option value="g"${t.r==="g"?" selected":""}>⚽ Gol</option>
+          <option value="a"${t.r==="a"?" selected":""}>🧤 Atajado</option>
+          <option value="d"${t.r==="d"?" selected":""}>❌ Desviado</option>
+        </select>
+        <span onclick="tandaState.${lado}.splice(${i},1);tandaRender()" title="Quitar" style="cursor:pointer;color:#e57373;font-weight:700;padding:0 4px;">×</span>
+      </div>`).join("");
+    document.getElementById("tanda-"+lado).innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:.4rem;">${(equipo||"").toUpperCase()}</div>
+      ${filas}
+      <button class="btn btn-secondary btn-sm" onclick="tandaState.${lado}.push({n:'',r:'g'});tandaRender()">+ Penal</button>`;
+  });
+  tandaResultado();
+}
+
+function tandaNombre(lado, num){
+  const arr = (lado==="L" ? planillaLocal : planillaVisit).jugadores || [];
+  const j = arr.find(x=>String(x.numero).trim()===String(num).trim() && String(num).trim());
+  return j ? j.nombre : "";
+}
+
+function tandaResultado(){
+  const el = document.getElementById("tanda-resultado");
+  if(!el) return;
+  const hay = tandaState.L.length || tandaState.V.length;
+  const g = lado => tandaState[lado].filter(t=>t.r==="g").length;
+  el.textContent = hay ? `${g("L")} - ${g("V")}` : "";
+}
+
+// minuto_actual a guardar al cerrar un partido: antes era null a secas, lo que borraba la
+// definición por penales ("pen") que dejó sync-live. Ahora la conserva, y si se cargó la
+// tanda a mano, el "pen" sale de ella. tandaNueva === undefined → no tocar la tanda guardada.
+async function minutoActualAlCerrar(fixtureId, tandaNueva){
+  let prev = {};
+  try {
+    const {data} = await sb.from("fixture").select("minuto_actual").eq("id", fixtureId).maybeSingle();
+    prev = JSON.parse(data?.minuto_actual || "{}") || {};
+  } catch(e){}
+  const tanda = tandaNueva !== undefined ? tandaNueva : (Array.isArray(prev.tanda) ? prev.tanda : []);
+  let pen = Array.isArray(prev.pen) ? prev.pen : null;
+  if(tanda.length){
+    const g = e => tanda.filter(t=>t.e===e && t.r==="g").length;
+    pen = [g("L"), g("V")];
+  }
+  if(!pen && !tanda.length) return null;
+  return JSON.stringify({m:null, ...(pen ? {pen} : {}), ...(tanda.length ? {tanda} : {})});
 }
 
 function showFlash(msg, type){
@@ -2563,6 +2686,8 @@ function renderPlanilla(containerId, jugadores){
   }
   html+=`</tbody></table>`;
   document.getElementById(containerId).innerHTML=html;
+  // Los nombres de la tanda salen de los números de la planilla: refrescarlos si cambiaron.
+  if(document.getElementById("tanda-card")?.style.display === "") tandaRender();
 }
 
 // ── AGREGAR / ELIMINAR EVENTOS ──
@@ -4077,6 +4202,7 @@ function guardarBorrador(){
     partidoActual: {...partidoActual},
     planillaLocal: JSON.parse(JSON.stringify(planillaLocal)),
     planillaVisit: JSON.parse(JSON.stringify(planillaVisit)),
+    tanda: tandaArmar(),
     form: {
       glLocal: document.getElementById("score-local")?.value || "0",
       glVisit: document.getElementById("score-visit")?.value || "0",
@@ -4132,6 +4258,7 @@ function cargarBorrador(){
   document.getElementById("partido-dt-visit").value = f.dtVisit;
   renderPlanilla("tabla-local", planillaLocal.jugadores || []);
   renderPlanilla("tabla-visit", planillaVisit.jugadores || []);
+  if(draft.tanda?.length){ tandaCargar(partidoActual.fixtureId, draft.tanda); tandaPrepararUI(); }
   showFlash("📂 Borrador cargado. Completá y publicá cuando estés listo.", "ok");
 }
 
@@ -4217,7 +4344,7 @@ async function confirmarCarga(publicar=true){
         estadio, stream_url: streamUrl, arbitro, juez1, juez2, cuarto_arbitro: cuarto,
         dt_local: _dtLocal, dt_visitante: _dtVisit,
         dia, hora,
-        ...(publicar ? { estado: 'jugado', minuto_actual: null } : {}),
+        ...(publicar ? { estado: 'jugado', minuto_actual: await minutoActualAlCerrar(fixtureId, tandaHabilitada(partidoActual.zona) ? tandaArmar() : undefined) } : {}),
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
@@ -4367,7 +4494,7 @@ async function erGuardar(){
         goles_local: gl,
         goles_visitante: gv,
         estado: 'jugado',
-        minuto_actual: null,
+        minuto_actual: await minutoActualAlCerrar(fixtureId),
       }).eq("id", fixtureId);
       if (fxErr) throw fxErr;
     }
