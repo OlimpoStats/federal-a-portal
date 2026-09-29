@@ -2854,7 +2854,7 @@ async function verFicha(key, tienePlanilla){
     const [pZona, pFecha, ...pRest] = key.split("_");
     // Get partido from DB
     const {data:partidos} = await sb.from("partidos")
-      .select("id, zona, fecha, equipo_local_nombre, equipo_visitante_nombre, goles_local, goles_visitante, estadio, arbitro, juez1, juez2, cuarto_arbitro, dia, hora, dt_local, dt_visitante")
+      .select("id, fixture_id, zona, fecha, equipo_local_nombre, equipo_visitante_nombre, goles_local, goles_visitante, estadio, arbitro, juez1, juez2, cuarto_arbitro, dia, hora, dt_local, dt_visitante")
       .eq("zona", pZona)
       .eq("fecha", parseInt(pFecha));
 
@@ -2878,13 +2878,24 @@ async function verFicha(key, tienePlanilla){
       .select("planilla_id, tipo, minuto, extra")
       .in("planilla_id", (planillas||[]).map(p=>p.id));
 
+    // Tanda de penales pateados (Desempate Descenso / finales): la carga el admin dentro de
+    // fixture.minuto_actual ("tanda", [{e:'L'|'V', n:camiseta, r:'g'|'a'|'d'}] en orden).
+    let tanda = [];
+    {
+      let fxQ = sb.from("fixture").select("minuto_actual");
+      fxQ = partido.fixture_id ? fxQ.eq("id", partido.fixture_id)
+        : fxQ.eq("zona", partido.zona).eq("fecha", partido.fecha).eq("equipo_local", partido.equipo_local_nombre).eq("equipo_visitante", partido.equipo_visitante_nombre);
+      const {data:fxRow} = await fxQ.maybeSingle();
+      try { const t = JSON.parse(fxRow?.minuto_actual || "{}")?.tanda; if(Array.isArray(t)) tanda = t; } catch(e){}
+    }
+
     const evByPlanilla = {};
     (eventos||[]).forEach(ev => {
       if(!evByPlanilla[ev.planilla_id]) evByPlanilla[ev.planilla_id] = [];
       evByPlanilla[ev.planilla_id].push(ev);
     });
 
-    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre, rivalPlanilla) => {
+    const renderEquipo = (nombreEquipo, jugadoresEquipo, dtNombre, rivalPlanilla, lado) => {
       if(!jugadoresEquipo?.length) return '<div style="color:var(--muted);font-size:13px;padding:.5rem 0;">Sin planilla cargada.</div>';
       // Goles en contra del rival que cuentan PARA este equipo
       const golesContraFavor = (rivalPlanilla||[]).flatMap(pl=>
@@ -3018,6 +3029,29 @@ async function verFicha(key, tienePlanilla){
 
 
 
+      // Penales de la tanda de este equipo, en orden. Se rellena con filas vacías hasta el largo
+      // del rival para que Cambios/Tarjetas arranquen a la misma altura en las 2 columnas.
+      const tandaSec = (() => {
+        if(!tanda.length) return "";
+        const mios = tanda.filter(t=>t.e===lado);
+        const maxLado = Math.max(tanda.filter(t=>t.e==="L").length, tanda.filter(t=>t.e==="V").length);
+        const ICON = {g:["⚽","Gol"], a:["🧤","Atajado"], d:["❌","Desviado"]};
+        const rows = mios.map(t=>{
+          const pl = todosJugadores.find(j=>String(j.numero_camiseta)===String(t.n));
+          const nombre = pl ? (pl.jugadores?.nombre_display||pl.jugadores?.nombre||"—") : "—";
+          const [ic,lbl] = ICON[t.r]||["",""];
+          return `<div style="display:flex;align-items:center;gap:.5rem;border-bottom:1px solid rgba(255,255,255,0.05);height:30px;box-sizing:border-box;overflow:hidden;">
+            <span style="font-size:13px;color:#bbb;width:20px;text-align:right;flex-shrink:0;font-family:'Barlow Condensed';font-weight:600;">${t.n}</span>
+            <span style="font-size:13px;flex:1;line-height:1.3;font-family:'Barlow',sans-serif;${t.r!=='g'?'color:#999;':''}">${nombre}</span>
+            <span title="${lbl}" style="font-size:14px;flex-shrink:0;width:20px;text-align:center;">${ic}</span>
+          </div>`;
+        }).join("");
+        const pad = Array.from({length:maxLado-mios.length},()=>`<div style="height:30px;border-bottom:1px solid rgba(255,255,255,0.05);box-sizing:border-box;"></div>`).join("");
+        return `<div style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">${secHeader("PENALES")}<span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--accent);">${mios.filter(t=>t.r==="g").length}</span></div>
+          ${rows}${pad}</div>`;
+      })();
+
       const cambiosSec = cambios.length ? `
         <div class="ficha-cambios-sec" style="border-top:1px solid var(--border);margin-top:.75rem;padding-top:.5rem;">
           ${secHeader("CAMBIOS")}
@@ -3047,6 +3081,7 @@ async function verFicha(key, tienePlanilla){
         ${secHeader("SUPLENTES")}
         ${suplentes.map(j=>renderJug(j,false)).join("")}
         ${Array.from({length:Math.max(0,9-suplentes.length)},()=>`<div style="height:30px;border-bottom:1px solid rgba(255,255,255,0.05);box-sizing:border-box;"></div>`).join("")}
+        ${tandaSec}
         ${cambiosSec}
         ${tarjetasSec}
       `;
@@ -3249,8 +3284,8 @@ async function verFicha(key, tienePlanilla){
         ${partido.arbitro?`<div style="font-size:13px;color:#ccc;margin-top:.25rem;"><span class="arbi-p">🧑‍⚖️ <strong>${partido.arbitro}</strong></span>${partido.juez1||partido.juez2||partido.cuarto_arbitro?`<span class="arbi-j">${partido.juez1?` &nbsp;🚩 ${partido.juez1}`:""}${partido.juez2?` · ${partido.juez2}`:""}${partido.cuarto_arbitro?` &nbsp;4️⃣ ${partido.cuarto_arbitro}`:""}</span>`:""}</div>`:""}
       </div>
       <div class="planillas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla)}</div>
-        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante, localPlanilla)}</div>
+        <div id="ficha-col-local">${renderEquipo(partido.equipo_local_nombre, localPlanilla, partido.dt_local, visitPlanilla, "L")}</div>
+        <div id="ficha-col-visit">${renderEquipo(partido.equipo_visitante_nombre, visitPlanilla, partido.dt_visitante, localPlanilla, "V")}</div>
       </div>
       ${incidenciasHtml}
       `;
