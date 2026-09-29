@@ -5045,10 +5045,16 @@ async function cargarEstadisticas(){
       tirLibreMap[key].goles++;
     });
 
-    // Equipo stats from FIXTURE (Primera Fase + Segunda Fase, siguen sumando)
-    ZONAS_TODAS.forEach(z=>{
+    // Tablas generales: todas las zonas del fixture (Primera Fase, Segunda Fase y playoffs).
+    // Los partidos en cancha neutral (Desempate Descenso y la primera final del Primer Ascenso)
+    // suman en la general y en 1T/2T, pero no en las tablas de local ni de visitante.
+    const ZONAS_GENERALES = Object.keys(FIXTURE);
+    const sinLocalia = z => z === 'Desempate Descenso' || /^Final Primer Ascenso.*Ida/i.test(z);
+
+    // Equipo stats from FIXTURE
+    ZONAS_GENERALES.forEach(z=>{
       for(let f=1;f<=18;f++){
-        (FIXTURE[z][String(f)]||[]).forEach(m=>{
+        (FIXTURE[z]?.[String(f)]||[]).forEach(m=>{
           if(m.gl===null) return;
           [m.local, m.visitante].forEach(eq=>{
             if(!equipoStats[eq]) equipoStats[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0,zona:z,
@@ -5057,11 +5063,16 @@ async function cargarEstadisticas(){
           });
           const loc=equipoStats[m.local], vis=equipoStats[m.visitante];
           loc.pj++; vis.pj++; loc.gf+=m.gl; loc.gc+=m.gv; vis.gf+=m.gv; vis.gc+=m.gl;
-          loc.local.pj++; loc.local.gf+=m.gl; loc.local.gc+=m.gv;
-          vis.visit.pj++; vis.visit.gf+=m.gv; vis.visit.gc+=m.gl;
-          if(m.gl>m.gv){ loc.g++;loc.pts+=3;vis.p++; loc.local.g++;loc.local.pts+=3;vis.visit.p++; }
-          else if(m.gl<m.gv){ vis.g++;vis.pts+=3;loc.p++; vis.visit.g++;vis.visit.pts+=3;loc.local.p++; }
-          else{ loc.e++;vis.e++;loc.pts++;vis.pts++; loc.local.e++;loc.local.pts++;vis.visit.e++;vis.visit.pts++; }
+          if(m.gl>m.gv){ loc.g++;loc.pts+=3;vis.p++; }
+          else if(m.gl<m.gv){ vis.g++;vis.pts+=3;loc.p++; }
+          else{ loc.e++;vis.e++;loc.pts++;vis.pts++; }
+          if(!sinLocalia(z)){
+            loc.local.pj++; loc.local.gf+=m.gl; loc.local.gc+=m.gv;
+            vis.visit.pj++; vis.visit.gf+=m.gv; vis.visit.gc+=m.gl;
+            if(m.gl>m.gv){ loc.local.g++;loc.local.pts+=3;vis.visit.p++; }
+            else if(m.gl<m.gv){ vis.visit.g++;vis.visit.pts+=3;loc.local.p++; }
+            else{ loc.local.e++;loc.local.pts++;vis.visit.e++;vis.visit.pts++; }
+          }
           // Vallas invictas
           // local: if m.gv===0 the local keeper kept a clean sheet
           // visit: if m.gl===0 the visitante keeper kept a clean sheet
@@ -5561,8 +5572,8 @@ async function cargarEstadisticas(){
     const initHalf = (eq, t) => { if(!t[eq]) t[eq]={pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}; };
 
     // First init all played teams
-    ZONAS_TODAS.forEach(z=>{ for(let f=1;f<=18;f++){
-      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+    ZONAS_GENERALES.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z]?.[String(f)]||[]).forEach(m=>{
         if(m.gl===null) return;
         initHalf(m.local,half1); initHalf(m.visitante,half1);
         initHalf(m.local,half2); initHalf(m.visitante,half2);
@@ -5593,13 +5604,14 @@ async function cargarEstadisticas(){
     });
 
     // Build standings per half
-    ZONAS_TODAS.forEach(z=>{ for(let f=1;f<=18;f++){
-      (FIXTURE[z][String(f)]||[]).forEach(m=>{
+    ZONAS_GENERALES.forEach(z=>{ for(let f=1;f<=18;f++){
+      (FIXTURE[z]?.[String(f)]||[]).forEach(m=>{
         if(m.gl===null) return;
-        // Find partido_id for this fixture match
+        // Find partido_id for this fixture match (zona+fecha también: el mismo cruce con la
+        // misma localía puede repetirse entre fases)
         const pid = Object.keys(partidosById).find(id=>{
           const p=partidosById[id];
-          return p.equipo_local_nombre===m.local && p.equipo_visitante_nombre===m.visitante;
+          return p.zona===z && String(p.fecha)===String(f) && p.equipo_local_nombre===m.local && p.equipo_visitante_nombre===m.visitante;
         });
         if(!pid) return;
         const gl1 = (golesHT[`${pid}|${m.local}`]||{}).h1||0;
