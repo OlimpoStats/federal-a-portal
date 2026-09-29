@@ -1795,8 +1795,8 @@ function tandaResultado(){
 }
 
 // minuto_actual a guardar al cerrar un partido: antes era null a secas, lo que borraba la
-// definición por penales ("pen") que dejó sync-live. Ahora la conserva, y si se cargó la
-// tanda a mano, el "pen" sale de ella. tandaNueva === undefined → no tocar la tanda guardada.
+// definición por penales ("pen") que dejó sync-live. Ahora la conserva; solo si no había
+// ninguna, el "pen" se calcula de la tanda cargada a mano. tandaNueva === undefined → no tocar la tanda guardada.
 async function minutoActualAlCerrar(fixtureId, tandaNueva){
   let prev = {};
   try {
@@ -1805,7 +1805,8 @@ async function minutoActualAlCerrar(fixtureId, tandaNueva){
   } catch(e){}
   const tanda = tandaNueva !== undefined ? tandaNueva : (Array.isArray(prev.tanda) ? prev.tanda : []);
   let pen = Array.isArray(prev.pen) ? prev.pen : null;
-  if(tanda.length){
+  // El resultado ya guardado (FotMob) manda: la tanda solo lo completa si no había ninguno.
+  if(!pen && tanda.length){
     const g = e => tanda.filter(t=>t.e===e && t.r==="g").length;
     pen = [g("L"), g("V")];
   }
