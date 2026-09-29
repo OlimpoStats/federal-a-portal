@@ -2031,7 +2031,18 @@ let fechaActual=1,fxZona="Nonagonal A",fxFase="segunda";
 const GRUPOS2 = ["Nonagonal A","Nonagonal B","Reválida A","Reválida B"];
 const ZONAS_TODAS = [...ZONAS, ...GRUPOS2];
 const LIBRES2 = {"Nonagonal A":{"1":"Sarmiento (LB)","2":"Gimnasia (Ch)","3":"Bartolomé Mitre","4":"9 de Julio (Rafaela)","5":"Sol de América (F)","6":"San Martín (F)","7":"Douglas Haig","8":"Defensores (VR)","9":"Sp. Belgrano"},"Nonagonal B":{"1":"Alvarado","2":"Kimberley","3":"Juv. Antoniana","4":"Atenas (RC)","5":"Huracán LH","6":"Cipolletti","7":"Villa Mitre","8":"Olimpo","9":"Argentino (MM)"},"Reválida A":{"1":"Independiente (Ch)","2":"Gimnasia (CDU)","3":"Boca Unidos","4":"El Linqueño","5":"Sarmiento (R)","6":"Defensores (PV)","7":"Sp. Las Parejas","8":"Atlético Escobar","9":"Tucumán Central"},"Reválida B":{}};
-function faseRank(z){ return ZONAS.includes(z) ? 0 : 1; }
+// Orden de fases: Primera Fase, Segunda Fase y después cada ronda de playoffs (ida antes
+// que vuelta). El Desempate Descenso se jugó el mismo fin de semana que la ida de Cuartos.
+function faseRank(z){
+  if(ZONAS.includes(z)) return 0;
+  if(GRUPOS2.includes(z)) return 1;
+  const ronda = /Dieciseisavos/i.test(z) ? 0 : /Octavos/i.test(z) ? 1 : /Semifinal/i.test(z) ? 3 : /Final/i.test(z) ? 4 : 2;
+  return 2 + ronda*2 + (/Vuelta/i.test(z) ? 1 : 0);
+}
+// Todas las zonas con partidos en el fixture (Primera Fase, Segunda Fase y playoffs).
+function zonasFixture(){ return Object.keys(FIXTURE); }
+// Partidos en cancha neutral: no cuentan como local/visitante para nadie.
+function esZonaNeutral(z){ return z === 'Desempate Descenso' || /^Final Primer Ascenso.*Ida/i.test(z); }
 function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? `${code} F${f}` : `F${f}`; }
 // Fecha "absoluta" cruzando fases: la Segunda Fase reinicia su numeración de fechas en 1,
 // así que un fecha=1 de Nonagonal/Reválida no puede compararse directo contra un fecha=18
@@ -2039,7 +2050,9 @@ function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? 
 function fechaAbsoluta(zona, fecha){
   const f = Number(fecha) || 0;
   if(!f) return 0;
-  const rank = zona ? faseRank(zona) : 0;
+  // Disciplina: se mantiene Primera Fase = 0 / todo lo demás = 1 (no usar faseRank, que separa
+  // cada ronda de playoffs para ordenar listados y cambiaría el cálculo de sanciones cumplidas).
+  const rank = zona && !ZONAS.includes(zona) ? 1 : 0;
   return rank*1000 + f;
 }
 
@@ -2577,10 +2590,10 @@ function renderFilaPartido(zona, f, m, meta){
 }
 
 // Últimos 5 partidos jugados de un equipo, más reciente primero — recorre FIXTURE en
-// memoria (todas las fases, ZONAS_TODAS) igual que renderPartidosClub, sin pegarle a la DB.
+// memoria (todas las fases y playoffs, zonasFixture()) igual que renderPartidosClub, sin pegarle a la DB.
 function last5ForTeam(nombre){
   const jugados = [];
-  ZONAS_TODAS.forEach(zona => {
+  zonasFixture().forEach(zona => {
     for(let f=1; f<=18; f++){
       (FIXTURE[zona]?.[String(f)]||[]).forEach(mm => {
         if(mm.local!==nombre && mm.visitante!==nombre) return;
@@ -2590,7 +2603,7 @@ function last5ForTeam(nombre){
         const fichaKeyMm = `${zona}_${f}_${mm.local}_${mm.visitante}`;
         const metaMm = PARTIDO_META[fichaKeyMm]||{};
         jugados.push({
-          zona, fecha:f, esLocal, rival,
+          zona, fecha:f, esLocal, neutral: esZonaNeutral(zona), rival,
           gf: esLocal?mm.gl:mm.gv, gc: esLocal?mm.gv:mm.gl,
           dia: metaMm.dia||''
         });
@@ -2756,7 +2769,7 @@ async function verInfoPartido(fichaKey){
         <span class="plt-rival-name">${p.rival}</span>
       </div>
       <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
-      <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+      <span class="plt-lv-badge">${p.neutral?'N':p.esLocal?'L':'V'}</span>
       <span class="plt-fecha-lbl">${fmtFechaCorta(p.dia)}</span>
     </div>`;
   };
@@ -5046,8 +5059,7 @@ async function cargarEstadisticas(){
     // Tablas generales: todas las zonas del fixture (Primera Fase, Segunda Fase y playoffs).
     // Los partidos en cancha neutral (Desempate Descenso y la primera final del Primer Ascenso)
     // suman en la general y en 1T/2T, pero no en las tablas de local ni de visitante.
-    const ZONAS_GENERALES = Object.keys(FIXTURE);
-    const sinLocalia = z => z === 'Desempate Descenso' || /^Final Primer Ascenso.*Ida/i.test(z);
+    const ZONAS_GENERALES = zonasFixture();
 
     // Equipo stats from FIXTURE
     ZONAS_GENERALES.forEach(z=>{
@@ -5064,7 +5076,7 @@ async function cargarEstadisticas(){
           if(m.gl>m.gv){ loc.g++;loc.pts+=3;vis.p++; }
           else if(m.gl<m.gv){ vis.g++;vis.pts+=3;loc.p++; }
           else{ loc.e++;vis.e++;loc.pts++;vis.pts++; }
-          if(!sinLocalia(z)){
+          if(!esZonaNeutral(z)){
             loc.local.pj++; loc.local.gf+=m.gl; loc.local.gc+=m.gv;
             vis.visit.pj++; vis.visit.gf+=m.gv; vis.visit.gc+=m.gl;
             if(m.gl>m.gv){ loc.local.g++;loc.local.pts+=3;vis.visit.p++; }
@@ -5227,7 +5239,7 @@ async function cargarEstadisticas(){
     // We already have fixtureData with arbitro field - build a map partido→arbitro
     // Also build from PARTIDO_META as fallback
     const arbitroPorPartido = {}; // "zona_fecha_local_visit" → arbitro name
-    ZONAS_TODAS.forEach(z=>{
+    zonasFixture().forEach(z=>{
       for(let f=1;f<=18;f++){
         (FIXTURE[z][String(f)]||[]).forEach(m=>{
           if(m.gl===null) return;
@@ -5258,7 +5270,7 @@ async function cargarEstadisticas(){
     });
 
     // Build arbiStats from partido results
-    ZONAS_TODAS.forEach(z=>{
+    zonasFixture().forEach(z=>{
       for(let f=1;f<=18;f++){
         (FIXTURE[z][String(f)]||[]).forEach(m=>{
           if(m.gl===null) return;
@@ -5423,7 +5435,7 @@ async function cargarEstadisticas(){
 
     // Partidos jugados por club (para filtro de arqueros con al menos 50%)
     const clubMatchCount = {};
-    ZONAS_TODAS.forEach(z=>{ for(let f=1;f<=18;f++){
+    zonasFixture().forEach(z=>{ for(let f=1;f<=18;f++){
       (FIXTURE[z][String(f)]||[]).forEach(m=>{
         if(m.gl===null) return;
         clubMatchCount[m.local]=(clubMatchCount[m.local]||0)+1;
@@ -5708,7 +5720,7 @@ async function cargarEstadisticas(){
     _ARBI_PARTIDOS = {};
     const arbiRows = Object.entries(arbiStats).sort((a,b)=>b[1].pj-a[1].pj);
     arbiRows.forEach(([nombre])=>{ _ARBI_PARTIDOS[nombre]=[]; });
-    ZONAS_TODAS.forEach(z=>{
+    zonasFixture().forEach(z=>{
       for(let f=1;f<=18;f++){
         (FIXTURE[z][String(f)]||[]).forEach(m=>{
           if(m.gl===null) return;
@@ -6723,7 +6735,8 @@ function setPltFilter(f){
 function renderPartidosClub(nombre){
   const cont = document.getElementById('plt-matches-cont');
   let allJugados = [], allProximos = [];
-  ZONAS_TODAS.forEach(zona => {
+  zonasFixture().forEach(zona => {
+    const neutral = esZonaNeutral(zona);
     for(let f=1; f<=18; f++){
       (FIXTURE[zona][String(f)]||[]).forEach(m => {
         if(m.local!==nombre && m.visitante!==nombre) return;
@@ -6732,9 +6745,9 @@ function renderPartidosClub(nombre){
         const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
         const meta = PARTIDO_META[fichaKey]||{};
         if(m.gl!==null){
-          allJugados.push({ zona, fecha:f, esLocal, rival, gf:esLocal?m.gl:m.gv, gc:esLocal?m.gv:m.gl, fichaKey, meta });
+          allJugados.push({ zona, fecha:f, esLocal, neutral, rival, gf:esLocal?m.gl:m.gv, gc:esLocal?m.gv:m.gl, fichaKey, meta });
         } else {
-          allProximos.push({ zona, fecha:f, esLocal, rival, fichaKey, meta });
+          allProximos.push({ zona, fecha:f, esLocal, neutral, rival, fichaKey, meta });
         }
       });
     }
@@ -6742,15 +6755,22 @@ function renderPartidosClub(nombre){
   allJugados.sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
   allProximos.sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
 
-  const filt = _pltMatchFilter || 'todos';
-  const jugados  = filt==='todos' ? allJugados  : allJugados.filter(p  => filt==='local'?p.esLocal:!p.esLocal);
-  const proximos = filt==='todos' ? allProximos : allProximos.filter(p => filt==='local'?p.esLocal:!p.esLocal);
+  // Pestaña "Neutral" solo para los clubes que tienen partidos en cancha neutral.
+  const hayNeutral = allJugados.some(p=>p.neutral) || allProximos.some(p=>p.neutral);
+  let filt = _pltMatchFilter || 'todos';
+  if(filt==='neutral' && !hayNeutral) filt = 'todos';
+  const pasaFiltro = p => filt==='todos' ? true
+    : filt==='neutral' ? p.neutral
+    : !p.neutral && (filt==='local' ? p.esLocal : !p.esLocal);
+  const jugados  = allJugados.filter(pasaFiltro);
+  const proximos = allProximos.filter(pasaFiltro);
 
   const tc = _pltData?.clubColor || '';
   const activeStyle = tc ? `background:${tc}33;color:#f0f0f0;border-color:${tc};` : '';
   const filterBar = `<div class="plt-filter-row">
     <button class="plt-filter-btn${filt==='local'?' active':''}" data-f="local" onclick="setPltFilter('local')" ${filt==='local'&&tc?`style="${activeStyle}"`:''}>Local</button>
     <button class="plt-filter-btn${filt==='visitante'?' active':''}" data-f="visitante" onclick="setPltFilter('visitante')" ${filt==='visitante'&&tc?`style="${activeStyle}"`:''}>Visitante</button>
+    ${hayNeutral?`<button class="plt-filter-btn${filt==='neutral'?' active':''}" data-f="neutral" onclick="setPltFilter('neutral')" ${filt==='neutral'&&tc?`style="${activeStyle}"`:''}>Neutral</button>`:''}
     <button class="plt-filter-btn${filt==='todos'?' active':''}" data-f="todos" onclick="setPltFilter('todos')" ${filt==='todos'&&tc?`style="${activeStyle}"`:''}>Todos</button>
   </div>`;
 
@@ -6775,7 +6795,7 @@ function renderPartidosClub(nombre){
           ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
           <span class="plt-rival-name">${p.rival}</span>
         </div>
-        <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+        <span class="plt-lv-badge">${p.neutral?'N':p.esLocal?'L':'V'}</span>
         <span class="plt-res-badge ${res}">${p.gf}−${p.gc}</span>
         <div class="plt-action-btns">${fichaBtn}${videoBtn}</div>
       </div>`;
@@ -6796,7 +6816,7 @@ function renderPartidosClub(nombre){
           ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
           <span class="plt-rival-name">${p.rival}</span>
         </div>
-        <span class="plt-lv-badge">${p.esLocal?'L':'V'}</span>
+        <span class="plt-lv-badge">${p.neutral?'N':p.esLocal?'L':'V'}</span>
         <span style="font-size:11px;color:#777;">${fechaStr||'—'}</span>
         <div></div>
       </div>`;
@@ -7182,7 +7202,7 @@ async function abrirPerfilJugador(jugadorId){
           <td class="jug-tbl-rival">
             ${rivalEsc?`<img src="${rivalEsc}" onerror="this.style.display='none'" alt="">`:''}
             <span class="jug-tbl-rival-name">${f.rival}</span>
-            <span class="jug-tbl-lv-res ${res}">(${f.esLocal?'L':'V'}, ${f.gf}-${f.gc})</span>
+            <span class="jug-tbl-lv-res ${res}">(${esZonaNeutral(f.zona)?'N':f.esLocal?'L':'V'}, ${f.gf}-${f.gc})</span>
           </td>
           <td><span class="jug-cond-badge ${f.condClass}">${condAbbr[f.condClass]}</span></td>
           <td>${f.minutos||'—'}</td>
