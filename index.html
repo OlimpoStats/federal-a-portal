@@ -418,6 +418,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mirror-cont .llave-col-qf .llave-marc{gap:.35rem;padding-left:.3rem;}
   .bnc-mirror-cont .llave-col-qf .llave-marc-cell{min-width:18px;}
   .bnc-mirror-cont .llave-col-qf .llave-marc-cell:not(:first-child){padding-left:.35rem;}
+  /* En celulares más anchos (~430-700px) el nombre ya no llena la tarjeta y quedaba un hueco
+     grande entre el nombre y los goles, con I/V/G apretados en la punta: el bloque de goles
+     ocupa el 40% de la fila (tope 150px) y sus celdas se reparten ese ancho. min-width:max-content
+     = en pantallas angostas nunca queda más chico que su tamaño natural. */
+  .bnc-mirror-cont .llave-col-qf .llave-marc{flex:0 0 auto;width:40%;max-width:150px;min-width:max-content;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc-cell{flex:1 1 0;}
   /* Semis centradas (quedaban tiradas a la izquierda, con su tope de 258px de ancho). */
   .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
 }
