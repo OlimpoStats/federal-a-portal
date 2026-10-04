@@ -244,7 +244,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    en jerarquía visual con el de G. */
 .llave-marc-cell:not(:first-child){padding-left:.5rem;border-left:1px solid rgba(255,255,255,.12);}
 .llave-marc-cell.llave-marc-glob{padding-left:.55rem;border-left:1.5px solid rgba(255,255,255,.32);}
-.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;}
+/* line-height fijo: sin él, el número de G (18px) era más alto que el de I/V (16px) y la
+   letra de abajo quedaba desparejada — I y V más arriba que G. */
+.llave-marc-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#ccc;line-height:22px;}
 .llave-marc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .llave-marc-glob .llave-marc-val{font-size:18px;color:#fff;}
 .llave-marc-glob-gano .llave-marc-val{color:var(--accent);}
@@ -331,16 +333,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    no) — con ancho fijo las 2 mitades son pixel-idénticas y se centran como bloque. */
 .bnc-mirror-cont{display:grid;grid-template-columns:auto auto auto;gap:2rem;align-items:center;justify-content:center;}
 .bnc-mini-bracket{display:grid;grid-template-columns:1fr auto;gap:1.4rem;align-items:stretch;width:408px;position:relative;}
-/* Color propio de las líneas del cuadro (más visible que --border, que a 8% de opacidad
-   quedaba invisible contra el fondo oscuro — se veían tarjetas sueltas sin conexión). */
-.bnc-mini-bracket .bracket-pair::after{
-  content:'';position:absolute;top:25%;bottom:25%;right:-1rem;width:.9rem;
-  border:1.5px solid rgba(255,255,255,.28);border-left:none;border-radius:0 4px 4px 0;
-}
+/* Sin gancho entre el par de Cuartos y su Semi (pedido del usuario: se entiende igual de
+   dónde salen los equipos, y en mobile tampoco se muestra). Hace falta anularlo explícitamente
+   porque la regla genérica .llave-col:not(:last-child) .bracket-pair::after (la de la
+   Calculadora) también le pegaba a la mitad izquierda — por eso ahí se veía gris y no blanco. */
+.bnc-mini-bracket .llave-col .bracket-pair::after{display:none;}
 /* Mitad derecha espejada: la Semi queda pegada al centro (a la izquierda de su mini-cuadro) y
-   los Cuartos afuera (a la derecha) — el gancho se invierte para seguir apuntando hacia la Semi. */
+   los Cuartos afuera (a la derecha). */
 .bnc-mini-bracket-der{grid-template-columns:auto 1fr;}
-.bnc-mini-bracket-der .bracket-pair::after{right:auto;left:-1rem;border-left:1.5px solid rgba(255,255,255,.28);border-right:none;border-radius:4px 0 0 4px;}
 /* Gancho chiquito de cada mini-cuadro hacia la Final, en el hueco entre columnas del grid
    principal — con margen de sobra antes de tocar la tarjeta de la Final (no llega pegado). */
 .bnc-mini-bracket::before{content:'';position:absolute;top:50%;width:.8rem;height:1.5px;background:rgba(255,255,255,.28);}
@@ -372,7 +372,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .llave-card-p16{padding:.25rem .4rem;}
   .llave-card-p16 .llave-fila{padding:.1rem 0;}
   .llave-card-p16 .llave-nombre{font-size:12px;}
-  .llave-card-p16 .llave-marc-val{font-size:13px;}
+  .llave-card-p16 .llave-marc-val{font-size:13px;line-height:17px;}
   .llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:14px;}
   .llave-card-p16 .llave-marc-lbl{font-size:8px;}
 }
@@ -383,7 +383,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    getBoundingClientRect: overflow real desde 1440px hacia abajo, resoluciones de laptop muy
    comunes) — se extiende el mismo layout apilado que ya funcionaba bien en mobile. */
 @media (max-width:1560px){
-  .bnc-mirror-cont{grid-template-columns:1fr;justify-content:stretch;}
+  /* minmax(0,1fr) y no 1fr: con los 2 Cuartos lado a lado (abajo), un 1fr se estiraba al
+     ancho mínimo de los nombres y desbordaba la pantalla en celulares de 360px. */
+  .bnc-mirror-cont{grid-template-columns:minmax(0,1fr);justify-content:stretch;}
+  .bnc-mirror-cont .llave-col{min-width:0;}
+  /* Los 2 cruces de Cuartos de cada lado uno al lado del otro (no apilados). */
+  .bnc-mirror-cont .llave-col-qf .bracket-pair{flex-direction:row;align-items:stretch;}
+  .bnc-mirror-cont .llave-col-qf .bracket-pair>.llave-card{flex:1 1 0;min-width:0;}
   /* Aplana los 2 mini-cuadros (display:contents): sus 2 hijos (par de Cuartos + Semi) pasan a
      apilarse directamente dentro de .bnc-mirror-cont, en el mismo orden en que aparecen en el
      HTML — Cuartos-1, Semi-1, Final, Semi-2, Cuartos-2 — que es el orden correcto (confirmado
@@ -396,6 +402,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
   .bnc-mirror-final{min-width:0;}
+}
+/* Cuartos lado a lado en celular: tarjeta y marcador más apretados y sin el "1°A" (no
+   entraba el nombre del club, quedaba "San Martín..." / "Argentino ..."). */
+@media (max-width:700px){
+  .bnc-mirror-cont .llave-col-qf .bracket-pair{gap:.4rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-card{padding:.35rem .4rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila{gap:.3rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;gap:.25rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-seed{display:none;}
+  .bnc-mirror-cont .llave-col-qf .llave-nombre{font-size:12px;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc{gap:.3rem;padding-left:.3rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc-cell{min-width:14px;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc-cell:not(:first-child){padding-left:.3rem;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
