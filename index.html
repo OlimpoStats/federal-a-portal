@@ -424,6 +424,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
      = en pantallas angostas nunca queda más chico que su tamaño natural. */
   .bnc-mirror-cont .llave-col-qf .llave-marc{flex:0 0 auto;width:40%;max-width:150px;min-width:max-content;}
   .bnc-mirror-cont .llave-col-qf .llave-marc-cell{flex:1 1 0;}
+  /* Cuartos ya jugados (fila compacta, solo escudo + marcador): el escudo quedaba chico en una
+     punta, un hueco en el medio y los goles apretados en la otra. Escudo un poco más grande y el
+     marcador ocupa todo el resto de la fila, repartido entre I/V/G. */
+  .bnc-mirror-cont .llave-col-qf .llave-fila-compacta{gap:.7rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila-compacta img{width:24px!important;height:24px!important;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila-compacta .me{width:24px;height:24px;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila-compacta .llave-marc{flex:1 1 auto;width:auto;max-width:none;margin-left:0;}
   /* Semis centradas (quedaban tiradas a la izquierda, con su tope de 258px de ancho). */
   .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
 }
