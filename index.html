@@ -435,6 +435,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mirror-cont .llave-col-qf .llave-fila-compacta .llave-marc{flex:1 1 auto;width:auto;max-width:none;margin-left:0;}
   /* Semis centradas (quedaban tiradas a la izquierda, con su tope de 258px de ancho). */
   .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
+  /* Semis: los 3 recuadros del marcador del mismo ancho — con el gap entre celdas, el de I y V
+     incluían ese espacio y el de G (último, sin gap después) quedaba más angosto. */
+  .bnc-mirror-cont .llave-col-sf .llave-marc{gap:0;padding-left:0;}
+  .bnc-mirror-cont .llave-col-sf .llave-marc-cell,
+  .bnc-mirror-cont .llave-col-sf .llave-marc-cell:not(:first-child),
+  .bnc-mirror-cont .llave-col-sf .llave-marc-cell.llave-marc-glob{box-sizing:border-box;width:32px;min-width:0;padding-left:0;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
