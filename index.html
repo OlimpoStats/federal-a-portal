@@ -407,14 +407,19 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    entraba el nombre del club, quedaba "San Martín..." / "Argentino ..."). */
 @media (max-width:700px){
   .bnc-mirror-cont .llave-col-qf .bracket-pair{gap:.4rem;}
-  .bnc-mirror-cont .llave-col-qf .llave-card{padding:.35rem .4rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-card{padding:.35rem;}
   .bnc-mirror-cont .llave-col-qf .llave-fila{gap:.3rem;}
-  .bnc-mirror-cont .llave-col-qf .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;gap:.25rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;gap:.3rem;}
   .bnc-mirror-cont .llave-col-qf .llave-seed{display:none;}
   .bnc-mirror-cont .llave-col-qf .llave-nombre{font-size:12px;}
-  .bnc-mirror-cont .llave-col-qf .llave-marc{gap:.3rem;padding-left:.3rem;}
-  .bnc-mirror-cont .llave-col-qf .llave-marc-cell{min-width:14px;}
-  .bnc-mirror-cont .llave-col-qf .llave-marc-cell:not(:first-child){padding-left:.3rem;}
+  /* Escudo un poco más grande y celdas de goles más anchas (con 14px quedaban apretadas) —
+     el ancho sale del nombre, que se corta con "..." antes. */
+  .bnc-mirror-cont .llave-col-qf .me{width:25px;height:25px;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc{gap:.35rem;padding-left:.3rem;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc-cell{min-width:18px;}
+  .bnc-mirror-cont .llave-col-qf .llave-marc-cell:not(:first-child){padding-left:.35rem;}
+  /* Semis centradas (quedaban tiradas a la izquierda, con su tope de 258px de ancho). */
+  .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
 }
 /* Cuadro "espejo" del Nonagonal — SOLO para la home (pantalla principal), independiente del
    cuadro de 3 columnas de arriba (que usa la calculadora): 2 cuartos del lado que da a la
