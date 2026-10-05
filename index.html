@@ -7,6 +7,10 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- GSAP + Flip: animaciones del Simulador (los equipos "viajan" a su nuevo lugar cuando se
+     rearman los cruces). Si no cargan, el Simulador funciona igual, sin animación. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/Flip.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0e0e0e;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--win:#1e5c35;--loss:#5c1e1e;--draw:#3a3a3a;}
@@ -586,6 +590,42 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
 
+/* ── SIMULADOR ── */
+.sim-wrap{padding:0 0 2.5rem;max-width:1100px;margin:0 auto;}
+.sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.3rem;}
+.sim-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;}
+.sim-reset{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.45rem .9rem;font-size:13px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;}
+.sim-reset:hover{border-color:var(--accent);}
+.sim-nota{font-size:13px;color:#999;margin:0 0 1.4rem;line-height:1.5;}
+.sim-bloque-tit{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin:0 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid rgba(232,196,74,.3);}
+.sim-bloque{margin-bottom:2rem;}
+.sim-ronda{margin-bottom:1.2rem;}
+.sim-ronda-tit{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ddd;margin:0 0 .5rem;display:flex;flex-wrap:wrap;gap:.25rem .6rem;align-items:baseline;}
+.sim-ronda-sub{font-family:'Barlow',sans-serif;font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;}
+.sim-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+.sim-card.real{border-style:dashed;}
+.sim-eq{display:flex;align-items:center;gap:.45rem;width:100%;background:none;border:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:.45rem .6rem;cursor:pointer;text-align:left;min-width:0;transition:background .2s,opacity .3s;}
+.sim-eq+.sim-eq{border-top:1px solid var(--border);}
+.sim-eq:hover:not(:disabled){background:var(--surface2);}
+.sim-eq:disabled{cursor:default;}
+.sim-rank{font-size:10px;font-weight:700;color:var(--muted);min-width:24px;flex-shrink:0;}
+.sim-nombre{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.sim-eq.gano .sim-nombre{color:#4caf50;font-weight:700;}
+.sim-eq.gano::after{content:'✓';color:#4caf50;font-weight:700;flex-shrink:0;}
+.sim-eq.perdio{opacity:.4;}
+.sim-eq.perdio img{filter:grayscale(1);}
+.sim-eq.pend{color:var(--muted);font-style:italic;}
+.sim-espera{font-size:13px;color:var(--muted);font-style:italic;padding:.2rem 0 .4rem;}
+.sim-campeon{display:flex;align-items:center;gap:.6rem;background:rgba(232,196,74,.1);border:1px solid rgba(232,196,74,.5);border-radius:10px;padding:.75rem 1rem;margin:.2rem 0 1rem;font-size:16px;font-weight:700;}
+.sim-campeon-lbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);}
+@media(max-width:700px){
+  .sim-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;}
+  .sim-eq{font-size:12px;padding:.45rem .4rem;gap:.3rem;}
+  .sim-eq .me{width:18px;height:18px;}
+  .sim-rank{min-width:20px;font-size:9px;}
+}
+
 /* ── CONTACTO MODAL ── */
 .contacto-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;width:420px;max-width:94vw;}
 .contacto-modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.65rem .85rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:110px;outline:none;transition:border-color .15s;margin-bottom:.75rem;}
@@ -1021,7 +1061,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
     <div class="ni" onclick="goPage('foro',this)">Foro</div>
     <div class="ni" onclick="goPage('prode',this)">Prode</div>
-    <div class="ni" onclick="goPage('calculadora',this)">Calculadora</div>
+    <div class="ni" onclick="goPage('simulador',this)">Simulador</div>
     <div class="ni" onclick="abrirContacto()">Contacto</div>
     <div class="user-btn" id="user-btn" onclick="abrirModal()" title="Iniciar sesión">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -1052,7 +1092,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
   <div class="drawer-section">Extra</div>
   <div class="drawer-item" id="di-prode" onclick="goPageDrawer('prode')">🎯 Prode</div>
-  <div class="drawer-item" id="di-calculadora" onclick="goPageDrawer('calculadora')">🧮 Calculadora</div>
+  <div class="drawer-item" id="di-simulador" onclick="goPageDrawer('simulador')">🧮 Simulador</div>
   <div class="drawer-item" id="di-reglamento" onclick="goPageDrawer('reglamento')">📋 Reglamento</div>
   <div class="drawer-section">Comunidad</div>
   <div class="drawer-item" id="di-foro" onclick="goPageDrawer('foro')">💬 Foro</div>
@@ -1139,32 +1179,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   </div>
 </div>
 
-<!-- CALCULADORA -->
-<div class="page" id="page-calculadora">
-  <div style="padding:1rem 1rem 2.5rem;max-width:860px;margin:0 auto;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:.2rem;">🧮 Calculadora</div>
-
-    <p class="sec" style="color:#fff;margin-top:.5rem;">Estado actual</p>
-    <div class="calc-form-grid" style="margin-bottom:1rem;">
-      <div id="calc-real-tabla-nona-a"></div>
-      <div id="calc-real-tabla-nona-b"></div>
+<!-- SIMULADOR (reemplaza a la Calculadora: la Segunda Fase ya terminó, no quedan partidos
+     pendientes para cargar goles — ahora se simulan los playoffs eligiendo ganadores) -->
+<div class="page" id="page-simulador">
+  <div class="sim-wrap">
+    <div class="sim-head">
+      <div class="sim-title">🧮 Simulador</div>
+      <button class="sim-reset" onclick="reiniciarSimulador()">↺ Reiniciar</button>
     </div>
-    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
-      <div id="calc-real-tabla-rev-a"></div>
-      <div id="calc-real-tabla-rev-b"></div>
-    </div>
-    <p class="sec" style="color:#fff;">Primer ascenso — cuadro actual</p>
-    <div id="calc-real-bracket-nona" class="bracket-nona-cont" style="margin-bottom:1.2rem;"></div>
-    <p class="sec" style="color:#fff;">Segundo ascenso — 16vos actuales</p>
-    <div id="calc-real-preview16" class="preview16-cont" style="margin-bottom:1.5rem;"></div>
-
-    <p class="sec" style="color:#fff;">Simulá resultados pendientes</p>
-    <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes de Segunda Fase y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y los cuadros proyectados.</p>
-    <div id="calc-form"><div style="color:#888;font-size:13px;">Cargando partidos...</div></div>
-    <div id="calc-btn-wrap" style="display:none;margin:1.25rem 0;text-align:center;">
-      <button onclick="calcularProyeccion()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.65rem 2.5rem;font-size:16px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;">CALCULAR</button>
-    </div>
-    <div id="calc-resultados"></div>
+    <p class="sim-nota">Tocá el equipo que gana cada llave y mirá cómo se arman los cruces. Tocalo de nuevo para deshacer. Los partidos ya jugados no se pueden cambiar. El primero de cada llave es el mejor ubicado: define de local y avanza en caso de empate.</p>
+    <div id="sim-cont"></div>
   </div>
 </div>
 
@@ -1197,10 +1221,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
             <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
             <div style="display:flex;align-items:center;gap:.6rem;">
-              <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin
-                   función, solo ocupa el espacio hasta que esté lista esa pantalla. stopPropagation
-                   para que no dispare el toggle del desplegable al clickearlo. -->
-              <div title="Próximamente" onclick="event.stopPropagation();" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
+              <!-- Botón al Simulador. stopPropagation para que no dispare el toggle del
+                   desplegable al clickearlo. -->
+              <div onclick="event.stopPropagation();goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid rgba(232,196,74,.45);border-radius:6px;padding:.4rem .6rem;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">🧮 Simulador</div>
               <span class="oc-chevron" id="oc-chevron">▾</span>
             </div>
           </div>
@@ -4617,7 +4640,8 @@ const _PATH_MAP = {
   '/reglamento': 'reglamento',
   '/foro': 'foro',
   '/prode': 'prode',
-  '/calc': 'calculadora',
+  '/calc': 'simulador',
+  '/simulador': 'simulador',
 };
 const _PAGE_PATH = {};
 Object.entries(_PATH_MAP).forEach(([path, id]) => _PAGE_PATH[id] = path);
@@ -4641,7 +4665,7 @@ function goPage(id, el){
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas") cargarEstadisticas();
   if(id==="planteles") cargarPlanteles();
-  if(id==="calculadora"){ renderEstadoActualCalc(); cargarCalculadora(); }
+  if(id==="simulador") cargarSimulador();
   if(id==="foro"){
     page.style.display="flex";
     const hdrH = window.innerWidth<=700?52:62;
@@ -7272,6 +7296,213 @@ async function abrirPerfilJugador(jugadorId){
   } catch(e){
     cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">Error al cargar los datos del jugador.</div>';
   }
+}
+
+// ===== SIMULADOR =====
+// El usuario elige con un clic quién gana cada llave que todavía no se jugó y el sitio arma en
+// el momento las rondas siguientes. Reglas (confirmadas por el usuario):
+// - Primer Ascenso: Cuartos → Semis → Final, mismas llaves que el cuadro de la home.
+// - Segundo Ascenso, todo según "Orden para cruces" (1 = perdedor de la Final, 2-3 = perdedores
+//   de Semis, 4-7 = perdedores de Cuartos, 8-27 = Tabla de Mérito) y SIEMPRE mejor vs peor,
+//   reordenando en cada ronda: 16vos = 4 perdedores de Cuartos + 20 de la Tabla (12 llaves);
+//   Octavos = 12 ganadores + los 2 perdedores de Semis (7); Cuartos = 7 ganadores + el perdedor
+//   de la Final (4); Semis (2); Final (1). El mejor ubicado va primero (define de local).
+// Los resultados reales ya cargados se respetan y no se pueden cambiar.
+const SIM_PICKS = {};        // ronda -> Set con los nombres elegidos como ganadores
+let _simUltimoClick = null;  // {n, ronda, rect} del último ganador elegido (animación de "avance")
+let _simCampeones = '';      // campeones del render anterior, para animar solo cuando cambian
+if(window.gsap && window.Flip) gsap.registerPlugin(Flip);
+
+function _simPick(ronda){ return SIM_PICKS[ronda] || (SIM_PICKS[ronda] = new Set()); }
+
+// Ganador de una llave: el real si ya se jugó; si no, el que eligió el usuario.
+function _simGanador(ronda, a, b, real){
+  if(real) return real;
+  if(!a || !b || !a.n || !b.n) return null;
+  const s = _simPick(ronda), ia = s.has(a.n), ib = s.has(b.n);
+  return ia && !ib ? a : ib && !ia ? b : null;
+}
+
+function calcSimulacion(){
+  const br = calcBracketNonagonal();
+  const usados = {};
+  const llave = (ronda, mejor, peor, realGanador) => {
+    const ganador = _simGanador(ronda, mejor, peor, realGanador);
+    if(ganador && !realGanador) (usados[ronda] = usados[ronda] || []).push(ganador.n);
+    const perdedor = ganador ? (ganador===mejor ? peor : mejor) : null;
+    return { ronda, mejor, peor, ganador, perdedor, real: !!realGanador };
+  };
+  const mismo = (x, y) => x && y && x.n === y.n;
+
+  // ── Primer Ascenso ──
+  const qf = br.cuartos.map(c => llave('pa-qf', c.mejor, c.peor, c.resultado.resuelto ? c.ganador : null));
+  const qfPorId = {}; br.cuartos.forEach((c,i)=>qfPorId[c.id]=qf[i]);
+  const sf = CRUCES_SEMIS_NONAGONAL.map((cfg,i) => {
+    const eqA = qfPorId[cfg.qfA].ganador, eqB = qfPorId[cfg.qfB].ganador;
+    let mejor=null, peor=null;
+    if(eqA && eqB) [mejor,peor] = eqA.pos <= eqB.pos ? [eqA,eqB] : [eqB,eqA];
+    const r = br.semis[i];
+    const real = (r.ganador && mismo(r.mejor,mejor) && mismo(r.peor,peor)) ? (mismo(r.ganador,mejor) ? mejor : peor) : null;
+    return llave('pa-sf', mejor, peor, real);
+  });
+  const e1 = sf[0].ganador, e2 = sf[1].ganador, bf = br.final;
+  const realF = (bf.resuelto && bf.ganador && mismo(bf.equipo1,e1) && mismo(bf.equipo2,e2)) ? (mismo(bf.ganador,e1) ? e1 : e2) : null;
+  const fin = llave('pa-f', e1, e2, realF);
+
+  // ── Segundo Ascenso ──
+  // Puestos "a sorteo" de la Tabla de Mérito: cada uno toma un candidato en el orden listado
+  // (el 1° el primero, el 2° el otro) y se marca con 🎲.
+  const tm = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
+  const vistos = new Map();
+  const merito = tm.map((it,i)=>{
+    if(it.tipo!=='sorteo') return { n:it.n, rank:8+i };
+    const key = it.candidatos.map(c=>c.n).join('|'), k = vistos.get(key)||0;
+    vistos.set(key, k+1);
+    return { n:it.candidatos[k].n, rank:8+i, sorteo:true };
+  });
+  // Los caídos del Primer Ascenso solo se ubican cuando se conocen TODOS los de su ronda (el
+  // orden entre ellos depende de quiénes son); mientras tanto, lugar reservado con su puesto.
+  const caidos = (llaves) => llaves.every(l=>l.perdedor) ? ordenarCaidosNonagonal(llaves.map(l=>l.perdedor)) : null;
+  const qfLos = caidos(qf), sfLos = caidos(sf);
+  const reservado = (lista, idx, rank, label) => lista && lista[idx] ? { n:lista[idx].n, rank } : { n:null, rank, label:`${label} #${rank}` };
+
+  const rondasSA = [];
+  const armar = (ronda, nombre, sub, participantes) => {
+    const lista = [...participantes].sort((a,b)=>a.rank-b.rank);
+    const cruces = armarCrucesDesdeOrden(lista).map(c => llave(ronda, c.mejor, c.peor, null));
+    const r = { ronda, nombre, sub, cruces, completa: cruces.every(c=>c.ganador) };
+    rondasSA.push(r);
+    return r;
+  };
+  let ant = armar('sa-16', 'Dieciseisavos', '4 perdedores de Cuartos del Primer Ascenso + 20 de la Tabla de Mérito',
+    [0,1,2,3].map(i=>reservado(qfLos, i, 4+i, 'Cuartofinalista')).concat(merito));
+  let pendiente = null; // primera ronda sin completar: las siguientes esperan a esa
+  const siguiente = (ronda, nombre, sub, extras) => {
+    if(pendiente || !ant.completa){
+      pendiente = pendiente || ant.nombre;
+      rondasSA.push({ ronda, nombre, sub, espera: pendiente });
+      return;
+    }
+    ant = armar(ronda, nombre, sub, ant.cruces.map(c=>c.ganador).concat(extras));
+  };
+  siguiente('sa-8', 'Octavos', '12 ganadores + los 2 perdedores de Semis del Primer Ascenso',
+    [0,1].map(i=>reservado(sfLos, i, 2+i, 'Semifinalista')));
+  siguiente('sa-4', 'Cuartos', '7 ganadores + el perdedor de la Final del Primer Ascenso',
+    [fin.perdedor ? { n:fin.perdedor.n, rank:1 } : { n:null, rank:1, label:'Finalista #1' }]);
+  siguiente('sa-2', 'Semifinales', '', []);
+  siguiente('sa-1', 'Final', '', []);
+  const campeonSA = (!pendiente && ant.ronda==='sa-1' && ant.completa) ? ant.cruces[0].ganador : null;
+
+  // Limpia elecciones que quedaron sin efecto (p. ej. el equipo ya no llega a esa ronda).
+  Object.keys(SIM_PICKS).forEach(r=>{ SIM_PICKS[r] = new Set(usados[r]||[]); });
+
+  return { qf, sf, fin, campeonPA: fin.ganador, rondasSA, campeonSA };
+}
+
+function _simFila(l, eq){
+  if(!eq || !eq.n) return `<button class="sim-eq pend" disabled><span class="sim-rank"></span><span class="sim-nombre">${eq && eq.label ? eq.label : 'A Definir'}</span></button>`;
+  const cls = l.ganador ? (l.ganador.n===eq.n ? ' gano' : ' perdio') : '';
+  const rank = eq.rank!=null ? `#${eq.rank}` : (eq.pos ? _seedLabelLlave(eq) : '');
+  const bloqueado = l.real || !l.mejor || !l.peor || !l.mejor.n || !l.peor.n;
+  const n = eq.n.replace(/"/g,'&quot;');
+  return `<button class="sim-eq${cls}" data-flip-id="${l.ronda}:${n}" data-n="${n}"${bloqueado?' disabled':''} onclick="simElegir(this,'${l.ronda}')">
+    <span class="sim-rank">${rank}</span>${escudoHTML(eq.n,'me')}<span class="sim-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></button>`;
+}
+function _simCard(l){
+  return `<div class="sim-card${l.real?' real':''}">${_simFila(l, l.mejor)}${_simFila(l, l.peor)}</div>`;
+}
+function _simRonda(nombre, sub, llaves){
+  const jugada = llaves.length && llaves.every(l=>l.real);
+  const subTxt = jugada ? 'Jugado' : sub;
+  return `<div class="sim-ronda"><p class="sim-ronda-tit">${nombre}${subTxt?`<span class="sim-ronda-sub">${subTxt}</span>`:''}</p>
+    <div class="sim-grid">${llaves.map(_simCard).join('')}</div></div>`;
+}
+function _simCampeon(label, eq){
+  return eq ? `<div class="sim-campeon" data-campeon="${label}">🏆 <span class="sim-campeon-lbl">${label}</span>${escudoHTML(eq.n,'me')}<span>${eq.n}</span></div>` : '';
+}
+
+function renderSimulador(animar){
+  const cont = document.getElementById('sim-cont');
+  if(!cont) return;
+  const sim = calcSimulacion();
+  const rondasSA = sim.rondasSA.map(r => r.espera
+    ? `<div class="sim-ronda"><p class="sim-ronda-tit">${r.nombre}${r.sub?`<span class="sim-ronda-sub">${r.sub}</span>`:''}</p><div class="sim-espera">Se arma cuando estén todos los ganadores de ${r.espera}.</div></div>`
+    : _simRonda(r.nombre, r.sub, r.cruces)).join('');
+  const html = `<div class="sim-bloque">
+      <p class="sim-bloque-tit">Primer Ascenso</p>
+      ${_simRonda('Cuartos de Final', '', sim.qf)}
+      ${_simRonda('Semifinales', '', sim.sf)}
+      ${_simRonda('Final', '', [sim.fin])}
+      ${_simCampeon('Primer ascenso', sim.campeonPA)}
+    </div>
+    <div class="sim-bloque">
+      <p class="sim-bloque-tit">Segundo Ascenso</p>
+      ${rondasSA}
+      ${_simCampeon('Segundo ascenso', sim.campeonSA)}
+    </div>`;
+
+  const conAnim = animar && window.gsap && window.Flip;
+  const estado = conAnim ? Flip.getState(cont.querySelectorAll('[data-flip-id]')) : null;
+  cont.innerHTML = html;
+  const campeones = [sim.campeonPA, sim.campeonSA].map(e=>e?e.n:'').join('|');
+  const campeonesCambiaron = campeones !== _simCampeones;
+  _simCampeones = campeones;
+  if(!estado) return;
+
+  const click = _simUltimoClick;
+  _simUltimoClick = null;
+  // Los equipos que ya estaban en pantalla "viajan" a su nuevo lugar (reordenamiento de cruces);
+  // los que aparecen por primera vez entran con un pequeño rebote. El que el usuario acaba de
+  // elegir sale volando desde la tarjeta donde lo tocó hasta su llave de la ronda siguiente.
+  Flip.from(estado, {
+    targets: cont.querySelectorAll('[data-flip-id]'),
+    duration: .55, ease: 'power3.inOut',
+    onEnter: els => els.forEach((el,i) => {
+      if(click && el.dataset.n===click.n && el.dataset.flipId!==`${click.ronda}:${click.n}`){
+        const r = el.getBoundingClientRect();
+        const dx = click.rect.left - r.left, dy = click.rect.top - r.top;
+        if(Math.abs(dy) < window.innerHeight){
+          gsap.fromTo(el, {x:dx, y:dy, scale:1.05, zIndex:5}, {x:0, y:0, scale:1, duration:.7, ease:'power3.inOut', clearProps:'zIndex,transform'});
+          gsap.fromTo(el, {backgroundColor:'rgba(76,175,80,.35)'}, {backgroundColor:'rgba(76,175,80,0)', duration:1.2, delay:.5, clearProps:'backgroundColor'});
+          return;
+        }
+      }
+      gsap.fromTo(el, {opacity:0, y:12, scale:.94}, {opacity:1, y:0, scale:1, duration:.45, delay:Math.min(i*.02,.4), ease:'back.out(1.6)', clearProps:'transform,opacity'});
+    }),
+  });
+  if(click){
+    const elegido = cont.querySelector(`[data-flip-id="${CSS.escape(`${click.ronda}:${click.n}`)}"]`);
+    if(elegido) gsap.fromTo(elegido, {backgroundColor:'rgba(76,175,80,.3)'}, {backgroundColor:'rgba(76,175,80,0)', duration:.9, clearProps:'backgroundColor'});
+  }
+  if(campeonesCambiaron){
+    gsap.fromTo(cont.querySelectorAll('.sim-campeon'), {opacity:0, scale:.85, y:10}, {opacity:1, scale:1, y:0, duration:.6, ease:'back.out(2)', clearProps:'transform,opacity'});
+  }
+}
+
+function simElegir(btn, ronda){
+  const n = btn.dataset.n;
+  const otros = [...btn.parentElement.querySelectorAll('.sim-eq')].map(b=>b.dataset.n).filter(x=>x && x!==n);
+  const s = _simPick(ronda);
+  if(s.has(n)){ s.delete(n); _simUltimoClick = null; }   // tocar de nuevo al ganador = deshacer
+  else { otros.forEach(o=>s.delete(o)); s.add(n); _simUltimoClick = { n, ronda, rect: btn.getBoundingClientRect() }; }
+  renderSimulador(true);
+}
+
+function reiniciarSimulador(){
+  Object.keys(SIM_PICKS).forEach(k=>delete SIM_PICKS[k]);
+  _simUltimoClick = null;
+  renderSimulador(true);
+}
+
+function cargarSimulador(){
+  const cont = document.getElementById('sim-cont');
+  if(!cont) return;
+  if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows){
+    cont.innerHTML = '<div class="sim-espera">Cargando...</div>';
+    setTimeout(cargarSimulador, 500);
+    return;
+  }
+  renderSimulador(false);
 }
 
 // ===== CALCULADORA =====
