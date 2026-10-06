@@ -1258,10 +1258,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
       <div class="fecha-hdr" style="justify-content:center;">
-        <div style="text-align:center;">
-          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos y descenso</div>
-          <div class="fsub">Ida y vuelta — 2026</div>
+        <div class="fnav" id="home-estado-prev" onclick="cambiarHomeEstado(-1)" style="visibility:hidden;">‹</div>
+        <div style="text-align:center;flex:1;">
+          <div class="fnum" id="home-estado-tit" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos y descenso</div>
+          <div class="fsub" id="home-estado-sub">Ida y vuelta — 2026</div>
         </div>
+        <div class="fnav" id="home-estado-next" onclick="cambiarHomeEstado(1)" style="visibility:hidden;">›</div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
@@ -2256,18 +2258,26 @@ const PLAYOFF_NONA_ZONAS = {
   SF1:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
   SF2:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
 };
-// Panel de "Resultados" de la home: reemplaza a las 9 fechas de Segunda Fase (fase cerrada,
-// archivada en /segunda-fase) por 2 estados de Cuartos de Final — Ida (incluye el desempate de
-// descenso, mismo fin de semana) y Vuelta. Cuando se llegue a Semis, sumar sus zonas acá.
-const CUARTOS_ESTADOS = {
-  1: { label:'Ida', fuentes: [
-        {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
-        {zona:'Desempate Descenso', fecha:1},
-      ]},
-  2: { label:'Vuelta', fuentes: [
-        {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
-      ]},
-};
+// Panel de "Resultados" de la home: una solapa por fin de semana de playoffs, navegable con
+// flechas. Cuartos quedó como estaba (ida, vuelta y desempate juntos); desde Semis/16vos cada
+// fin de semana va separado (pedido del usuario). Solo aparecen las solapas cuyas zonas ya
+// existen en el fixture; para una ronda nueva, sumar su solapa acá.
+const HOME_ESTADOS = [
+  { titulo:'Cuartos y descenso', sub:'Ida y vuelta — 2026', fuentes: [
+      {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
+      {zona:'Desempate Descenso', fecha:1},
+      {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+    ]},
+  { titulo:'Semis y 16vos - Ida', sub:'Primer y Segundo Ascenso — 2026', fuentes: [
+      {zona:'Semifinal Primer Ascenso - Ida', fecha:1},
+      {zona:'Dieciseisavos Segundo Ascenso - Ida', fecha:1},
+    ]},
+  { titulo:'Semis y 16vos - Vuelta', sub:'Primer y Segundo Ascenso — 2026', fuentes: [
+      {zona:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+      {zona:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1},
+    ]},
+];
+let _homeEstado = null; // índice elegido con las flechas (null = automático)
 // Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
 // nombreMejor/nombrePeor dentro de esas zonas, sin asumir quién quedó como local/visitante
 // (más robusto que depender del orden exacto en que se cargó cada fila).
@@ -2313,6 +2323,19 @@ function refrescarPlayoffNonaSemis(semisPorId){
     PLAYOFF_NONA[sf.id].ida = res.ida;
     PLAYOFF_NONA[sf.id].vuelta = res.vuelta;
   });
+}
+
+// Llaves del Segundo Ascenso con zona real en `fixture` (las siembra el admin). Devuelve los
+// goles de ida/vuelta y el resultado de la llave entre mejor y peor ubicado, o null si esa
+// ronda todavía no existe en el fixture.
+const ZONAS_SEGUNDO_ASCENSO = {
+  'sa-16': { ida:'Dieciseisavos Segundo Ascenso - Ida', vuelta:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1 },
+};
+function llaveRealSegundoAscenso(ronda, nombreMejor, nombrePeor){
+  const z = ZONAS_SEGUNDO_ASCENSO[ronda];
+  if(!z || !nombreMejor || !nombrePeor || !FIXTURE[z.ida]) return null;
+  const goles = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, nombreMejor, nombrePeor);
+  return { ...goles, resultado: resolverLlaveIdaVuelta(goles.ida, goles.vuelta) };
 }
 
 // Suma ida+vuelta; en empate global (puntos y goles, es decir el aggregate) avanza el mejor
@@ -2506,6 +2529,10 @@ const ZONA_COLORES = {
   "Cuartos Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "CI" },
   "Cuartos Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "CV" },
   "Desempate Descenso": { color: "#e53935", text: "#ffffff", code: "DD" },
+  "Semifinal Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "SI" },
+  "Semifinal Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "SV" },
+  "Dieciseisavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "16I" },
+  "Dieciseisavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "16V" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -4425,17 +4452,21 @@ function armarCrucesDesdeOrden(lista){
 // El ícono de los placeholders (⬇️/🎲) va en una caja ".me" del mismo tamaño que un escudo real
 // (22px) — sin eso, la fila de un placeholder quedaba mucho más angosta que la de un equipo real
 // (escudo+nombre), se veían desparejas dentro de la misma tarjeta.
-function _ladoPreview16(item){
+function _ladoPreview16(item, esGanador){
   if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
   if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend" title="Eliminado del 1er Ascenso"><div class="me" style="font-size:15px;">⬇️</div><span class="llave-nombre">${item.label}</span></div>`;
   if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend"><div class="me" style="font-size:15px;">🎲</div><span class="llave-nombre">${item.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
-  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
 }
+// Con la zona de 16vos ya cargada en el fixture, el marcador I/V/G muestra los goles reales.
 function _cardPreview16(mejor, peor){
-  const marc = _marcadorLado(null, null, null, false);
+  const real = llaveRealSegundoAscenso('sa-16', mejor && mejor.n, peor && peor.n);
+  const r = real && real.resultado.resuelto ? real.resultado : null;
+  const marcMejor = real ? _marcadorLado(real.ida.golMejor, real.vuelta.golMejor, r ? r.globalMejor : null, !!(r && r.ganadorEsMejor)) : _marcadorLado(null, null, null, false);
+  const marcPeor  = real ? _marcadorLado(real.ida.golPeor,  real.vuelta.golPeor,  r ? r.globalPeor  : null, !!(r && !r.ganadorEsMejor)) : _marcadorLado(null, null, null, false);
   return `<div class="llave-card llave-card-v llave-card-p16">
-    <div class="llave-fila">${_ladoPreview16(mejor)}${marc}</div>
-    <div class="llave-fila">${_ladoPreview16(peor)}${marc}</div>
+    <div class="llave-fila">${_ladoPreview16(mejor, r && r.ganadorEsMejor)}${marcMejor}</div>
+    <div class="llave-fila">${_ladoPreview16(peor, r && !r.ganadorEsMejor)}${marcPeor}</div>
   </div>`;
 }
 
@@ -4563,22 +4594,46 @@ document.addEventListener("click", e=>{
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
-// ── CUARTOS DE FINAL: widget de resultados propio (Ida / Vuelta, ver CUARTOS_ESTADOS) ──
+// ── PLAYOFFS: widget de resultados propio, una solapa por fin de semana (ver HOME_ESTADOS) ──
 // Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
-// archivada en /segunda-fase). Ida, vuelta y el desempate de descenso van TODOS juntos en una
-// sola solapa (el usuario lo pidió explícito: "ida y vuelta van en la misma solapa") — no hay
-// navegación entre estados, la separación entre el fin de semana de ida y el de vuelta ya la
-// da el agrupado por día (cada fuente de CUARTOS_ESTADOS trae su propia fecha real de
-// Supabase, que es la que hay que usar para las fichaKey, no el número de estado).
+// archivada en /segunda-fase). Cada fuente trae su propia fecha real de Supabase, que es la que
+// hay que usar para las fichaKey. Solapa automática: la primera con algún partido sin
+// resultado (si están todas jugadas, la última); las flechas permiten moverse entre las que
+// existen.
+function _homeEstadosDisponibles(){
+  return HOME_ESTADOS.map((e,i)=>({e,i})).filter(({e})=>e.fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).length));
+}
+function cambiarHomeEstado(d){
+  const disp = _homeEstadosDisponibles();
+  const pos = disp.findIndex(x=>x.i===_homeEstadoActual()) + d;
+  if(pos < 0 || pos >= disp.length) return;
+  _homeEstado = disp[pos].i;
+  renderPartidos2();
+}
+function _homeEstadoActual(){
+  const disp = _homeEstadosDisponibles();
+  if(!disp.length) return 0;
+  if(_homeEstado!=null && disp.some(x=>x.i===_homeEstado)) return _homeEstado;
+  const pend = disp.find(({e})=>e.fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>m.gl==null)));
+  return (pend || disp[disp.length-1]).i;
+}
 function renderPartidos2(){
   const rows = [];
-  Object.values(CUARTOS_ESTADOS).forEach(estado=>{
-    estado.fuentes.forEach(({zona,fecha}) => {
-      const ms = FIXTURE[zona]?.[String(fecha)] || [];
-      ms.forEach(m => {
-        const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
-        rows.push({ zona, fecha, m, meta });
-      });
+  const idx = _homeEstadoActual(), estado = HOME_ESTADOS[idx];
+  const disp = _homeEstadosDisponibles(), pos = disp.findIndex(x=>x.i===idx);
+  const tit = document.getElementById('home-estado-tit'), sub = document.getElementById('home-estado-sub');
+  if(tit) tit.textContent = estado.titulo;
+  if(sub) sub.textContent = estado.sub;
+  const prev = document.getElementById('home-estado-prev'), next = document.getElementById('home-estado-next');
+  if(prev) prev.style.visibility = pos > 0 ? '' : 'hidden';
+  if(next) next.style.visibility = pos >= 0 && pos < disp.length-1 ? '' : 'hidden';
+  const ordenFuente = {};
+  estado.fuentes.forEach(({zona},k)=>{ ordenFuente[zona] = k; });
+  estado.fuentes.forEach(({zona,fecha}) => {
+    const ms = FIXTURE[zona]?.[String(fecha)] || [];
+    ms.forEach(m => {
+      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
+      rows.push({ zona, fecha, m, meta });
     });
   });
 
@@ -4598,8 +4653,8 @@ function renderPartidos2(){
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
     if(ad < hoy){
-      // Día pasado: por grupo directo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
-      return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+      // Día pasado: por zona, en el orden de la solapa (p. ej. Semis antes que 16vos)
+      return (ordenFuente[a.zona]-ordenFuente[b.zona]) || a.m.local.localeCompare(b.m.local);
     }
     // Por hora real programada
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
@@ -7552,8 +7607,12 @@ function calcSimulacion(){
     const lista = participantes.filter(p=>p.rank!=null).sort((a,b)=>a.rank-b.rank)
       .concat(participantes.filter(p=>p.rank==null));
     const jugable = lista.every(p=>p.n);
+    const realGanador = (c) => {
+      const real = llaveRealSegundoAscenso(ronda, c.mejor.n, c.peor.n);
+      return real && real.resultado.resuelto ? (real.resultado.ganadorEsMejor ? c.mejor : c.peor) : null;
+    };
     const cruces = armarCrucesDesdeOrden(lista).map(c => jugable
-      ? llave(ronda, c.mejor, c.peor, null)
+      ? llave(ronda, c.mejor, c.peor, realGanador(c))
       : { ronda, mejor:c.mejor, peor:c.peor, ganador:null, perdedor:null, real:false });
     return rondasSA[ronda] = { ronda, cruces, lista, jugable, completa: jugable && cruces.every(c=>c.ganador) };
   };
