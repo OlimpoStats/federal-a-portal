@@ -6644,7 +6644,7 @@ async function cargarSancionados(){
     const umbralZona = umbralEntry.zona;
     const estadoInicial = isServed({fecha_origen: umbralFo, zona: umbralZona, equipo: umbralEntry.eq, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
     toCreateAccum.push({
-      jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: d.eq,
+      jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: umbralEntry.eq,
       tipo: 'amarillas', partidos_sancion: 1, zona: umbralZona,
       motivo: 'Acumulación de amarillas', fecha_origen: umbralFo,
       estado: estadoInicial,
@@ -6689,7 +6689,7 @@ async function cargarSancionados(){
     const dbSanc = activeSanc.find(s => s.jugador_id === Number(jId) && s.tipo === 'amarillas');
     amarillasSuspAhora.push({
       id: dbSanc?.id ?? null, jugador_id: Number(jId),
-      jugador_nombre: d.jNom, equipo: d.eq,
+      jugador_nombre: d.jNom, equipo: umbralFoCurrent.eq,
       fecha_origen: umbralFoCurrent.fo, zona: umbralFoCurrent.zona, tipo: 'amarillas',
       partidos_sancion: 1, estado: 'pendiente', motivo: 'Acumulación de amarillas',
     });
