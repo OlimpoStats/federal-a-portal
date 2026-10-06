@@ -1561,6 +1561,27 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 
 <script>
 // ── SUPABASE ──
+// Árbitros/asistentes cargados con distintos nombres que son la misma persona (confirmado por el
+// usuario). Se unifican al cargar los datos, así cuentan juntos en Estadísticas y se ven bien en
+// las fichas. Para sumar uno: "nombre como viene" → "nombre correcto".
+const ARBITROS_ALIAS = {
+  'Adriel Araya': 'Iván Adriel Araya',
+  'Iván Quintero': 'Iván Adriel Araya',
+  'Matás Javier González': 'Matías Javier González',
+  'Matías González': 'Matías Javier González',
+  'Fernando Zabala': 'Fernando Zabalza',
+  'Juan Ignacio Roig': 'Juan Ignacio Flores Roig',
+  'Juan Ignacio Flores R.': 'Juan Ignacio Flores Roig',
+  'Mariano González': 'Mariano Ramón González',
+};
+function normArbitros(r){
+  if(r) ['arbitro','juez1','juez2','cuarto_arbitro'].forEach(c=>{
+    const n = r[c] && String(r[c]).trim();
+    if(n && ARBITROS_ALIAS[n]) r[c] = ARBITROS_ALIAS[n];
+  });
+  return r;
+}
+
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
 // Algunas conexiones móviles (proxies de "ahorro de datos" de operadoras, muy comunes en
@@ -1610,6 +1631,7 @@ async function cargarPartidosDesdeDB(){
     // Process fixture (fuente principal)
     const {data:fixtureData, error:fixtureErr} = fixtureResult;
     if(!fixtureErr && fixtureData){
+      fixtureData.forEach(normArbitros);
       window._FIXTURE_RAW = fixtureData;
       fixtureData.forEach(p => {
         if(!p.zona || !p.fecha) return;
@@ -1655,6 +1677,7 @@ async function cargarPartidosDesdeDB(){
     // Compatibilidad: overlay desde partidos
     const {data, error} = partidosResult;
     if(!error && data){
+      data.forEach(normArbitros);
       data.forEach(p => {
         if(!p.zona || !p.fecha) return;
         const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
@@ -2999,6 +3022,7 @@ async function verFicha(key, tienePlanilla){
       .eq("fecha", parseInt(pFecha));
 
     let partido = null;
+    (partidos||[]).forEach(normArbitros);
     if(partidos?.length){
       // Find matching by key
       partido = partidos.find(p => {
@@ -5388,6 +5412,7 @@ async function cargarEstadisticas(){
         .not('arbitro','is',null).neq('arbitro','');
       fixtureArbitros = data;
     }
+    (fixtureArbitros||[]).forEach(normArbitros);
     const fixtureIdToArbitro = {};
     (fixtureArbitros||[]).forEach(p=>{
       const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
@@ -6478,6 +6503,7 @@ function _aplicarCache(d){
       if(fotmob_url) m.fotmob_url = fotmob_url;
     });
     Object.assign(PARTIDO_META, d.meta||{});
+    Object.values(PARTIDO_META).forEach(normArbitros);
     // viaVercel: el caché local de visitas anteriores puede traer las URLs viejas (directo a Supabase).
     Object.entries(d.esc||{}).forEach(([n,u]) => { ESCUDOS[n] = viaVercel(u); });
     Object.assign(PLANILLA_CARGADA, d.pl||{});
