@@ -907,6 +907,8 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 .asis-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.45rem .6rem;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
 .asis-row:hover,.asis-row.open{background:rgba(255,255,255,.03);}
 .asis-res{font-size:12px;color:#999;white-space:nowrap;}
+.asis-pj{color:#fff;font-weight:600;}
+.asis-sep{color:#555;margin:0 .45rem;}
 .asis-det{background:#111;border-bottom:1px solid var(--border);padding:.2rem 0;}
 .asis-det-fila{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .6rem;padding:.35rem .75rem;border-bottom:1px solid #1a1a1a;}
 .asis-det-fila:last-child{border-bottom:none;}
@@ -1285,7 +1287,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
             <div style="display:flex;align-items:center;gap:.6rem;">
               <!-- Botón al Simulador. stopPropagation para que no dispare el toggle del
                    desplegable al clickearlo. -->
-              <div onclick="event.stopPropagation();goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid rgba(232,196,74,.45);border-radius:6px;padding:.4rem .6rem;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">🧮 Simulador</div>
+              <div onclick="event.stopPropagation();goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:linear-gradient(90deg,#ffe27a,#e8a83a);border:none;border-radius:6px;padding:.4rem .6rem;color:#111;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(232,196,74,.35);">🧮 Simulador</div>
               <span class="oc-chevron" id="oc-chevron">▾</span>
             </div>
           </div>
@@ -2529,10 +2531,10 @@ const ZONA_COLORES = {
   "Cuartos Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "CI" },
   "Cuartos Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "CV" },
   "Desempate Descenso": { color: "#e53935", text: "#ffffff", code: "DD" },
-  "Semifinal Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "SI" },
-  "Semifinal Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "SV" },
-  "Dieciseisavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "16I" },
-  "Dieciseisavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "16V" },
+  "Semifinal Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "SI", pillLabel: "SEMI" },
+  "Semifinal Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "SV", pillLabel: "SEMI" },
+  "Dieciseisavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "16I", pillLabel: "16°-REV" },
+  "Dieciseisavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "16V", pillLabel: "16°-REV" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -4649,6 +4651,10 @@ function renderPartidos2(){
   // los horarios de arranque.
   const hoy = _hoyLocalISO();
   rows.sort((a,b)=>{
+    // Las zonas van en el orden de la solapa SIEMPRE (Semis antes que 16vos, pedido del
+    // usuario), y dentro de cada una por día y hora.
+    const kz = ordenFuente[a.zona] - ordenFuente[b.zona];
+    if(kz !== 0) return kz;
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
@@ -6948,9 +6954,9 @@ function renderAsistentes(){
   cont.innerHTML = nombres.map(n=>{
     const ps = _ASIS_PARTIDOS[n], lin = ps.filter(p=>p.rol==='linea').length, cua = ps.length - lin;
     const sid = 'asis-' + n.replace(/[^a-zA-Z0-9]/g,'_');
-    const resumen = [lin ? `🚩 ${lin}` : '', cua ? `4️⃣ ${cua}` : ''].filter(Boolean).join(' &nbsp;');
+    const resumen = [lin ? `🚩 ${lin}` : '', cua ? `4️⃣ ${cua}` : ''].filter(Boolean).join('<span class="asis-sep">·</span>');
     return `<div class="asis-row" id="${sid}" onclick="toggleAsisDetalle('${n.replace(/'/g,"\\'")}')">
-      <span>${n} <span style="font-size:10px;color:#555;">▾</span></span><span class="asis-res">${ps.length} PJ &nbsp;${resumen}</span></div>`;
+      <span>${n} <span style="font-size:10px;color:#555;">▾</span></span><span class="asis-res"><span class="asis-pj">${ps.length} PJ</span><span class="asis-sep">—</span>${resumen}</span></div>`;
   }).join('') + `<div style="font-size:11px;color:#666;padding:.5rem .6rem;border-top:1px solid rgba(255,255,255,.06);">🚩 Juez de línea &nbsp; 4️⃣ 4° árbitro</div>`;
 }
 function toggleAsisDetalle(nombre){
