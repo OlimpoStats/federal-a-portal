@@ -2214,6 +2214,34 @@ function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? 
 // Fecha "absoluta" cruzando fases: la Segunda Fase reinicia su numeración de fechas en 1,
 // así que un fecha=1 de Nonagonal/Reválida no puede compararse directo contra un fecha=18
 // de Primera Fase. zona=null (sanciones viejas anteriores a la Segunda Fase) → Primera Fase.
+// Disciplina: ¿las amarillas de esta zona cuentan para el cómputo de suspensión? Solo las de
+// playoffs (Primer y Segundo Ascenso). Al cerrar Nonagonal/Reválida se limpiaron las
+// acumuladas; el Desempate Descenso fue un partido suelto de ese cierre y tampoco cuenta.
+function esZonaComputablePlayoff(z){
+  return !!z && !ZONAS.includes(z) && !GRUPOS2.includes(z) && z !== 'Desempate Descenso';
+}
+// Orden cronológico del partido que jugó `equipo` en zona/fecha: su día real (YYYY-MM-DD) si se
+// conoce; si no, la fecha absoluta (Primera Fase antes que todo lo demás). Sirve para saber si
+// un equipo ya jugó después de una sanción.
+function ordenPartidoEquipo(zona, fecha, equipo){
+  const ms = (zona && FIXTURE[zona] && FIXTURE[zona][String(fecha)]) || [];
+  const m = ms.find(x => x.local===equipo || x.visitante===equipo);
+  const dia = m && (PARTIDO_META[getMetaKey(zona, fecha, m.local, m.visitante)] || {}).dia;
+  return dia ? String(dia) : '0000-' + String(fechaAbsoluta(zona, fecha)).padStart(5,'0');
+}
+// equipo → órdenes (ver ordenPartidoEquipo) de todos sus partidos ya jugados
+function ordenesPartidosPorEquipo(){
+  const out = {};
+  zonasFixture().forEach(z=>{
+    Object.entries(FIXTURE[z]||{}).forEach(([f, ms])=>{
+      (ms||[]).forEach(m=>{
+        if(m.gl==null) return;
+        [m.local, m.visitante].forEach(eq=>{ (out[eq] = out[eq] || []).push(ordenPartidoEquipo(z, f, eq)); });
+      });
+    });
+  });
+  return out;
+}
 function fechaAbsoluta(zona, fecha){
   const f = Number(fecha) || 0;
   if(!f) return 0;
@@ -5226,10 +5254,18 @@ async function cargarEstadisticas(){
       ...(partidosDB||[]).map(p => fechaAbsoluta(p.zona, p.fecha)),
       ...(sancionesDB||[]).map(s => fechaAbsoluta(s.zona, s.fecha_origen))
     );
+    // Suspensión cumplida = el equipo jugó, DESPUÉS del partido de origen, al menos tantos
+    // partidos como fechas de sanción. Se ordena por el día real de cada partido (en playoffs
+    // todas las rondas son "fecha 1", así que el número de fecha ya no alcanza).
+    const _ordenesEquipo = ordenesPartidosPorEquipo();
+    const sancionCumplida = (equipo, zona, fecha, partidos) => {
+      const origen = ordenPartidoEquipo(zona, fecha, equipo);
+      const despues = (_ordenesEquipo[equipo]||[]).filter(o => o > origen).length;
+      return despues >= Math.max(1, Number(partidos) || 1);
+    };
     const isSancServed = s => {
-      const fo = fechaAbsoluta(s.zona, s.fecha_origen);
-      if(!fo) return maxFechaJug > 0;
-      return maxFechaJug >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
+      if(!s.fecha_origen) return maxFechaJug > 0;
+      return sancionCumplida(s.equipo, s.zona, s.fecha_origen, s.partidos_sancion);
     };
 
     // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
@@ -5246,31 +5282,37 @@ async function cargarEstadisticas(){
       const _p=partidosById[partidoId];
       const fo=_p ? fechaAbsoluta(_p.zona, _p.fecha) : null;
       const mk=`${canonId}_${partidoId}`;
-      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,amarilla:false,expulsion:false};
+      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,zona:_p&&_p.zona,fecha:_p&&_p.fecha,amarilla:false,expulsion:false};
       if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
       if(ev.tipo==='doble_amarilla'){ _amLimPartido[mk].amarilla=true; _amLimPartido[mk].expulsion=true; }
       if(ev.tipo==='roja') _amLimPartido[mk].expulsion=true;
     });
-    // Simulación de ciclos: por jugador, ordenar fechas y detectar si está suspendido actualmente
-    const _amFechas={}; // canonId → {nombre, equipo, fechas:[]}
+    // Ciclos de 5 amarillas, en orden cronológico real. Al terminar Nonagonal/Reválida las
+    // amarillas acumuladas se limpiaron: para el cómputo solo cuentan las de playoffs (ver
+    // esZonaComputablePlayoff). Una suspensión por la 5ª amarilla que todavía no se cumplió al
+    // cerrar esa fase se arrastra igual (el jugador sigue suspendido hasta que su equipo juegue).
+    // Las amarillas viejas siguen contando en el perfil y en la tabla de amarillas totales.
+    const _amFechas={}; // canonId → {nombre, equipo, items:[{zona, fecha, equipo, orden}]}
     Object.values(_amLimPartido).forEach(m=>{
       if(!m.amarilla||m.expulsion||!m.fo) return;
-      if(!_amFechas[m.jId]) _amFechas[m.jId]={nombre:m.nombre,equipo:m.equipo,fechas:[]};
-      _amFechas[m.jId].fechas.push(m.fo);
+      if(!_amFechas[m.jId]) _amFechas[m.jId]={nombre:m.nombre,equipo:m.equipo,items:[]};
+      _amFechas[m.jId].items.push({zona:m.zona, fecha:m.fecha, equipo:m.equipo, orden:ordenPartidoEquipo(m.zona, m.fecha, m.equipo)});
     });
-    Object.values(_amFechas).forEach(d=>d.fechas.sort((a,b)=>a-b));
     const amarillasLimiteMap={}; // jId → {key, nombre, equipo, count}
     Object.entries(_amFechas).forEach(([jId,d])=>{
-      let cc=0, suspended=false;
-      for(const fo of d.fechas){
+      d.items.sort((a,b)=>a.orden<b.orden?-1:a.orden>b.orden?1:0);
+      // Cada tramo (antes / desde los playoffs) cuenta su propio ciclo desde 0
+      let cc=0, ultimaQuinta=null, enPlayoff=false;
+      for(const it of d.items){
+        const esPlayoff = esZonaComputablePlayoff(it.zona);
+        if(esPlayoff && !enPlayoff){ enPlayoff=true; cc=0; }
         cc++;
-        if(cc===5){
-          if(maxFechaJug>fo){ cc=0; } // ciclo servido, resetear
-          else{ suspended=true; break; } // suspensión activa
-        }
+        if(cc===5){ cc=0; ultimaQuinta=it; }
       }
-      if(cc>=3||suspended){
-        amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:cc};
+      const suspended = !!ultimaQuinta && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, 1);
+      const computables = enPlayoff ? cc : 0;
+      if(computables>=3||suspended){
+        amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:computables};
       }
     });
 
