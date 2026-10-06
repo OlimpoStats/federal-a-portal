@@ -591,39 +591,89 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
 
 /* ── SIMULADOR ── */
-.sim-wrap{padding:0 0 2.5rem;max-width:1100px;margin:0 auto;}
-.sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.3rem;}
-.sim-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;}
-.sim-reset{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.45rem .9rem;font-size:13px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;}
-.sim-reset:hover{border-color:var(--accent);}
-.sim-nota{font-size:13px;color:#999;margin:0 0 1.4rem;line-height:1.5;}
-.sim-bloque-tit{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin:0 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid rgba(232,196,74,.3);}
-.sim-bloque{margin-bottom:2rem;}
-.sim-ronda{margin-bottom:1.2rem;}
-.sim-ronda-tit{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ddd;margin:0 0 .5rem;display:flex;flex-wrap:wrap;gap:.25rem .6rem;align-items:baseline;}
-.sim-ronda-sub{font-family:'Barlow',sans-serif;font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);}
-.sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;}
-.sim-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+/* Estilo "vidrio" oscuro con brillos dorados (elegido por el usuario sobre una maqueta). Arriba
+   las fases; a la izquierda la ronda que se elige y a la derecha la siguiente "en vivo": cada
+   ganador entra al instante y los cruces se reacomodan solos. En mobile el panel en vivo es una
+   franja fija abajo que se despliega. */
+/* Entrada de la página solo con fundido: una animación de transform (aunque haya terminado)
+   hace que la franja fija del panel en vivo en mobile se ubique respecto de la página y no de
+   la pantalla. */
+#page-simulador.page-entering{animation-name:simPageEnter;}
+@keyframes simPageEnter{from{opacity:0}to{opacity:1}}
+#page-simulador.active::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 600px at 10% -10%,rgba(232,196,74,.14),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(255,150,40,.10),transparent 60%),#0b0a07;}
+.sim-wrap{max-width:1280px;margin:0 auto;padding-bottom:2.5rem;}
+.sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.sim-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.sim-reset{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;border-radius:999px;padding:.4rem .95rem;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.sim-reset:hover{border-color:var(--accent);color:var(--accent);}
+.sim-nota{font-size:13px;color:#8a8577;margin:.3rem 0 0;line-height:1.5;}
+.sim-steps{display:flex;gap:6px;margin:14px 0 20px;flex-wrap:wrap;}
+.sim-st{padding:6px 13px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#8a8577;cursor:pointer;transition:all .25s;}
+.sim-st:hover{color:#ddd;}
+.sim-st.ok{color:var(--accent);border-color:rgba(232,196,74,.35);}
+.sim-st.ok::after{content:' ✓';}
+.sim-st.on{color:#1a1405;background:linear-gradient(90deg,#ffe27a,#e8a83a);border-color:transparent;box-shadow:0 0 18px rgba(232,196,74,.45);}
+.sim-st.lock{opacity:.5;}
+.sim-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:start;}
+.sim-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.4);}
+.sim-ph{display:flex;align-items:baseline;gap:.4rem .7rem;margin-bottom:12px;flex-wrap:wrap;}
+.sim-ph b{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-right:auto;}
+.sim-ph span{font-size:12px;color:#8a8577;}
+.sim-live{display:inline-flex;align-items:center;gap:6px;color:#ff5a7a!important;font-weight:700;}
+.sim-live::before{content:'';width:8px;height:8px;border-radius:50%;background:#ff5a7a;box-shadow:0 0 10px #ff5a7a;animation:simLatido 1.6s ease-in-out infinite;}
+@keyframes simLatido{50%{opacity:.35;}}
+.sim-cuenta{font-weight:700;color:#ccc!important;}
+.sim-flecha{display:none;}
+.sim-sec{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#8a8577;margin:16px 0 8px;}
+.sim-sec:first-child{margin-top:0;}
+.sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.sim-lista{display:flex;flex-direction:column;gap:8px;}
+.sim-card{border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.07);overflow:hidden;}
 .sim-card.real{border-style:dashed;}
-.sim-eq{display:flex;align-items:center;gap:.45rem;width:100%;background:none;border:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:.45rem .6rem;cursor:pointer;text-align:left;min-width:0;transition:background .2s,opacity .3s;}
-.sim-eq+.sim-eq{border-top:1px solid var(--border);}
-.sim-eq:hover:not(:disabled){background:var(--surface2);}
-.sim-eq:disabled{cursor:default;}
-.sim-rank{font-size:10px;font-weight:700;color:var(--muted);min-width:24px;flex-shrink:0;}
-.sim-nombre{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
-.sim-eq.gano .sim-nombre{color:#4caf50;font-weight:700;}
-.sim-eq.gano::after{content:'✓';color:#4caf50;font-weight:700;flex-shrink:0;}
-.sim-eq.perdio{opacity:.4;}
-.sim-eq.perdio img{filter:grayscale(1);}
-.sim-eq.pend{color:var(--muted);font-style:italic;}
-.sim-espera{font-size:13px;color:var(--muted);font-style:italic;padding:.2rem 0 .4rem;}
-.sim-campeon{display:flex;align-items:center;gap:.6rem;background:rgba(232,196,74,.1);border:1px solid rgba(232,196,74,.5);border-radius:10px;padding:.75rem 1rem;margin:.2rem 0 1rem;font-size:16px;font-weight:700;}
-.sim-campeon-lbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);}
+.sim-eq{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;background:none;border:none;color:#eee;font-family:'Barlow',sans-serif;font-size:14px;font-weight:500;text-align:left;min-width:0;transition:background .25s,opacity .3s,filter .3s;}
+button.sim-eq{cursor:pointer;}
+.sim-eq+.sim-eq{border-top:1px solid rgba(255,255,255,.06);}
+button.sim-eq:hover{background:rgba(232,196,74,.07);}
+.sim-eq .me{width:24px;height:24px;}
+.sim-rank{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:#8a8577;min-width:26px;flex-shrink:0;}
+.sim-nombre{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-eq.gano{background:linear-gradient(90deg,rgba(232,196,74,.18),transparent);box-shadow:inset 3px 0 0 var(--accent);}
+.sim-eq.gano .sim-nombre{color:#fff;font-weight:700;}
+.sim-eq.gano::after{content:'✓';color:var(--accent);font-weight:800;text-shadow:0 0 8px var(--accent);flex-shrink:0;}
+.sim-eq.perdio{opacity:.35;filter:grayscale(1);}
+.sim-eq.pend .sim-nombre{color:#6b675c;font-style:italic;}
+.sim-q{width:24px;height:24px;border-radius:50%;border:1px dashed rgba(255,255,255,.25);display:grid;place-items:center;color:#6b675c;font-size:12px;flex-shrink:0;box-sizing:border-box;}
+.sim-eq.nuevo{animation:simNuevo 1.6s ease-out;}
+@keyframes simNuevo{0%{background:rgba(232,196,74,.35);box-shadow:inset 0 0 0 1px rgba(232,196,74,.8);}100%{background:transparent;box-shadow:inset 0 0 0 1px transparent;}}
+.sim-falt{margin-top:12px;font-size:12px;color:#8a8577;}
+.sim-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden;}
+.sim-bar i{display:block;height:100%;background:linear-gradient(90deg,#ffe27a,#e8a83a);box-shadow:0 0 10px var(--accent);}
+.sim-ir{margin-top:12px;width:100%;padding:.65rem;border-radius:12px;border:none;background:linear-gradient(90deg,#ffe27a,#e8a83a);color:#1a1405;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(232,196,74,.35);}
+.sim-campeon{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:linear-gradient(90deg,rgba(232,196,74,.22),rgba(232,196,74,.04));border:1px solid rgba(232,196,74,.5);box-shadow:0 0 30px rgba(232,196,74,.2);margin-top:16px;}
+.sim-campeon .me{width:34px;height:34px;}
+.sim-campeon-txt{display:flex;flex-direction:column;min-width:0;}
+.sim-campeon-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);}
+.sim-campeon-n{font-size:18px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-campeon.pend{background:none;border-style:dashed;border-color:rgba(255,255,255,.15);box-shadow:none;}
+.sim-campeon.pend .sim-campeon-n{color:#6b675c;font-style:italic;font-weight:500;}
+.sim-vivo .sim-campeon{margin-top:0;}
+.sim-espera{font-size:13px;color:#8a8577;font-style:italic;}
 @media(max-width:700px){
-  .sim-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;}
-  .sim-eq{font-size:12px;padding:.45rem .4rem;gap:.3rem;}
-  .sim-eq .me{width:18px;height:18px;}
-  .sim-rank{min-width:20px;font-size:9px;}
+  .sim-wrap{padding-bottom:90px;}
+  .sim-title{font-size:26px;}
+  .sim-st{padding:5px 9px;font-size:12px;}
+  .sim-cols{grid-template-columns:minmax(0,1fr);}
+  .sim-grid{grid-template-columns:minmax(0,1fr);}
+  .sim-panel{padding:12px;border-radius:16px;}
+  /* Panel en vivo: franja fija abajo, se despliega tocándola */
+  .sim-panel.sim-vivo{position:fixed;left:8px;right:8px;bottom:8px;z-index:50;max-height:52px;overflow:hidden;padding:0;background:rgba(22,19,10,.94);border-color:rgba(232,196,74,.35);box-shadow:0 -6px 30px rgba(0,0,0,.6),0 0 18px rgba(232,196,74,.15);transition:max-height .45s cubic-bezier(.4,0,.2,1);}
+  .sim-panel.sim-vivo.abierto{max-height:72vh;overflow-y:auto;}
+  .sim-vivo .sim-ph{position:sticky;top:0;z-index:2;margin:0;padding:0 14px;height:52px;align-items:center;flex-wrap:nowrap;background:rgba(22,19,10,.98);cursor:pointer;}
+  .sim-vivo .sim-ph b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .sim-vivo .sim-ph span{white-space:nowrap;}
+  .sim-flecha{display:inline-block;color:var(--accent)!important;font-size:12px;transition:transform .3s;}
+  .sim-vivo.abierto .sim-flecha{transform:rotate(180deg);}
+  .sim-vivo-body{padding:4px 12px 12px;}
 }
 
 /* ── CONTACTO MODAL ── */
@@ -1184,10 +1234,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="page" id="page-simulador">
   <div class="sim-wrap">
     <div class="sim-head">
-      <div class="sim-title">🧮 Simulador</div>
+      <div class="sim-title">Simulador</div>
       <button class="sim-reset" onclick="reiniciarSimulador()">↺ Reiniciar</button>
     </div>
-    <p class="sim-nota">Tocá el equipo que gana cada llave y mirá cómo se arman los cruces. Tocalo de nuevo para deshacer. Los partidos ya jugados no se pueden cambiar. El primero de cada llave es el mejor ubicado: define de local y avanza en caso de empate.</p>
+    <p class="sim-nota">Tocá al ganador de cada llave: la ronda siguiente se va armando en vivo. Tocalo de nuevo para deshacer. Los partidos ya jugados no se pueden cambiar. El primero de cada llave es el mejor ubicado: define de local y avanza en caso de empate.</p>
     <div id="sim-cont"></div>
   </div>
 </div>
@@ -7308,10 +7358,28 @@ async function abrirPerfilJugador(jugadorId){
 //   Octavos = 12 ganadores + los 2 perdedores de Semis (7); Cuartos = 7 ganadores + el perdedor
 //   de la Final (4); Semis (2); Final (1). El mejor ubicado va primero (define de local).
 // Los resultados reales ya cargados se respetan y no se pueden cambiar.
-const SIM_PICKS = {};        // ronda -> Set con los nombres elegidos como ganadores
-let _simUltimoClick = null;  // {n, ronda, rect} del último ganador elegido (animación de "avance")
-let _simCampeones = '';      // campeones del render anterior, para animar solo cuando cambian
+// Pantalla: arriba las fases; a la izquierda la ronda que se elige y a la derecha la siguiente
+// "en vivo" — cada ganador entra al instante y los cruces provisorios se reacomodan solos (los
+// lugares todavía sin dueño quedan al final, como los peores). Una ronda se puede elegir recién
+// cuando están todos sus equipos; al completarla se pasa sola a la siguiente.
+const SIM_PICKS = {};          // ronda -> Set con los nombres elegidos como ganadores
+let _simUltimoClick = null;    // {n, ronda, rect} del último ganador elegido (animación de "avance")
+let _simCampeones = '';        // campeones del render anterior, para animar solo cuando cambian
+let SIM_FASE = null;           // fase que se está viendo
+let _simSheetAbierto = false;  // mobile: panel "en vivo" desplegado
+let _simAutoAvance = null;
+let _simPct = 0;               // avance de la barra en el render anterior
+let _simUltimo = null;         // último resultado de calcSimulacion
 if(window.gsap && window.Flip) gsap.registerPlugin(Flip);
+
+const SIM_FASES = [
+  { id:'pa',    chip:'Primer Ascenso', nombre:'Primer Ascenso' },
+  { id:'sa-16', chip:'16vos',   nombre:'Dieciseisavos' },
+  { id:'sa-8',  chip:'Octavos', nombre:'Octavos' },
+  { id:'sa-4',  chip:'Cuartos', nombre:'Cuartos' },
+  { id:'sa-2',  chip:'Semis',   nombre:'Semifinales' },
+  { id:'sa-1',  chip:'Final',   nombre:'Final' },
+];
 
 function _simPick(ronda){ return SIM_PICKS[ronda] || (SIM_PICKS[ronda] = new Set()); }
 
@@ -7364,134 +7432,238 @@ function calcSimulacion(){
   // orden entre ellos depende de quiénes son); mientras tanto, lugar reservado con su puesto.
   const caidos = (llaves) => llaves.every(l=>l.perdedor) ? ordenarCaidosNonagonal(llaves.map(l=>l.perdedor)) : null;
   const qfLos = caidos(qf), sfLos = caidos(sf);
-  const reservado = (lista, idx, rank, label) => lista && lista[idx] ? { n:lista[idx].n, rank } : { n:null, rank, label:`${label} #${rank}` };
+  const reservado = (lista, idx, rank, label) => lista && lista[idx] ? { n:lista[idx].n, rank } : { n:null, rank, label };
+  const finLos = fin.perdedor ? { n:fin.perdedor.n, rank:1 } : { n:null, rank:1, label:'Finalista' };
+  const caen = [finLos]
+    .concat([0,1].map(i=>reservado(sfLos, i, 2+i, 'Semifinalista')))
+    .concat([0,1,2,3].map(i=>reservado(qfLos, i, 4+i, 'Cuartofinalista')));
 
-  const rondasSA = [];
-  const armar = (ronda, nombre, sub, participantes) => {
-    const lista = [...participantes].sort((a,b)=>a.rank-b.rank);
-    const cruces = armarCrucesDesdeOrden(lista).map(c => llave(ronda, c.mejor, c.peor, null));
-    const r = { ronda, nombre, sub, cruces, completa: cruces.every(c=>c.ganador) };
-    rondasSA.push(r);
-    return r;
+  // Cada ronda se arma aunque la anterior no esté completa (cruces provisorios): los equipos
+  // conocidos se ordenan por su puesto y los lugares sin dueño van al final. Solo se puede
+  // elegir ganador cuando están todos.
+  const rondasSA = {};
+  const armar = (ronda, participantes) => {
+    const lista = participantes.filter(p=>p.rank!=null).sort((a,b)=>a.rank-b.rank)
+      .concat(participantes.filter(p=>p.rank==null));
+    const jugable = lista.every(p=>p.n);
+    const cruces = armarCrucesDesdeOrden(lista).map(c => jugable
+      ? llave(ronda, c.mejor, c.peor, null)
+      : { ronda, mejor:c.mejor, peor:c.peor, ganador:null, perdedor:null, real:false });
+    return rondasSA[ronda] = { ronda, cruces, lista, jugable, completa: jugable && cruces.every(c=>c.ganador) };
   };
-  let ant = armar('sa-16', 'Dieciseisavos', '4 perdedores de Cuartos del Primer Ascenso + 20 de la Tabla de Mérito',
-    [0,1,2,3].map(i=>reservado(qfLos, i, 4+i, 'Cuartofinalista')).concat(merito));
-  let pendiente = null; // primera ronda sin completar: las siguientes esperan a esa
-  const siguiente = (ronda, nombre, sub, extras) => {
-    if(pendiente || !ant.completa){
-      pendiente = pendiente || ant.nombre;
-      rondasSA.push({ ronda, nombre, sub, espera: pendiente });
-      return;
-    }
-    ant = armar(ronda, nombre, sub, ant.cruces.map(c=>c.ganador).concat(extras));
-  };
-  siguiente('sa-8', 'Octavos', '12 ganadores + los 2 perdedores de Semis del Primer Ascenso',
-    [0,1].map(i=>reservado(sfLos, i, 2+i, 'Semifinalista')));
-  siguiente('sa-4', 'Cuartos', '7 ganadores + el perdedor de la Final del Primer Ascenso',
-    [fin.perdedor ? { n:fin.perdedor.n, rank:1 } : { n:null, rank:1, label:'Finalista #1' }]);
-  siguiente('sa-2', 'Semifinales', '', []);
-  siguiente('sa-1', 'Final', '', []);
-  const campeonSA = (!pendiente && ant.ronda==='sa-1' && ant.completa) ? ant.cruces[0].ganador : null;
+  const ganadores = (r, de) => r.cruces.map(c => c.ganador || { n:null, label:`Ganador de ${de}` });
+  const r16 = armar('sa-16', caen.slice(3).concat(merito));
+  const r8  = armar('sa-8',  ganadores(r16,'16vos').concat(caen.slice(1,3)));
+  const r4  = armar('sa-4',  ganadores(r8,'Octavos').concat([finLos]));
+  const r2  = armar('sa-2',  ganadores(r4,'Cuartos'));
+  const r1  = armar('sa-1',  ganadores(r2,'Semis'));
+  const campeonSA = r1.completa ? r1.cruces[0].ganador : null;
 
   // Limpia elecciones que quedaron sin efecto (p. ej. el equipo ya no llega a esa ronda).
   Object.keys(SIM_PICKS).forEach(r=>{ SIM_PICKS[r] = new Set(usados[r]||[]); });
 
-  return { qf, sf, fin, campeonPA: fin.ganador, rondasSA, campeonSA };
+  return { qf, sf, fin, campeonPA: fin.ganador, caen, rondasSA, campeonSA };
 }
 
-function _simFila(l, eq){
-  if(!eq || !eq.n) return `<button class="sim-eq pend" disabled><span class="sim-rank"></span><span class="sim-nombre">${eq && eq.label ? eq.label : 'A Definir'}</span></button>`;
+// Para cada fase: llaves, cuántas tienen ganador, si se puede elegir y si está completa.
+function _simEstadoFases(sim){
+  const est = {};
+  SIM_FASES.forEach(f=>{
+    const llaves = f.id==='pa' ? [...sim.qf, ...sim.sf, sim.fin] : sim.rondasSA[f.id].cruces;
+    const jugable = f.id==='pa' ? true : sim.rondasSA[f.id].jugable;
+    est[f.id] = { llaves, jugable, hechas: llaves.filter(l=>l.ganador).length,
+      completa: f.id==='pa' ? !!sim.fin.ganador : sim.rondasSA[f.id].completa };
+  });
+  return est;
+}
+
+// Fila de un equipo. lado 'L' = panel donde se elige (botón), 'R' = panel en vivo (solo muestra).
+function _simFila(l, eq, lado){
+  if(!eq || !eq.n) return `<div class="sim-eq pend"><span class="sim-rank">${eq && eq.rank!=null ? '#'+eq.rank : ''}</span><span class="sim-q">?</span><span class="sim-nombre">${eq && eq.label ? eq.label : 'Por definir'}</span></div>`;
   const cls = l.ganador ? (l.ganador.n===eq.n ? ' gano' : ' perdio') : '';
   const rank = eq.rank!=null ? `#${eq.rank}` : (eq.pos ? _seedLabelLlave(eq) : '');
-  const bloqueado = l.real || !l.mejor || !l.peor || !l.mejor.n || !l.peor.n;
   const n = eq.n.replace(/"/g,'&quot;');
-  return `<button class="sim-eq${cls}" data-flip-id="${l.ronda}:${n}" data-n="${n}"${bloqueado?' disabled':''} onclick="simElegir(this,'${l.ronda}')">
-    <span class="sim-rank">${rank}</span>${escudoHTML(eq.n,'me')}<span class="sim-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></button>`;
+  const clic = lado==='L' && !l.real && l.mejor && l.peor && l.mejor.n && l.peor.n;
+  const tag = clic ? 'button' : 'div';
+  return `<${tag} class="sim-eq${cls}" data-flip-id="${lado}:${l.ronda}:${n}" data-n="${n}"${clic ? ` onclick="simElegir(this,'${l.ronda}')"` : ''}>
+    <span class="sim-rank">${rank}</span>${escudoHTML(eq.n,'me')}<span class="sim-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></${tag}>`;
 }
-function _simCard(l){
-  return `<div class="sim-card${l.real?' real':''}">${_simFila(l, l.mejor)}${_simFila(l, l.peor)}</div>`;
-}
-function _simRonda(nombre, sub, llaves){
-  const jugada = llaves.length && llaves.every(l=>l.real);
-  const subTxt = jugada ? 'Jugado' : sub;
-  return `<div class="sim-ronda"><p class="sim-ronda-tit">${nombre}${subTxt?`<span class="sim-ronda-sub">${subTxt}</span>`:''}</p>
-    <div class="sim-grid">${llaves.map(_simCard).join('')}</div></div>`;
+function _simCard(l, lado){
+  return `<div class="sim-card${l.real?' real':''}">${_simFila(l, l.mejor, lado)}${_simFila(l, l.peor, lado)}</div>`;
 }
 function _simCampeon(label, eq){
-  return eq ? `<div class="sim-campeon" data-campeon="${label}">🏆 <span class="sim-campeon-lbl">${label}</span>${escudoHTML(eq.n,'me')}<span>${eq.n}</span></div>` : '';
+  return eq
+    ? `<div class="sim-campeon" data-campeon="${label}">${escudoHTML(eq.n,'me')}<div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 Campeón · ${label}</span><span class="sim-campeon-n">${eq.n}</span></div></div>`
+    : `<div class="sim-campeon pend"><span class="sim-q">?</span><div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 Campeón · ${label}</span><span class="sim-campeon-n">Por definir</span></div></div>`;
 }
 
-function renderSimulador(animar){
+// anim: false (sin animación), 'pick' (se eligió un ganador) o {dir} (cambio de fase)
+function renderSimulador(anim){
   const cont = document.getElementById('sim-cont');
   if(!cont) return;
-  const sim = calcSimulacion();
-  const rondasSA = sim.rondasSA.map(r => r.espera
-    ? `<div class="sim-ronda"><p class="sim-ronda-tit">${r.nombre}${r.sub?`<span class="sim-ronda-sub">${r.sub}</span>`:''}</p><div class="sim-espera">Se arma cuando estén todos los ganadores de ${r.espera}.</div></div>`
-    : _simRonda(r.nombre, r.sub, r.cruces)).join('');
-  const html = `<div class="sim-bloque">
-      <p class="sim-bloque-tit">Primer Ascenso</p>
-      ${_simRonda('Cuartos de Final', '', sim.qf)}
-      ${_simRonda('Semifinales', '', sim.sf)}
-      ${_simRonda('Final', '', [sim.fin])}
-      ${_simCampeon('Primer ascenso', sim.campeonPA)}
-    </div>
-    <div class="sim-bloque">
-      <p class="sim-bloque-tit">Segundo Ascenso</p>
-      ${rondasSA}
-      ${_simCampeon('Segundo ascenso', sim.campeonSA)}
+  const sim = _simUltimo = calcSimulacion();
+  const est = _simEstadoFases(sim);
+  if(!SIM_FASE) SIM_FASE = (SIM_FASES.find(f=>est[f.id].jugable && !est[f.id].completa) || SIM_FASES[SIM_FASES.length-1]).id;
+  const idx = SIM_FASES.findIndex(f=>f.id===SIM_FASE), fase = SIM_FASES[idx], sig = SIM_FASES[idx+1];
+  const st = est[fase.id];
+
+  const chips = SIM_FASES.map(f=>{
+    const e = est[f.id];
+    const c = [f.id===SIM_FASE ? 'on' : '', e.completa ? 'ok' : '', !e.jugable && f.id!==SIM_FASE ? 'lock' : ''].join(' ');
+    return `<button class="sim-st ${c}" onclick="simIrFase('${f.id}')">${f.chip}</button>`;
+  }).join('');
+
+  // ── Panel izquierdo: la ronda que se elige ──
+  const hint = !st.jugable ? `Provisorio · faltan ganadores de ${SIM_FASES[idx-1].chip}`
+    : st.completa ? 'Ronda completa' : 'Tocá al ganador de cada llave';
+  let izq;
+  if(fase.id==='pa'){
+    const sec = (tit, llaves) => `<p class="sim-sec">${tit}${llaves.every(l=>l.real) ? ' · Jugado' : ''}</p><div class="sim-grid">${llaves.map(l=>_simCard(l,'L')).join('')}</div>`;
+    izq = sec('Cuartos de final', sim.qf) + sec('Semifinales', sim.sf) + sec('Final', [sim.fin]) + _simCampeon('Primer ascenso', sim.campeonPA);
+  } else {
+    izq = `<div class="sim-grid">${st.llaves.map(l=>_simCard(l,'L')).join('')}</div>`;
+    if(!sig) izq += _simCampeon('Segundo ascenso', sim.campeonSA);
+  }
+  const pct = st.llaves.length ? st.hechas / st.llaves.length * 100 : 0;
+  const progreso = `<div class="sim-falt">${st.hechas} de ${st.llaves.length} llaves definidas<div class="sim-bar"><i style="width:${pct}%"></i></div></div>`;
+
+  // ── Panel derecho: la ronda siguiente, en vivo ──
+  let tit, cuerpo, conocidos, total;
+  if(fase.id==='pa'){
+    tit = 'Pasan al Segundo Ascenso';
+    cuerpo = `<div class="sim-card">${sim.caen.map(e=>_simFila({ronda:'pa'}, e, 'R')).join('')}</div>`;
+    conocidos = sim.caen.filter(e=>e.n).length; total = sim.caen.length;
+  } else if(sig){
+    const r = sim.rondasSA[sig.id];
+    tit = sig.nombre;
+    cuerpo = `<div class="sim-lista">${r.cruces.map(c=>_simCard(c,'R')).join('')}</div>`;
+    conocidos = r.lista.filter(p=>p.n).length; total = r.lista.length;
+  } else {
+    tit = 'Ascienden';
+    cuerpo = `<div class="sim-lista">${_simCampeon('Primer ascenso', sim.campeonPA)}${_simCampeon('Segundo ascenso', sim.campeonSA)}</div>`;
+    conocidos = [sim.campeonPA, sim.campeonSA].filter(Boolean).length; total = 2;
+  }
+  let pie = '';
+  if(sig && st.completa && est[sig.id].jugable) pie = `<button class="sim-ir" onclick="simIrFase('${sig.id}')">Ir a ${sig.chip} →</button>`;
+  else if(conocidos < total && sig) pie = `<div class="sim-falt">Faltan ${total-conocidos} · ${fase.id==='pa' ? 'cada uno se ubica cuando se define su ronda' : 'los cruces son provisorios'}</div>`;
+
+  const conAnim = anim==='pick' && window.gsap && window.Flip;
+  const estado = conAnim ? Flip.getState(cont.querySelectorAll('[data-flip-id]')) : null;
+  cont.innerHTML = `<div class="sim-steps">${chips}</div>
+    <div class="sim-cols">
+      <div class="sim-panel sim-elegir">
+        <div class="sim-ph"><b>${fase.nombre}</b><span>${hint}</span></div>
+        <div class="sim-anim">${izq}</div>${progreso}
+      </div>
+      <div class="sim-panel sim-vivo${_simSheetAbierto ? ' abierto' : ''}">
+        <div class="sim-ph" onclick="simToggleVivo()"><b>${tit}</b><span class="sim-live">EN VIVO</span><span class="sim-cuenta">${conocidos}/${total}</span><span class="sim-flecha">▲</span></div>
+        <div class="sim-vivo-body sim-anim">${cuerpo}${pie}</div>
+      </div>
     </div>`;
 
-  const conAnim = animar && window.gsap && window.Flip;
-  const estado = conAnim ? Flip.getState(cont.querySelectorAll('[data-flip-id]')) : null;
-  cont.innerHTML = html;
   const campeones = [sim.campeonPA, sim.campeonSA].map(e=>e?e.n:'').join('|');
   const campeonesCambiaron = campeones !== _simCampeones;
   _simCampeones = campeones;
+  const pctAntes = _simPct; _simPct = pct;
+  if(!window.gsap) return;
+
+  if(anim && anim.dir){
+    // Cambio de fase: los paneles entran deslizándose hacia el lado en que se avanza.
+    gsap.fromTo(cont.querySelectorAll('.sim-anim'), {x:anim.dir*40, opacity:0}, {x:0, opacity:1, duration:.45, ease:'power3.out', stagger:.06, clearProps:'transform,opacity'});
+    return;
+  }
   if(!estado) return;
 
+  const vivo = cont.querySelector('.sim-vivo');
+  const colapsado = getComputedStyle(vivo).position==='fixed' && !vivo.classList.contains('abierto');
   const click = _simUltimoClick;
   _simUltimoClick = null;
+  gsap.fromTo(cont.querySelector('.sim-bar i'), {width:pctAntes+'%'}, {width:pct+'%', duration:.5, ease:'power2.out'});
+  if(click){
+    const nuevo = vivo.querySelector(`[data-n="${CSS.escape(click.n)}"]`);
+    if(nuevo) nuevo.classList.add('nuevo');
+  }
   // Los equipos que ya estaban en pantalla "viajan" a su nuevo lugar (reordenamiento de cruces);
   // los que aparecen por primera vez entran con un pequeño rebote. El que el usuario acaba de
-  // elegir sale volando desde la tarjeta donde lo tocó hasta su llave de la ronda siguiente.
+  // elegir sale volando desde la tarjeta donde lo tocó hasta su lugar en la ronda siguiente.
   Flip.from(estado, {
     targets: cont.querySelectorAll('[data-flip-id]'),
     duration: .55, ease: 'power3.inOut',
     onEnter: els => els.forEach((el,i) => {
-      if(click && el.dataset.n===click.n && el.dataset.flipId!==`${click.ronda}:${click.n}`){
+      if(colapsado && vivo.contains(el)) return;
+      if(click && el.dataset.n===click.n && el.dataset.flipId!==`L:${click.ronda}:${click.n}`){
         const r = el.getBoundingClientRect();
         const dx = click.rect.left - r.left, dy = click.rect.top - r.top;
         if(Math.abs(dy) < window.innerHeight){
           gsap.fromTo(el, {x:dx, y:dy, scale:1.05, zIndex:5}, {x:0, y:0, scale:1, duration:.7, ease:'power3.inOut', clearProps:'zIndex,transform'});
-          gsap.fromTo(el, {backgroundColor:'rgba(76,175,80,.35)'}, {backgroundColor:'rgba(76,175,80,0)', duration:1.2, delay:.5, clearProps:'backgroundColor'});
           return;
         }
       }
       gsap.fromTo(el, {opacity:0, y:12, scale:.94}, {opacity:1, y:0, scale:1, duration:.45, delay:Math.min(i*.02,.4), ease:'back.out(1.6)', clearProps:'transform,opacity'});
     }),
   });
-  if(click){
-    const elegido = cont.querySelector(`[data-flip-id="${CSS.escape(`${click.ronda}:${click.n}`)}"]`);
-    if(elegido) gsap.fromTo(elegido, {backgroundColor:'rgba(76,175,80,.3)'}, {backgroundColor:'rgba(76,175,80,0)', duration:.9, clearProps:'backgroundColor'});
+  // Mobile con el panel en vivo cerrado: el escudo del ganador vuela hasta la franja de abajo.
+  if(click && colapsado){
+    const img = click.img, dest = vivo.querySelector('.sim-cuenta');
+    if(img && dest){
+      const ghost = img.cloneNode(true), d = dest.getBoundingClientRect();
+      Object.assign(ghost.style, {position:'fixed', left:click.imgRect.left+'px', top:click.imgRect.top+'px', width:click.imgRect.width+'px', height:click.imgRect.height+'px', zIndex:60, pointerEvents:'none'});
+      document.body.appendChild(ghost);
+      gsap.to(ghost, {left:d.left, top:d.top, scale:.6, opacity:.2, duration:.6, ease:'power2.in', onComplete:()=>{
+        ghost.remove();
+        gsap.fromTo(dest, {scale:1.5, color:'#ffe27a'}, {scale:1, color:'#ccc', duration:.5, ease:'back.out(2)', clearProps:'transform,color'});
+        gsap.fromTo(vivo, {boxShadow:'0 0 30px rgba(232,196,74,.6)'}, {boxShadow:'0 0 18px rgba(232,196,74,.15)', duration:.8, clearProps:'boxShadow'});
+      }});
+    }
   }
   if(campeonesCambiaron){
-    gsap.fromTo(cont.querySelectorAll('.sim-campeon'), {opacity:0, scale:.85, y:10}, {opacity:1, scale:1, y:0, duration:.6, ease:'back.out(2)', clearProps:'transform,opacity'});
+    gsap.fromTo(cont.querySelectorAll('.sim-campeon:not(.pend)'), {opacity:0, scale:.85, y:10}, {opacity:1, scale:1, y:0, duration:.6, ease:'back.out(2)', clearProps:'transform,opacity'});
   }
 }
 
 function simElegir(btn, ronda){
+  clearTimeout(_simAutoAvance);
   const n = btn.dataset.n;
   const otros = [...btn.parentElement.querySelectorAll('.sim-eq')].map(b=>b.dataset.n).filter(x=>x && x!==n);
   const s = _simPick(ronda);
+  const antes = _simEstadoFases(_simUltimo)[SIM_FASE].completa;
   if(s.has(n)){ s.delete(n); _simUltimoClick = null; }   // tocar de nuevo al ganador = deshacer
-  else { otros.forEach(o=>s.delete(o)); s.add(n); _simUltimoClick = { n, ronda, rect: btn.getBoundingClientRect() }; }
-  renderSimulador(true);
+  else {
+    otros.forEach(o=>s.delete(o)); s.add(n);
+    const img = btn.querySelector('.me');
+    _simUltimoClick = { n, ronda, rect: btn.getBoundingClientRect(), img, imgRect: img && img.getBoundingClientRect() };
+  }
+  renderSimulador('pick');
+  // Al completar la ronda se pasa sola a la siguiente.
+  const est = _simEstadoFases(_simUltimo);
+  const i = SIM_FASES.findIndex(f=>f.id===SIM_FASE), sig = SIM_FASES[i+1];
+  if(!antes && est[SIM_FASE].completa && sig && est[sig.id].jugable){
+    _simAutoAvance = setTimeout(()=>simIrFase(sig.id), 1100);
+  }
+}
+
+function simIrFase(id){
+  clearTimeout(_simAutoAvance);
+  if(id===SIM_FASE) return;
+  const ant = SIM_FASES.findIndex(f=>f.id===SIM_FASE), nue = SIM_FASES.findIndex(f=>f.id===id);
+  SIM_FASE = id;
+  renderSimulador({ dir: nue > ant ? 1 : -1 });
+  const steps = document.querySelector('#sim-cont .sim-steps');
+  if(steps && steps.getBoundingClientRect().top < 60) window.scrollTo({ top: steps.getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth' });
+}
+
+function simToggleVivo(){
+  _simSheetAbierto = !_simSheetAbierto;
+  const vivo = document.querySelector('#sim-cont .sim-vivo');
+  if(vivo) vivo.classList.toggle('abierto', _simSheetAbierto);
 }
 
 function reiniciarSimulador(){
+  clearTimeout(_simAutoAvance);
   Object.keys(SIM_PICKS).forEach(k=>delete SIM_PICKS[k]);
   _simUltimoClick = null;
-  renderSimulador(true);
+  SIM_FASE = null;
+  renderSimulador({ dir:-1 });
 }
 
 function cargarSimulador(){
