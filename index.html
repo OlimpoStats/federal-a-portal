@@ -7,6 +7,10 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- GSAP + Flip: animaciones del Simulador (los equipos "viajan" a su nuevo lugar cuando se
+     rearman los cruces). Si no cargan, el Simulador funciona igual, sin animación. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/Flip.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0e0e0e;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#666;--accent:#e8c44a;--win:#1e5c35;--loss:#5c1e1e;--draw:#3a3a3a;}
@@ -586,6 +590,62 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
 
+/* ── SIMULADOR ── */
+/* Estilo "vidrio" oscuro con brillos dorados (elegido por el usuario sobre una maqueta). Todas
+   las rondas juntas en columnas, como un cuadro que se reacomoda solo; en pantallas medianas se
+   desplaza de costado y en mobile van una debajo de otra. */
+.sim-wrap{max-width:1280px;margin:0 auto;padding-bottom:2.5rem;}
+.sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.sim-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.sim-reset{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;border-radius:999px;padding:.4rem .95rem;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.sim-reset:hover{border-color:var(--accent);color:var(--accent);}
+.sim-nota{font-size:13px;color:#8a8577;margin:.3rem 0 0;line-height:1.5;}
+.sim-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:12px;align-items:center;margin-top:18px;}
+@media(max-width:1300px) and (min-width:701px){.sim-cols{overflow-x:auto;padding-bottom:6px;}}
+.sim-col{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 10px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.4);min-width:0;}
+.sim-col.completa{border-color:rgba(232,196,74,.3);}
+.sim-col-h{display:flex;align-items:baseline;justify-content:space-between;gap:.4rem;padding:0 2px;}
+.sim-col-h b{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;}
+.sim-col-h span{font-size:11px;color:#8a8577;white-space:nowrap;}
+.sim-col.provisoria .sim-col-h span{color:#c9a93f;}
+.sim-col-body{margin-top:10px;}
+.sim-col .sim-bar{margin-top:6px;height:4px;}
+.sim-sec{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#8a8577;margin:16px 0 8px;}
+.sim-sec:first-child{margin-top:0;}
+.sim-lista{display:flex;flex-direction:column;gap:8px;}
+.sim-card{border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.07);overflow:hidden;}
+.sim-card.real{border-style:dashed;}
+.sim-eq{display:flex;align-items:center;gap:7px;width:100%;padding:8px 9px;background:none;border:none;color:#eee;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;text-align:left;min-width:0;transition:background .25s,opacity .3s,filter .3s;}
+button.sim-eq{cursor:pointer;}
+.sim-eq+.sim-eq{border-top:1px solid rgba(255,255,255,.06);}
+button.sim-eq:hover{background:rgba(232,196,74,.07);}
+.sim-eq .me{width:22px;height:22px;}
+.sim-rank{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:#8a8577;min-width:22px;flex-shrink:0;}
+.sim-nombre{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-eq.gano{background:linear-gradient(90deg,rgba(232,196,74,.18),transparent);box-shadow:inset 3px 0 0 var(--accent);}
+.sim-eq.gano .sim-nombre{color:#fff;font-weight:700;}
+.sim-eq.gano::after{content:'✓';color:var(--accent);font-weight:800;text-shadow:0 0 8px var(--accent);flex-shrink:0;}
+.sim-eq.perdio{opacity:.35;filter:grayscale(1);}
+.sim-eq.pend .sim-nombre{color:#6b675c;font-style:italic;}
+.sim-q{width:22px;height:22px;border-radius:50%;border:1px dashed rgba(255,255,255,.25);display:grid;place-items:center;color:#6b675c;font-size:12px;flex-shrink:0;box-sizing:border-box;}
+.sim-eq.nuevo{animation:simNuevo 1s ease-out;}
+@keyframes simNuevo{0%{background:rgba(232,196,74,.35);box-shadow:inset 0 0 0 1px rgba(232,196,74,.8);}100%{background:transparent;box-shadow:inset 0 0 0 1px transparent;}}
+.sim-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden;}
+.sim-bar i{display:block;height:100%;background:linear-gradient(90deg,#ffe27a,#e8a83a);box-shadow:0 0 10px var(--accent);}
+.sim-campeon{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:linear-gradient(90deg,rgba(232,196,74,.22),rgba(232,196,74,.04));border:1px solid rgba(232,196,74,.5);box-shadow:0 0 30px rgba(232,196,74,.2);margin-top:12px;}
+.sim-campeon .me{width:34px;height:34px;}
+.sim-campeon-txt{display:flex;flex-direction:column;min-width:0;}
+.sim-campeon-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);}
+.sim-campeon-n{font-size:16px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-campeon.pend{background:none;border-style:dashed;border-color:rgba(255,255,255,.15);box-shadow:none;}
+.sim-campeon.pend .sim-campeon-n{color:#6b675c;font-style:italic;font-weight:500;}
+.sim-espera{font-size:13px;color:#8a8577;font-style:italic;}
+@media(max-width:700px){
+  .sim-title{font-size:26px;}
+  .sim-cols{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:minmax(0,1fr);overflow-x:visible;}
+  .sim-eq{font-size:14px;padding:9px 11px;}
+}
+
 /* ── CONTACTO MODAL ── */
 .contacto-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;width:420px;max-width:94vw;}
 .contacto-modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.65rem .85rem;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;resize:vertical;min-height:110px;outline:none;transition:border-color .15s;margin-bottom:.75rem;}
@@ -844,6 +904,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .arbi-det-row td{padding:.5rem .75rem!important;border-bottom:1px solid #1a1a1a;}
 .arbi-match-link{cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;color:#e8c44a;text-decoration:underline;text-underline-offset:2px;transition:color .12s;}
 .arbi-match-link:hover{color:var(--accent);}
+.asis-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.45rem .6rem;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
+.asis-row:hover,.asis-row.open{background:rgba(255,255,255,.03);}
+.asis-res{font-size:12px;color:#999;white-space:nowrap;}
+.asis-det{background:#111;border-bottom:1px solid var(--border);padding:.2rem 0;}
+.asis-det-fila{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .6rem;padding:.35rem .75rem;border-bottom:1px solid #1a1a1a;}
+.asis-det-fila:last-child{border-bottom:none;}
+.asis-rol{font-size:11px;font-weight:700;padding:.1rem .45rem;border-radius:4px;white-space:nowrap;}
+.asis-rol.linea{background:rgba(232,196,74,.12);color:#e8c44a;}
+.asis-rol.cuarto{background:rgba(100,160,255,.12);color:#8ab4ff;}
 .plt-filter-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.3px;padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
 .plt-filter-btn:hover{color:#ddd;border-color:rgba(255,255,255,.3);}
 .plt-filter-btn.active{background:rgba(255,255,255,.1);color:#f0f0f0;border-color:rgba(255,255,255,.35);}
@@ -1005,6 +1074,37 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .calc-match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;}
 .calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
+
+/* ── ESTÉTICA MODERNA ──
+   Vidrio oscuro con brillos dorados, la misma del Simulador, aplicada a los componentes comunes.
+   Solo cambia colores, bordes, sombras y redondeos: no toca tamaños ni cómo se acomodan las
+   cosas (los ajustes de mobile siguen igual). */
+body{background:#0b0a07;}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 600px at 10% -10%,rgba(232,196,74,.12),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(255,150,40,.08),transparent 60%);}
+.hdr{background:rgba(14,13,10,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 18px rgba(232,196,74,.15);}
+.tabla-mini,.fecha-hdr,.partido,.llave-card,.cruce-merito-card,.oc-toggle,.oc-collapse-inner,.espejo-card,.placeholder{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border-color:rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.tabla-mini{border-radius:12px;}
+.fecha-hdr,.oc-toggle{border-radius:12px;}
+.tabla-mini thead th,.tabla-mini thead tr{background:rgba(255,255,255,.045);}
+.tabla-mini tbody tr:hover{background:rgba(232,196,74,.05);}
+.ztab{background:rgba(255,255,255,.05);color:var(--accent);border-color:rgba(232,196,74,.35);border-radius:999px;}
+.ztab:hover{opacity:1;background:rgba(232,196,74,.12);}
+.ztab.active{background:linear-gradient(90deg,#ffe27a,#e8a83a);color:#1a1405;border-color:transparent;border-radius:999px;box-shadow:0 0 16px rgba(232,196,74,.4);}
+.modal,.contacto-modal{background:linear-gradient(180deg,#1d1a12,#13120e);border-color:rgba(232,196,74,.25);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(232,196,74,.08);}
+
+/* Animaciones: entrada en cascada SOLO mientras la página recién se abre (goPage le pone la clase
+   anim-in un momento), así las actualizaciones en vivo no vuelven a animar todo. Más el brillo
+   dorado al pasar el mouse. Nada de esto cambia tamaños ni posiciones finales. */
+@keyframes entraSube{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes entraFila{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.anim-in .partido,.anim-in .llave-card,.anim-in .espejo-card,.anim-in .cruce-merito-card,.anim-in .fecha-hdr,.anim-in .tabla-mini,.anim-in .oc-toggle{animation:entraSube .4s cubic-bezier(.2,.8,.2,1) both;}
+.anim-in .tabla-mini tbody tr{animation:entraFila .3s ease-out both;animation-delay:0ms;}
+.anim-in .tabla-mini tbody tr:nth-child(2){animation-delay:25ms;}.anim-in .tabla-mini tbody tr:nth-child(3){animation-delay:50ms;}.anim-in .tabla-mini tbody tr:nth-child(4){animation-delay:75ms;}.anim-in .tabla-mini tbody tr:nth-child(5){animation-delay:100ms;}.anim-in .tabla-mini tbody tr:nth-child(6){animation-delay:125ms;}.anim-in .tabla-mini tbody tr:nth-child(7){animation-delay:150ms;}.anim-in .tabla-mini tbody tr:nth-child(8){animation-delay:175ms;}.anim-in .tabla-mini tbody tr:nth-child(9){animation-delay:200ms;}.anim-in .tabla-mini tbody tr:nth-child(10){animation-delay:225ms;}.anim-in .tabla-mini tbody tr:nth-child(11){animation-delay:250ms;}.anim-in .tabla-mini tbody tr:nth-child(12){animation-delay:275ms;}.anim-in .tabla-mini tbody tr:nth-child(13){animation-delay:300ms;}.anim-in .tabla-mini tbody tr:nth-child(14){animation-delay:325ms;}.anim-in .tabla-mini tbody tr:nth-child(15){animation-delay:350ms;}.anim-in .tabla-mini tbody tr:nth-child(16){animation-delay:375ms;}.anim-in .tabla-mini tbody tr:nth-child(n+17){animation-delay:400ms;}
+.anim-in .partido:nth-child(2),.anim-in .llave-card:nth-child(2){animation-delay:35ms;}.anim-in .partido:nth-child(3),.anim-in .llave-card:nth-child(3){animation-delay:70ms;}.anim-in .partido:nth-child(4),.anim-in .llave-card:nth-child(4){animation-delay:105ms;}.anim-in .partido:nth-child(5),.anim-in .llave-card:nth-child(5){animation-delay:140ms;}.anim-in .partido:nth-child(6),.anim-in .llave-card:nth-child(6){animation-delay:175ms;}.anim-in .partido:nth-child(7),.anim-in .llave-card:nth-child(7){animation-delay:210ms;}.anim-in .partido:nth-child(8),.anim-in .llave-card:nth-child(8){animation-delay:245ms;}.anim-in .partido:nth-child(9),.anim-in .llave-card:nth-child(9){animation-delay:280ms;}.anim-in .partido:nth-child(10),.anim-in .llave-card:nth-child(10){animation-delay:315ms;}
+.partido,.llave-card,.espejo-card,.cruce-merito-card{transition:border-color .15s,box-shadow .2s;}
+.partido:hover,.llave-card:hover,.espejo-card:hover,.cruce-merito-card:hover{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 1px rgba(232,196,74,.28),0 0 18px rgba(232,196,74,.12);}
+.tabla-mini tbody tr{transition:background .15s;}
+@media (prefers-reduced-motion:reduce){.anim-in *{animation:none!important;}}
 </style>
 </head>
 <body>
@@ -1021,7 +1121,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="ni" onclick="goPage('reglamento',this)">Reglamento</div>
     <div class="ni" onclick="goPage('foro',this)">Foro</div>
     <div class="ni" onclick="goPage('prode',this)">Prode</div>
-    <div class="ni" onclick="goPage('calculadora',this)">Calculadora</div>
+    <div class="ni" onclick="goPage('simulador',this)">Simulador</div>
     <div class="ni" onclick="abrirContacto()">Contacto</div>
     <div class="user-btn" id="user-btn" onclick="abrirModal()" title="Iniciar sesión">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -1052,7 +1152,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="drawer-item" id="di-estadisticas" onclick="goPageDrawer('estadisticas')">📊 Estadísticas</div>
   <div class="drawer-section">Extra</div>
   <div class="drawer-item" id="di-prode" onclick="goPageDrawer('prode')">🎯 Prode</div>
-  <div class="drawer-item" id="di-calculadora" onclick="goPageDrawer('calculadora')">🧮 Calculadora</div>
+  <div class="drawer-item" id="di-simulador" onclick="goPageDrawer('simulador')">🧮 Simulador</div>
   <div class="drawer-item" id="di-reglamento" onclick="goPageDrawer('reglamento')">📋 Reglamento</div>
   <div class="drawer-section">Comunidad</div>
   <div class="drawer-item" id="di-foro" onclick="goPageDrawer('foro')">💬 Foro</div>
@@ -1139,49 +1239,31 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   </div>
 </div>
 
-<!-- CALCULADORA -->
-<div class="page" id="page-calculadora">
-  <div style="padding:1rem 1rem 2.5rem;max-width:860px;margin:0 auto;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:.2rem;">🧮 Calculadora</div>
-
-    <p class="sec" style="color:#fff;margin-top:.5rem;">Estado actual</p>
-    <div class="calc-form-grid" style="margin-bottom:1rem;">
-      <div id="calc-real-tabla-nona-a"></div>
-      <div id="calc-real-tabla-nona-b"></div>
+<!-- SIMULADOR (reemplaza a la Calculadora: la Segunda Fase ya terminó, no quedan partidos
+     pendientes para cargar goles — ahora se simulan los playoffs eligiendo ganadores) -->
+<div class="page" id="page-simulador">
+  <div class="sim-wrap">
+    <div class="sim-head">
+      <div class="sim-title">Simulador</div>
+      <button class="sim-reset" onclick="reiniciarSimulador()">↺ Reiniciar</button>
     </div>
-    <div class="calc-form-grid" style="margin-bottom:1.5rem;">
-      <div id="calc-real-tabla-rev-a"></div>
-      <div id="calc-real-tabla-rev-b"></div>
-    </div>
-    <p class="sec" style="color:#fff;">Primer ascenso — cuadro actual</p>
-    <div id="calc-real-bracket-nona" class="bracket-nona-cont" style="margin-bottom:1.2rem;"></div>
-    <p class="sec" style="color:#fff;">Segundo ascenso — 16vos actuales</p>
-    <div id="calc-real-preview16" class="preview16-cont" style="margin-bottom:1.5rem;"></div>
-
-    <p class="sec" style="color:#fff;">Simulá resultados pendientes</p>
-    <p style="font-size:13px;color:#888;margin-bottom:1.25rem;">Completá los resultados pendientes de Segunda Fase y presioná <strong style="color:#ccc;">Calcular</strong> para ver las tablas y los cuadros proyectados.</p>
-    <div id="calc-form"><div style="color:#888;font-size:13px;">Cargando partidos...</div></div>
-    <div id="calc-btn-wrap" style="display:none;margin:1.25rem 0;text-align:center;">
-      <button onclick="calcularProyeccion()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.65rem 2.5rem;font-size:16px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;">CALCULAR</button>
-    </div>
-    <div id="calc-resultados"></div>
+    <p class="sim-nota">Tocá al ganador de cada llave: pasa al instante a la ronda siguiente y los cruces se reacomodan solos. Tocalo de nuevo para deshacer. El primero de cada llave es el mejor ubicado: define de local y avanza en caso de empate.</p>
+    <div id="sim-cont"></div>
   </div>
 </div>
 
 <!-- INICIO -->
-<div class="page active" id="page-inicio">
+<div class="page active anim-in" id="page-inicio">
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
-      <div class="fecha-hdr" style="justify-content:space-between;">
-        <div style="width:110px;flex-shrink:0;"></div>
-        <div style="text-align:center;">
-          <div class="fnum" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos de Final</div>
-          <div class="fsub">Ida y vuelta — 2026</div>
+      <div class="fecha-hdr" style="justify-content:center;">
+        <div class="fnav" id="home-estado-prev" onclick="cambiarHomeEstado(-1)" style="visibility:hidden;">‹</div>
+        <div style="text-align:center;flex:1;">
+          <div class="fnum" id="home-estado-tit" style="display:inline-flex;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">Cuartos y descenso</div>
+          <div class="fsub" id="home-estado-sub">Ida y vuelta — 2026</div>
         </div>
-        <!-- Lugar reservado para el Simulador (reemplaza a "Calculadora") — todavía sin función,
-             solo ocupa el espacio hasta que esté lista esa pantalla. -->
-        <div title="Próximamente" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.4rem .6rem;color:var(--muted);font-size:12px;font-weight:600;cursor:default;">🧮 Simulador</div>
+        <div class="fnav" id="home-estado-next" onclick="cambiarHomeEstado(1)" style="visibility:hidden;">›</div>
       </div>
       <div id="partidos-cont2"></div>
     </div>
@@ -1200,7 +1282,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
             <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
-            <span class="oc-chevron" id="oc-chevron">▾</span>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <!-- Botón al Simulador. stopPropagation para que no dispare el toggle del
+                   desplegable al clickearlo. -->
+              <div onclick="event.stopPropagation();goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--surface2);border:1px solid rgba(232,196,74,.45);border-radius:6px;padding:.4rem .6rem;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;">🧮 Simulador</div>
+              <span class="oc-chevron" id="oc-chevron">▾</span>
+            </div>
           </div>
           <div class="oc-collapse" id="oc-collapse">
             <div class="oc-collapse-inner">
@@ -1368,8 +1455,18 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
     <!-- ÁRBITROS -->
     <div id="stats-arbitros" style="display:none;">
-      <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
-      <div class="tabla-mini" id="tbl-arbitros"></div>
+      <div id="arbi-subtabs" style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <div class="ztab active" onclick="showArbiSubTab('principales',this)" style="font-size:12px;padding:.3rem .8rem;">Árbitros principales</div>
+        <div class="ztab" onclick="showArbiSubTab('asistentes',this)" style="font-size:12px;padding:.3rem .8rem;">Asistentes</div>
+      </div>
+      <div id="arbicont-principales">
+        <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
+        <div class="tabla-mini" id="tbl-arbitros"></div>
+      </div>
+      <div id="arbicont-asistentes" style="display:none;">
+        <p class="sec">🚩 ASISTENTES</p>
+        <div class="tabla-mini" id="tbl-arbi-asistentes"></div>
+      </div>
     </div>
 
     <!-- DIR. TÉCNICOS -->
@@ -1480,6 +1577,27 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 <script>
 // ── SUPABASE ──
+// Árbitros/asistentes cargados con distintos nombres que son la misma persona (confirmado por el
+// usuario). Se unifican al cargar los datos, así cuentan juntos en Estadísticas y se ven bien en
+// las fichas. Para sumar uno: "nombre como viene" → "nombre correcto".
+const ARBITROS_ALIAS = {
+  'Adriel Araya': 'Iván Adriel Araya',
+  'Iván Quintero': 'Iván Adriel Araya',
+  'Matás Javier González': 'Matías Javier González',
+  'Matías González': 'Matías Javier González',
+  'Fernando Zabala': 'Fernando Zabalza',
+  'Juan Ignacio Roig': 'Juan Ignacio Flores Roig',
+  'Juan Ignacio Flores R.': 'Juan Ignacio Flores Roig',
+  'Mariano González': 'Mariano Ramón González',
+};
+function normArbitros(r){
+  if(r) ['arbitro','juez1','juez2','cuarto_arbitro'].forEach(c=>{
+    const n = r[c] && String(r[c]).trim();
+    if(n && ARBITROS_ALIAS[n]) r[c] = ARBITROS_ALIAS[n];
+  });
+  return r;
+}
+
 const SUPA_URL = "https://fnbxddmnotzqoquizfit.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYnhkZG1ub3R6cW9xdWl6Zml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NzI0NDAsImV4cCI6MjA5MDE0ODQ0MH0.8FdlhqFbf9E1rFH97aQ2Fvp4ArkM9BK-rzwzuvR6-Ec";
 // Algunas conexiones móviles (proxies de "ahorro de datos" de operadoras, muy comunes en
@@ -1529,6 +1647,7 @@ async function cargarPartidosDesdeDB(){
     // Process fixture (fuente principal)
     const {data:fixtureData, error:fixtureErr} = fixtureResult;
     if(!fixtureErr && fixtureData){
+      fixtureData.forEach(normArbitros);
       window._FIXTURE_RAW = fixtureData;
       fixtureData.forEach(p => {
         if(!p.zona || !p.fecha) return;
@@ -1574,6 +1693,7 @@ async function cargarPartidosDesdeDB(){
     // Compatibilidad: overlay desde partidos
     const {data, error} = partidosResult;
     if(!error && data){
+      data.forEach(normArbitros);
       data.forEach(p => {
         if(!p.zona || !p.fecha) return;
         const ms = FIXTURE[p.zona] && FIXTURE[p.zona][String(p.fecha)];
@@ -2138,18 +2258,26 @@ const PLAYOFF_NONA_ZONAS = {
   SF1:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
   SF2:{ida:'Semifinal Primer Ascenso - Ida', vuelta:'Semifinal Primer Ascenso - Vuelta', fecha:1},
 };
-// Panel de "Resultados" de la home: reemplaza a las 9 fechas de Segunda Fase (fase cerrada,
-// archivada en /segunda-fase) por 2 estados de Cuartos de Final — Ida (incluye el desempate de
-// descenso, mismo fin de semana) y Vuelta. Cuando se llegue a Semis, sumar sus zonas acá.
-const CUARTOS_ESTADOS = {
-  1: { label:'Ida', fuentes: [
-        {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
-        {zona:'Desempate Descenso', fecha:1},
-      ]},
-  2: { label:'Vuelta', fuentes: [
-        {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
-      ]},
-};
+// Panel de "Resultados" de la home: una solapa por fin de semana de playoffs, navegable con
+// flechas. Cuartos quedó como estaba (ida, vuelta y desempate juntos); desde Semis/16vos cada
+// fin de semana va separado (pedido del usuario). Solo aparecen las solapas cuyas zonas ya
+// existen en el fixture; para una ronda nueva, sumar su solapa acá.
+const HOME_ESTADOS = [
+  { titulo:'Cuartos y descenso', sub:'Ida y vuelta — 2026', fuentes: [
+      {zona:'Cuartos Primer Ascenso - Ida', fecha:1},
+      {zona:'Desempate Descenso', fecha:1},
+      {zona:'Cuartos Primer Ascenso - Vuelta', fecha:1},
+    ]},
+  { titulo:'Semis y 16vos - Ida', sub:'Primer y Segundo Ascenso — 2026', fuentes: [
+      {zona:'Semifinal Primer Ascenso - Ida', fecha:1},
+      {zona:'Dieciseisavos Segundo Ascenso - Ida', fecha:1},
+    ]},
+  { titulo:'Semis y 16vos - Vuelta', sub:'Primer y Segundo Ascenso — 2026', fuentes: [
+      {zona:'Semifinal Primer Ascenso - Vuelta', fecha:1},
+      {zona:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1},
+    ]},
+];
+let _homeEstado = null; // índice elegido con las flechas (null = automático)
 // Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
 // nombreMejor/nombrePeor dentro de esas zonas, sin asumir quién quedó como local/visitante
 // (más robusto que depender del orden exacto en que se cargó cada fila).
@@ -2195,6 +2323,19 @@ function refrescarPlayoffNonaSemis(semisPorId){
     PLAYOFF_NONA[sf.id].ida = res.ida;
     PLAYOFF_NONA[sf.id].vuelta = res.vuelta;
   });
+}
+
+// Llaves del Segundo Ascenso con zona real en `fixture` (las siembra el admin). Devuelve los
+// goles de ida/vuelta y el resultado de la llave entre mejor y peor ubicado, o null si esa
+// ronda todavía no existe en el fixture.
+const ZONAS_SEGUNDO_ASCENSO = {
+  'sa-16': { ida:'Dieciseisavos Segundo Ascenso - Ida', vuelta:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1 },
+};
+function llaveRealSegundoAscenso(ronda, nombreMejor, nombrePeor){
+  const z = ZONAS_SEGUNDO_ASCENSO[ronda];
+  if(!z || !nombreMejor || !nombrePeor || !FIXTURE[z.ida]) return null;
+  const goles = _golesLlaveDesdeFixture(z.ida, z.vuelta, z.fecha, nombreMejor, nombrePeor);
+  return { ...goles, resultado: resolverLlaveIdaVuelta(goles.ida, goles.vuelta) };
 }
 
 // Suma ida+vuelta; en empate global (puntos y goles, es decir el aggregate) avanza el mejor
@@ -2388,6 +2529,10 @@ const ZONA_COLORES = {
   "Cuartos Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "CI" },
   "Cuartos Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "CV" },
   "Desempate Descenso": { color: "#e53935", text: "#ffffff", code: "DD" },
+  "Semifinal Primer Ascenso - Ida": { color: "#e8c44a", text: "#1a1500", code: "SI" },
+  "Semifinal Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "SV" },
+  "Dieciseisavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "16I" },
+  "Dieciseisavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "16V" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -2918,6 +3063,7 @@ async function verFicha(key, tienePlanilla){
       .eq("fecha", parseInt(pFecha));
 
     let partido = null;
+    (partidos||[]).forEach(normArbitros);
     if(partidos?.length){
       // Find matching by key
       partido = partidos.find(p => {
@@ -4306,17 +4452,21 @@ function armarCrucesDesdeOrden(lista){
 // El ícono de los placeholders (⬇️/🎲) va en una caja ".me" del mismo tamaño que un escudo real
 // (22px) — sin eso, la fila de un placeholder quedaba mucho más angosta que la de un equipo real
 // (escudo+nombre), se veían desparejas dentro de la misma tarjeta.
-function _ladoPreview16(item){
+function _ladoPreview16(item, esGanador){
   if(!item) return `<div class="llave-eq-simple pend">A Definir</div>`;
   if(item.tipo==='pendiente') return `<div class="llave-eq-simple pend" title="Eliminado del 1er Ascenso"><div class="me" style="font-size:15px;">⬇️</div><span class="llave-nombre">${item.label}</span></div>`;
   if(item.tipo==='sorteo') return `<div class="llave-eq-simple pend"><div class="me" style="font-size:15px;">🎲</div><span class="llave-nombre">${item.candidatos.map(c=>c.n).join(' / ')}</span></div>`;
-  return `<div class="llave-eq-simple">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
+  return `<div class="llave-eq-simple${esGanador?' llave-gano':''}">${escudoHTML(item.n,'me')}<span class="llave-nombre">${item.n}</span></div>`;
 }
+// Con la zona de 16vos ya cargada en el fixture, el marcador I/V/G muestra los goles reales.
 function _cardPreview16(mejor, peor){
-  const marc = _marcadorLado(null, null, null, false);
+  const real = llaveRealSegundoAscenso('sa-16', mejor && mejor.n, peor && peor.n);
+  const r = real && real.resultado.resuelto ? real.resultado : null;
+  const marcMejor = real ? _marcadorLado(real.ida.golMejor, real.vuelta.golMejor, r ? r.globalMejor : null, !!(r && r.ganadorEsMejor)) : _marcadorLado(null, null, null, false);
+  const marcPeor  = real ? _marcadorLado(real.ida.golPeor,  real.vuelta.golPeor,  r ? r.globalPeor  : null, !!(r && !r.ganadorEsMejor)) : _marcadorLado(null, null, null, false);
   return `<div class="llave-card llave-card-v llave-card-p16">
-    <div class="llave-fila">${_ladoPreview16(mejor)}${marc}</div>
-    <div class="llave-fila">${_ladoPreview16(peor)}${marc}</div>
+    <div class="llave-fila">${_ladoPreview16(mejor, r && r.ganadorEsMejor)}${marcMejor}</div>
+    <div class="llave-fila">${_ladoPreview16(peor, r && !r.ganadorEsMejor)}${marcPeor}</div>
   </div>`;
 }
 
@@ -4444,22 +4594,46 @@ document.addEventListener("click", e=>{
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
 
-// ── CUARTOS DE FINAL: widget de resultados propio (Ida / Vuelta, ver CUARTOS_ESTADOS) ──
+// ── PLAYOFFS: widget de resultados propio, una solapa por fin de semana (ver HOME_ESTADOS) ──
 // Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
-// archivada en /segunda-fase). Ida, vuelta y el desempate de descenso van TODOS juntos en una
-// sola solapa (el usuario lo pidió explícito: "ida y vuelta van en la misma solapa") — no hay
-// navegación entre estados, la separación entre el fin de semana de ida y el de vuelta ya la
-// da el agrupado por día (cada fuente de CUARTOS_ESTADOS trae su propia fecha real de
-// Supabase, que es la que hay que usar para las fichaKey, no el número de estado).
+// archivada en /segunda-fase). Cada fuente trae su propia fecha real de Supabase, que es la que
+// hay que usar para las fichaKey. Solapa automática: la primera con algún partido sin
+// resultado (si están todas jugadas, la última); las flechas permiten moverse entre las que
+// existen.
+function _homeEstadosDisponibles(){
+  return HOME_ESTADOS.map((e,i)=>({e,i})).filter(({e})=>e.fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).length));
+}
+function cambiarHomeEstado(d){
+  const disp = _homeEstadosDisponibles();
+  const pos = disp.findIndex(x=>x.i===_homeEstadoActual()) + d;
+  if(pos < 0 || pos >= disp.length) return;
+  _homeEstado = disp[pos].i;
+  renderPartidos2();
+}
+function _homeEstadoActual(){
+  const disp = _homeEstadosDisponibles();
+  if(!disp.length) return 0;
+  if(_homeEstado!=null && disp.some(x=>x.i===_homeEstado)) return _homeEstado;
+  const pend = disp.find(({e})=>e.fuentes.some(({zona,fecha})=>(FIXTURE[zona]?.[String(fecha)]||[]).some(m=>m.gl==null)));
+  return (pend || disp[disp.length-1]).i;
+}
 function renderPartidos2(){
   const rows = [];
-  Object.values(CUARTOS_ESTADOS).forEach(estado=>{
-    estado.fuentes.forEach(({zona,fecha}) => {
-      const ms = FIXTURE[zona]?.[String(fecha)] || [];
-      ms.forEach(m => {
-        const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
-        rows.push({ zona, fecha, m, meta });
-      });
+  const idx = _homeEstadoActual(), estado = HOME_ESTADOS[idx];
+  const disp = _homeEstadosDisponibles(), pos = disp.findIndex(x=>x.i===idx);
+  const tit = document.getElementById('home-estado-tit'), sub = document.getElementById('home-estado-sub');
+  if(tit) tit.textContent = estado.titulo;
+  if(sub) sub.textContent = estado.sub;
+  const prev = document.getElementById('home-estado-prev'), next = document.getElementById('home-estado-next');
+  if(prev) prev.style.visibility = pos > 0 ? '' : 'hidden';
+  if(next) next.style.visibility = pos >= 0 && pos < disp.length-1 ? '' : 'hidden';
+  const ordenFuente = {};
+  estado.fuentes.forEach(({zona},k)=>{ ordenFuente[zona] = k; });
+  estado.fuentes.forEach(({zona,fecha}) => {
+    const ms = FIXTURE[zona]?.[String(fecha)] || [];
+    ms.forEach(m => {
+      const meta = PARTIDO_META[getMetaKey(zona,fecha,m.local,m.visitante)] || {};
+      rows.push({ zona, fecha, m, meta });
     });
   });
 
@@ -4479,8 +4653,8 @@ function renderPartidos2(){
     const kd = ad.localeCompare(bd);
     if(kd !== 0) return kd;
     if(ad < hoy){
-      // Día pasado: por grupo directo (Nonagonal A, Nonagonal B, Reválida A, Reválida B)
-      return (GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona)) || a.m.local.localeCompare(b.m.local);
+      // Día pasado: por zona, en el orden de la solapa (p. ej. Semis antes que 16vos)
+      return (ordenFuente[a.zona]-ordenFuente[b.zona]) || a.m.local.localeCompare(b.m.local);
     }
     // Por hora real programada
     const kh = horaOrden(a.meta.hora) - horaOrden(b.meta.hora);
@@ -4615,7 +4789,8 @@ const _PATH_MAP = {
   '/reglamento': 'reglamento',
   '/foro': 'foro',
   '/prode': 'prode',
-  '/calc': 'calculadora',
+  '/calc': 'simulador',
+  '/simulador': 'simulador',
 };
 const _PAGE_PATH = {};
 Object.entries(_PATH_MAP).forEach(([path, id]) => _PAGE_PATH[id] = path);
@@ -4635,11 +4810,19 @@ function goPage(id, el){
   if(!page) return;
   page.classList.add("active","page-entering");
   if(el) el.classList.add("active");
+  // Entrada en cascada de tarjetas y filas (ver .anim-in en el CSS). La primera vez dura más
+  // en cada página porque los datos tardan en llegar. El Simulador tiene sus propias animaciones.
+  if(id!=="simulador"){
+    page.classList.add("anim-in");
+    clearTimeout(page._animT);
+    page._animT = setTimeout(()=>page.classList.remove("anim-in"), page._yaAnimo ? 1200 : 4000);
+    page._yaAnimo = true;
+  }
   window.scrollTo(0,0);
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas") cargarEstadisticas();
   if(id==="planteles") cargarPlanteles();
-  if(id==="calculadora"){ renderEstadoActualCalc(); cargarCalculadora(); }
+  if(id==="simulador") cargarSimulador();
   if(id==="foro"){
     page.style.display="flex";
     const hdrH = window.innerWidth<=700?52:62;
@@ -5306,6 +5489,7 @@ async function cargarEstadisticas(){
         .not('arbitro','is',null).neq('arbitro','');
       fixtureArbitros = data;
     }
+    (fixtureArbitros||[]).forEach(normArbitros);
     const fixtureIdToArbitro = {};
     (fixtureArbitros||[]).forEach(p=>{
       const key=`${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`;
@@ -5801,6 +5985,25 @@ async function cargarEstadisticas(){
     _ARBI_DATA = arbiRows;
     _ARBI_SORT = {col:'pj', dir:-1};
     renderArbiTable();
+
+    // ASISTENTES — jueces de línea y 4° árbitros, con los partidos jugados en los que estuvieron
+    _ASIS_PARTIDOS = {};
+    const jugadosPorKey = {};
+    zonasFixture().forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{ if(m.gl!==null) jugadosPorKey[`${z}_${f}_${m.local}_${m.visitante}`] = {zona:z, fecha:f, m}; });
+      }
+    });
+    (fixtureArbitros||[]).forEach(p=>{
+      const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`, j = jugadosPorKey[key];
+      if(!j) return;
+      [[p.juez1,'linea'],[p.juez2,'linea'],[p.cuarto_arbitro,'cuarto']].forEach(([n,rol])=>{
+        n = (n||'').trim(); if(!n) return;
+        (_ASIS_PARTIDOS[n] = _ASIS_PARTIDOS[n] || []).push({zona:j.zona, fecha:j.fecha, local:j.m.local, visitante:j.m.visitante, gl:j.m.gl, gv:j.m.gv,
+          rol, arbitro:p.arbitro, fichaKey:key, tienePlanilla:!!PLANILLA_CARGADA[key]});
+      });
+    });
+    renderAsistentes();
 
     // PENALES EJECUTANTES
     const penEjec = {};
@@ -6377,6 +6580,7 @@ function _aplicarCache(d){
       if(fotmob_url) m.fotmob_url = fotmob_url;
     });
     Object.assign(PARTIDO_META, d.meta||{});
+    Object.values(PARTIDO_META).forEach(normArbitros);
     // viaVercel: el caché local de visitas anteriores puede traer las URLs viejas (directo a Supabase).
     Object.entries(d.esc||{}).forEach(([n,u]) => { ESCUDOS[n] = viaVercel(u); });
     Object.assign(PLANILLA_CARGADA, d.pl||{});
@@ -6464,6 +6668,8 @@ async function init(){
     }
   } else {
     const startPage = _PATH_MAP[location.pathname];
+    // El Inicio arranca activo desde el HTML (con anim-in): se la saca cuando ya entró todo.
+    { const pi = document.getElementById('page-inicio'); pi._animT = setTimeout(()=>pi.classList.remove('anim-in'), 4000); }
     if(startPage && startPage !== 'inicio'){
       goPage(startPage, document.querySelector(`.ni[onclick*="'${startPage}'"]`));
     }
@@ -6720,6 +6926,51 @@ function renderArbiTable(){
   </table></div>${legend}`;
   document.getElementById('tbl-arbitros').innerHTML = _ARBI_DATA.length
     ? html : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+}
+
+function showArbiSubTab(tab, el){
+  document.querySelectorAll('#arbi-subtabs .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['principales','asistentes'].forEach(t=>{
+    const c = document.getElementById('arbicont-'+t);
+    if(c) c.style.display = t===tab ? '' : 'none';
+  });
+}
+
+// Asistentes: solo el listado de nombres; al tocar uno se despliegan sus partidos con el rol
+// (juez de línea o 4° árbitro).
+let _ASIS_PARTIDOS = {};
+function renderAsistentes(){
+  const cont = document.getElementById('tbl-arbi-asistentes');
+  if(!cont) return;
+  const nombres = Object.keys(_ASIS_PARTIDOS).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+  if(!nombres.length){ cont.innerHTML = '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>'; return; }
+  cont.innerHTML = nombres.map(n=>{
+    const ps = _ASIS_PARTIDOS[n], lin = ps.filter(p=>p.rol==='linea').length, cua = ps.length - lin;
+    const sid = 'asis-' + n.replace(/[^a-zA-Z0-9]/g,'_');
+    const resumen = [lin ? `🚩 ${lin}` : '', cua ? `4️⃣ ${cua}` : ''].filter(Boolean).join(' &nbsp;');
+    return `<div class="asis-row" id="${sid}" onclick="toggleAsisDetalle('${n.replace(/'/g,"\\'")}')">
+      <span>${n} <span style="font-size:10px;color:#555;">▾</span></span><span class="asis-res">${ps.length} PJ &nbsp;${resumen}</span></div>`;
+  }).join('') + `<div style="font-size:11px;color:#666;padding:.5rem .6rem;border-top:1px solid rgba(255,255,255,.06);">🚩 Juez de línea &nbsp; 4️⃣ 4° árbitro</div>`;
+}
+function toggleAsisDetalle(nombre){
+  const sid = 'asis-' + nombre.replace(/[^a-zA-Z0-9]/g,'_');
+  const row = document.getElementById(sid);
+  if(!row) return;
+  const abierto = document.getElementById(sid + '-det');
+  if(abierto){ abierto.remove(); row.classList.remove('open'); return; }
+  row.classList.add('open');
+  const partidos = (_ASIS_PARTIDOS[nombre]||[]).slice().sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
+  const det = document.createElement('div');
+  det.id = sid + '-det';
+  det.className = 'asis-det';
+  det.innerHTML = partidos.map(m=>`<div class="asis-det-fila">
+      <span class="asis-rol ${m.rol}">${m.rol==='linea' ? '🚩 Juez de línea' : '4️⃣ 4° árbitro'}</span>
+      <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
+      <span style="font-size:11px;color:#888;">${fechaLabel(m.zona,m.fecha)}</span>
+      ${m.arbitro ? `<span style="font-size:11px;color:#aaa;">🧑‍⚖️ ${m.arbitro}</span>` : ''}
+    </div>`).join('');
+  row.insertAdjacentElement('afterend', det);
 }
 
 function sortArbiTable(col){
@@ -7270,6 +7521,241 @@ async function abrirPerfilJugador(jugadorId){
   } catch(e){
     cont.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;">Error al cargar los datos del jugador.</div>';
   }
+}
+
+// ===== SIMULADOR =====
+// El usuario elige con un clic quién gana cada llave que todavía no se jugó y el sitio arma en
+// el momento las rondas siguientes. Reglas (confirmadas por el usuario):
+// - Primer Ascenso: Cuartos → Semis → Final, mismas llaves que el cuadro de la home.
+// - Segundo Ascenso, todo según "Orden para cruces" (1 = perdedor de la Final, 2-3 = perdedores
+//   de Semis, 4-7 = perdedores de Cuartos, 8-27 = Tabla de Mérito) y SIEMPRE mejor vs peor,
+//   reordenando en cada ronda: 16vos = 4 perdedores de Cuartos + 20 de la Tabla (12 llaves);
+//   Octavos = 12 ganadores + los 2 perdedores de Semis (7); Cuartos = 7 ganadores + el perdedor
+//   de la Final (4); Semis (2); Final (1). El mejor ubicado va primero (define de local).
+// Los resultados reales ya cargados se respetan y no se pueden cambiar.
+// Pantalla: todas las rondas juntas, en columnas (en mobile, una debajo de otra). Cada ganador
+// entra al instante en la ronda siguiente y los cruces provisorios se reacomodan solos (los
+// lugares todavía sin dueño quedan al final, como los peores). Una ronda se puede elegir recién
+// cuando están todos sus equipos. Los Cuartos del Primer Ascenso ya se jugaron: no se muestran.
+const SIM_PICKS = {};          // ronda -> Set con los nombres elegidos como ganadores
+let _simUltimoClick = null;    // {n, ronda, rect} del último ganador elegido (animación de "avance")
+let _simCampeones = '';        // campeones del render anterior, para animar solo cuando cambian
+if(window.gsap && window.Flip) gsap.registerPlugin(Flip);
+
+function _simPick(ronda){ return SIM_PICKS[ronda] || (SIM_PICKS[ronda] = new Set()); }
+
+// Ganador de una llave: el real si ya se jugó; si no, el que eligió el usuario.
+function _simGanador(ronda, a, b, real){
+  if(real) return real;
+  if(!a || !b || !a.n || !b.n) return null;
+  const s = _simPick(ronda), ia = s.has(a.n), ib = s.has(b.n);
+  return ia && !ib ? a : ib && !ia ? b : null;
+}
+
+function calcSimulacion(){
+  const br = calcBracketNonagonal();
+  const usados = {};
+  const llave = (ronda, mejor, peor, realGanador) => {
+    const ganador = _simGanador(ronda, mejor, peor, realGanador);
+    if(ganador && !realGanador) (usados[ronda] = usados[ronda] || []).push(ganador.n);
+    const perdedor = ganador ? (ganador===mejor ? peor : mejor) : null;
+    return { ronda, mejor, peor, ganador, perdedor, real: !!realGanador };
+  };
+  const mismo = (x, y) => x && y && x.n === y.n;
+
+  // ── Primer Ascenso ──
+  const qf = br.cuartos.map(c => llave('pa-qf', c.mejor, c.peor, c.resultado.resuelto ? c.ganador : null));
+  const qfPorId = {}; br.cuartos.forEach((c,i)=>qfPorId[c.id]=qf[i]);
+  const sf = CRUCES_SEMIS_NONAGONAL.map((cfg,i) => {
+    const eqA = qfPorId[cfg.qfA].ganador, eqB = qfPorId[cfg.qfB].ganador;
+    let mejor=null, peor=null;
+    if(eqA && eqB) [mejor,peor] = eqA.pos <= eqB.pos ? [eqA,eqB] : [eqB,eqA];
+    const r = br.semis[i];
+    const real = (r.ganador && mismo(r.mejor,mejor) && mismo(r.peor,peor)) ? (mismo(r.ganador,mejor) ? mejor : peor) : null;
+    return llave('pa-sf', mejor, peor, real);
+  });
+  const e1 = sf[0].ganador, e2 = sf[1].ganador, bf = br.final;
+  const realF = (bf.resuelto && bf.ganador && mismo(bf.equipo1,e1) && mismo(bf.equipo2,e2)) ? (mismo(bf.ganador,e1) ? e1 : e2) : null;
+  const fin = llave('pa-f', e1, e2, realF);
+
+  // ── Segundo Ascenso ──
+  // Puestos "a sorteo" de la Tabla de Mérito: cada uno toma un candidato en el orden listado
+  // (el 1° el primero, el 2° el otro) y se marca con 🎲.
+  const tm = calcTablaMerito(_ultimoNonARows, _ultimoNonBRows, _ultimoRevARows, _ultimoRevBRows);
+  const vistos = new Map();
+  const merito = tm.map((it,i)=>{
+    if(it.tipo!=='sorteo') return { n:it.n, rank:8+i };
+    const key = it.candidatos.map(c=>c.n).join('|'), k = vistos.get(key)||0;
+    vistos.set(key, k+1);
+    return { n:it.candidatos[k].n, rank:8+i, sorteo:true };
+  });
+  // Los caídos del Primer Ascenso solo se ubican cuando se conocen TODOS los de su ronda (el
+  // orden entre ellos depende de quiénes son); mientras tanto, lugar reservado con su puesto.
+  const caidos = (llaves) => llaves.every(l=>l.perdedor) ? ordenarCaidosNonagonal(llaves.map(l=>l.perdedor)) : null;
+  const qfLos = caidos(qf), sfLos = caidos(sf);
+  const reservado = (lista, idx, rank, label) => lista && lista[idx] ? { n:lista[idx].n, rank } : { n:null, rank, label };
+  const finLos = fin.perdedor ? { n:fin.perdedor.n, rank:1 } : { n:null, rank:1, label:'Finalista' };
+  const caen = [finLos]
+    .concat([0,1].map(i=>reservado(sfLos, i, 2+i, 'Semifinalista')))
+    .concat([0,1,2,3].map(i=>reservado(qfLos, i, 4+i, 'Cuartofinalista')));
+
+  // Cada ronda se arma aunque la anterior no esté completa (cruces provisorios): los equipos
+  // conocidos se ordenan por su puesto y los lugares sin dueño van al final. Solo se puede
+  // elegir ganador cuando están todos.
+  const rondasSA = {};
+  const armar = (ronda, participantes) => {
+    const lista = participantes.filter(p=>p.rank!=null).sort((a,b)=>a.rank-b.rank)
+      .concat(participantes.filter(p=>p.rank==null));
+    const jugable = lista.every(p=>p.n);
+    const realGanador = (c) => {
+      const real = llaveRealSegundoAscenso(ronda, c.mejor.n, c.peor.n);
+      return real && real.resultado.resuelto ? (real.resultado.ganadorEsMejor ? c.mejor : c.peor) : null;
+    };
+    const cruces = armarCrucesDesdeOrden(lista).map(c => jugable
+      ? llave(ronda, c.mejor, c.peor, realGanador(c))
+      : { ronda, mejor:c.mejor, peor:c.peor, ganador:null, perdedor:null, real:false });
+    return rondasSA[ronda] = { ronda, cruces, lista, jugable, completa: jugable && cruces.every(c=>c.ganador) };
+  };
+  const ganadores = (r, de) => r.cruces.map(c => c.ganador || { n:null, label:`Ganador de ${de}` });
+  const r16 = armar('sa-16', caen.slice(3).concat(merito));
+  const r8  = armar('sa-8',  ganadores(r16,'16vos').concat(caen.slice(1,3)));
+  const r4  = armar('sa-4',  ganadores(r8,'Octavos').concat([finLos]));
+  const r2  = armar('sa-2',  ganadores(r4,'Cuartos'));
+  const r1  = armar('sa-1',  ganadores(r2,'Semis'));
+  const campeonSA = r1.completa ? r1.cruces[0].ganador : null;
+
+  // Limpia elecciones que quedaron sin efecto (p. ej. el equipo ya no llega a esa ronda).
+  Object.keys(SIM_PICKS).forEach(r=>{ SIM_PICKS[r] = new Set(usados[r]||[]); });
+
+  return { qf, sf, fin, campeonPA: fin.ganador, caen, rondasSA, campeonSA };
+}
+
+// Fila de un equipo. lado 'L' = panel donde se elige (botón), 'R' = panel en vivo (solo muestra).
+function _simFila(l, eq, lado){
+  if(!eq || !eq.n) return `<div class="sim-eq pend"><span class="sim-rank">${eq && eq.rank!=null ? '#'+eq.rank : ''}</span><span class="sim-q">?</span><span class="sim-nombre">${eq && eq.label ? eq.label : 'Por definir'}</span></div>`;
+  const cls = l.ganador ? (l.ganador.n===eq.n ? ' gano' : ' perdio') : '';
+  const rank = eq.rank!=null ? `#${eq.rank}` : (eq.pos ? _seedLabelLlave(eq) : '');
+  const n = eq.n.replace(/"/g,'&quot;');
+  const clic = lado==='L' && !l.real && l.mejor && l.peor && l.mejor.n && l.peor.n;
+  const tag = clic ? 'button' : 'div';
+  return `<${tag} class="sim-eq${cls}" data-flip-id="${lado}:${l.ronda}:${n}" data-n="${n}"${clic ? ` onclick="simElegir(this,'${l.ronda}')"` : ''}>
+    <span class="sim-rank">${rank}</span>${escudoHTML(eq.n,'me')}<span class="sim-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></${tag}>`;
+}
+function _simCard(l, lado){
+  return `<div class="sim-card${l.real?' real':''}">${_simFila(l, l.mejor, lado)}${_simFila(l, l.peor, lado)}</div>`;
+}
+function _simCampeon(label, eq){
+  const titulo = label==='Segundo ascenso' ? 'Ganador' : 'Campeón';
+  return eq
+    ? `<div class="sim-campeon" data-campeon="${label}">${escudoHTML(eq.n,'me')}<div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 ${titulo} · ${label}</span><span class="sim-campeon-n">${eq.n}</span></div></div>`
+    : `<div class="sim-campeon pend"><span class="sim-q">?</span><div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 ${titulo} · ${label}</span><span class="sim-campeon-n">Por definir</span></div></div>`;
+}
+
+// Columnas de la pantalla: el Primer Ascenso (Semis + Final) y cada ronda del Segundo Ascenso.
+const SIM_COLS = [
+  { id:'pa',    nombre:'Primer Ascenso' },
+  { id:'sa-16', nombre:'Dieciseisavos' },
+  { id:'sa-8',  nombre:'Octavos' },
+  { id:'sa-4',  nombre:'Cuartos' },
+  { id:'sa-2',  nombre:'Semifinales' },
+  { id:'sa-1',  nombre:'Final' },
+];
+
+// anim: false (sin animación) o true (se eligió/deshizo un ganador)
+function renderSimulador(anim){
+  const cont = document.getElementById('sim-cont');
+  if(!cont) return;
+  const sim = calcSimulacion();
+
+  const cols = SIM_COLS.map(c=>{
+    let cuerpo, llaves, jugable = true;
+    if(c.id==='pa'){
+      llaves = [...sim.sf, sim.fin];
+      cuerpo = `<p class="sim-sec">Semifinales</p><div class="sim-lista">${sim.sf.map(l=>_simCard(l,'L')).join('')}</div>
+        <p class="sim-sec">Final</p>${_simCard(sim.fin,'L')}${_simCampeon('Primer ascenso', sim.campeonPA)}`;
+    } else {
+      const r = sim.rondasSA[c.id];
+      llaves = r.cruces; jugable = r.jugable;
+      cuerpo = `<div class="sim-lista">${r.cruces.map(l=>_simCard(l,'L')).join('')}</div>${c.id==='sa-1' ? _simCampeon('Segundo ascenso', sim.campeonSA) : ''}`;
+      if(!jugable){
+        const faltan = r.lista.filter(p=>!p.n).length;
+        c.estado = `Provisorio · faltan ${faltan}`;
+      }
+    }
+    const hechas = llaves.filter(l=>l.ganador).length;
+    const pct = jugable ? hechas / llaves.length * 100 : 0;
+    const estado = !jugable ? c.estado : `${hechas}/${llaves.length}`;
+    return `<div class="sim-col${jugable ? '' : ' provisoria'}${jugable && hechas===llaves.length ? ' completa' : ''}" data-col="${c.id}">
+      <div class="sim-col-h"><b>${c.nombre}</b><span>${estado}</span></div>
+      <div class="sim-bar"><i style="width:${pct}%" data-pct="${pct}"></i></div>
+      <div class="sim-col-body">${cuerpo}</div></div>`;
+  }).join('');
+
+  const conAnim = anim && window.gsap && window.Flip;
+  const estado = conAnim ? Flip.getState(cont.querySelectorAll('[data-flip-id]')) : null;
+  const pctAntes = {};
+  cont.querySelectorAll('.sim-col').forEach(c=>{ const i = c.querySelector('.sim-bar i'); pctAntes[c.dataset.col] = i ? +i.dataset.pct : 0; });
+  cont.innerHTML = `<div class="sim-cols">${cols}</div>`;
+
+  const campeones = [sim.campeonPA, sim.campeonSA].map(e=>e?e.n:'').join('|');
+  const campeonesCambiaron = campeones !== _simCampeones;
+  _simCampeones = campeones;
+  if(!estado) return;
+
+  const click = _simUltimoClick;
+  _simUltimoClick = null;
+  cont.querySelectorAll('.sim-col').forEach(c=>{
+    const i = c.querySelector('.sim-bar i'), antes = pctAntes[c.dataset.col] || 0;
+    if(i && antes !== +i.dataset.pct) gsap.fromTo(i, {width:antes+'%'}, {width:i.dataset.pct+'%', duration:.3, ease:'power2.out'});
+  });
+  // Los equipos que ya estaban en pantalla "viajan" a su nuevo lugar (reordenamiento de cruces);
+  // los que aparecen por primera vez entran con un rebote corto. El que el usuario acaba de
+  // elegir sale volando desde donde lo tocó hasta su lugar en la ronda siguiente.
+  Flip.from(estado, {
+    targets: cont.querySelectorAll('[data-flip-id]'),
+    duration: .3, ease: 'power2.out',
+    onEnter: els => els.forEach(el => {
+      if(click && el.dataset.n===click.n){
+        const r = el.getBoundingClientRect();
+        const dx = click.rect.left - r.left, dy = click.rect.top - r.top;
+        if(Math.abs(dy) < window.innerHeight){
+          gsap.fromTo(el, {x:dx, y:dy, zIndex:5}, {x:0, y:0, duration:.35, ease:'power2.out', clearProps:'zIndex,transform'});
+          el.classList.add('nuevo');
+          return;
+        }
+      }
+      gsap.fromTo(el, {opacity:0, scale:.94}, {opacity:1, scale:1, duration:.2, ease:'back.out(1.6)', clearProps:'transform,opacity'});
+    }),
+  });
+  if(campeonesCambiaron){
+    gsap.fromTo(cont.querySelectorAll('.sim-campeon:not(.pend)'), {opacity:0, scale:.85, y:10}, {opacity:1, scale:1, y:0, duration:.5, ease:'back.out(2)', clearProps:'transform,opacity'});
+  }
+}
+
+function simElegir(btn, ronda){
+  const n = btn.dataset.n;
+  const otros = [...btn.parentElement.querySelectorAll('.sim-eq')].map(b=>b.dataset.n).filter(x=>x && x!==n);
+  const s = _simPick(ronda);
+  if(s.has(n)){ s.delete(n); _simUltimoClick = null; }   // tocar de nuevo al ganador = deshacer
+  else { otros.forEach(o=>s.delete(o)); s.add(n); _simUltimoClick = { n, ronda, rect: btn.getBoundingClientRect() }; }
+  renderSimulador(true);
+}
+
+function reiniciarSimulador(){
+  Object.keys(SIM_PICKS).forEach(k=>delete SIM_PICKS[k]);
+  _simUltimoClick = null;
+  renderSimulador(true);
+}
+
+function cargarSimulador(){
+  const cont = document.getElementById('sim-cont');
+  if(!cont) return;
+  if(!_ultimoNonARows || !_ultimoNonBRows || !_ultimoRevARows || !_ultimoRevBRows){
+    cont.innerHTML = '<div class="sim-espera">Cargando...</div>';
+    setTimeout(cargarSimulador, 500);
+    return;
+  }
+  renderSimulador(false);
 }
 
 // ===== CALCULADORA =====
