@@ -51,7 +51,7 @@ async function buildAndUploadSnapshot() {
     sbGetTodo("planillas", `select=id,partido_id,equipo_id`),
     sbGetTodo("penales", `select=resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id`),
     sbGetTodo("partidos", `select=zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante&order=fecha`),
-    sbGetTodo("sanciones", `select=*&or=(estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada))&order=created_at.desc`),
+    sbGetTodo("sanciones", `select=*&or=(estado.eq.pendiente,tipo.eq.amarillas)&order=created_at.desc`),
     sbGetTodo("transferencias", `select=jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id`),
     sbGetTodo("planillas", `select=${arqSelect}&numero_camiseta=in.(1,12)`),
     sbGetTodo("fixture", `select=id,zona,fecha,equipo_local,equipo_visitante,arbitro,juez1,juez2,cuarto_arbitro&arbitro=not.is.null&arbitro=neq.`),
