@@ -758,6 +758,22 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
           <button class="btn btn-primary btn-sm" onclick="agregarArbitro()">+ Agregar</button>
         </div>
       </div>
+      <!-- Unificar: dos nombres que son la misma persona (p. ej. mal escrito). Reescribe el nombre en
+           todos los partidos (fixture y partidos, en los 4 roles) y borra el duplicado de la lista. -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-body">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;margin-bottom:.35rem;">🔀 Unificar árbitros</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;">Cuando la misma persona está cargada con dos nombres: elegí el nombre a corregir y el correcto. Se cambia en todos los partidos (árbitro, jueces de línea y 4° árbitro) y el nombre viejo se borra de la lista.</p>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="unif-de" list="unif-nombres" placeholder="Nombre a corregir" style="flex:1;min-width:180px;" oninput="unifReset()">
+            <span style="color:var(--muted);">→</span>
+            <input type="text" id="unif-a" list="unif-nombres" placeholder="Nombre correcto" style="flex:1;min-width:180px;" oninput="unifReset()">
+            <button class="btn btn-secondary btn-sm" onclick="unifBuscar()">Revisar</button>
+          </div>
+          <datalist id="unif-nombres"></datalist>
+          <div id="unif-res" style="font-size:13px;margin-top:.75rem;"></div>
+        </div>
+      </div>
       <div class="abm-list" id="arb-lista"><div style="padding:1rem;color:var(--muted);font-size:13px;">Cargando...</div></div>
     </div>
 
@@ -4921,6 +4937,7 @@ async function cargarABM(){
     CACHE.estadios = re.data||[];
     CACHE.tecnicos = rt.data||[];
     renderABMLista("arb-lista", CACHE.arbitros, "arbitros");
+    cargarNombresUnificar();
     renderABMLista("est-lista", CACHE.estadios, "estadios");
     renderABMLista("tec-lista", CACHE.tecnicos, "tecnicos");
   } catch(e){ console.log("ABM error", e); }
@@ -4946,6 +4963,76 @@ function renderABMLista(elId, items, tabla){
         <button class="abm-del" onclick="eliminarABM('${tabla}',${it.id})" title="Eliminar">×</button>
       </div>
     </div>`).join("");
+}
+
+// ── Unificar árbitros ──
+// Los partidos guardan el nombre como texto (no el id de la lista), por eso hay que reescribirlo
+// en fixture y en partidos, en los 4 roles.
+const _UNIF_TABLAS = ['fixture','partidos'];
+const _UNIF_CAMPOS = ['arbitro','juez1','juez2','cuarto_arbitro'];
+let _unifListo = null; // {de, a, total} revisado y pendiente de confirmar
+
+async function cargarNombresUnificar(){
+  const nombres = new Set((CACHE.arbitros||[]).map(a=>a.nombre));
+  for(const t of _UNIF_TABLAS){
+    const {data} = await sb.from(t).select(_UNIF_CAMPOS.join(','));
+    (data||[]).forEach(r=>_UNIF_CAMPOS.forEach(c=>{ if(r[c] && r[c].trim()) nombres.add(r[c].trim()); }));
+  }
+  const dl = document.getElementById('unif-nombres');
+  if(dl) dl.innerHTML = [...nombres].sort((a,b)=>a.localeCompare(b,'es')).map(n=>`<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+}
+
+function unifReset(){ _unifListo = null; document.getElementById('unif-res').innerHTML = ''; }
+
+async function unifBuscar(){
+  const de = document.getElementById('unif-de').value.trim();
+  const a = document.getElementById('unif-a').value.trim();
+  const res = document.getElementById('unif-res');
+  if(!de || !a){ res.innerHTML = '<span style="color:#e57373;">Completá los dos nombres.</span>'; return; }
+  if(de === a){ res.innerHTML = '<span style="color:#e57373;">Los dos nombres son iguales.</span>'; return; }
+  res.innerHTML = 'Revisando...';
+  // Partidos (filas de fixture) donde aparece el nombre a corregir, en cualquier rol
+  const filtro = _UNIF_CAMPOS.map(c=>`${c}.eq."${de.replace(/"/g,'\\"')}"`).join(',');
+  const {data, error} = await sb.from('fixture').select('id').or(filtro);
+  if(error){ res.innerHTML = `<span style="color:#e57373;">Error: ${error.message}</span>`; return; }
+  const total = (data||[]).length;
+  const enLista = (CACHE.arbitros||[]).some(x=>x.nombre===de);
+  if(!total && !enLista){ res.innerHTML = `<span style="color:#e57373;">"${de}" no aparece en ningún partido ni en la lista.</span>`; return; }
+  _unifListo = {de, a, total};
+  res.innerHTML = `Se va a cambiar <b>${de}</b> por <b>${a}</b> en <b>${total}</b> partido${total===1?'':'s'}${enLista ? ' y se va a borrar de la lista' : ''}.
+    <button class="btn btn-primary btn-sm" style="margin-left:.5rem;" onclick="unifConfirmar()">Confirmar</button>`;
+}
+
+async function unifConfirmar(){
+  if(!_unifListo) return;
+  const {de, a} = _unifListo;
+  const res = document.getElementById('unif-res');
+  res.innerHTML = 'Unificando...';
+  try {
+    for(const t of _UNIF_TABLAS){
+      for(const c of _UNIF_CAMPOS){
+        const {error} = await sb.from(t).update({[c]: a}).eq(c, de);
+        if(error) throw new Error(`${t}.${c}: ${error.message}`);
+      }
+    }
+    // El correcto queda en la lista (si no estaba, se agrega) y el viejo se borra.
+    if(!(CACHE.arbitros||[]).some(x=>x.nombre===a)){
+      const {error} = await sb.from('arbitros').insert({nombre:a});
+      if(error) throw new Error('arbitros: '+error.message);
+    }
+    const {error:errDel} = await sb.from('arbitros').delete().eq('nombre', de);
+    if(errDel) throw new Error('arbitros: '+errDel.message);
+  } catch(e){
+    res.innerHTML = `<span style="color:#e57373;">Error: ${e.message}. Lo que ya se cambió quedó guardado; podés volver a intentar.</span>`;
+    return;
+  }
+  _unifListo = null;
+  res.innerHTML = `<span style="color:#4caf50;">✓ Listo: "${de}" ahora es "${a}".</span>`;
+  document.getElementById('unif-de').value = '';
+  document.getElementById('unif-a').value = '';
+  regenerarFotoEstadisticas();
+  regenerarFotoSegundaFase();
+  await cargarABM();
 }
 
 async function editarABM(tabla, id, nombreActual){
