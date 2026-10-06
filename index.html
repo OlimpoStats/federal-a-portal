@@ -1463,7 +1463,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
       </div>
       <div id="arbicont-asistentes" style="display:none;">
         <p class="sec">🚩 ASISTENTES</p>
-        <div class="tabla-mini" id="tbl-asistentes"></div>
+        <div class="tabla-mini" id="tbl-arbi-asistentes"></div>
       </div>
     </div>
 
@@ -6886,7 +6886,7 @@ function showArbiSubTab(tab, el){
 // (juez de línea o 4° árbitro).
 let _ASIS_PARTIDOS = {};
 function renderAsistentes(){
-  const cont = document.getElementById('tbl-asistentes');
+  const cont = document.getElementById('tbl-arbi-asistentes');
   if(!cont) return;
   const nombres = Object.keys(_ASIS_PARTIDOS).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
   if(!nombres.length){ cont.innerHTML = '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>'; return; }
