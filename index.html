@@ -1509,7 +1509,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 
       <div id="jugcont-disciplina" style="display:none;">
         <div id="disc-top-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div><p class="sec">🟨 Amarillas computables</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
+          <div><p class="sec">🟨 Próximos a la suspensión</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
           <div>
             <div id="sanc-pendientes-pub-wrap"><p class="sec">⛔ Suspensiones pendientes</p><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
             <p class="sec" style="margin-top:1rem;">🟨🟥 Disciplina por equipo</p>
@@ -5312,7 +5312,7 @@ async function cargarEstadisticas(){
       }
       const suspended = !!ultimaQuinta && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, 1);
       const computables = enPlayoff ? cc : 0;
-      if(computables>=1||suspended){
+      if(computables>=3||suspended){
         amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:computables};
       }
     });
@@ -5661,7 +5661,7 @@ async function cargarEstadisticas(){
       }).join('')
       + cincoAmarillas.map((j,i)=>`<tr>
           <td><span class="pos">${sancPend.length+i+1}</span></td>
-          <td>${fmtJug(j.nombre, j.equipo, j.key)}</td>
+          <td>${fmtJug(j.nombre, j.equipo)}</td>
           <td style="text-align:center;font-size:13px;">🟨×5</td>
           <td style="text-align:center;font-weight:700;color:#ffa726;">Acumulación</td>
         </tr>`).join('')
@@ -5696,9 +5696,9 @@ async function cargarEstadisticas(){
       </tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // AMARILLAS COMPUTABLES: todos los que tienen al menos una desde los playoffs (Primer y
-    // Segundo Ascenso), más los que siguen suspendidos por la 5ª
-    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=1).sort((a,b)=>
+    // PRÓXIMOS A LA SUSPENSIÓN: 3 y 4 amarillas computables (desde los playoffs, Primer y
+    // Segundo Ascenso). Los suspendidos por la 5ª van en "Suspensiones pendientes".
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=3&&j.count<=4).sort((a,b)=>
       b.count-a.count ||
       zonaDeEquipo(a.equipo).localeCompare(zonaDeEquipo(b.equipo)) ||
       (a.equipo||'').localeCompare(b.equipo||'')
@@ -5708,9 +5708,10 @@ async function cargarEstadisticas(){
     )+amLimRows.map((j,i)=>{
       const color=j.count>=5?'#e57373':'#ffa726';
       const badge = j.count>=5 ? `<span style="font-size:9px;background:#e57373;color:#fff;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:4px;">SANCIONADO</span>` : `<span style="font-size:10px;color:${color};">${j.count}/5</span>`;
-      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
+      // Sin la key: acá va solo el club actual (el de su última amarilla), no "2 clubes"
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
     }).join('')+'</tbody></table>'
-    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Nadie tiene 3 o 4 amarillas computables por ahora.</div>';
 
     // Partidos jugados por club (para filtro de arqueros con al menos 50%)
     const clubMatchCount = {};
