@@ -1091,6 +1091,20 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .ztab:hover{opacity:1;background:rgba(232,196,74,.12);}
 .ztab.active{background:linear-gradient(90deg,#ffe27a,#e8a83a);color:#1a1405;border-color:transparent;border-radius:999px;box-shadow:0 0 16px rgba(232,196,74,.4);}
 .modal,.contacto-modal{background:linear-gradient(180deg,#1d1a12,#13120e);border-color:rgba(232,196,74,.25);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(232,196,74,.08);}
+
+/* Animaciones: entrada en cascada SOLO mientras la página recién se abre (goPage le pone la clase
+   anim-in un momento), así las actualizaciones en vivo no vuelven a animar todo. Más el brillo
+   dorado al pasar el mouse. Nada de esto cambia tamaños ni posiciones finales. */
+@keyframes entraSube{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes entraFila{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.anim-in .partido,.anim-in .llave-card,.anim-in .espejo-card,.anim-in .cruce-merito-card,.anim-in .fecha-hdr,.anim-in .tabla-mini,.anim-in .oc-toggle{animation:entraSube .4s cubic-bezier(.2,.8,.2,1) both;}
+.anim-in .tabla-mini tbody tr{animation:entraFila .3s ease-out both;animation-delay:0ms;}
+.anim-in .tabla-mini tbody tr:nth-child(2){animation-delay:25ms;}.anim-in .tabla-mini tbody tr:nth-child(3){animation-delay:50ms;}.anim-in .tabla-mini tbody tr:nth-child(4){animation-delay:75ms;}.anim-in .tabla-mini tbody tr:nth-child(5){animation-delay:100ms;}.anim-in .tabla-mini tbody tr:nth-child(6){animation-delay:125ms;}.anim-in .tabla-mini tbody tr:nth-child(7){animation-delay:150ms;}.anim-in .tabla-mini tbody tr:nth-child(8){animation-delay:175ms;}.anim-in .tabla-mini tbody tr:nth-child(9){animation-delay:200ms;}.anim-in .tabla-mini tbody tr:nth-child(10){animation-delay:225ms;}.anim-in .tabla-mini tbody tr:nth-child(11){animation-delay:250ms;}.anim-in .tabla-mini tbody tr:nth-child(12){animation-delay:275ms;}.anim-in .tabla-mini tbody tr:nth-child(13){animation-delay:300ms;}.anim-in .tabla-mini tbody tr:nth-child(14){animation-delay:325ms;}.anim-in .tabla-mini tbody tr:nth-child(15){animation-delay:350ms;}.anim-in .tabla-mini tbody tr:nth-child(16){animation-delay:375ms;}.anim-in .tabla-mini tbody tr:nth-child(n+17){animation-delay:400ms;}
+.anim-in .partido:nth-child(2),.anim-in .llave-card:nth-child(2){animation-delay:35ms;}.anim-in .partido:nth-child(3),.anim-in .llave-card:nth-child(3){animation-delay:70ms;}.anim-in .partido:nth-child(4),.anim-in .llave-card:nth-child(4){animation-delay:105ms;}.anim-in .partido:nth-child(5),.anim-in .llave-card:nth-child(5){animation-delay:140ms;}.anim-in .partido:nth-child(6),.anim-in .llave-card:nth-child(6){animation-delay:175ms;}.anim-in .partido:nth-child(7),.anim-in .llave-card:nth-child(7){animation-delay:210ms;}.anim-in .partido:nth-child(8),.anim-in .llave-card:nth-child(8){animation-delay:245ms;}.anim-in .partido:nth-child(9),.anim-in .llave-card:nth-child(9){animation-delay:280ms;}.anim-in .partido:nth-child(10),.anim-in .llave-card:nth-child(10){animation-delay:315ms;}
+.partido,.llave-card,.espejo-card,.cruce-merito-card{transition:border-color .15s,box-shadow .2s;}
+.partido:hover,.llave-card:hover,.espejo-card:hover,.cruce-merito-card:hover{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 1px rgba(232,196,74,.28),0 0 18px rgba(232,196,74,.12);}
+.tabla-mini tbody tr{transition:background .15s;}
+@media (prefers-reduced-motion:reduce){.anim-in *{animation:none!important;}}
 </style>
 </head>
 <body>
@@ -1239,7 +1253,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 </div>
 
 <!-- INICIO -->
-<div class="page active" id="page-inicio">
+<div class="page active anim-in" id="page-inicio">
   <div class="inicio-grid">
     <div>
       <p class="sec" style="color:#fff;">Resultados</p>
@@ -4741,6 +4755,14 @@ function goPage(id, el){
   if(!page) return;
   page.classList.add("active","page-entering");
   if(el) el.classList.add("active");
+  // Entrada en cascada de tarjetas y filas (ver .anim-in en el CSS). La primera vez dura más
+  // en cada página porque los datos tardan en llegar. El Simulador tiene sus propias animaciones.
+  if(id!=="simulador"){
+    page.classList.add("anim-in");
+    clearTimeout(page._animT);
+    page._animT = setTimeout(()=>page.classList.remove("anim-in"), page._yaAnimo ? 1200 : 4000);
+    page._yaAnimo = true;
+  }
   window.scrollTo(0,0);
   if(id==="fixture"){renderFxTabs();renderFxCont();}
   if(id==="estadisticas") cargarEstadisticas();
@@ -6591,6 +6613,8 @@ async function init(){
     }
   } else {
     const startPage = _PATH_MAP[location.pathname];
+    // El Inicio arranca activo desde el HTML (con anim-in): se la saca cuando ya entró todo.
+    { const pi = document.getElementById('page-inicio'); pi._animT = setTimeout(()=>pi.classList.remove('anim-in'), 4000); }
     if(startPage && startPage !== 'inicio'){
       goPage(startPage, document.querySelector(`.ni[onclick*="'${startPage}'"]`));
     }
