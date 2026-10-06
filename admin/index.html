@@ -6435,6 +6435,12 @@ async function importarPlantelExcel(){
 // zona=null (sanciones viejas anteriores a la Segunda Fase) → se asume Primera Fase.
 const _ZONAS_SEGUNDA_FASE = ['Nonagonal A','Nonagonal B','Reválida A','Reválida B'];
 function faseRankZona(z){ return _ZONAS_SEGUNDA_FASE.includes(z) ? 1 : 0; }
+// ¿Las amarillas de esta zona cuentan para el cómputo de suspensión? Solo las de playoffs: al
+// cerrar Nonagonal/Reválida se limpiaron las acumuladas (el Desempate Descenso fue parte de ese
+// cierre). Las suspensiones pendientes de antes se arrastran igual.
+function esZonaComputablePlayoff(z){
+  return !!z && !/^Zona [A-H]$/.test(z) && !_ZONAS_SEGUNDA_FASE.includes(z) && z !== 'Desempate Descenso';
+}
 function fechaAbsolutaZona(zona, fecha){
   const f = Number(fecha) || 0;
   if(!f) return 0;
@@ -6471,6 +6477,25 @@ async function cargarSancionados(){
   }
   const {data: playedPartidos} = await sb.from('partidos')
     .select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre').not('goles_local','is',null);
+  // Partidos jugados con su día real: para saber si un equipo ya jugó DESPUÉS de una sanción
+  // (en playoffs todas las rondas son "fecha 1", el número de fecha ya no alcanza).
+  const {data: fixtureJugados} = await sb.from('fixture')
+    .select('zona,fecha,equipo_local,equipo_visitante,dia').not('goles_local','is',null);
+  const _diaPartido = {}; // "zona|fecha|equipo" → día
+  const _ordenesEquipo = {}; // equipo → órdenes de sus partidos jugados
+  (fixtureJugados||[]).forEach(p => [p.equipo_local, p.equipo_visitante].forEach(eq => {
+    if(p.dia) _diaPartido[`${p.zona}|${p.fecha}|${eq}`] = String(p.dia);
+  }));
+  const ordenPartido = (zona, fecha, equipo) =>
+    _diaPartido[`${zona}|${fecha}|${equipo}`] || '0000-' + String(fechaAbsolutaZona(zona, fecha)).padStart(5,'0');
+  (fixtureJugados||[]).forEach(p => [p.equipo_local, p.equipo_visitante].forEach(eq => {
+    (_ordenesEquipo[eq] = _ordenesEquipo[eq] || []).push(ordenPartido(p.zona, p.fecha, eq));
+  }));
+  // Cumplida = el equipo jugó después del partido de origen al menos tantos partidos como fechas de sanción
+  const sancionCumplida = (equipo, zona, fecha, partidos) => {
+    const origen = ordenPartido(zona, fecha, equipo);
+    return (_ordenesEquipo[equipo]||[]).filter(o => o > origen).length >= Math.max(1, Number(partidos) || 1);
+  };
 
   if(evErr){ document.getElementById('sanc-activas-cont').innerHTML = `<div style="padding:1rem;color:#e57373;font-size:13px;">Error: ${evErr.message}</div>`; return; }
 
@@ -6491,9 +6516,8 @@ async function cargarSancionados(){
     ...(allSancForCheck||[]).map(s => fechaAbsolutaZona(s.zona, s.fecha_origen))
   );
   const isServed = s => {
-    const fo = fechaAbsolutaZona(s.zona, s.fecha_origen);
-    if(!fo) return maxFechaJugada > 0; // sin fecha = dato viejo
-    return maxFechaJugada >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
+    if(!s.fecha_origen) return maxFechaJugada > 0; // sin fecha = dato viejo
+    return sancionCumplida(s.equipo, s.zona, s.fecha_origen, s.partidos_sancion);
   };
   console.log('[DEBUG sancionados] maxFechaJugada:', maxFechaJugada,
     '| playedPartidos:', (playedPartidos||[]).length,
@@ -6544,7 +6568,7 @@ async function cargarSancionados(){
     const key = `${jId}|${zo||''}|${fo}`;
     const legacyKey = `${jNom}|${eq}|${zo||''}|${fo}`;
     if(existingKeys.has(key) || existingKeys.has(legacyKey) || seenInBatch.has(key)) continue;
-    const estadoInicial = isServed({fecha_origen: fo, zona: zo, partidos_sancion: 0}) ? 'cumplida' : 'pendiente';
+    const estadoInicial = isServed({fecha_origen: fo, zona: zo, equipo: eq, partidos_sancion: 0}) ? 'cumplida' : 'pendiente';
     toCreate.push({ jugador_id: jId, jugador_nombre: jNom, equipo: eq, tipo: 'roja', zona: zo,
       partidos_sancion: 0, motivo: ev.tipo==='doble_amarilla'?'Doble amarilla':'Roja directa',
       fecha_origen: fo, estado: estadoInicial });
@@ -6580,9 +6604,20 @@ async function cargarSancionados(){
     if(!m.fo) return; // sin fecha no se puede determinar el umbral
     if(!amCountMap[m.jId]) amCountMap[m.jId] = {jNom:m.jNom, eq:m.eq, count:0, fechas:[]};
     amCountMap[m.jId].count++;
-    amCountMap[m.jId].fechas.push({fo:m.fo, zona:m.zona});
+    amCountMap[m.jId].fechas.push({fo:m.fo, zona:m.zona, eq:m.eq, orden:ordenPartido(m.zona, m.fo, m.eq)});
   });
-  Object.values(amCountMap).forEach(d => d.fechas.sort((a,b) => fechaAbsolutaZona(a.zona,a.fo) - fechaAbsolutaZona(b.zona,b.fo)));
+  Object.values(amCountMap).forEach(d => d.fechas.sort((a,b) => a.orden < b.orden ? -1 : a.orden > b.orden ? 1 : 0));
+  // Las amarillas que cruzan el 5 en cada ciclo, con el reinicio al empezar los playoffs (las
+  // acumuladas de Nonagonal/Reválida se limpiaron; cada tramo cuenta su ciclo desde 0).
+  const umbralesAmarillas = fechas => {
+    const out = []; let cc = 0, enPlayoff = false;
+    for(const it of fechas){
+      if(esZonaComputablePlayoff(it.zona) && !enPlayoff){ enPlayoff = true; cc = 0; }
+      cc++;
+      if(cc === 5){ cc = 0; out.push(it); }
+    }
+    return out;
+  };
 
   // Restar 5 por cada sanción de acumulación existente (incluyendo eliminadas: borrar no recrea)
   const accumSancExist = (allSancForCheck||[]).filter(s => s.tipo === 'amarillas');
@@ -6598,16 +6633,16 @@ async function cargarSancionados(){
 
   const toCreateAccum = [];
   Object.entries(amCountMap).forEach(([jId, d]) => {
-    if(d.count < 5) return;
     if((accumPendCount[jId]||0) > 0) return; // ya tiene una pendiente activa
-    // Usar la fecha de la amarilla que CRUZA el umbral actual (no la última amarilla)
-    // Umbral actual = (sanciones existentes + 1) × 5 → índice 0-based = sancExist×5 + 4
+    // Hay una sanción de acumulación por cada umbral; se crea la del primer umbral que todavía
+    // no tiene su registro (sanciones existentes = umbrales ya registrados)
+    const umbrales = umbralesAmarillas(d.fechas);
     const sancExist = accumSancCount[Number(jId)] || 0;
-    const umbralIdx = sancExist * 5 + 4; // 0-indexed
-    const umbralEntry = d.fechas[umbralIdx] ?? d.fechas[d.fechas.length - 1];
+    if(umbrales.length <= sancExist) return;
+    const umbralEntry = umbrales[sancExist];
     const umbralFo = umbralEntry.fo;
     const umbralZona = umbralEntry.zona;
-    const estadoInicial = isServed({fecha_origen: umbralFo, zona: umbralZona, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
+    const estadoInicial = isServed({fecha_origen: umbralFo, zona: umbralZona, equipo: umbralEntry.eq, partidos_sancion: 1}) ? 'cumplida' : 'pendiente';
     toCreateAccum.push({
       jugador_id: Number(jId), jugador_nombre: d.jNom, equipo: d.eq,
       tipo: 'amarillas', partidos_sancion: 1, zona: umbralZona,
@@ -6645,23 +6680,11 @@ async function cargarSancionados(){
   // Independiente del estado en DB — evita mostrar sanciones con fecha_origen incorrecta
   const amarillasSuspAhora = [];
   Object.entries(amCountMap).forEach(([jId, d]) => {
-    // Simular ciclos de 5 amarillas en orden cronológico
-    let cicloCount = 0;
-    let umbralFoCurrent = null;
-    for(const entry of d.fechas) {
-      cicloCount++;
-      if(cicloCount === 5) {
-        umbralFoCurrent = entry;
-        if(maxFechaJugada > fechaAbsolutaZona(entry.zona, entry.fo)) {
-          // Suspensión de este ciclo ya fue cumplida (el club jugó después)
-          cicloCount = 0; umbralFoCurrent = null;
-        } else {
-          // Suspensión activa
-          break;
-        }
-      }
-    }
-    if(cicloCount < 5 || !umbralFoCurrent) return; // no llegó al umbral o ya sirvió
+    // Suspendido si la última amarilla que cruzó el 5 todavía no se cumplió (el equipo no jugó
+    // después). Se arrastra aunque haya sido antes del reinicio de los playoffs.
+    const umbrales = umbralesAmarillas(d.fechas);
+    const umbralFoCurrent = umbrales[umbrales.length - 1];
+    if(!umbralFoCurrent || sancionCumplida(umbralFoCurrent.eq, umbralFoCurrent.zona, umbralFoCurrent.fo, 1)) return;
     // Buscar registro DB para el botón eliminar (por jugador + tipo)
     const dbSanc = activeSanc.find(s => s.jugador_id === Number(jId) && s.tipo === 'amarillas');
     amarillasSuspAhora.push({
@@ -6683,7 +6706,7 @@ async function cargarSancionados(){
     const partido = partidoMap[pl.partido_id];
     const fo = partido?.fecha;
     const zo = partido?.zona || null;
-    if(!fo || isServed({fecha_origen: fo, zona: zo, partidos_sancion: 0})) continue;
+    if(!fo || isServed({fecha_origen: fo, zona: zo, equipo: pl.equipos.nombre, partidos_sancion: 0})) continue;
     const key = `${jId}|${zo||''}|${fo}`;
     if(_rojasVistas.has(key)) continue;
     _rojasVistas.add(key);
