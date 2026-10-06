@@ -6657,7 +6657,7 @@ async function cargarSancionados(){
   // Limpieza: sanciones "roja" que se crearon por error a partir de una amarilla suelta (bug ya
   // corregido arriba). Solo las automáticas que nadie tocó (0 partidos, motivo "Roja directa")
   // y donde ese jugador vio una amarilla en ese partido pero ninguna roja/doble amarilla real
-  // → se marcan eliminadas.
+  // → se marcan 'cumplida' (la base no acepta 'eliminada'), así dejan de figurar como pendientes.
   const rojasReales = new Set(), amarillasVistas = new Set();
   for(const ev of (expEvs||[])){
     const p = partidoMap[ev.planillas?.partido_id];
@@ -6666,13 +6666,13 @@ async function cargarSancionados(){
     if(ev.tipo === 'amarilla') amarillasVistas.add(k); else rojasReales.add(k);
   }
   const rojasFalsas = (allSancForCheck||[]).filter(s => {
-    if(s.tipo!=='roja' || s.estado==='eliminada' || !s.jugador_id || !s.zona) return false;
+    if(s.tipo!=='roja' || s.estado!=='pendiente' || !s.jugador_id || !s.zona) return false;
     if(Number(s.partidos_sancion)>0 || s.motivo!=='Roja directa') return false;
     const k = `${s.jugador_id}|${s.zona}|${s.fecha_origen}`;
     return amarillasVistas.has(k) && !rojasReales.has(k);
   }).map(s=>s.id);
   for(let i = 0; i < rojasFalsas.length; i += 200){
-    await sb.from('sanciones').update({estado:'eliminada'}).in('id', rojasFalsas.slice(i, i + 200));
+    await sb.from('sanciones').update({estado:'cumplida'}).in('id', rojasFalsas.slice(i, i + 200));
   }
 
   // Todas las sanciones ya con lo recién creado: lo que el admin ajustó (partidos), borró
@@ -6966,8 +6966,10 @@ async function dismissSancionCumplida(id){
 
 async function eliminarSancion(id){
   if(!confirm('¿Eliminar esta sanción?')) return;
-  // Soft-delete: marcar como 'eliminada' para que no se recree automáticamente
-  const {error} = await sb.from('sanciones').update({estado:'eliminada'}).eq('id', id);
+  // Soft-delete: se marca 'cumplida' (la base no acepta otro estado: sanciones_estado_check
+  // solo permite pendiente / cumplida / recien_cumplida). Así no se muestra, no se recrea sola
+  // y el sitio no la cuenta como suspensión.
+  const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
   regenerarFotoEstadisticas();
   cargarSancionados();
