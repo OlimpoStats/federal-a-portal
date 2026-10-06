@@ -905,6 +905,15 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 .arbi-det-row td{padding:.5rem .75rem!important;border-bottom:1px solid #1a1a1a;}
 .arbi-match-link{cursor:pointer;font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;color:#e8c44a;text-decoration:underline;text-underline-offset:2px;transition:color .12s;}
 .arbi-match-link:hover{color:var(--accent);}
+.asis-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.45rem .6rem;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
+.asis-row:hover,.asis-row.open{background:rgba(255,255,255,.03);}
+.asis-res{font-size:12px;color:#999;white-space:nowrap;}
+.asis-det{background:#111;border-bottom:1px solid var(--border);padding:.2rem 0;}
+.asis-det-fila{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .6rem;padding:.35rem .75rem;border-bottom:1px solid #1a1a1a;}
+.asis-det-fila:last-child{border-bottom:none;}
+.asis-rol{font-size:11px;font-weight:700;padding:.1rem .45rem;border-radius:4px;white-space:nowrap;}
+.asis-rol.linea{background:rgba(232,196,74,.12);color:#e8c44a;}
+.asis-rol.cuarto{background:rgba(100,160,255,.12);color:#8ab4ff;}
 .plt-filter-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.3px;padding:4px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
 .plt-filter-btn:hover{color:#ddd;border-color:rgba(255,255,255,.3);}
 .plt-filter-btn.active{background:rgba(255,255,255,.1);color:#f0f0f0;border-color:rgba(255,255,255,.35);}
@@ -1414,8 +1423,18 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 
     <!-- ÁRBITROS -->
     <div id="stats-arbitros" style="display:none;">
-      <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
-      <div class="tabla-mini" id="tbl-arbitros"></div>
+      <div id="arbi-subtabs" style="display:flex;gap:.5rem;margin-bottom:1rem;">
+        <div class="ztab active" onclick="showArbiSubTab('principales',this)" style="font-size:12px;padding:.3rem .8rem;">Árbitros principales</div>
+        <div class="ztab" onclick="showArbiSubTab('asistentes',this)" style="font-size:12px;padding:.3rem .8rem;">Asistentes</div>
+      </div>
+      <div id="arbicont-principales">
+        <p class="sec">🧑‍⚖️ DETALLE DE ÁRBITROS</p>
+        <div class="tabla-mini" id="tbl-arbitros"></div>
+      </div>
+      <div id="arbicont-asistentes" style="display:none;">
+        <p class="sec">🚩 ASISTENTES</p>
+        <div class="tabla-mini" id="tbl-asistentes"></div>
+      </div>
     </div>
 
     <!-- DIR. TÉCNICOS -->
@@ -5849,6 +5868,25 @@ async function cargarEstadisticas(){
     _ARBI_SORT = {col:'pj', dir:-1};
     renderArbiTable();
 
+    // ASISTENTES — jueces de línea y 4° árbitros, con los partidos jugados en los que estuvieron
+    _ASIS_PARTIDOS = {};
+    const jugadosPorKey = {};
+    zonasFixture().forEach(z=>{
+      for(let f=1;f<=18;f++){
+        (FIXTURE[z][String(f)]||[]).forEach(m=>{ if(m.gl!==null) jugadosPorKey[`${z}_${f}_${m.local}_${m.visitante}`] = {zona:z, fecha:f, m}; });
+      }
+    });
+    (fixtureArbitros||[]).forEach(p=>{
+      const key = `${p.zona}_${p.fecha}_${p.equipo_local}_${p.equipo_visitante}`, j = jugadosPorKey[key];
+      if(!j) return;
+      [[p.juez1,'linea'],[p.juez2,'linea'],[p.cuarto_arbitro,'cuarto']].forEach(([n,rol])=>{
+        n = (n||'').trim(); if(!n) return;
+        (_ASIS_PARTIDOS[n] = _ASIS_PARTIDOS[n] || []).push({zona:j.zona, fecha:j.fecha, local:j.m.local, visitante:j.m.visitante, gl:j.m.gl, gv:j.m.gv,
+          rol, arbitro:p.arbitro, fichaKey:key, tienePlanilla:!!PLANILLA_CARGADA[key]});
+      });
+    });
+    renderAsistentes();
+
     // PENALES EJECUTANTES
     const penEjec = {};
     (penalesDB||[]).forEach(p=>{
@@ -6769,6 +6807,51 @@ function renderArbiTable(){
     ? html : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 }
 
+function showArbiSubTab(tab, el){
+  document.querySelectorAll('#arbi-subtabs .ztab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['principales','asistentes'].forEach(t=>{
+    const c = document.getElementById('arbicont-'+t);
+    if(c) c.style.display = t===tab ? '' : 'none';
+  });
+}
+
+// Asistentes: solo el listado de nombres; al tocar uno se despliegan sus partidos con el rol
+// (juez de línea o 4° árbitro).
+let _ASIS_PARTIDOS = {};
+function renderAsistentes(){
+  const cont = document.getElementById('tbl-asistentes');
+  if(!cont) return;
+  const nombres = Object.keys(_ASIS_PARTIDOS).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+  if(!nombres.length){ cont.innerHTML = '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>'; return; }
+  cont.innerHTML = nombres.map(n=>{
+    const ps = _ASIS_PARTIDOS[n], lin = ps.filter(p=>p.rol==='linea').length, cua = ps.length - lin;
+    const sid = 'asis-' + n.replace(/[^a-zA-Z0-9]/g,'_');
+    const resumen = [lin ? `🚩 ${lin}` : '', cua ? `4️⃣ ${cua}` : ''].filter(Boolean).join(' &nbsp;');
+    return `<div class="asis-row" id="${sid}" onclick="toggleAsisDetalle('${n.replace(/'/g,"\\'")}')">
+      <span>${n} <span style="font-size:10px;color:#555;">▾</span></span><span class="asis-res">${ps.length} PJ &nbsp;${resumen}</span></div>`;
+  }).join('') + `<div style="font-size:11px;color:#666;padding:.5rem .6rem;border-top:1px solid rgba(255,255,255,.06);">🚩 Juez de línea &nbsp; 4️⃣ 4° árbitro</div>`;
+}
+function toggleAsisDetalle(nombre){
+  const sid = 'asis-' + nombre.replace(/[^a-zA-Z0-9]/g,'_');
+  const row = document.getElementById(sid);
+  if(!row) return;
+  const abierto = document.getElementById(sid + '-det');
+  if(abierto){ abierto.remove(); row.classList.remove('open'); return; }
+  row.classList.add('open');
+  const partidos = (_ASIS_PARTIDOS[nombre]||[]).slice().sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
+  const det = document.createElement('div');
+  det.id = sid + '-det';
+  det.className = 'asis-det';
+  det.innerHTML = partidos.map(m=>`<div class="asis-det-fila">
+      <span class="asis-rol ${m.rol}">${m.rol==='linea' ? '🚩 Juez de línea' : '4️⃣ 4° árbitro'}</span>
+      <span class="arbi-match-link" onclick="event.stopPropagation();verFicha('${m.fichaKey}',${!!m.tienePlanilla})">${m.local} ${m.gl}–${m.gv} ${m.visitante}</span>
+      <span style="font-size:11px;color:#888;">${fechaLabel(m.zona,m.fecha)}</span>
+      ${m.arbitro ? `<span style="font-size:11px;color:#aaa;">🧑‍⚖️ ${m.arbitro}</span>` : ''}
+    </div>`).join('');
+  row.insertAdjacentElement('afterend', det);
+}
+
 function sortArbiTable(col){
   if(_ARBI_SORT.col===col) _ARBI_SORT.dir*=-1;
   else { _ARBI_SORT.col=col; _ARBI_SORT.dir=-1; }
@@ -7437,9 +7520,10 @@ function _simCard(l, lado){
   return `<div class="sim-card${l.real?' real':''}">${_simFila(l, l.mejor, lado)}${_simFila(l, l.peor, lado)}</div>`;
 }
 function _simCampeon(label, eq){
+  const titulo = label==='Segundo ascenso' ? 'Ganador' : 'Campeón';
   return eq
-    ? `<div class="sim-campeon" data-campeon="${label}">${escudoHTML(eq.n,'me')}<div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 Campeón · ${label}</span><span class="sim-campeon-n">${eq.n}</span></div></div>`
-    : `<div class="sim-campeon pend"><span class="sim-q">?</span><div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 Campeón · ${label}</span><span class="sim-campeon-n">Por definir</span></div></div>`;
+    ? `<div class="sim-campeon" data-campeon="${label}">${escudoHTML(eq.n,'me')}<div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 ${titulo} · ${label}</span><span class="sim-campeon-n">${eq.n}</span></div></div>`
+    : `<div class="sim-campeon pend"><span class="sim-q">?</span><div class="sim-campeon-txt"><span class="sim-campeon-lbl">🏆 ${titulo} · ${label}</span><span class="sim-campeon-n">Por definir</span></div></div>`;
 }
 
 // Columnas de la pantalla: el Primer Ascenso (Semis + Final) y cada ronda del Segundo Ascenso.
