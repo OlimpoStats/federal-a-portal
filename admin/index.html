@@ -6772,6 +6772,8 @@ async function cargarSancionados(){
     });
   }
 
+  // Si se crearon, limpiaron o cerraron sanciones, actualizar la foto que lee el sitio público
+  if(toCreate.length || toCreateAccum.length || rojasFalsas.length || toMarkCumplida.length) regenerarFotoEstadisticas();
   const sancToRender = [...amarillasSuspAhora, ...rojasSuspAhora];
   console.log('[DEBUG v3] sancToRender:', sancToRender.length,
     '| amarillas:', amarillasSuspAhora.length, '| rojas:', rojasSuspAhora.length);
@@ -6849,6 +6851,7 @@ async function updatePartidosSancion(id, delta, current, btn){
   const newVal = Math.max(0, (current||0) + delta);
   const {error} = await sb.from('sanciones').update({partidos_sancion: newVal}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
+  regenerarFotoEstadisticas(); // para que el sitio público vea el cambio
   const wrap = btn.parentElement;
   const numEl = wrap.querySelector('[data-sanc-num]');
   if(numEl){ numEl.textContent = newVal; numEl.dataset.sancNum = newVal; numEl.style.color = newVal > 0 ? '#f0b429' : '#555'; }
@@ -6950,12 +6953,14 @@ async function agregarSancion(){
 async function marcarSancionCumplida(id){
   const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
+  regenerarFotoEstadisticas();
   cargarSancionados();
 }
 
 async function dismissSancionCumplida(id){
   const {error} = await sb.from('sanciones').update({estado:'cumplida'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
+  regenerarFotoEstadisticas();
   cargarSancionados();
 }
 
@@ -6964,6 +6969,7 @@ async function eliminarSancion(id){
   // Soft-delete: marcar como 'eliminada' para que no se recree automáticamente
   const {error} = await sb.from('sanciones').update({estado:'eliminada'}).eq('id', id);
   if(error){ alert('Error: ' + error.message); return; }
+  regenerarFotoEstadisticas();
   cargarSancionados();
 }
 </script>
