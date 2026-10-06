@@ -594,7 +594,6 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Estilo "vidrio" oscuro con brillos dorados (elegido por el usuario sobre una maqueta). Todas
    las rondas juntas en columnas, como un cuadro que se reacomoda solo; en pantallas medianas se
    desplaza de costado y en mobile van una debajo de otra. */
-#page-simulador.active::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 600px at 10% -10%,rgba(232,196,74,.14),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(255,150,40,.10),transparent 60%),#0b0a07;}
 .sim-wrap{max-width:1280px;margin:0 auto;padding-bottom:2.5rem;}
 .sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
 .sim-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -1075,6 +1074,23 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 .calc-match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;}
 .calc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 @media(max-width:700px){.calc-form-grid{grid-template-columns:1fr;}}
+
+/* ── ESTÉTICA MODERNA ──
+   Vidrio oscuro con brillos dorados, la misma del Simulador, aplicada a los componentes comunes.
+   Solo cambia colores, bordes, sombras y redondeos: no toca tamaños ni cómo se acomodan las
+   cosas (los ajustes de mobile siguen igual). */
+body{background:#0b0a07;}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 600px at 10% -10%,rgba(232,196,74,.12),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(255,150,40,.08),transparent 60%);}
+.hdr{background:rgba(14,13,10,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 1px 18px rgba(232,196,74,.15);}
+.tabla-mini,.fecha-hdr,.partido,.llave-card,.cruce-merito-card,.oc-toggle,.oc-collapse-inner,.espejo-card,.placeholder{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border-color:rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.tabla-mini{border-radius:12px;}
+.fecha-hdr,.oc-toggle{border-radius:12px;}
+.tabla-mini thead th,.tabla-mini thead tr{background:rgba(255,255,255,.045);}
+.tabla-mini tbody tr:hover{background:rgba(232,196,74,.05);}
+.ztab{background:rgba(255,255,255,.05);color:var(--accent);border-color:rgba(232,196,74,.35);border-radius:999px;}
+.ztab:hover{opacity:1;background:rgba(232,196,74,.12);}
+.ztab.active{background:linear-gradient(90deg,#ffe27a,#e8a83a);color:#1a1405;border-color:transparent;border-radius:999px;box-shadow:0 0 16px rgba(232,196,74,.4);}
+.modal,.contacto-modal{background:linear-gradient(180deg,#1d1a12,#13120e);border-color:rgba(232,196,74,.25);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(232,196,74,.08);}
 </style>
 </head>
 <body>
