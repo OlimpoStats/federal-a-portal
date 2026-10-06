@@ -23,6 +23,7 @@ const GRUPOS2 = [
   "Cuartos Primer Ascenso - Ida", "Cuartos Primer Ascenso - Vuelta",
   "Semifinal Primer Ascenso - Ida", "Semifinal Primer Ascenso - Vuelta",
   "Final Primer Ascenso",
+  "Dieciseisavos Segundo Ascenso - Ida", "Dieciseisavos Segundo Ascenso - Vuelta",
   "Desempate Descenso",
 ];
 const ZONAS_FILTRO = `(${GRUPOS2.map(z => `"${z}"`).join(",")})`;

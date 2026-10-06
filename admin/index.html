@@ -556,8 +556,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
       <div id="hs-seed-cuartos-wrap" style="margin-bottom:1rem;">
-        <button class="btn btn-primary" onclick="seedCuartosPlayoff()">⚡ Cargar Cuartos de Final (playoff) + Desempate Descenso</button>
-        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Cuartos Primer Ascenso - Ida/Vuelta" y "Desempate Descenso" con los cruces ya definidos. No hace nada si ya existen.</p>
+        <button class="btn btn-primary" onclick="seedSemis16vos()">⚡ Cargar Semis (Primer Ascenso) + 16vos (Segundo Ascenso)</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Semifinal Primer Ascenso - Ida/Vuelta" y "Dieciseisavos Segundo Ascenso - Ida/Vuelta" con los cruces ya definidos. No hace nada si ya existen.</p>
       </div>
       <div class="card">
         <div class="card-body">
@@ -1130,6 +1130,53 @@ async function seedCuartosPlayoff(){
   // estos partidos hasta el primer gol en vivo o hasta que se les cargue día/hora — se dispara
   // ya mismo para que, aunque falte programarlos, la zona ya aparezca (partidos sin día/hora
   // igual se muestran, solo no tienen horario todavía).
+  regenerarFotoSegundaFase();
+}
+
+// Botón de uso único (Programación) para sembrar las Semis del Primer Ascenso y los 16vos del
+// Segundo Ascenso, ida y vuelta. Ventaja deportiva: el mejor ubicado visita en la ida y es local
+// en la vuelta. Los cruces salen tal cual de la home (cuadro del Primer Ascenso y "Orden para
+// cruces", mejor vs peor) con los Cuartos ya jugados.
+async function seedSemis16vos(){
+  if(FIXTURE["Semifinal Primer Ascenso - Ida"] || FIXTURE["Dieciseisavos Segundo Ascenso - Ida"]){
+    alert("Ya existen las zonas de Semis / 16vos, no se vuelven a insertar.");
+    return;
+  }
+  if(!confirm("Esto va a cargar las 2 Semis del Primer Ascenso y los 12 cruces de 16vos del Segundo Ascenso (ida y vuelta, 28 partidos). ¿Continuar?")) return;
+  const filas = [
+    {zona:"Semifinal Primer Ascenso - Ida", fecha:1, equipo_local:"Olimpo", equipo_visitante:"San Martín (F)"},
+    {zona:"Semifinal Primer Ascenso - Ida", fecha:1, equipo_local:"Cipolletti", equipo_visitante:"Alvarado"},
+    {zona:"Semifinal Primer Ascenso - Vuelta", fecha:1, equipo_local:"San Martín (F)", equipo_visitante:"Olimpo"},
+    {zona:"Semifinal Primer Ascenso - Vuelta", fecha:1, equipo_local:"Alvarado", equipo_visitante:"Cipolletti"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Defensores (PV)", equipo_visitante:"Gimnasia (Ch)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Juv. Unida (SL)", equipo_visitante:"Sol de América (F)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sp. Las Parejas", equipo_visitante:"Defensores (VR)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"FADEP", equipo_visitante:"Atenas (RC)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"El Linqueño", equipo_visitante:"Douglas Haig"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Dep. Rincón", equipo_visitante:"Kimberley"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Gimnasia (CDU)", equipo_visitante:"9 de Julio (Rafaela)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"San Martín (M)", equipo_visitante:"Argentino (MM)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Costa Brava", equipo_visitante:"Villa Mitre"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Boca Unidos", equipo_visitante:"Bartolomé Mitre"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Juv. Antoniana", equipo_visitante:"Huracán LH"},
+    {zona:"Dieciseisavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sp. Belgrano", equipo_visitante:"Sarmiento (LB)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Gimnasia (Ch)", equipo_visitante:"Defensores (PV)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Sol de América (F)", equipo_visitante:"Juv. Unida (SL)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Defensores (VR)", equipo_visitante:"Sp. Las Parejas"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Atenas (RC)", equipo_visitante:"FADEP"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Douglas Haig", equipo_visitante:"El Linqueño"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Kimberley", equipo_visitante:"Dep. Rincón"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"9 de Julio (Rafaela)", equipo_visitante:"Gimnasia (CDU)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Argentino (MM)", equipo_visitante:"San Martín (M)"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Villa Mitre", equipo_visitante:"Costa Brava"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Bartolomé Mitre", equipo_visitante:"Boca Unidos"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Huracán LH", equipo_visitante:"Juv. Antoniana"},
+    {zona:"Dieciseisavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Sarmiento (LB)", equipo_visitante:"Sp. Belgrano"},
+  ];
+  const {error} = await sb.from("fixture").insert(filas);
+  if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
+  alert("Listo — se cargaron los 28 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
+  await cargarFixture();
   regenerarFotoSegundaFase();
 }
 
