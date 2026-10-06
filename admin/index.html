@@ -6468,7 +6468,7 @@ async function cargarSancionados(){
   let allSancForCheck = [], sancPage = 0;
   while(true){
     const {data} = await sb.from('sanciones')
-      .select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo,zona')
+      .select('id,jugador_id,jugador_nombre,equipo,fecha_origen,estado,tipo,zona,partidos_sancion,motivo')
       .range(sancPage * 1000, (sancPage + 1) * 1000 - 1);
     if(!data || data.length === 0) break;
     allSancForCheck = allSancForCheck.concat(data);
@@ -6551,10 +6551,12 @@ async function cargarSancionados(){
     existingKeys.add(`${s.jugador_nombre}|${s.equipo}|${s.zona||''}|${s.fecha_origen||0}`);
   });
 
-  // Auto-create sanciones for expulsados not yet in DB
+  // Auto-create sanciones for expulsados not yet in DB (solo rojas y dobles amarillas: expEvs
+  // también trae las amarillas sueltas, que NO son expulsión)
   const toCreate = [];
   const seenInBatch = new Set();
   for(const ev of (expEvs||[])){
+    if(ev.tipo !== 'roja' && ev.tipo !== 'doble_amarilla') continue;
     const pl = ev.planillas;
     if(!pl?.jugadores?.id || !pl?.equipos) continue;
     const jId = pl.jugadores.id;
@@ -6652,6 +6654,44 @@ async function cargarSancionados(){
   });
   if(toCreateAccum.length) await sb.from('sanciones').insert(toCreateAccum);
 
+  // Limpieza: sanciones "roja" que se crearon por error a partir de una amarilla suelta (bug ya
+  // corregido arriba). Solo las automáticas que nadie tocó (0 partidos, motivo "Roja directa")
+  // y donde ese jugador vio una amarilla en ese partido pero ninguna roja/doble amarilla real
+  // → se marcan eliminadas.
+  const rojasReales = new Set(), amarillasVistas = new Set();
+  for(const ev of (expEvs||[])){
+    const p = partidoMap[ev.planillas?.partido_id];
+    if(!p || !ev.planillas?.jugadores?.id) continue;
+    const k = `${ev.planillas.jugadores.id}|${p.zona||''}|${p.fecha}`;
+    if(ev.tipo === 'amarilla') amarillasVistas.add(k); else rojasReales.add(k);
+  }
+  const rojasFalsas = (allSancForCheck||[]).filter(s => {
+    if(s.tipo!=='roja' || s.estado==='eliminada' || !s.jugador_id || !s.zona) return false;
+    if(Number(s.partidos_sancion)>0 || s.motivo!=='Roja directa') return false;
+    const k = `${s.jugador_id}|${s.zona}|${s.fecha_origen}`;
+    return amarillasVistas.has(k) && !rojasReales.has(k);
+  }).map(s=>s.id);
+  for(let i = 0; i < rojasFalsas.length; i += 200){
+    await sb.from('sanciones').update({estado:'eliminada'}).in('id', rojasFalsas.slice(i, i + 200));
+  }
+
+  // Todas las sanciones ya con lo recién creado: lo que el admin ajustó (partidos), borró
+  // (eliminada) o dio por cumplida manda sobre el cálculo desde las tarjetas.
+  let sancTodas = [], stPage = 0;
+  while(true){
+    const {data} = await sb.from('sanciones')
+      .select('id,jugador_id,zona,fecha_origen,tipo,estado,partidos_sancion,created_at')
+      .range(stPage * 1000, (stPage + 1) * 1000 - 1);
+    if(!data || data.length === 0) break;
+    sancTodas = sancTodas.concat(data);
+    if(data.length < 1000) break;
+    stPage++;
+  }
+  const sancDe = (jId, tipo, zona, fo) => sancTodas
+    .filter(s => s.jugador_id===Number(jId) && s.tipo===tipo && (s.zona||null)===(zona||null) && Number(s.fecha_origen)===Number(fo))
+    .sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''))[0] || null;
+  const descartada = s => s && (s.estado==='eliminada' || s.estado==='cumplida');
+
   // Fetch only active sanciones for rendering
   // Paginar sanciones activas (pueden ser muchas por duplicados históricos)
   let activeSanc = [], activePage = 0;
@@ -6684,14 +6724,21 @@ async function cargarSancionados(){
     // después). Se arrastra aunque haya sido antes del reinicio de los playoffs.
     const umbrales = umbralesAmarillas(d.fechas);
     const umbralFoCurrent = umbrales[umbrales.length - 1];
-    if(!umbralFoCurrent || sancionCumplida(umbralFoCurrent.eq, umbralFoCurrent.zona, umbralFoCurrent.fo, 1)) return;
-    // Buscar registro DB para el botón eliminar (por jugador + tipo)
-    const dbSanc = activeSanc.find(s => s.jugador_id === Number(jId) && s.tipo === 'amarillas');
+    if(!umbralFoCurrent) return;
+    // Su registro en la base (el de ese umbral): si el admin la borró o la dio por cumplida no
+    // se muestra, y la cantidad de partidos es la que dejó el admin (puede ser 0)
+    // (registros viejos pueden tener otra zona/fecha: si no hay uno exacto, el último pendiente)
+    const dbSanc = sancDe(jId, 'amarillas', umbralFoCurrent.zona, umbralFoCurrent.fo)
+      || sancTodas.filter(s => s.jugador_id===Number(jId) && s.tipo==='amarillas' && s.estado==='pendiente')
+           .sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''))[0] || null;
+    if(descartada(dbSanc)) return;
+    const partidos = dbSanc ? Number(dbSanc.partidos_sancion)||0 : 1;
+    if(sancionCumplida(umbralFoCurrent.eq, umbralFoCurrent.zona, umbralFoCurrent.fo, partidos)) return;
     amarillasSuspAhora.push({
       id: dbSanc?.id ?? null, jugador_id: Number(jId),
       jugador_nombre: d.jNom, equipo: umbralFoCurrent.eq,
       fecha_origen: umbralFoCurrent.fo, zona: umbralFoCurrent.zona, tipo: 'amarillas',
-      partidos_sancion: 1, estado: 'pendiente', motivo: 'Acumulación de amarillas',
+      partidos_sancion: partidos, estado: 'pendiente', motivo: 'Acumulación de amarillas',
     });
   });
 
@@ -6706,13 +6753,17 @@ async function cargarSancionados(){
     const partido = partidoMap[pl.partido_id];
     const fo = partido?.fecha;
     const zo = partido?.zona || null;
-    if(!fo || isServed({fecha_origen: fo, zona: zo, equipo: pl.equipos.nombre, partidos_sancion: 0})) continue;
+    if(!fo) continue;
     const key = `${jId}|${zo||''}|${fo}`;
     if(_rojasVistas.has(key)) continue;
     _rojasVistas.add(key);
+    // Su registro en la base manda: borrada o dada por cumplida no se muestra, y se cumple
+    // según los partidos que cargó el admin
+    const dbSanc = sancDe(jId, 'roja', zo, fo);
+    if(descartada(dbSanc)) continue;
+    if(isServed({fecha_origen: fo, zona: zo, equipo: pl.equipos.nombre, partidos_sancion: dbSanc?.partidos_sancion ?? 0})) continue;
     const jNom = pl.jugadores.nombre_display || pl.jugadores.nombre || '?';
     const eq = pl.equipos.nombre || '?';
-    const dbSanc = activeSanc.find(s => s.tipo==='roja' && s.jugador_id===jId && Number(s.fecha_origen)===fo && (s.zona||null)===zo);
     rojasSuspAhora.push({
       id: dbSanc?.id ?? null, jugador_id: jId,
       jugador_nombre: jNom, equipo: eq, fecha_origen: fo, zona: zo,
