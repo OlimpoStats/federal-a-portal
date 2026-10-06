@@ -5134,7 +5134,7 @@ async function cargarEstadisticas(){
         sb.from('planillas').select('id,partido_id,equipo_id'),
         sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
         sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
-        sb.from('sanciones').select('*').or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)').order('created_at',{ascending:false}),
+        sb.from('sanciones').select('*').or('estado.eq.pendiente,tipo.eq.amarillas').order('created_at',{ascending:false}),
         sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
       ]);
       if(evRes0.error) throw evRes0.error;
@@ -5166,7 +5166,7 @@ async function cargarEstadisticas(){
       let sancFrom = 1000;
       while(sancionesDB.length % 1000 === 0 && sancionesDB.length > 0){
         const {data:sancBatch} = await sb.from('sanciones').select('*')
-          .or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)')
+          .or('estado.eq.pendiente,tipo.eq.amarillas')
           .order('created_at',{ascending:false}).range(sancFrom, sancFrom+999);
         if(!sancBatch?.length) break;
         sancionesDB = sancionesDB.concat(sancBatch);
@@ -5310,7 +5310,17 @@ async function cargarEstadisticas(){
         cc++;
         if(cc===5){ cc=0; ultimaQuinta=it; }
       }
-      const suspended = !!ultimaQuinta && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, 1);
+      // Lo que cargó el admin manda: si la borró, la dio por cumplida o la dejó en 0 partidos,
+      // no hay suspensión; si le puso más partidos, se cumple con esa cantidad.
+      let suspended = false;
+      if(ultimaQuinta){
+        const reg = (sancionesDB||[]).filter(s => s.tipo==='amarillas' && (s.zona||null)===(ultimaQuinta.zona||null)
+            && Number(s.fecha_origen)===Number(ultimaQuinta.fecha) && (String(s.jugador_id)===String(jId) || s.jugador_nombre===d.nombre))
+          .sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''))[0];
+        const partidos = reg ? Number(reg.partidos_sancion)||0 : 1;
+        const anulada = reg && (reg.estado==='eliminada' || reg.estado==='cumplida' || partidos===0);
+        suspended = !anulada && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, partidos);
+      }
       const computables = enPlayoff ? cc : 0;
       if(computables>=3||suspended){
         amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:computables};
