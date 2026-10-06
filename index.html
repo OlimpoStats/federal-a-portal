@@ -1509,7 +1509,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 
       <div id="jugcont-disciplina" style="display:none;">
         <div id="disc-top-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
-          <div><p class="sec">🟨 Próximos a la suspensión</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
+          <div><p class="sec">🟨 Amarillas computables</p><div class="tabla-mini" id="tbl-amarillas-limite"></div></div>
           <div>
             <div id="sanc-pendientes-pub-wrap"><p class="sec">⛔ Suspensiones pendientes</p><div class="tabla-mini" id="tbl-suspensiones-pendientes"></div></div>
             <p class="sec" style="margin-top:1rem;">🟨🟥 Disciplina por equipo</p>
@@ -5301,6 +5301,7 @@ async function cargarEstadisticas(){
     const amarillasLimiteMap={}; // jId → {key, nombre, equipo, count}
     Object.entries(_amFechas).forEach(([jId,d])=>{
       d.items.sort((a,b)=>a.orden<b.orden?-1:a.orden>b.orden?1:0);
+      d.equipo = d.items[d.items.length-1].equipo; // el club de su última amarilla (por si cambió de club)
       // Cada tramo (antes / desde los playoffs) cuenta su propio ciclo desde 0
       let cc=0, ultimaQuinta=null, enPlayoff=false;
       for(const it of d.items){
@@ -5311,7 +5312,7 @@ async function cargarEstadisticas(){
       }
       const suspended = !!ultimaQuinta && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, 1);
       const computables = enPlayoff ? cc : 0;
-      if(computables>=3||suspended){
+      if(computables>=1||suspended){
         amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:computables};
       }
     });
@@ -5695,8 +5696,9 @@ async function cargarEstadisticas(){
       </tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // AMARILLAS PARA LÍMITE (próximos a la suspensión: 4 y 5 computables)
-    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=4).sort((a,b)=>
+    // AMARILLAS COMPUTABLES: todos los que tienen al menos una desde los playoffs (Primer y
+    // Segundo Ascenso), más los que siguen suspendidos por la 5ª
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=1).sort((a,b)=>
       b.count-a.count ||
       zonaDeEquipo(a.equipo).localeCompare(zonaDeEquipo(b.equipo)) ||
       (a.equipo||'').localeCompare(b.equipo||'')
