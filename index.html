@@ -646,9 +646,30 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 @media(max-width:700px){
   .sim-title{font-size:26px;}
   .sim-cols{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:minmax(0,1fr);overflow-x:visible;}
-  .sim-eq{font-size:14px;padding:9px 11px;}
+  /* llaves de a 2 por fila en todas las fases (16vos mantiene sus dos bloques de 6) */
   .sim-col.doble{grid-column:auto;}
-  .sim-col.doble .sim-lista{display:flex;}
+  .sim-lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+  .sim-lista > .sim-card:only-child{grid-column:1/-1;}
+  .sim-col{padding:10px 8px;}
+  .sim-card{border-radius:11px;}
+  .sim-eq{font-size:12px;padding:7px 6px;gap:5px;}
+  .sim-eq .me,.sim-q{width:18px;height:18px;}
+  .sim-rank{font-size:10px;min-width:17px;}
+}
+/* Estadísticas › Generales en mobile: las 5 tablas entran enteras, sin scroll lateral.
+   Bloque aparte a propósito: no toca los @media(max-width:900px/700px) de más abajo. */
+@media(max-width:700px){
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t){max-width:none!important;overflow-x:hidden!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) table{table-layout:fixed;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) th{width:24px!important;padding:.35rem 0!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) th:nth-child(1){width:22px!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) th:nth-child(2){width:auto!important;padding-left:.3rem!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) th:nth-child(9),
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) th:nth-child(10){width:28px!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) td{padding:.45rem 0!important;font-size:12px!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) td:nth-child(2){overflow:hidden!important;padding-left:.3rem!important;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) .tr-eq{gap:.15rem;}
+  :is(#tbl-general,#tbl-local-stats,#tbl-visitante-stats,#tbl-1t,#tbl-2t) .tr-eq span{font-size:12px!important;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 }
 
 /* ── CONTACTO MODAL ── */
