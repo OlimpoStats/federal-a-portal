@@ -594,14 +594,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 /* Estilo "vidrio" oscuro con brillos dorados (elegido por el usuario sobre una maqueta). Todas
    las rondas juntas en columnas, como un cuadro que se reacomoda solo; en pantallas medianas se
    desplaza de costado y en mobile van una debajo de otra. */
-.sim-wrap{max-width:1280px;margin:0 auto;padding-bottom:2.5rem;}
+.sim-wrap{max-width:1500px;margin:0 auto;padding-bottom:2.5rem;}
 .sim-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
 .sim-title{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700;letter-spacing:.5px;background:linear-gradient(90deg,#fff,#ffe27a);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .sim-reset{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;border-radius:999px;padding:.4rem .95rem;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
 .sim-reset:hover{border-color:var(--accent);color:var(--accent);}
 .sim-nota{font-size:13px;color:#8a8577;margin:.3rem 0 0;line-height:1.5;}
 .sim-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);gap:12px;align-items:center;margin-top:18px;}
-@media(max-width:1300px) and (min-width:701px){.sim-cols{overflow-x:auto;padding-bottom:6px;}}
+@media(max-width:1500px) and (min-width:701px){.sim-cols{overflow-x:auto;padding-bottom:6px;}}
+/* 16vos: dos bloques de 6 llaves lado a lado, para que entre en pantallas de 1080p */
+.sim-col.doble{grid-column:span 2;}
+.sim-col.doble .sim-lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(6,auto);grid-auto-flow:column;gap:8px;}
 .sim-col{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px 10px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 40px rgba(0,0,0,.4);min-width:0;}
 .sim-col.completa{border-color:rgba(232,196,74,.3);}
 .sim-col-h{display:flex;align-items:baseline;justify-content:space-between;gap:.4rem;padding:0 2px;}
@@ -644,6 +647,8 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
   .sim-title{font-size:26px;}
   .sim-cols{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:minmax(0,1fr);overflow-x:visible;}
   .sim-eq{font-size:14px;padding:9px 11px;}
+  .sim-col.doble{grid-column:auto;}
+  .sim-col.doble .sim-lista{display:flex;}
 }
 
 /* ── CONTACTO MODAL ── */
@@ -7746,7 +7751,7 @@ function renderSimulador(anim){
     const hechas = llaves.filter(l=>l.ganador).length;
     const pct = jugable ? hechas / llaves.length * 100 : 0;
     const estado = !jugable ? c.estado : `${hechas}/${llaves.length}`;
-    return `<div class="sim-col${jugable ? '' : ' provisoria'}${jugable && hechas===llaves.length ? ' completa' : ''}" data-col="${c.id}">
+    return `<div class="sim-col${c.id==='sa-16' ? ' doble' : ''}${jugable ? '' : ' provisoria'}${jugable && hechas===llaves.length ? ' completa' : ''}" data-col="${c.id}">
       <div class="sim-col-h"><b>${c.nombre}</b><span>${estado}</span></div>
       <div class="sim-bar"><i style="width:${pct}%" data-pct="${pct}"></i></div>
       <div class="sim-col-body">${cuerpo}</div></div>`;
