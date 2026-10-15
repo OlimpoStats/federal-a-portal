@@ -82,6 +82,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
+.iv-fila{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--muted);white-space:nowrap;margin-top:1px;}
 .vs{font-size:11px;color:#444;letter-spacing:1px;font-weight:600;}
 .goleadores{font-size:12px;color:var(--muted);padding:.2rem .9rem .4rem;display:flex;justify-content:space-between;}
 .gol-local{text-align:left;flex:1;}
@@ -1324,7 +1325,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
         </div>
@@ -2707,6 +2708,21 @@ function penalesDe(m){
 // botón de ficha, barra de estadio/árbitro). Compartida entre el widget de Primera Fase
 // (renderPartidos, zonas ZONAS) y el de Segunda Fase (renderPartidos2, grupos GRUPOS2) —
 // antes este último dibujaba siempre "VS" fijo y nunca mostraba resultados/en vivo/streaming.
+// Partido de vuelta de una llave: resultado de la ida (ya visto desde el local de la vuelta) y
+// global, o null si no es vuelta o la ida no se jugó. En vivo/terminado el global suma lo de la vuelta.
+function idaVueltaDe(zona, f, m){
+  if(!/ - Vuelta$/.test(zona)) return null;
+  const ida = (FIXTURE[zona.replace(/ - Vuelta$/, ' - Ida')]?.[String(f)] || [])
+    .find(x => x.local===m.visitante && x.visitante===m.local || x.local===m.local && x.visitante===m.visitante);
+  if(!ida || ida.gl==null || ida.gv==null) return null;
+  const idaL = ida.local===m.local ? ida.gl : ida.gv, idaV = ida.local===m.local ? ida.gv : ida.gl;
+  const jugando = m.gl!=null && m.gv!=null;
+  return { ida:`${idaL}-${idaV}`, global: jugando ? `${idaL+m.gl}-${idaV+m.gv}` : null };
+}
+// Dónde se muestra "IDA"/"GLOBAL" en la fila de resultados: 'fila' (debajo de la hora o del
+// marcador) o 'barra' (en la barra de abajo, con estadio y árbitro). PRUEBA: falta que el
+// usuario elija una de las dos.
+let IDA_VUELTA_ESTILO = 'fila';
 function renderFilaPartido(zona, f, m, meta){
   const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
   const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
@@ -2723,14 +2739,17 @@ function renderFilaPartido(zona, f, m, meta){
   const rojasLocal = showRedIcons && _rl > 0 ? rojaIcon.repeat(_rl) : "";
   const rojasVisit = showRedIcons && _rv > 0 ? rojaIcon.repeat(_rv) : "";
 
+  const _iv = idaVueltaDe(zona, f, m);
+  const _ivTxt = _iv ? (_iv.global ? `GLOBAL: ${_iv.global}` : `IDA: ${_iv.ida}`) : '';
+  const _ivFila = _iv && IDA_VUELTA_ESTILO==='fila' ? `<div class="iv-fila">${_ivTxt}</div>` : '';
   let centro;
   if(m.gl!==null){
     const scoreClass = esEnVivo ? "score score-live" : "score";
-    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div>${_ivFila}</div>`;
   } else if(meta.hora){
-    centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
+    centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div>${_ivFila}</div>`;
   } else {
-    centro=`<div class="vs">VS</div>`;
+    centro=_ivFila ? `<div style="text-align:center"><div class="vs">VS</div>${_ivFila}</div>` : `<div class="vs">VS</div>`;
   }
 
   // gol_contra: swap sides - counts for the OTHER team
@@ -2767,11 +2786,14 @@ function renderFilaPartido(zona, f, m, meta){
 
   // Info bar: programmed = estadio + arbitro; live = no bar
   const infoItems = [];
+  const _ivBarra = _iv && IDA_VUELTA_ESTILO==='barra';
+  if(_ivBarra && m.gl===null) infoItems.push(`🔁 ${_ivTxt}`);
   if(!esEnVivo){
     if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
     if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
   }
-  const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
+  if(_ivBarra && m.gl!==null) infoItems.unshift(`🔁 ${_ivTxt}`);
+  const infoBarHTML = (infoItems.length && (m.gl===null || esEnVivo || _ivBarra)) ? `<div style="display:flex;align-items:stretch;gap:.4rem;margin-top:-1px;">
     <div class="partido-infobar-txt" style="flex:1;background:${_zc.color}12;border:1px solid ${_zc.color}22;border-top:none;border-radius:0 0 6px 6px;padding:.2rem .75rem .25rem;font-size:13px;color:#e0e0e0;display:flex;gap:.75rem;flex-wrap:wrap;">
       ${infoItems.join(' &nbsp;')}
     </div>
@@ -4218,7 +4240,7 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   const tituloEl = document.getElementById(tituloElId);
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  if(tituloEl) tituloEl.textContent = 'Primer Ascenso - Cuartos de Final';
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso';
   el.className = 'bnc-mirror-cont';
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
