@@ -2740,9 +2740,11 @@ function renderFilaPartido(zona, f, m, meta){
 
   const _iv = idaVueltaDe(zona, f, m);
   // Vuelta sin empezar: "IDA" en la barra de abajo (con estadio y árbitro). En vivo y terminado:
-  // "GLOBAL" debajo del marcador, con el número del que está pasando en amarillo.
+  // "GLOBAL" debajo del marcador, en blanco. Solo con el global empatado se pinta de amarillo
+  // el número del que pasa (el local de la vuelta, por ventaja deportiva).
+  const _ivEmp = _iv && _iv.global && _iv.global.l === _iv.global.v;
   const _ivFila = _iv && _iv.global
-    ? `<div class="iv-fila">GLOBAL: <span${_iv.global.pasaLocal?' class="iv-pasa"':''}>${_iv.global.l}</span>-<span${_iv.global.pasaLocal?'':' class="iv-pasa"'}>${_iv.global.v}</span></div>`
+    ? `<div class="iv-fila">GLOBAL: <span${_ivEmp?' class="iv-pasa"':''}>${_iv.global.l}</span>-${_iv.global.v}</div>`
     : '';
   let centro;
   if(m.gl!==null){
