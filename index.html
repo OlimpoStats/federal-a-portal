@@ -78,6 +78,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .esc img{width:100%;height:100%;object-fit:contain;}
 .eqn{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 .eq.vis .eqn{text-align:right;}
+/* Fila de resultados: el nombre largo pasa a un segundo renglón en vez de cortarse con "..."
+   (la etiqueta de ronda le quita lugar al local). Tope de 2 renglones. */
+.partido .eqn{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .grp-pill{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:18px;padding:0 5px;border-radius:999px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;margin-right:.22rem;white-space:nowrap;flex-shrink:0;}
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
