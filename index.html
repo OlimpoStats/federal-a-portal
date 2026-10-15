@@ -366,8 +366,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
    tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
    las 12). */
-.llave-card-p16{padding:.35rem .5rem;}
-.llave-card-p16 .llave-fila{padding:.15rem 0;}
+.llave-card-p16{padding:.3rem .5rem;}
+.llave-card-p16 .llave-fila{padding:.05rem 0;}
+.llave-card-p16 .llave-fila+.llave-fila{margin-top:.2rem;padding-top:.25rem;}
+.llave-card-p16 .llave-marc-val{font-size:14px;line-height:16px;}
+.llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:15px;}
+.llave-card-p16 .llave-marc-lbl{font-size:8px;line-height:9px;}
 .llave-card-p16 .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;}
 .llave-card-p16 .llave-marc{gap:.35rem;padding-left:.4rem;}
 .llave-card-p16 .llave-marc-cell{min-width:21px;}
@@ -503,10 +507,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
    bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
    Clase reusable (home + calculadora), no atada a un id. */
-.cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:1rem 0 .5rem;}
-.cp-sub:first-of-type{margin-top:0;}
+.cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;}
 .cp-rank{font-size:11px;color:var(--muted);min-width:24px;flex-shrink:0;}
-.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3rem;}
+.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem 1rem;}
 @media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
 /* zona tabs */
@@ -1313,8 +1316,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
         <div id="cruces-parciales-wrap" style="display:none;">
           <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Próxima fase</p>
           <p class="llave-nota">Así quedarían si las llaves terminaran como van ahora (en empate global pasa el primero de cada llave).</p>
-          <p class="cp-sub">Primer Ascenso - Final</p>
-          <div id="cp-final-cont" class="preview16-cont"></div>
           <p class="cp-sub">Segundo Ascenso - Octavos de Final</p>
           <div id="cp-octavos-cont" class="preview16-cont"></div>
         </div>
@@ -4573,7 +4574,7 @@ function calcCrucesParciales(){
     SIM_PICKS['sa-16'] = new Set(p16);
     const sim = calcSimulacion();
     return { hayDatos: pSemis.length + p16.length > 0 || base.sf.some(l=>l.real) || base.rondasSA['sa-16'].cruces.some(l=>l.real),
-             final: sim.fin, octavos: sim.rondasSA['sa-8'].cruces };
+             octavos: sim.rondasSA['sa-8'].cruces };
   } finally {
     Object.keys(SIM_PICKS).forEach(r=>{ delete SIM_PICKS[r]; });
     Object.assign(SIM_PICKS, guardado);
@@ -4595,7 +4596,6 @@ function renderCrucesParciales(){
   try { cp = yaSembrada ? null : calcCrucesParciales(); } catch(e){ cp = null; }
   if(!cp || !cp.hayDatos){ wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  document.getElementById('cp-final-cont').innerHTML = _cardCruceParcial(cp.final);
   document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(_cardCruceParcial).join('');
 }
 
