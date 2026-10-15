@@ -189,6 +189,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-eq-simple.llave-solo-escudo{justify-content:center;}
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-eq-simple.llave-eq-der{justify-content:flex-end;}
+/* El nombre ocupa todo el lado (flex:1): alineado a la derecha para que quede pegado a su
+   escudo y no al "vs" (se notaba en la Final con nombres cortos como "Cipolletti"). */
+.llave-eq-simple.llave-eq-der .llave-nombre{text-align:right;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .llave-nombre{font-size:14px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
@@ -418,6 +421,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
   .bnc-mirror-final{min-width:0;}
+}
+/* Notebook/tablet (701-1560px, cuadro apilado): los Cuartos ya jugados (tarjeta compacta, solo
+   escudo + goles) se estiraban a media fila y quedaban gigantes con un hueco entre escudo y
+   goles. Acá toman su tamaño natural, igual que en pantalla grande, y el par va centrado. */
+@media (min-width:701px) and (max-width:1560px){
+  .bnc-mirror-cont .llave-col-qf .bracket-pair{justify-content:center;gap:2rem;}
+  .bnc-mirror-cont .llave-col-qf .bracket-pair>.llave-card-compacta{flex:0 0 auto;}
+  /* Semis centradas (quedaban tiradas a la izquierda), igual que en celular. */
+  .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
 }
 /* Cuartos lado a lado en celular: tarjeta y marcador más apretados y sin el "1°A" (no
    entraba el nombre del club, quedaba "San Martín..." / "Argentino ..."). */
