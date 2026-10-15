@@ -359,6 +359,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    para la Semi ahí adentro (.llave-col-sf), no toca la Final (sigue en 200px) ni los Cuartos
    compactos (tienen su propio ancho vía .llave-fila-compacta, no este tope). */
 .bnc-mini-bracket .llave-col-sf .llave-card-sm{max-width:258px;}
+/* Semis ya resueltas (tarjetas compactas): cada mitad se cierra sobre su contenido, así la
+   Semi queda pegada a sus Cuartos y la Final toma todo el centro, con los nombres enteros. */
+.bnc-semis-resueltas .bnc-mirror-final .llave-card-sm{max-width:340px;}
+@media (min-width:1561px){
+  .bnc-semis-resueltas{grid-template-columns:auto minmax(0,1fr) auto;justify-content:stretch;}
+  .bnc-semis-resueltas .bnc-mini-bracket{width:auto;grid-template-columns:auto auto;}
+  .bnc-semis-resueltas .bnc-mirror-final .llave-card-sm{max-width:none;}
+}
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
 .llave-card-sm .llave-marc-cell{min-width:20px;}
@@ -4217,6 +4225,7 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   const colSF = sf => `<div class="llave-col llave-col-sf"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
   // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
   // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
+  el.classList.toggle('bnc-semis-resueltas', semisResueltas);
   el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
     <div class="bnc-mirror-final">
       <p class="llave-col-title">Final</p>
