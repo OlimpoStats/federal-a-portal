@@ -82,6 +82,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .res{text-align:center;min-width:64px;}
 .score{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;}
 .score .sep{color:var(--muted);font-weight:400;margin:0 2px;}
+.iv-fila{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;color:#fff;white-space:nowrap;margin-top:1px;}
+.iv-fila .iv-pasa{color:var(--accent);}
 .vs{font-size:11px;color:#444;letter-spacing:1px;font-weight:600;}
 .goleadores{font-size:12px;color:var(--muted);padding:.2rem .9rem .4rem;display:flex;justify-content:space-between;}
 .gol-local{text-align:left;flex:1;}
@@ -189,6 +191,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .llave-eq-simple.llave-solo-escudo{justify-content:center;}
 .llave-eq-simple.llave-solo-escudo.llave-gano{filter:drop-shadow(0 0 3px #4caf50);}
 .llave-eq-simple.llave-eq-der{justify-content:flex-end;}
+/* El nombre ocupa todo el lado (flex:1): alineado a la derecha para que quede pegado a su
+   escudo y no al "vs" (se notaba en la Final con nombres cortos como "Cipolletti"). */
+.llave-eq-simple.llave-eq-der .llave-nombre{text-align:right;}
 .llave-seed{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;}
 .llave-nombre{font-size:14px;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 .llave-vent{margin-left:.15rem;color:#ffca28;flex-shrink:0;}
@@ -359,6 +364,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    para la Semi ahí adentro (.llave-col-sf), no toca la Final (sigue en 200px) ni los Cuartos
    compactos (tienen su propio ancho vía .llave-fila-compacta, no este tope). */
 .bnc-mini-bracket .llave-col-sf .llave-card-sm{max-width:258px;}
+/* Semis ya resueltas (tarjetas compactas): cada mitad se cierra sobre su contenido, así la
+   Semi queda pegada a sus Cuartos y la Final toma todo el centro, con los nombres enteros. */
+.bnc-semis-resueltas .bnc-mirror-final .llave-card-sm{max-width:340px;}
+@media (min-width:1561px){
+  .bnc-semis-resueltas{grid-template-columns:auto minmax(0,1fr) auto;justify-content:stretch;}
+  .bnc-semis-resueltas .bnc-mini-bracket{width:auto;grid-template-columns:auto auto;}
+  .bnc-semis-resueltas .bnc-mirror-final .llave-card-sm{max-width:none;}
+}
 .llave-card-sm .llave-fila{padding:.15rem 0;}
 .llave-card-sm .llave-fila .llave-eq-simple{min-width:90px;}
 .llave-card-sm .llave-marc-cell{min-width:20px;}
@@ -366,8 +379,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    entraba en los 90px de .llave-card-sm (quedaba "Cuartofi..."), variante propia sin ese tope
    tan chico. En mobile se achica más todavía (menos alto por tarjeta = menos scroll para ver
    las 12). */
-.llave-card-p16{padding:.35rem .5rem;}
-.llave-card-p16 .llave-fila{padding:.15rem 0;}
+.llave-card-p16{padding:.3rem .5rem;}
+.llave-card-p16 .llave-fila{padding:.05rem 0;}
+.llave-card-p16 .llave-fila+.llave-fila{margin-top:.2rem;padding-top:.25rem;}
+.llave-card-p16 .llave-marc-val{font-size:14px;line-height:16px;}
+.llave-card-p16 .llave-marc-glob .llave-marc-val{font-size:15px;}
+.llave-card-p16 .llave-marc-lbl{font-size:8px;line-height:9px;}
 .llave-card-p16 .llave-fila .llave-eq-simple{min-width:0;flex:1 1 auto;}
 .llave-card-p16 .llave-marc{gap:.35rem;padding-left:.4rem;}
 .llave-card-p16 .llave-marc-cell{min-width:21px;}
@@ -406,6 +423,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   .bnc-mini-bracket,.bnc-mini-bracket-der{display:contents;}
   .bnc-mini-bracket .bracket-pair::after,.bnc-mini-bracket::before{display:none;}
   .bnc-mirror-final{min-width:0;}
+}
+/* Notebook/tablet (701-1560px, cuadro apilado): los Cuartos ya jugados (tarjeta compacta, solo
+   escudo + goles) se estiraban a media fila y quedaban gigantes con un hueco entre escudo y
+   goles. Acá toman su tamaño natural, igual que en pantalla grande, y el par va centrado. */
+@media (min-width:701px) and (max-width:1560px){
+  .bnc-mirror-cont .llave-col-qf .bracket-pair{justify-content:center;gap:2rem;}
+  .bnc-mirror-cont .llave-col-qf .bracket-pair>.llave-card-compacta{flex:0 0 auto;}
+  /* Semis centradas (quedaban tiradas a la izquierda), igual que en celular. */
+  .bnc-mirror-cont .llave-col-sf .llave-col-body{align-items:center;}
 }
 /* Cuartos lado a lado en celular: tarjeta y marcador más apretados y sin el "1°A" (no
    entraba el nombre del club, quedaba "San Martín..." / "Argentino ..."). */
@@ -503,7 +529,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
    bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
    Clase reusable (home + calculadora), no atada a un id. */
-.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3rem;}
+.cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:0 0 .5rem;}
+.cp-rank{font-size:11px;color:var(--muted);min-width:24px;flex-shrink:0;}
+.preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem 1rem;}
 @media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
 /* zona tabs */
@@ -1298,7 +1326,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
     <div>
       <div id="inner-grid" style="display:flex;flex-direction:column;gap:1.5rem;">
         <div id="bracket-nonagonal-wrap">
-          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso - Cuartos de Final</p>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="bracket-nonagonal-title">Primer Ascenso</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="bracket-nonagonal-cont" class="bracket-nona-cont"></div>
         </div>
@@ -1306,6 +1334,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <p class="sec" style="color:#fff;margin-bottom:.2rem;">Segundo Ascenso - Dieciseisavos de Final</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="preview16-cont" class="preview16-cont"></div>
+        </div>
+        <div id="cruces-parciales-wrap" style="display:none;">
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Próxima fase</p>
+          <p class="llave-nota">Así quedarían si las llaves terminaran como van ahora (en empate global pasa el primero de cada llave).</p>
+          <p class="cp-sub">Segundo Ascenso - Octavos de Final</p>
+          <div id="cp-octavos-cont" class="preview16-cont"></div>
         </div>
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
@@ -2240,6 +2274,34 @@ function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? 
 // Fecha "absoluta" cruzando fases: la Segunda Fase reinicia su numeración de fechas en 1,
 // así que un fecha=1 de Nonagonal/Reválida no puede compararse directo contra un fecha=18
 // de Primera Fase. zona=null (sanciones viejas anteriores a la Segunda Fase) → Primera Fase.
+// Disciplina: ¿las amarillas de esta zona cuentan para el cómputo de suspensión? Solo las de
+// playoffs (Primer y Segundo Ascenso). Al cerrar Nonagonal/Reválida se limpiaron las
+// acumuladas; el Desempate Descenso fue un partido suelto de ese cierre y tampoco cuenta.
+function esZonaComputablePlayoff(z){
+  return !!z && !ZONAS.includes(z) && !GRUPOS2.includes(z) && z !== 'Desempate Descenso';
+}
+// Orden cronológico del partido que jugó `equipo` en zona/fecha: su día real (YYYY-MM-DD) si se
+// conoce; si no, la fecha absoluta (Primera Fase antes que todo lo demás). Sirve para saber si
+// un equipo ya jugó después de una sanción.
+function ordenPartidoEquipo(zona, fecha, equipo){
+  const ms = (zona && FIXTURE[zona] && FIXTURE[zona][String(fecha)]) || [];
+  const m = ms.find(x => x.local===equipo || x.visitante===equipo);
+  const dia = m && (PARTIDO_META[getMetaKey(zona, fecha, m.local, m.visitante)] || {}).dia;
+  return dia ? String(dia) : '0000-' + String(fechaAbsoluta(zona, fecha)).padStart(5,'0');
+}
+// equipo → órdenes (ver ordenPartidoEquipo) de todos sus partidos ya jugados
+function ordenesPartidosPorEquipo(){
+  const out = {};
+  zonasFixture().forEach(z=>{
+    Object.entries(FIXTURE[z]||{}).forEach(([f, ms])=>{
+      (ms||[]).forEach(m=>{
+        if(m.gl==null) return;
+        [m.local, m.visitante].forEach(eq=>{ (out[eq] = out[eq] || []).push(ordenPartidoEquipo(z, f, eq)); });
+      });
+    });
+  });
+  return out;
+}
 function fechaAbsoluta(zona, fecha){
   const f = Number(fecha) || 0;
   if(!f) return 0;
@@ -2647,6 +2709,19 @@ function penalesDe(m){
 // botón de ficha, barra de estadio/árbitro). Compartida entre el widget de Primera Fase
 // (renderPartidos, zonas ZONAS) y el de Segunda Fase (renderPartidos2, grupos GRUPOS2) —
 // antes este último dibujaba siempre "VS" fijo y nunca mostraba resultados/en vivo/streaming.
+// Partido de vuelta de una llave: resultado de la ida (ya visto desde el local de la vuelta) y
+// global, o null si no es vuelta o la ida no se jugó. En vivo/terminado el global suma lo de la vuelta.
+function idaVueltaDe(zona, f, m){
+  if(!/ - Vuelta$/.test(zona)) return null;
+  const ida = (FIXTURE[zona.replace(/ - Vuelta$/, ' - Ida')]?.[String(f)] || [])
+    .find(x => x.local===m.visitante && x.visitante===m.local || x.local===m.local && x.visitante===m.visitante);
+  if(!ida || ida.gl==null || ida.gv==null) return null;
+  const idaL = ida.local===m.local ? ida.gl : ida.gv, idaV = ida.local===m.local ? ida.gv : ida.gl;
+  if(m.gl==null || m.gv==null) return { ida:`${idaL}-${idaV}`, global:null };
+  // En empate global pasa el local de la vuelta (el mejor ubicado, ventaja deportiva).
+  const gL = idaL + m.gl, gV = idaV + m.gv;
+  return { ida:`${idaL}-${idaV}`, global:{ l:gL, v:gV, pasaLocal: gL >= gV } };
+}
 function renderFilaPartido(zona, f, m, meta){
   const fichaKey = `${zona}_${f}_${m.local}_${m.visitante}`;
   const tienePlanilla = !!PLANILLA_CARGADA[fichaKey];
@@ -2663,10 +2738,18 @@ function renderFilaPartido(zona, f, m, meta){
   const rojasLocal = showRedIcons && _rl > 0 ? rojaIcon.repeat(_rl) : "";
   const rojasVisit = showRedIcons && _rv > 0 ? rojaIcon.repeat(_rv) : "";
 
+  const _iv = idaVueltaDe(zona, f, m);
+  // Vuelta sin empezar: "IDA" en la barra de abajo (con estadio y árbitro). En vivo y terminado:
+  // "GLOBAL" debajo del marcador, en blanco. Solo con el global empatado se pinta de amarillo
+  // el número del que pasa (el local de la vuelta, por ventaja deportiva).
+  const _ivEmp = _iv && _iv.global && _iv.global.l === _iv.global.v;
+  const _ivFila = _iv && _iv.global
+    ? `<div class="iv-fila">GLOBAL: <span${_ivEmp?' class="iv-pasa"':''}>${_iv.global.l}</span>-${_iv.global.v}</div>`
+    : '';
   let centro;
   if(m.gl!==null){
     const scoreClass = esEnVivo ? "score score-live" : "score";
-    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div></div>`;
+    centro=`<div style="text-align:center">${minDiv}<div class="${scoreClass}">${m.gl}<span class="sep">—</span>${m.gv}</div>${_ivFila}</div>`;
   } else if(meta.hora){
     centro=`<div style="text-align:center"><div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--accent)">${meta.hora}</div></div>`;
   } else {
@@ -2707,6 +2790,7 @@ function renderFilaPartido(zona, f, m, meta){
 
   // Info bar: programmed = estadio + arbitro; live = no bar
   const infoItems = [];
+  if(_iv && m.gl===null) infoItems.push(`🔁 IDA: ${_iv.ida}`);
   if(!esEnVivo){
     if(meta.estadio) infoItems.push(`🏟️ ${meta.estadio}`);
     if(meta.arbitro) infoItems.push(`⚖️ ${meta.arbitro}`);
@@ -4014,6 +4098,7 @@ function renderGruposSegundaFase(grupos){
 
   renderBracketNonagonalMirror(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
+  renderCrucesParciales();
   const bracketParaCruces = calcBracketNonagonal(grupos);
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
   renderOrdenCruces(bracketParaCruces, tablaMerito);
@@ -4157,7 +4242,7 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   const tituloEl = document.getElementById(tituloElId);
   if(!el) return;
   const bracket = calcBracketNonagonal(grupos);
-  if(tituloEl) tituloEl.textContent = 'Primer Ascenso - Cuartos de Final';
+  if(tituloEl) tituloEl.textContent = 'Primer Ascenso';
   el.className = 'bnc-mirror-cont';
   const [qf1,qf2,qf3,qf4] = bracket.cuartos;
   const [sf1,sf2] = bracket.semis;
@@ -4176,6 +4261,7 @@ function renderBracketNonagonalMirror(grupos, elId='bracket-nonagonal-cont', tit
   const colSF = sf => `<div class="llave-col llave-col-sf"><div class="llave-col-body">${_cardLlave(sf, false, 'llave-card-sm', semisResueltas)}</div></div>`;
   // Mitad izquierda: Cuartos afuera, Semi pegada al centro. Mitad derecha espejada (Semi
   // primero en el HTML = queda a la izquierda de SU mini-cuadro = pegada al centro también).
+  el.classList.toggle('bnc-semis-resueltas', semisResueltas);
   el.innerHTML = `<div class="bnc-mini-bracket">${colQF(qf1,qf2)}${colSF(sf1)}</div>
     <div class="bnc-mirror-final">
       <p class="llave-col-title">Final</p>
@@ -4505,6 +4591,57 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
   const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
   cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
+}
+
+// ── "Cruces parciales" (home): cómo quedaría la ronda siguiente si las llaves en juego
+// terminaran como van ahora. Usa las mismas reglas que el Simulador (calcSimulacion): se
+// "elige" como ganador de cada llave sin definir al que va adelante en el global (ida + lo que
+// haya de la vuelta, en vivo incluido); en empate, el mejor ubicado. Llave sin ida jugada =
+// sin ganador parcial (queda "Ganador de ..."). Se oculta cuando la ronda siguiente ya existe
+// en el fixture o todavía no se jugó nada de la actual.
+function _liderParcialLlave(zonas, mejor, peor){
+  if(!zonas || !mejor || !peor || !mejor.n || !peor.n) return null;
+  const g = _golesLlaveDesdeFixture(zonas.ida, zonas.vuelta, zonas.fecha, mejor.n, peor.n);
+  if(g.ida.golMejor==null || g.ida.golPeor==null) return null;
+  const m = g.ida.golMejor + (g.vuelta.golMejor||0), p = g.ida.golPeor + (g.vuelta.golPeor||0);
+  return m >= p ? mejor : peor;
+}
+function calcCrucesParciales(){
+  // calcSimulacion lee/limpia SIM_PICKS: se guardan las elecciones del Simulador y se reponen al final.
+  const guardado = {};
+  Object.keys(SIM_PICKS).forEach(r=>{ guardado[r] = new Set(SIM_PICKS[r]); delete SIM_PICKS[r]; });
+  try {
+    const base = calcSimulacion();
+    const zSemis = PLAYOFF_NONA_ZONAS.SF1, z16 = ZONAS_SEGUNDO_ASCENSO['sa-16'];
+    const lideres = (llaves, zonas) => llaves.filter(l=>!l.real).map(l=>_liderParcialLlave(zonas, l.mejor, l.peor)).filter(Boolean).map(e=>e.n);
+    const pSemis = lideres(base.sf, zSemis), p16 = lideres(base.rondasSA['sa-16'].cruces, z16);
+    SIM_PICKS['pa-sf'] = new Set(pSemis);
+    SIM_PICKS['sa-16'] = new Set(p16);
+    const sim = calcSimulacion();
+    return { hayDatos: pSemis.length + p16.length > 0 || base.sf.some(l=>l.real) || base.rondasSA['sa-16'].cruces.some(l=>l.real),
+             octavos: sim.rondasSA['sa-8'].cruces };
+  } finally {
+    Object.keys(SIM_PICKS).forEach(r=>{ delete SIM_PICKS[r]; });
+    Object.assign(SIM_PICKS, guardado);
+  }
+}
+function _filaCruceParcial(eq){
+  if(!eq || !eq.n) return `<div class="llave-fila"><div class="llave-eq-simple pend">${eq && eq.rank!=null ? `<span class="cp-rank">#${eq.rank}</span>` : ''}<span class="llave-nombre">${eq && eq.label ? eq.label : 'A Definir'}</span></div></div>`;
+  const tag = eq.rank!=null ? `#${eq.rank}` : (eq.pos ? _seedLabelLlave(eq) : '');
+  return `<div class="llave-fila"><div class="llave-eq-simple"><span class="cp-rank">${tag}</span>${escudoHTML(eq.n,'me')}<span class="llave-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></div></div>`;
+}
+function _cardCruceParcial(l){
+  return `<div class="llave-card llave-card-v llave-card-p16">${_filaCruceParcial(l.mejor)}${_filaCruceParcial(l.peor)}</div>`;
+}
+function renderCrucesParciales(){
+  const wrap = document.getElementById('cruces-parciales-wrap');
+  if(!wrap) return;
+  const yaSembrada = Object.keys(FIXTURE).some(z=>/^(Final Primer Ascenso|Octavos Segundo Ascenso)/i.test(z));
+  let cp = null;
+  try { cp = yaSembrada ? null : calcCrucesParciales(); } catch(e){ cp = null; }
+  if(!cp || !cp.hayDatos){ wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(_cardCruceParcial).join('');
 }
 
 // Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
@@ -5132,7 +5269,7 @@ async function cargarEstadisticas(){
         sb.from('planillas').select('id,partido_id,equipo_id'),
         sb.from('penales').select('resultado,ejecutante_id,arquero_id,equipo_favor,equipo_contra,minuto,partido_id,fixture_id'),
         sb.from('partidos').select('zona,fecha,equipo_local_nombre,equipo_visitante_nombre,dt_local,dt_visitante').order('fecha'),
-        sb.from('sanciones').select('*').or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)').order('created_at',{ascending:false}),
+        sb.from('sanciones').select('*').or('estado.eq.pendiente,tipo.eq.amarillas').order('created_at',{ascending:false}),
         sb.from('transferencias').select('jugador_origen_id,jugador_destino_id,equipo_origen_id,equipo_destino_id')
       ]);
       if(evRes0.error) throw evRes0.error;
@@ -5164,7 +5301,7 @@ async function cargarEstadisticas(){
       let sancFrom = 1000;
       while(sancionesDB.length % 1000 === 0 && sancionesDB.length > 0){
         const {data:sancBatch} = await sb.from('sanciones').select('*')
-          .or('estado.eq.pendiente,and(tipo.eq.amarillas,estado.neq.eliminada)')
+          .or('estado.eq.pendiente,tipo.eq.amarillas')
           .order('created_at',{ascending:false}).range(sancFrom, sancFrom+999);
         if(!sancBatch?.length) break;
         sancionesDB = sancionesDB.concat(sancBatch);
@@ -5252,10 +5389,18 @@ async function cargarEstadisticas(){
       ...(partidosDB||[]).map(p => fechaAbsoluta(p.zona, p.fecha)),
       ...(sancionesDB||[]).map(s => fechaAbsoluta(s.zona, s.fecha_origen))
     );
+    // Suspensión cumplida = el equipo jugó, DESPUÉS del partido de origen, al menos tantos
+    // partidos como fechas de sanción. Se ordena por el día real de cada partido (en playoffs
+    // todas las rondas son "fecha 1", así que el número de fecha ya no alcanza).
+    const _ordenesEquipo = ordenesPartidosPorEquipo();
+    const sancionCumplida = (equipo, zona, fecha, partidos) => {
+      const origen = ordenPartidoEquipo(zona, fecha, equipo);
+      const despues = (_ordenesEquipo[equipo]||[]).filter(o => o > origen).length;
+      return despues >= Math.max(1, Number(partidos) || 1);
+    };
     const isSancServed = s => {
-      const fo = fechaAbsoluta(s.zona, s.fecha_origen);
-      if(!fo) return maxFechaJug > 0;
-      return maxFechaJug >= fo + Math.max(1, Number(s.partidos_sancion) || 1);
+      if(!s.fecha_origen) return maxFechaJug > 0;
+      return sancionCumplida(s.equipo, s.zona, s.fecha_origen, s.partidos_sancion);
     };
 
     // AMARILLAS PARA LÍMITE (una amarilla sin expulsión, por partido)
@@ -5272,31 +5417,48 @@ async function cargarEstadisticas(){
       const _p=partidosById[partidoId];
       const fo=_p ? fechaAbsoluta(_p.zona, _p.fecha) : null;
       const mk=`${canonId}_${partidoId}`;
-      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,amarilla:false,expulsion:false};
+      if(!_amLimPartido[mk]) _amLimPartido[mk]={jId:canonId,nombre,equipo,fo,zona:_p&&_p.zona,fecha:_p&&_p.fecha,amarilla:false,expulsion:false};
       if(ev.tipo==='amarilla') _amLimPartido[mk].amarilla=true;
       if(ev.tipo==='doble_amarilla'){ _amLimPartido[mk].amarilla=true; _amLimPartido[mk].expulsion=true; }
       if(ev.tipo==='roja') _amLimPartido[mk].expulsion=true;
     });
-    // Simulación de ciclos: por jugador, ordenar fechas y detectar si está suspendido actualmente
-    const _amFechas={}; // canonId → {nombre, equipo, fechas:[]}
+    // Ciclos de 5 amarillas, en orden cronológico real. Al terminar Nonagonal/Reválida las
+    // amarillas acumuladas se limpiaron: para el cómputo solo cuentan las de playoffs (ver
+    // esZonaComputablePlayoff). Una suspensión por la 5ª amarilla que todavía no se cumplió al
+    // cerrar esa fase se arrastra igual (el jugador sigue suspendido hasta que su equipo juegue).
+    // Las amarillas viejas siguen contando en el perfil y en la tabla de amarillas totales.
+    const _amFechas={}; // canonId → {nombre, equipo, items:[{zona, fecha, equipo, orden}]}
     Object.values(_amLimPartido).forEach(m=>{
       if(!m.amarilla||m.expulsion||!m.fo) return;
-      if(!_amFechas[m.jId]) _amFechas[m.jId]={nombre:m.nombre,equipo:m.equipo,fechas:[]};
-      _amFechas[m.jId].fechas.push(m.fo);
+      if(!_amFechas[m.jId]) _amFechas[m.jId]={nombre:m.nombre,equipo:m.equipo,items:[]};
+      _amFechas[m.jId].items.push({zona:m.zona, fecha:m.fecha, equipo:m.equipo, orden:ordenPartidoEquipo(m.zona, m.fecha, m.equipo)});
     });
-    Object.values(_amFechas).forEach(d=>d.fechas.sort((a,b)=>a-b));
     const amarillasLimiteMap={}; // jId → {key, nombre, equipo, count}
     Object.entries(_amFechas).forEach(([jId,d])=>{
-      let cc=0, suspended=false;
-      for(const fo of d.fechas){
+      d.items.sort((a,b)=>a.orden<b.orden?-1:a.orden>b.orden?1:0);
+      d.equipo = d.items[d.items.length-1].equipo; // el club de su última amarilla (por si cambió de club)
+      // Cada tramo (antes / desde los playoffs) cuenta su propio ciclo desde 0
+      let cc=0, ultimaQuinta=null, enPlayoff=false;
+      for(const it of d.items){
+        const esPlayoff = esZonaComputablePlayoff(it.zona);
+        if(esPlayoff && !enPlayoff){ enPlayoff=true; cc=0; }
         cc++;
-        if(cc===5){
-          if(maxFechaJug>fo){ cc=0; } // ciclo servido, resetear
-          else{ suspended=true; break; } // suspensión activa
-        }
+        if(cc===5){ cc=0; ultimaQuinta=it; }
       }
-      if(cc>=3||suspended){
-        amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:cc};
+      // Lo que cargó el admin manda: si la borró, la dio por cumplida o la dejó en 0 partidos,
+      // no hay suspensión; si le puso más partidos, se cumple con esa cantidad.
+      let suspended = false;
+      if(ultimaQuinta){
+        const reg = (sancionesDB||[]).filter(s => s.tipo==='amarillas' && (s.zona||null)===(ultimaQuinta.zona||null)
+            && Number(s.fecha_origen)===Number(ultimaQuinta.fecha) && (String(s.jugador_id)===String(jId) || s.jugador_nombre===d.nombre))
+          .sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''))[0];
+        const partidos = reg ? Number(reg.partidos_sancion)||0 : 1;
+        const anulada = reg && (reg.estado==='eliminada' || reg.estado==='cumplida' || partidos===0);
+        suspended = !anulada && !sancionCumplida(ultimaQuinta.equipo, ultimaQuinta.zona, ultimaQuinta.fecha, partidos);
+      }
+      const computables = enPlayoff ? cc : 0;
+      if(computables>=3||suspended){
+        amarillasLimiteMap[jId]={key:jId,nombre:d.nombre,equipo:d.equipo,count:suspended?5:computables};
       }
     });
 
@@ -5644,7 +5806,7 @@ async function cargarEstadisticas(){
       }).join('')
       + cincoAmarillas.map((j,i)=>`<tr>
           <td><span class="pos">${sancPend.length+i+1}</span></td>
-          <td>${fmtJug(j.nombre, j.equipo, j.key)}</td>
+          <td>${fmtJug(j.nombre, j.equipo)}</td>
           <td style="text-align:center;font-size:13px;">🟨×5</td>
           <td style="text-align:center;font-weight:700;color:#ffa726;">Acumulación</td>
         </tr>`).join('')
@@ -5679,8 +5841,9 @@ async function cargarEstadisticas(){
       </tr>`).join('') + '</tbody></table>'
     : '<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
 
-    // AMARILLAS PARA LÍMITE (próximos a la suspensión: 4 y 5 computables)
-    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=4).sort((a,b)=>
+    // PRÓXIMOS A LA SUSPENSIÓN: 3 y 4 amarillas computables (desde los playoffs, Primer y
+    // Segundo Ascenso). Los suspendidos por la 5ª van en "Suspensiones pendientes".
+    const amLimRows=Object.values(amarillasLimiteMap).filter(j=>j.count>=3&&j.count<=4).sort((a,b)=>
       b.count-a.count ||
       zonaDeEquipo(a.equipo).localeCompare(zonaDeEquipo(b.equipo)) ||
       (a.equipo||'').localeCompare(b.equipo||'')
@@ -5690,9 +5853,10 @@ async function cargarEstadisticas(){
     )+amLimRows.map((j,i)=>{
       const color=j.count>=5?'#e57373':'#ffa726';
       const badge = j.count>=5 ? `<span style="font-size:9px;background:#e57373;color:#fff;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:4px;">SANCIONADO</span>` : `<span style="font-size:10px;color:${color};">${j.count}/5</span>`;
-      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo,j.key)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
+      // Sin la key: acá va solo el club actual (el de su última amarilla), no "2 clubes"
+      return `<tr><td><span class="pos">${i+1}</span></td><td>${fmtJug(j.nombre,j.equipo)}</td><td><strong style="color:${color};">${j.count}</strong></td><td>${badge}</td></tr>`;
     }).join('')+'</tbody></table>'
-    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Sin datos aún.</div>';
+    :'<div style="padding:1rem;color:var(--muted);font-size:13px;">Nadie tiene 3 o 4 amarillas computables por ahora.</div>';
 
     // Partidos jugados por club (para filtro de arqueros con al menos 50%)
     const clubMatchCount = {};
