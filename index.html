@@ -503,6 +503,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
    bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
    Clase reusable (home + calculadora), no atada a un id. */
+.cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:1rem 0 .5rem;}
+.cp-sub:first-of-type{margin-top:0;}
+.cp-rank{font-size:11px;color:var(--muted);min-width:24px;flex-shrink:0;}
 .preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.3rem;}
 @media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
@@ -1306,6 +1309,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <p class="sec" style="color:#fff;margin-bottom:.2rem;">Segundo Ascenso - Dieciseisavos de Final</p>
           <p class="llave-nota">El primer equipo de cada llave es local en la vuelta y avanza en caso de empate global.</p>
           <div id="preview16-cont" class="preview16-cont"></div>
+        </div>
+        <div id="cruces-parciales-wrap" style="display:none;">
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Próxima fase</p>
+          <p class="llave-nota">Así quedarían si las llaves terminaran como van ahora (en empate global pasa el primero de cada llave).</p>
+          <p class="cp-sub">Primer Ascenso - Final</p>
+          <div id="cp-final-cont" class="preview16-cont"></div>
+          <p class="cp-sub">Segundo Ascenso - Octavos de Final</p>
+          <div id="cp-octavos-cont" class="preview16-cont"></div>
         </div>
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
@@ -4042,6 +4053,7 @@ function renderGruposSegundaFase(grupos){
 
   renderBracketNonagonalMirror(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
+  renderCrucesParciales();
   const bracketParaCruces = calcBracketNonagonal(grupos);
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
   renderOrdenCruces(bracketParaCruces, tablaMerito);
@@ -4533,6 +4545,58 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
   const lista16vos = calcLista16vos(tablaMerito, calcBracketNonagonal());
   const cruces = armarCrucesDesdeOrden(lista16vos);
   cont.innerHTML = cruces.map(c => _cardPreview16(c.mejor, c.peor)).join('');
+}
+
+// ── "Cruces parciales" (home): cómo quedaría la ronda siguiente si las llaves en juego
+// terminaran como van ahora. Usa las mismas reglas que el Simulador (calcSimulacion): se
+// "elige" como ganador de cada llave sin definir al que va adelante en el global (ida + lo que
+// haya de la vuelta, en vivo incluido); en empate, el mejor ubicado. Llave sin ida jugada =
+// sin ganador parcial (queda "Ganador de ..."). Se oculta cuando la ronda siguiente ya existe
+// en el fixture o todavía no se jugó nada de la actual.
+function _liderParcialLlave(zonas, mejor, peor){
+  if(!zonas || !mejor || !peor || !mejor.n || !peor.n) return null;
+  const g = _golesLlaveDesdeFixture(zonas.ida, zonas.vuelta, zonas.fecha, mejor.n, peor.n);
+  if(g.ida.golMejor==null || g.ida.golPeor==null) return null;
+  const m = g.ida.golMejor + (g.vuelta.golMejor||0), p = g.ida.golPeor + (g.vuelta.golPeor||0);
+  return m >= p ? mejor : peor;
+}
+function calcCrucesParciales(){
+  // calcSimulacion lee/limpia SIM_PICKS: se guardan las elecciones del Simulador y se reponen al final.
+  const guardado = {};
+  Object.keys(SIM_PICKS).forEach(r=>{ guardado[r] = new Set(SIM_PICKS[r]); delete SIM_PICKS[r]; });
+  try {
+    const base = calcSimulacion();
+    const zSemis = PLAYOFF_NONA_ZONAS.SF1, z16 = ZONAS_SEGUNDO_ASCENSO['sa-16'];
+    const lideres = (llaves, zonas) => llaves.filter(l=>!l.real).map(l=>_liderParcialLlave(zonas, l.mejor, l.peor)).filter(Boolean).map(e=>e.n);
+    const pSemis = lideres(base.sf, zSemis), p16 = lideres(base.rondasSA['sa-16'].cruces, z16);
+    SIM_PICKS['pa-sf'] = new Set(pSemis);
+    SIM_PICKS['sa-16'] = new Set(p16);
+    const sim = calcSimulacion();
+    return { hayDatos: pSemis.length + p16.length > 0 || base.sf.some(l=>l.real) || base.rondasSA['sa-16'].cruces.some(l=>l.real),
+             final: sim.fin, octavos: sim.rondasSA['sa-8'].cruces };
+  } finally {
+    Object.keys(SIM_PICKS).forEach(r=>{ delete SIM_PICKS[r]; });
+    Object.assign(SIM_PICKS, guardado);
+  }
+}
+function _filaCruceParcial(eq){
+  if(!eq || !eq.n) return `<div class="llave-fila"><div class="llave-eq-simple pend">${eq && eq.rank!=null ? `<span class="cp-rank">#${eq.rank}</span>` : ''}<span class="llave-nombre">${eq && eq.label ? eq.label : 'A Definir'}</span></div></div>`;
+  const tag = eq.rank!=null ? `#${eq.rank}` : (eq.pos ? _seedLabelLlave(eq) : '');
+  return `<div class="llave-fila"><div class="llave-eq-simple"><span class="cp-rank">${tag}</span>${escudoHTML(eq.n,'me')}<span class="llave-nombre">${eq.n}${eq.sorteo?' 🎲':''}</span></div></div>`;
+}
+function _cardCruceParcial(l){
+  return `<div class="llave-card llave-card-v llave-card-p16">${_filaCruceParcial(l.mejor)}${_filaCruceParcial(l.peor)}</div>`;
+}
+function renderCrucesParciales(){
+  const wrap = document.getElementById('cruces-parciales-wrap');
+  if(!wrap) return;
+  const yaSembrada = Object.keys(FIXTURE).some(z=>/^(Final Primer Ascenso|Octavos Segundo Ascenso)/i.test(z));
+  let cp = null;
+  try { cp = yaSembrada ? null : calcCrucesParciales(); } catch(e){ cp = null; }
+  if(!cp || !cp.hayDatos){ wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('cp-final-cont').innerHTML = _cardCruceParcial(cp.final);
+  document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(_cardCruceParcial).join('');
 }
 
 // Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,
