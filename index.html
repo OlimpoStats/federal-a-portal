@@ -310,6 +310,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .oc-eq{display:flex;align-items:center;gap:.3rem;min-width:0;flex:0 1 auto;overflow:hidden;}
 .oc-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;}
 .oc-pend{font-size:11px;color:var(--muted);font-style:italic;}
+/* Eliminado en 16vos del Segundo Ascenso (vuelta terminada): escudo en blanco y negro y el
+   nombre tachado en rojo. */
+.oc-elim .me{filter:grayscale(1);}
+.oc-elim .oc-nombre{text-decoration:line-through;text-decoration-color:#e53935;text-decoration-thickness:2px;}
 .oc-detalle{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 @media (max-width:900px){
   #orden-cruces-cont{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
@@ -1339,9 +1343,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <div id="preview16-cont" class="preview16-cont"></div>
         </div>
         <div id="cruces-parciales-wrap" style="display:none;">
-          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Próxima fase</p>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Octavos de Final</p>
           <p class="llave-nota">Así quedarían si las llaves terminaran como van ahora (en empate global pasa el primero de cada llave).</p>
-          <p class="cp-sub">Segundo Ascenso - Octavos de Final</p>
+          <p class="cp-sub">Cruces parciales</p>
           <div id="cp-octavos-cont" class="preview16-cont"></div>
         </div>
         <div id="orden-cruces-wrap">
@@ -4505,7 +4509,8 @@ function calcOrdenParaCruces(bracket, tablaMerito){
 // con nombres cortos). Los de Reválida (tablaMerito) solo muestran posición + %C ("X,xxx
 // prom."), a diferencia de los del Nonagonal (reservados + tablaMerito 5°-9°) que sí muestran
 // pts/DG/GF — pedido explícito del usuario, para no repetir toda la cascada de desempate acá.
-function _filaOrdenCruces(it, pos){
+function _filaOrdenCruces(it, pos, elim){
+  const cls = (n) => `oc-fila${elim && n && elim.has(n) ? ' oc-elim' : ''}`;
   if(it.tipo==='reservado'){
     const eq = it.equipo;
     if(!eq){
@@ -4513,7 +4518,7 @@ function _filaOrdenCruces(it, pos){
     }
     const dif = eq.gf-eq.gc;
     const detalle = `${eq.pos}° — ${eq.pts}pts, DG:${dif>=0?'+':''}${dif}, GF:${eq.gf}`;
-    return `<div class="oc-fila">
+    return `<div class="${cls(eq.n)}">
       <span class="oc-pos">${pos}</span>
       <div class="oc-eq">${escudoHTML(eq.n,'me')}<span class="oc-nombre">${eq.n}</span></div>
       <span class="oc-detalle">${detalle}</span>
@@ -4526,11 +4531,29 @@ function _filaOrdenCruces(it, pos){
   const detalle = esRevalida
     ? `${it.pos}° — ${it.pctC} prom.`
     : (()=>{ const dif=it.dif; return `${it.pos}° — ${it.pts!=null?it.pts+'pts, ':''}DG:${dif>=0?'+':''}${dif}${it.gf!=null?(', GF:'+it.gf):''}`; })();
-  return `<div class="oc-fila">
+  return `<div class="${cls(it.n)}">
     <span class="oc-pos">${pos}</span>
     <div class="oc-eq">${escudoHTML(it.n,'me')}<span class="oc-nombre">${it.n}</span></div>
     <span class="oc-detalle">${detalle}</span>
   </div>`;
+}
+
+// Eliminados en 16vos del Segundo Ascenso: solo cuando la vuelta ya terminó (ni en vivo ni
+// programada). Los perdedores de Semis no entran acá porque se reenganchan.
+function calcEliminados16vos(tablaMerito, bracket){
+  const elim = new Set();
+  const z = ZONAS_SEGUNDO_ASCENSO['sa-16'];
+  const vueltas = (FIXTURE[z.vuelta] && FIXTURE[z.vuelta][String(z.fecha)]) || [];
+  armarCrucesDesdeOrden(calcLista16vos(tablaMerito, bracket)).forEach(c=>{
+    const m = c.mejor && c.mejor.n, p = c.peor && c.peor.n;
+    if(!m || !p) return;
+    const fila = vueltas.find(x => (x.local===m && x.visitante===p) || (x.local===p && x.visitante===m));
+    if(!fila || fila.estado==='en_curso' || fila.estado==='programado') return;
+    const real = llaveRealSegundoAscenso('sa-16', m, p);
+    if(!real || !real.resultado.resuelto) return;
+    elim.add(real.resultado.ganadorEsMejor ? p : m);
+  });
+  return elim;
 }
 
 // 3 columnas de 9 (27 = 3×9), apiladas en mobile.
@@ -4538,7 +4561,9 @@ function renderOrdenCruces(bracket, tablaMerito){
   const cont = document.getElementById('orden-cruces-cont');
   if(!cont) return;
   const items = calcOrdenParaCruces(bracket, tablaMerito);
-  const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1)).join('');
+  let elim = null;
+  try { elim = calcEliminados16vos(tablaMerito, bracket); } catch(e){ elim = null; }
+  const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1, elim)).join('');
   cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
 
