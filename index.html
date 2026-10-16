@@ -2915,7 +2915,10 @@ function last5ForTeam(nombre){
       });
     }
   });
-  jugados.sort((a,b)=>faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
+  // Por día real (los 16vos se jugaron después de los Cuartos aunque faseRank los ponga antes);
+  // sin día cargado, por fase y fecha, antes que los que sí tienen día.
+  const orden = j => j.dia || ('0000-' + String(faseRank(j.zona)*100 + j.fecha).padStart(5,'0'));
+  jugados.sort((a,b)=>orden(a).localeCompare(orden(b))||faseRank(a.zona)-faseRank(b.zona)||a.fecha-b.fecha);
   return jugados.slice(-5).reverse();
 }
 
@@ -2946,7 +2949,9 @@ async function cargarHistorialH2H(nombreLocal, nombreVisit){
   const {data} = await sb.from('historial_partidos')
     .select('id,temporada,fase,local,gl,gv,visitante')
     .or(`and(equipo_local_id.eq.${eqL.id},equipo_visitante_id.eq.${eqV.id}),and(equipo_local_id.eq.${eqV.id},equipo_visitante_id.eq.${eqL.id})`);
-  const rows = data||[];
+  // La temporada actual sale del FIXTURE (completo y al día): el archivo historial_partidos se
+  // cargó en septiembre y no tiene el final de Nonagonal/Reválida ni los playoffs.
+  const rows = (data||[]).filter(r=>String(r.temporada)!==TEMPORADA_ACTUAL).concat(_h2hTemporadaActual(nombreLocal, nombreVisit));
   if(!rows.length){ const vacio={resumen:null, ultimos:[]}; _h2hCache[cacheKey]=vacio; return vacio; }
 
   let ganoLocal=0, ganoVisit=0, empates=0, golLocal=0, golVisit=0;
@@ -2962,12 +2967,32 @@ async function cargarHistorialH2H(nombreLocal, nombreVisit){
   // sigue el orden en que se cargaron, razonablemente cronológico).
   const sortKey = r => {
     const anio = parseInt(String(r.temporada).match(/\d{4}/)?.[0]) || 0;
-    return anio*100000 + r.id;
+    return anio*100000 + (r._orden!=null ? 50000 + r._orden : r.id);
   };
   const ultimos = [...rows].sort((a,b)=>sortKey(b)-sortKey(a)).slice(0,5);
   const resultado = {resumen:{pj:rows.length, ganoLocal, empates, ganoVisit, golLocal, golVisit}, ultimos};
   _h2hCache[cacheKey] = resultado;
   return resultado;
+}
+
+// Partidos jugados (no en vivo) entre los dos equipos en la temporada actual, desde FIXTURE, con
+// el mismo formato que historial_partidos y _orden cronológico (día real; sin día, fase y fecha).
+const TEMPORADA_ACTUAL = '2026';
+function _h2hTemporadaActual(a, b){
+  const out = [];
+  zonasFixture().forEach(z=>{
+    Object.entries(FIXTURE[z]||{}).forEach(([f, ms])=>{
+      (ms||[]).forEach(m=>{
+        if(m.gl==null || m.gv==null || m.estado==='en_curso') return;
+        if(!((m.local===a && m.visitante===b) || (m.local===b && m.visitante===a))) return;
+        const dia = (PARTIDO_META[getMetaKey(z, f, m.local, m.visitante)] || {}).dia;
+        out.push({ temporada:TEMPORADA_ACTUAL, fase:z, local:m.local, gl:m.gl, gv:m.gv, visitante:m.visitante,
+                   _k: dia || ('0000-' + String(faseRank(z)*100 + Number(f)).padStart(5,'0')) });
+      });
+    });
+  });
+  out.sort((x,y)=>x._k.localeCompare(y._k)).forEach((r,i)=>{ r._orden = i; });
+  return out;
 }
 
 function renderHistorialCategoriaHTML(nombreLocal, nombreVisit, resumen){
