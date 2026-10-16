@@ -311,9 +311,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .oc-nombre{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;}
 .oc-pend{font-size:11px;color:var(--muted);font-style:italic;}
 /* Eliminado en 16vos del Segundo Ascenso (vuelta terminada): escudo en blanco y negro y el
-   nombre tachado en rojo. */
+   nombre tachado en blanco. */
 .oc-elim .me{filter:grayscale(1);}
-.oc-elim .oc-nombre{text-decoration:line-through;text-decoration-color:#e53935;text-decoration-thickness:2px;}
+.oc-elim .oc-nombre{text-decoration:line-through;text-decoration-color:#fff;text-decoration-thickness:2px;}
 .oc-detalle{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 @media (max-width:900px){
   #orden-cruces-cont{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
@@ -1343,7 +1343,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <div id="preview16-cont" class="preview16-cont"></div>
         </div>
         <div id="cruces-parciales-wrap" style="display:none;">
-          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Cruces parciales - Octavos de Final</p>
+          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Octavos de Final</p>
           <p class="llave-nota">Así quedarían si las llaves terminaran como van ahora (en empate global pasa el primero de cada llave).</p>
           <p class="cp-sub">Cruces parciales</p>
           <div id="cp-octavos-cont" class="preview16-cont"></div>
