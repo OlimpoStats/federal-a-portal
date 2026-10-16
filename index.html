@@ -2951,8 +2951,14 @@ async function cargarHistorialH2H(nombreLocal, nombreVisit){
     .or(`and(equipo_local_id.eq.${eqL.id},equipo_visitante_id.eq.${eqV.id}),and(equipo_local_id.eq.${eqV.id},equipo_visitante_id.eq.${eqL.id})`);
   // La temporada actual sale del FIXTURE (completo y al día): el archivo historial_partidos se
   // cargó en septiembre y no tiene el final de Nonagonal/Reválida ni los playoffs.
-  const rows = (data||[]).filter(r=>String(r.temporada)!==TEMPORADA_ACTUAL).concat(_h2hTemporadaActual(nombreLocal, nombreVisit));
-  if(!rows.length){ const vacio={resumen:null, ultimos:[]}; _h2hCache[cacheKey]=vacio; return vacio; }
+  // La Primera Fase del FIXTURE llega aparte (foto estática): se espera a que esté. Si no se pudo
+  // cargar, esos partidos se toman del archivo (que sí los tiene completos) y no se cachea.
+  try { await cargarFase1DesdeSnapshot(); } catch(e){}
+  const fase1Ok = _fase1Cargada;
+  const deArchivo = r => String(r.temporada)!==TEMPORADA_ACTUAL || (!fase1Ok && ZONAS.includes(r.fase));
+  const actual = _h2hTemporadaActual(nombreLocal, nombreVisit).filter(r => fase1Ok || !ZONAS.includes(r.fase));
+  const rows = (data||[]).filter(deArchivo).concat(actual);
+  if(!rows.length){ const vacio={resumen:null, ultimos:[]}; if(fase1Ok) _h2hCache[cacheKey]=vacio; return vacio; }
 
   let ganoLocal=0, ganoVisit=0, empates=0, golLocal=0, golVisit=0;
   rows.forEach(r=>{
@@ -2971,7 +2977,7 @@ async function cargarHistorialH2H(nombreLocal, nombreVisit){
   };
   const ultimos = [...rows].sort((a,b)=>sortKey(b)-sortKey(a)).slice(0,5);
   const resultado = {resumen:{pj:rows.length, ganoLocal, empates, ganoVisit, golLocal, golVisit}, ultimos};
-  _h2hCache[cacheKey] = resultado;
+  if(fase1Ok) _h2hCache[cacheKey] = resultado;
   return resultado;
 }
 
