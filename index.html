@@ -537,6 +537,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
    primer ascenso (.llave-card/.llave-fila), pero en grilla plana de 3 columnas: no hay líneas de
    bracket conectando rondas porque todavía no se sabe quién se cruza con quién más adelante.
    Clase reusable (home + calculadora), no atada a un id. */
+#segundo-ascenso-wrap #cruces-parciales-wrap{margin-top:1rem;}
 .sa-ronda-lbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#ccc;margin:1rem 0 .5rem;}
 #sa-rondas-cont .bnc-mirror-cont{margin-bottom:.5rem;}
 .cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem;}
@@ -1372,9 +1373,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
             <p class="sec" style="color:#fff;margin-bottom:0;">Orden para cruces</p>
             <div style="display:flex;align-items:center;gap:.6rem;">
-              <!-- Botón al Simulador. stopPropagation para que no dispare el toggle del
-                   desplegable al clickearlo. -->
-              <div onclick="event.stopPropagation();goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:linear-gradient(90deg,#ffe27a,#e8a83a);border:none;border-radius:6px;padding:.4rem .6rem;color:#111;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(232,196,74,.35);">🧮 Simulador</div>
               <span class="oc-chevron" id="oc-chevron">▾</span>
             </div>
           </div>
@@ -1398,6 +1396,29 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
      que sigue jugándose de ahí en más son los cuadros de playoff, que viven en Inicio). -->
 <div class="page" id="page-segundafase">
   <p class="sec" style="color:#fff;">📄 Segunda Fase — archivo (fase de grupos finalizada)</p>
+  <div class="inicio-grid">
+  <div>
+    <p class="sec" style="color:#fff;">Resultados</p>
+    <div style="display:flex;align-items:stretch;gap:.4rem;">
+      <div class="fecha-hdr" style="flex:1;">
+        <div class="fnav" id="btn-prev-sf" onclick="cambiarSF(-1)">&#8592;</div>
+        <div class="fi fi-sf" style="position:relative;">
+          <div class="fnum" onclick="toggleFechaPickerSF()" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.2rem .75rem;">
+            <span id="fnum-sf-txt">Fecha 9</span>
+            <span style="font-size:11px;color:var(--muted);">▼</span>
+          </div>
+          <div id="fecha-picker-sf" style="display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;padding:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.5);">
+            <div id="fecha-picker-sf-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:.3rem;width:180px;"></div>
+          </div>
+          <div class="fsub">Segunda Fase — 2026</div>
+        </div>
+        <div class="fnav dis" id="btn-next-sf" onclick="cambiarSF(1)">&#8594;</div>
+      </div>
+      <div style="width:32px;flex-shrink:0;"></div>
+    </div>
+    <div id="partidos-sf-cont"></div>
+  </div>
+  <div>
   <div id="nonagonales-wrap">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
       <div id="tablas-nonagonal-a" style="align-self:start;"></div>
@@ -1428,6 +1449,8 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
   <div id="golasist-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
     <div id="cont-goleadores-resumen" style="align-self:start;"></div>
     <div id="cont-asistentes-resumen" style="align-self:start;"></div>
+  </div>
+  </div>
   </div>
 </div>
 
@@ -4198,6 +4221,7 @@ function renderGruposSegundaFase(grupos){
   renderBracketNonagonalMirror(grupos);
   renderPreview16(nonARows, nonBRows, revARows, revBRows);
   renderRondasSA();
+  renderPartidosSF(fechaSF);
   renderCrucesParciales();
   const bracketParaCruces = calcBracketNonagonal(grupos);
   const tablaMerito = calcTablaMerito(nonARows, nonBRows, revARows, revBRows);
@@ -4814,6 +4838,7 @@ function renderRondasSA(){
     cont.innerHTML = '';
     if(titulo) titulo.textContent = 'Segundo Ascenso - Dieciseisavos de Final';
     if(lbl16) lbl16.style.display = 'none';
+    _ubicarCrucesParciales();
     return;
   }
   const ultima = sembradas[sembradas.length-1];
@@ -4821,6 +4846,7 @@ function renderRondasSA(){
   if(lbl16) lbl16.style.display = '';
   const bloque = (r, conLbl) => `${conLbl ? `<p class="sa-ronda-lbl">${NOMBRE_RONDA_SA[rondas[r].cruces.length]}</p>` : ''}
     <div class="preview16-cont">${rondas[r].cruces.map(l=>_cardRondaSA(r, l)).join('')}</div>`;
+  const bloqueDiv = (r, conLbl) => `<div class="sa-bloque">${bloque(r, conLbl)}</div>`;
   let html = '';
   let lista = [...sembradas].reverse();
   if(ultima === 'sa-1'){
@@ -4833,11 +4859,22 @@ function renderRondasSA(){
     _armarCuadroEspejo(div, qf, semis.map(l=>_tieRondaSA('sa-2', l)), _cardLlave(_tieRondaSA('sa-1', fin), false, 'llave-card-sm'));
     html = div.outerHTML;
     lista = lista.filter(r => r==='sa-8');
-    html += lista.map(r => bloque(r, true)).join('');
+    html += lista.map(r => bloqueDiv(r, true)).join('');
   } else {
-    html = lista.map((r,i) => bloque(r, i>0)).join('');
+    html = lista.map((r,i) => bloqueDiv(r, i>0)).join('');
   }
   cont.innerHTML = html;
+  _ubicarCrucesParciales();
+}
+// Los cruces parciales (ronda siguiente) van justo debajo de la ronda más nueva y arriba de la
+// anterior; con solo los 16vos cargados, debajo de ellos.
+function _ubicarCrucesParciales(){
+  const cpw = document.getElementById('cruces-parciales-wrap');
+  const cont = document.getElementById('sa-rondas-cont');
+  if(!cpw || !cont) return;
+  const primero = cont.firstElementChild;
+  if(primero) primero.after(cpw);
+  else { const p16 = document.getElementById('preview16-cont'); if(p16) p16.after(cpw); }
 }
 // Tarjeta de una llave de Octavos en adelante, con el marcador I/V/G real (como los 16vos).
 function _cardRondaSA(ronda, l){
@@ -4979,6 +5016,70 @@ document.addEventListener("click", e=>{
 });
 
 function cambiar(d){const n=fechaActual+d;if(n<1||n>18)return;fechaActual=n;renderPartidos(fechaActual);}
+
+// ── Segunda Fase (archivo): resultados de Nonagonal y Reválida por fecha (9 fechas), mismo
+// formato que la columna de Primera Fase. Arranca en la última fecha.
+const SF_FECHAS = 9;
+let fechaSF = SF_FECHAS;
+function renderPartidosSF(f){
+  const cont = document.getElementById('partidos-sf-cont');
+  if(!cont) return;
+  fechaSF = f;
+  document.getElementById('fnum-sf-txt').textContent = 'Fecha ' + f;
+  document.getElementById('btn-prev-sf').classList.toggle('dis', f<=1);
+  document.getElementById('btn-next-sf').classList.toggle('dis', f>=SF_FECHAS);
+  const rows = [];
+  GRUPOS2.forEach(z => {
+    ((FIXTURE[z] || {})[String(f)] || []).forEach(m => {
+      rows.push({ zona: z, m, meta: PARTIDO_META[getMetaKey(z,f,m.local,m.visitante)] || {} });
+    });
+  });
+  rows.sort((a,b)=>{
+    const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
+    return ad.localeCompare(bd) || GRUPOS2.indexOf(a.zona)-GRUPOS2.indexOf(b.zona) || a.m.local.localeCompare(b.m.local);
+  });
+  let html = "", diaActual = null;
+  rows.forEach(({zona, m, meta}) => {
+    const dKey = diaKey(meta.dia);
+    if(dKey !== diaActual){
+      diaActual = dKey;
+      const t = diaTitulo(meta.dia);
+      html += t.fecha
+        ? `<div class="dia-lbl"><span class="dia-week">${t.dia} - </span><span class="dia-date">${t.fecha}</span></div>`
+        : `<div class="dia-lbl"><span class="dia-week">${t.dia}</span></div>`;
+    }
+    html += renderFilaPartido(zona, f, m, meta);
+  });
+  cont.innerHTML = html;
+  for(let i=1;i<=SF_FECHAS;i++){
+    const el = document.getElementById('fpsf-'+i);
+    if(el){ el.style.color = i===f ? 'var(--accent)' : 'var(--text)'; el.style.borderColor = i===f ? 'var(--accent)' : 'var(--border)'; }
+  }
+}
+function cambiarSF(d){ const n = fechaSF+d; if(n<1 || n>SF_FECHAS) return; renderPartidosSF(n); }
+function toggleFechaPickerSF(){
+  const picker = document.getElementById('fecha-picker-sf');
+  const grid = document.getElementById('fecha-picker-sf-grid');
+  if(!picker) return;
+  if(grid && !grid.children.length){
+    grid.innerHTML = Array.from({length:SF_FECHAS},(_,i)=>{
+      const n = i+1;
+      return `<div onclick="irAFechaSF(${n})" id="fpsf-${n}" style="text-align:center;padding:.3rem .2rem;border-radius:4px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--border);color:${n===fechaSF?'var(--accent)':'var(--text)'};border-color:${n===fechaSF?'var(--accent)':'var(--border)'};">${n}</div>`;
+    }).join("");
+  }
+  picker.style.display = (picker.style.display === "none" || !picker.style.display) ? "block" : "none";
+}
+function irAFechaSF(n){
+  const picker = document.getElementById('fecha-picker-sf');
+  if(picker) picker.style.display = 'none';
+  renderPartidosSF(n);
+}
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".fi-sf")){
+    const picker = document.getElementById("fecha-picker-sf");
+    if(picker) picker.style.display = "none";
+  }
+});
 
 // ── PLAYOFFS: widget de resultados propio, una solapa por fin de semana (ver HOME_ESTADOS) ──
 // Reemplaza al viejo widget de Segunda Fase (9 fechas de Nonagonal/Reválida, fase cerrada y
