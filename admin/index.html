@@ -73,6 +73,57 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 .btn-secondary:hover{border-color:rgba(255,255,255,0.2);}
 .btn-danger{background:#3a1010;color:#e57373;border:1px solid #5a2020;}
 .btn-sm{font-size:12px;padding:.35rem .75rem;}
+/* Rondas (creador de rondas nuevas) */
+.nr-n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#111;align-items:center;justify-content:center;font-size:12px;margin-right:.5rem;}
+.nr-row3{display:grid;grid-template-columns:1.3fr 1fr 1.3fr;gap:.75rem;}
+.nr-hint{font-size:11px;color:var(--muted);margin-top:.35rem;}
+.nr-seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.nr-seg span{padding:.45rem .9rem;font-size:13px;color:var(--muted);background:var(--surface2);cursor:pointer;}
+.nr-seg span.on{background:var(--accent);color:#111;font-weight:700;}
+.nr-cruces{width:100%;border-collapse:collapse;}
+.nr-cruces th{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:.3rem .5rem;border-bottom:1px solid var(--border);}
+.nr-cruces td{padding:.45rem .5rem;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.nr-cruces .nr-num{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);width:28px;text-align:center;}
+.nr-cruces .nr-vs{color:var(--muted);font-size:12px;text-align:center;width:30px;}
+.nr-cruces .nr-acc{width:28px;text-align:center;cursor:pointer;font-size:15px;color:var(--muted);}
+.nr-cruces .nr-acc:hover{color:var(--text);}
+.nr-cruces .nr-x{color:#e57373;}
+.nr-eq{display:flex;align-items:center;gap:.5rem;flex:1;min-width:0;}
+.nr-eq select{flex:1;min-width:0;}
+.nr-cruces .nr-td-eq{width:44%;}
+.nr-eq .nr-rk{font-size:11px;color:var(--muted);min-width:24px;}
+.nr-esc{width:22px;height:22px;object-fit:contain;flex-shrink:0;}
+.nr-esc-v{width:22px;height:22px;flex-shrink:0;display:inline-block;}
+tr.nr-ed td{background:rgba(232,196,74,.05);}
+.nr-tag-ed{font-size:10px;font-weight:700;color:#111;background:var(--accent);border-radius:4px;padding:1px 6px;margin-left:.4rem;white-space:nowrap;}
+.nr-tag-auto{font-size:11px;color:#5dba7d;background:#0a1a0d;border:1px solid #1e5c35;border-radius:4px;padding:2px 8px;text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;}
+.nr-tag-man{font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;}
+.nr-aviso{margin-top:.6rem;font-size:12px;background:#1a1500;border:1px solid #5a4a0a;color:#e8c44a;border-radius:6px;padding:.5rem .75rem;}
+.nr-aviso.err{background:#1f0b0b;border-color:#6a2020;color:#ef9a9a;}
+.nr-ap-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.nr-toggle{display:flex !important;align-items:center;gap:.5rem;font-size:13px !important;color:var(--text) !important;margin-bottom:1rem !important;cursor:pointer;}
+.nr-toggle input{width:16px;height:16px;accent-color:var(--accent);}
+.nr-colores{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;}
+.nr-colores .c{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer;}
+.nr-colores .c.on{border-color:#fff;box-shadow:0 0 0 2px #000 inset;}
+.nr-colores label.otro{font-size:12px;color:var(--muted);border:1px dashed #555;border-radius:6px;padding:.3rem .55rem;margin:0;cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;}
+.nr-colores label.otro input{width:0;height:0;opacity:0;border:0;padding:0;}
+.nr-home-prev{background:#0b0b0b;border:1px solid var(--border);border-radius:8px;padding:.9rem;}
+.nr-home-prev .tit{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem;}
+.nr-fila{display:flex;align-items:center;gap:.6rem;border:1px solid var(--border);border-radius:8px;padding:.6rem .7rem;margin-bottom:.45rem;}
+.nr-pill{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;border-radius:999px;padding:.15rem .5rem;white-space:nowrap;}
+.nr-fila .eq{flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;display:flex;align-items:center;gap:.4rem;min-width:0;}
+.nr-fila .eq.der{justify-content:flex-end;}
+.nr-fila .vs{color:var(--muted);font-size:12px;}
+.nr-solapa{display:flex;align-items:center;justify-content:center;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem;margin-bottom:.6rem;}
+.nr-solapa b{font-family:'Barlow Condensed',sans-serif;font-size:18px;color:var(--accent);display:block;text-align:center;}
+.nr-solapa small{font-size:11px;color:var(--muted);display:block;text-align:center;}
+.nr-confirm{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.nr-ex{display:grid;grid-template-columns:1.6fr 70px 130px 110px;gap:.75rem;align-items:center;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.nr-ex:last-child{border-bottom:none;}
+.nr-ex input[type=color]{width:46px;height:30px;padding:0;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;}
+.nr-ex .nom{font-size:13px;}
+.nr-ex .nom small{display:block;font-size:11px;color:var(--muted);}
 
 /* spinner */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite;}
@@ -216,6 +267,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
     <div class="sb-section">Partidos</div>
     <div class="sb-item active" onclick="goPanel('partidos')"><span class="sb-icon">⚽</span>Partidos</div>
     <div class="sb-item" onclick="goPanel('horarios')"><span class="sb-icon">📅</span>Programación</div>
+    <div class="sb-item" onclick="goPanel('rondas')"><span class="sb-icon">🏗️</span>Rondas</div>
     <div class="sb-section">Clubes</div>
     <div class="sb-item" onclick="goPanel('escudos')"><span class="sb-icon">🛡️</span>Escudos</div>
     <div class="sb-item" onclick="goPanel('jugadores')"><span class="sb-icon">👤</span>Jugadores</div>
@@ -551,14 +603,75 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
 
     </div>
 
+<!-- ===================== RONDAS ===================== -->
+    <div class="panel" id="panel-rondas">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Nueva ronda</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Creá los partidos de una ronda nueva. Los cruces se proponen solos con el mismo cálculo del sitio; podés cambiarlos antes de crearla.</p>
+
+      <div class="card">
+        <div class="card-hdr"><span><span class="nr-n">1</span>Ronda</span></div>
+        <div class="card-body">
+          <div class="nr-row3">
+            <div><label>Ronda</label><select id="nr-ronda" onchange="nrElegirRonda(this.value)"></select></div>
+            <div><label>Formato</label><div class="nr-seg" id="nr-formato"></div></div>
+            <div><label>Nombre de la zona</label><input type="text" id="nr-nombre" oninput="NR.nombre=this.value.trim();nrRender()"><div class="nr-hint" id="nr-nombre-hint"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span><span class="nr-n">2</span>Cruces</span><span id="nr-origen"></span></div>
+        <div class="card-body">
+          <table class="nr-cruces">
+            <thead><tr><th>#</th><th id="nr-th-mejor">Mejor ubicado (local en la vuelta)</th><th></th><th id="nr-th-peor">Peor ubicado (local en la ida)</th><th></th><th></th></tr></thead>
+            <tbody id="nr-cruces-body"></tbody>
+          </table>
+          <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="nrAgregar()">＋ Agregar cruce</button>
+            <button class="btn btn-secondary btn-sm" id="nr-btn-reset" onclick="nrVolverPropuesta()">↺ Volver a la propuesta</button>
+          </div>
+          <div id="nr-avisos"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span><span class="nr-n">3</span>Cómo se ve en el sitio</span></div>
+        <div class="card-body">
+          <div class="nr-ap-grid">
+            <div>
+              <label class="nr-toggle"><input type="checkbox" id="nr-visible" onchange="NR.visible=this.checked;nrRender()"> Visible en la home (Resultados)</label>
+              <label>Color del recuadro</label>
+              <div class="nr-colores" id="nr-colores" style="margin-bottom:1rem;"></div>
+              <label>Texto del recuadro</label>
+              <input type="text" id="nr-pill" maxlength="12" style="max-width:160px;" oninput="NR.pill=this.value;nrRender()">
+              <div class="nr-hint" style="margin-bottom:1rem;">Lo que aparece en la etiqueta de cada partido.</div>
+              <div id="nr-solapa-wrap">
+                <label>Solapa de Resultados</label>
+                <div class="nr-seg" id="nr-juntas"></div>
+              </div>
+              <div class="nr-hint">Título de la solapa:</div>
+              <input type="text" id="nr-titulo" style="max-width:260px;margin-top:.35rem;" oninput="NR.titulo=this.value;nrRender()">
+            </div>
+            <div><div class="nr-home-prev" id="nr-home-prev"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nr-confirm">
+        <div style="font-size:13px;color:#bbb;" id="nr-confirm-info"></div>
+        <button class="btn btn-primary" id="nr-btn-crear" onclick="nrCrear()">⚡ Crear ronda</button>
+      </div>
+
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin:2rem 0 .35rem;">Rondas existentes</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Color, texto del recuadro y visibilidad en la home de las rondas ya creadas. Los cambios se ven en el sitio en menos de un minuto.</p>
+      <div class="card"><div class="card-body" id="nr-existentes"><div style="color:var(--muted);font-size:13px;">Cargando...</div></div></div>
+      <div style="text-align:right;"><button class="btn btn-primary" onclick="nrGuardarExistentes()">💾 Guardar cambios</button></div>
+    </div>
+
 <!-- ===================== HORARIOS Y STREAMS ===================== -->
     <div class="panel" id="panel-horarios">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
-      <div id="hs-seed-cuartos-wrap" style="margin-bottom:1rem;">
-        <button class="btn btn-primary" onclick="seedFinalOctavos()">⚡ Cargar Final (Primer Ascenso) + Octavos (Segundo Ascenso)</button>
-        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Final Primer Ascenso" y "Octavos Segundo Ascenso - Ida/Vuelta" con los cruces ya definidos. No hace nada si ya existen.</p>
-      </div>
       <div class="card">
         <div class="card-body">
           <div class="form-row two">
@@ -1184,34 +1297,328 @@ async function seedSemis16vos(){
 // cancha neutral; el "local" es solo nominal) y los Octavos del Segundo Ascenso, ida y vuelta
 // (el mejor ubicado visita en la ida y es local en la vuelta). Cruces sacados de la home con
 // Semis y 16vos ya jugados.
-async function seedFinalOctavos(){
-  if(FIXTURE["Final Primer Ascenso"] || FIXTURE["Octavos Segundo Ascenso - Ida"]){
-    alert("Ya existen las zonas de la Final / Octavos, no se vuelven a insertar.");
-    return;
+// ── RONDAS: creador de rondas nuevas + cómo se ve cada ronda en el sitio ──
+// La config (color/texto del recuadro, visible en la home, solapa) vive en config-sitio.json,
+// en el mismo bucket que las fotos; api/snapshot-segunda-fase.js la mete dentro de la foto.
+// Los cruces se proponen con el MISMO cálculo de la home (calcCrucesParciales), leído desde
+// la home abierta en un iframe oculto: así no hay dos copias de las reglas de cruces.
+const CONFIG_SITIO_PATH = "config-sitio.json";
+async function leerConfigSitio(){
+  const {data:{session}} = await sb.auth.getSession();
+  const r = await fetch(`${SUPA_URL}/storage/v1/object/authenticated/escudos/${CONFIG_SITIO_PATH}`, {
+    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session?.access_token || SUPA_KEY}` },
+    cache: "no-store",
+  });
+  if(r.ok) return await r.json();
+  const txt = await r.text().catch(()=> "");
+  if(r.status === 404 || /not.?found/i.test(txt)) return {}; // todavía no existe
+  throw new Error("No se pudo leer la configuración (HTTP " + r.status + ")");
+}
+async function guardarConfigSitio(cfg){
+  const blob = new Blob([JSON.stringify(cfg)], {type:"application/json"});
+  const {error} = await sb.storage.from("escudos").upload(CONFIG_SITIO_PATH, blob, {upsert:true, contentType:"application/json", cacheControl:"60"});
+  if(error) throw error;
+}
+
+const NR_RONDAS = {
+  "sa-4": { label:"Cuartos de Final — Segundo Ascenso", nombre:"Cuartos Segundo Ascenso", n:4, pill:"4°-REV", titulo:"Cuartos de Final" },
+  "sa-2": { label:"Semifinales — Segundo Ascenso", nombre:"Semifinal Segundo Ascenso", n:2, pill:"SEMI-REV", titulo:"Semifinales" },
+  "sa-1": { label:"Final — Segundo Ascenso", nombre:"Final Segundo Ascenso", n:1, pill:"FINAL-REV", titulo:"Final" },
+  "otra": { label:"Otra (nombre a mano)", nombre:"", n:1, pill:"", titulo:"" },
+};
+const NR_COLORES = ["#e8c44a","#4fc3f7","#8bc34a","#e0507a","#e53935","#b388ff"];
+let NR = null;        // estado del creador
+let NR_SITIO = null;  // datos leídos de la home: {ronda, cruces, completa, rank, esc, zc}
+let NR_EX = [];       // filas de "Rondas existentes"
+
+function _nrZonas(){
+  return NR.formato === "iv" ? [NR.nombre + " - Ida", NR.nombre + " - Vuelta"] : [NR.nombre];
+}
+function _nrEsc(nombre){
+  const u = NR_SITIO?.esc?.[nombre];
+  return u ? `<img class="nr-esc" src="${u}" alt="">` : `<span class="nr-esc-v"></span>`;
+}
+function _nrRank(nombre){
+  const r = NR_SITIO?.rank?.[nombre];
+  return r != null ? "#" + r : "";
+}
+function _nrTextoSobre(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if(!m) return "#111111";
+  const n = parseInt(m[1],16), r = n>>16, g = (n>>8)&255, b = n&255;
+  return (0.299*r + 0.587*g + 0.114*b) > 150 ? "#111111" : "#ffffff";
+}
+const _nrHtml = t => String(t ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+
+// Abre la home en un iframe oculto y espera a que termine de calcular (tablas de la Segunda
+// Fase ya armadas). Se borra antes el caché local de la home para que lea la foto más nueva.
+function _nrLeerSitio(){
+  return new Promise((resolve, reject) => {
+    try { localStorage.removeItem("fa_v3"); } catch(e){}
+    const fr = document.createElement("iframe");
+    fr.style.cssText = "position:absolute;left:-99999px;top:0;width:1280px;height:800px;visibility:hidden;";
+    fr.src = "/?calc=" + Date.now();
+    document.body.appendChild(fr);
+    const t0 = Date.now();
+    const tick = () => {
+      try {
+        const w = fr.contentWindow;
+        if(w && w.eval && w.eval("typeof _ultimoNonARows!=='undefined' && Array.isArray(_ultimoNonARows) && _ultimoNonARows.length>0 && typeof calcCrucesParciales==='function'")){
+          const json = w.eval(`(()=>{
+            const sembradas = _rondasSASembradas();
+            const actual = sembradas.length ? sembradas[sembradas.length-1] : 'sa-16';
+            const cp = calcCrucesParciales();
+            const reales = calcRondasSAReales();
+            const sim = calcSimulacion();
+            const rank = {};
+            Object.values(reales).forEach(r => (r.lista||[]).forEach(e => { if(e && e.n && e.rank!=null && rank[e.n]==null) rank[e.n] = e.rank; }));
+            const zc = {}; Object.keys(ZONA_COLORES).forEach(k => { zc[k] = zonaConfig(k); });
+            return JSON.stringify({
+              ronda: cp ? cp.ronda : null,
+              cruces: cp ? cp.octavos.map(c => ({ mejor: c.mejor && c.mejor.n || '', peor: c.peor && c.peor.n || '',
+                lblMejor: c.mejor && !c.mejor.n && c.mejor.label || '', lblPeor: c.peor && !c.peor.n && c.peor.label || '' })) : [],
+              completa: !!(reales[actual] && reales[actual].completa) && !!(sim && sim.fin && sim.fin.real),
+              rank, esc: Object.assign({}, ESCUDOS), zc,
+            });
+          })()`);
+          fr.remove();
+          resolve(JSON.parse(json));
+          return;
+        }
+      } catch(e){ fr.remove(); reject(e); return; }
+      if(Date.now() - t0 > 40000){ fr.remove(); reject(new Error("El sitio tardó demasiado en cargar")); return; }
+      setTimeout(tick, 400);
+    };
+    fr.onload = () => setTimeout(tick, 300);
+  });
+}
+
+async function nrAbrir(){
+  if(!NR) nrNuevo(null);
+  nrRender();
+  document.getElementById("nr-origen").innerHTML = `<span class="nr-tag-man">Calculando cruces con los datos del sitio...</span>`;
+  try {
+    NR_SITIO = await _nrLeerSitio();
+  } catch(e){
+    NR_SITIO = null;
+    console.error(e);
   }
-  if(!confirm("Esto va a cargar la Final del Primer Ascenso y los 7 cruces de Octavos del Segundo Ascenso (ida y vuelta, 15 partidos). ¿Continuar?")) return;
-  const filas = [
-    {zona:"Final Primer Ascenso", fecha:1, equipo_local:"San Martín (F)", equipo_visitante:"Cipolletti"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sp. Las Parejas", equipo_visitante:"Alvarado"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Gimnasia (CDU)", equipo_visitante:"Olimpo"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Boca Unidos", equipo_visitante:"Gimnasia (Ch)"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Juv. Antoniana", equipo_visitante:"Sol de América (F)"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sarmiento (LB)", equipo_visitante:"Atenas (RC)"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Villa Mitre", equipo_visitante:"Douglas Haig"},
-    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Argentino (MM)", equipo_visitante:"Kimberley"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Alvarado", equipo_visitante:"Sp. Las Parejas"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Olimpo", equipo_visitante:"Gimnasia (CDU)"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Gimnasia (Ch)", equipo_visitante:"Boca Unidos"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Sol de América (F)", equipo_visitante:"Juv. Antoniana"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Atenas (RC)", equipo_visitante:"Sarmiento (LB)"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Douglas Haig", equipo_visitante:"Villa Mitre"},
-    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Kimberley", equipo_visitante:"Argentino (MM)"},
-  ];
+  // Ronda propuesta: la que sigue a la última cargada (si todavía no existe en el fixture).
+  const sig = NR_SITIO?.ronda;
+  nrNuevo(sig && NR_RONDAS[sig] && !FIXTURE[NR_RONDAS[sig].nombre + " - Ida"] && !FIXTURE[NR_RONDAS[sig].nombre] ? sig : null);
+  nrRender();
+  nrCargarExistentes();
+}
+
+function nrNuevo(ronda){
+  const disponibles = Object.keys(NR_RONDAS).filter(k => k === "otra" || (!FIXTURE[NR_RONDAS[k].nombre + " - Ida"] && !FIXTURE[NR_RONDAS[k].nombre]));
+  const r = ronda && disponibles.includes(ronda) ? ronda : disponibles[0];
+  const sel = document.getElementById("nr-ronda");
+  sel.innerHTML = disponibles.map(k => `<option value="${k}">${NR_RONDAS[k].label}</option>`).join("");
+  sel.value = r;
+  nrElegirRonda(r, true);
+}
+function nrElegirRonda(r, sinRender){
+  const def = NR_RONDAS[r];
+  const prop = r !== "otra" && NR_SITIO && NR_SITIO.ronda === r ? NR_SITIO.cruces.map(c => ({...c})) : [];
+  NR = {
+    ronda: r, formato: "iv", nombre: def.nombre,
+    propuesta: prop.map(c => ({...c})),
+    cruces: prop.length ? prop : Array.from({length:def.n}, () => ({mejor:"", peor:""})),
+    visible: true, color: r === "otra" ? NR_COLORES[0] : "#4fc3f7", pill: def.pill,
+    juntas: true, titulo: def.titulo, sub: r === "otra" ? "2026" : "Segundo Ascenso — 2026",
+  };
+  document.getElementById("nr-nombre").value = NR.nombre;
+  document.getElementById("nr-pill").value = NR.pill;
+  document.getElementById("nr-titulo").value = NR.titulo;
+  document.getElementById("nr-visible").checked = NR.visible;
+  if(!sinRender) nrRender();
+}
+
+// Equipos que se pueden elegir: los de la Segunda Fase (los de la propuesta primero).
+function _nrEquipos(){
+  const set = new Set();
+  ["Nonagonal A","Nonagonal B","Reválida A","Reválida B"].forEach(z => Object.values(FIXTURE[z] || {}).forEach(ms => ms.forEach(m => { set.add(m.local); set.add(m.visitante); })));
+  const prop = new Set(NR.propuesta.flatMap(c => [c.mejor, c.peor]).filter(Boolean));
+  const ordenar = arr => arr.sort((a,b) => ((NR_SITIO?.rank?.[a] ?? 999) - (NR_SITIO?.rank?.[b] ?? 999)) || a.localeCompare(b));
+  return { prop: ordenar([...prop]), otros: ordenar([...set].filter(n => !prop.has(n))) };
+}
+function _nrSel(i, lado, val){
+  const {prop, otros} = _nrEquipos();
+  const opt = n => `<option value="${_nrHtml(n)}"${n===val?" selected":""}>${_nrHtml(n)}${_nrRank(n) ? " ("+_nrRank(n)+")" : ""}</option>`;
+  const grupos = (prop.length ? `<optgroup label="En carrera">${prop.map(opt).join("")}</optgroup><optgroup label="Otros">${otros.map(opt).join("")}</optgroup>` : otros.map(opt).join(""));
+  // Lugar todavía sin dueño en la propuesta (p. ej. el perdedor de una Final sin jugar).
+  const lbl = NR.propuesta[i]?.[lado === "mejor" ? "lblMejor" : "lblPeor"];
+  return `<div class="nr-eq"><span class="nr-rk">${_nrRank(val)}</span>${val ? _nrEsc(val) : '<span class="nr-esc-v"></span>'}<select onchange="nrSet(${i},'${lado}',this.value)"><option value="">— ${_nrHtml(lbl || "Equipo")} —</option>${grupos}</select></div>`;
+}
+function nrSet(i, lado, v){ NR.cruces[i][lado] = v; nrRender(); }
+function nrInvertir(i){ const c = NR.cruces[i]; [c.mejor, c.peor] = [c.peor, c.mejor]; nrRender(); }
+function nrQuitar(i){ NR.cruces.splice(i,1); nrRender(); }
+function nrAgregar(){ NR.cruces.push({mejor:"", peor:""}); nrRender(); }
+function nrVolverPropuesta(){ NR.cruces = NR.propuesta.map(c => ({...c})); nrRender(); }
+function nrFormato(f){ NR.formato = f; nrRender(); }
+function nrJuntas(v){ NR.juntas = v; nrRender(); }
+function nrColor(c){ NR.color = c; nrRender(); }
+
+function _nrValidar(){
+  const errores = [], avisos = [];
+  if(!NR.nombre) errores.push("Falta el nombre de la zona.");
+  _nrZonas().forEach(z => { if(FIXTURE[z]) errores.push(`La zona "${z}" ya existe.`); });
+  if(!NR.cruces.length) errores.push("No hay cruces.");
+  NR.cruces.forEach((c,i) => { if(!c.mejor || !c.peor) errores.push(`Falta un equipo en el cruce ${i+1}.`); });
+  const cuenta = {};
+  NR.cruces.forEach(c => [c.mejor, c.peor].filter(Boolean).forEach(n => { cuenta[n] = (cuenta[n]||0) + 1; }));
+  Object.entries(cuenta).filter(([,k]) => k > 1).forEach(([n]) => errores.push(`${n} aparece más de una vez.`));
+  const editados = NR.cruces.map((c,i) => _nrEditado(c,i) ? i+1 : null).filter(Boolean);
+  if(NR.propuesta.length && editados.length) avisos.push(`${editados.length===1 ? "El cruce "+editados[0]+" fue cambiado" : "Los cruces "+editados.join(", ")+" fueron cambiados"} a mano y ya no coincide${editados.length===1?"":"n"} con la propuesta del sitio.`);
+  if(NR.propuesta.length && NR.cruces.length !== NR.propuesta.length) avisos.push(`La propuesta tenía ${NR.propuesta.length} cruces y ahora hay ${NR.cruces.length}.`);
+  if(NR.propuesta.length && NR_SITIO && !NR_SITIO.completa) avisos.push("La ronda anterior todavía no terminó: la propuesta usa a los que van pasando hoy.");
+  return {errores, avisos};
+}
+function _nrEditado(c, i){
+  const p = NR.propuesta[i];
+  return NR.propuesta.length ? !(p && p.mejor === c.mejor && p.peor === c.peor) : false;
+}
+
+function nrRender(){
+  if(!NR) return;
+  const iv = NR.formato === "iv";
+  document.getElementById("nr-formato").innerHTML =
+    `<span class="${iv?"on":""}" onclick="nrFormato('iv')">Ida y vuelta</span><span class="${iv?"":"on"}" onclick="nrFormato('unico')">Partido único</span>`;
+  const zonas = _nrZonas();
+  document.getElementById("nr-nombre-hint").textContent = NR.nombre
+    ? (iv ? `Se crean "${zonas[0]}" y "- Vuelta".` : `Se crea "${zonas[0]}".`) : "";
+  document.getElementById("nr-th-mejor").textContent = iv ? "Mejor ubicado (local en la vuelta)" : "Local";
+  document.getElementById("nr-th-peor").textContent = iv ? "Peor ubicado (local en la ida)" : "Visitante";
+  const origen = document.getElementById("nr-origen");
+  if(NR.propuesta.length) origen.innerHTML = `<span class="nr-tag-auto">✓ Propuestos según "Orden para cruces"</span>`;
+  else if(!origen.innerHTML.includes("Calculando")) origen.innerHTML = `<span class="nr-tag-man">Cruces a mano</span>`;
+  document.getElementById("nr-btn-reset").style.display = NR.propuesta.length ? "" : "none";
+
+  document.getElementById("nr-cruces-body").innerHTML = NR.cruces.map((c,i) => {
+    const ed = _nrEditado(c,i);
+    return `<tr class="${ed?"nr-ed":""}"><td class="nr-num">${i+1}</td>
+      <td class="nr-td-eq">${_nrSel(i,"mejor",c.mejor)}</td><td class="nr-vs">vs</td>
+      <td class="nr-td-eq"><div style="display:flex;align-items:center;">${_nrSel(i,"peor",c.peor)}${ed?'<span class="nr-tag-ed">EDITADO</span>':""}</div></td>
+      <td class="nr-acc" title="Invertir localía" onclick="nrInvertir(${i})">⇄</td>
+      <td class="nr-acc nr-x" title="Quitar cruce" onclick="nrQuitar(${i})">✕</td></tr>`;
+  }).join("");
+
+  const {errores, avisos} = _nrValidar();
+  document.getElementById("nr-avisos").innerHTML =
+    errores.map(t => `<div class="nr-aviso err">⛔ ${_nrHtml(t)}</div>`).join("") +
+    avisos.map(t => `<div class="nr-aviso">⚠️ ${_nrHtml(t)}</div>`).join("");
+
+  // Apariencia
+  const esPropio = !NR_COLORES.includes(NR.color);
+  document.getElementById("nr-colores").innerHTML =
+    NR_COLORES.map(c => `<span class="c${c===NR.color?" on":""}" style="background:${c};" onclick="nrColor('${c}')"></span>`).join("") +
+    (esPropio ? `<span class="c on" style="background:${NR.color};"></span>` : "") +
+    `<label class="otro">Otro…<input type="color" value="${NR.color}" oninput="nrColor(this.value)"></label>`;
+  document.getElementById("nr-solapa-wrap").style.display = iv ? "" : "none";
+  document.getElementById("nr-juntas").innerHTML =
+    `<span class="${NR.juntas?"on":""}" onclick="nrJuntas(true)">Ida y vuelta juntas</span><span class="${NR.juntas?"":"on"}" onclick="nrJuntas(false)">Una solapa para cada una</span>`;
+
+  // Vista previa de la home
+  const txt = _nrTextoSobre(NR.color);
+  const fila = (l, v, tenue) => `<div class="nr-fila" style="background:linear-gradient(90deg,${NR.color}1a,rgba(255,255,255,.02));border-left:3px solid ${NR.color};${tenue?"opacity:.55;":""}">
+      <span class="nr-pill" style="background:${NR.color};color:${txt};">${_nrHtml(NR.pill)}</span>
+      <div class="eq">${_nrEsc(l)}${_nrHtml(l || "—")}</div><span class="vs">vs</span><div class="eq der">${_nrHtml(v || "—")}${_nrEsc(v)}</div></div>`;
+  const cr = NR.cruces.slice(0, 2);
+  let filas = cr.map(c => iv ? fila(c.peor, c.mejor) : fila(c.mejor, c.peor)).join("");
+  if(iv && NR.juntas && cr[0]) filas += fila(cr[0].mejor, cr[0].peor, true);
+  const titulo = iv && !NR.juntas ? `${NR.titulo} - Ida` : NR.titulo;
+  document.getElementById("nr-home-prev").innerHTML = !NR.visible
+    ? `<div class="tit">Así se vería en la home</div><div class="nr-hint">Oculta: no aparece en Resultados de la home.</div>`
+    : `<div class="tit">Así se vería en la home</div>
+      <div class="nr-solapa"><span style="color:var(--muted);">‹</span><div><b>${_nrHtml(titulo)}</b><small>${_nrHtml(NR.sub)}</small></div><span style="color:var(--muted);">›</span></div>
+      ${filas}
+      <div class="nr-hint">${iv ? (NR.juntas ? "Idas y vueltas en la misma lista, ordenadas por día." : "La vuelta va en otra solapa.") : ""}</div>`;
+
+  const n = NR.cruces.length * (iv ? 2 : 1);
+  document.getElementById("nr-confirm-info").innerHTML = `Se van a crear <b style="color:#fff;">${n} partido${n===1?"":"s"}</b>${iv ? `: ${NR.cruces.length} de ida y ${NR.cruces.length} de vuelta` : ""}. Después los programás desde "Programación" como siempre.`;
+  document.getElementById("nr-btn-crear").disabled = errores.length > 0;
+}
+
+async function nrCrear(){
+  const {errores} = _nrValidar();
+  if(errores.length){ alert(errores.join("\n")); return; }
+  const iv = NR.formato === "iv", zonas = _nrZonas();
+  const n = NR.cruces.length * (iv ? 2 : 1);
+  if(!confirm(`Se van a crear ${n} partidos en ${zonas.map(z=>'"'+z+'"').join(" y ")}. ¿Continuar?`)) return;
+  const filas = [];
+  NR.cruces.forEach(c => {
+    if(iv){
+      filas.push({zona:zonas[0], fecha:1, equipo_local:c.peor, equipo_visitante:c.mejor});
+      filas.push({zona:zonas[1], fecha:1, equipo_local:c.mejor, equipo_visitante:c.peor});
+    } else {
+      filas.push({zona:zonas[0], fecha:1, equipo_local:c.mejor, equipo_visitante:c.peor});
+    }
+  });
+  const btn = document.getElementById("nr-btn-crear");
+  btn.disabled = true;
   const {error} = await sb.from("fixture").insert(filas);
-  if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
-  alert("Listo — se cargaron los 15 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
+  if(error){ alert("Error al crear los partidos: " + error.message); btn.disabled = false; return; }
+  try {
+    const cfg = await leerConfigSitio();
+    cfg.rondas = (cfg.rondas || []).filter(r => r.nombre !== NR.nombre);
+    cfg.rondas.push({ nombre:NR.nombre, zonas, nueva:true, visible:NR.visible, color:NR.color, pill:NR.pill,
+      juntas: iv ? NR.juntas : true, titulo:NR.titulo, sub:NR.sub });
+    await guardarConfigSitio(cfg);
+  } catch(e){ alert("Los partidos se crearon, pero no se pudo guardar cómo se ven en el sitio: " + e.message + "\nPodés ajustarlo abajo, en Rondas existentes."); }
   await cargarFixture();
-  regenerarFotoSegundaFase();
+  await regenerarFotoSegundaFase();
+  alert(`Listo: se crearon ${n} partidos. Ya podés programarlos desde "Programación".`);
+  NR = null;
+  nrNuevo(null);
+  nrRender();
+  nrCargarExistentes();
+}
+
+// ── Rondas existentes ──
+async function nrCargarExistentes(){
+  const cont = document.getElementById("nr-existentes");
+  let cfg = {};
+  try { cfg = await leerConfigSitio(); } catch(e){ cont.innerHTML = `<div class="nr-aviso err">⛔ ${_nrHtml(e.message)}</div>`; return; }
+  const fija = /^(Zona [A-D]|Nonagonal [AB]|Reválida [AB])$/;
+  const grupos = {};
+  Object.keys(FIXTURE).filter(z => !fija.test(z)).forEach(z => {
+    const base = z.replace(/ - (Ida|Vuelta)$/, "");
+    (grupos[base] = grupos[base] || []).push(z);
+  });
+  NR_EX = Object.entries(grupos).map(([nombre, zonas]) => {
+    zonas.sort((a,b) => /Vuelta$/.test(a) - /Vuelta$/.test(b));
+    const r = (cfg.rondas || []).find(x => x.nombre === nombre) || {};
+    const zc = NR_SITIO?.zc?.[zonas[0]] || {};
+    return { nombre, zonas, nueva: !!r.nueva, visible: r.visible !== false,
+      color: r.color || zc.color || "#888888", pill: r.pill ?? zc.pillLabel ?? zc.code ?? "",
+      juntas: r.juntas !== false, titulo: r.titulo || "", sub: r.sub || "", tocada: false };
+  });
+  if(!NR_EX.length){ cont.innerHTML = `<div style="color:var(--muted);font-size:13px;">No hay rondas todavía.</div>`; return; }
+  cont.innerHTML = `<div class="nr-ex" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;"><span>Ronda</span><span>Color</span><span>Texto</span><span>En la home</span></div>` +
+    NR_EX.map((r,i) => `<div class="nr-ex">
+      <div class="nom">${_nrHtml(r.nombre)}<small>${r.zonas.length === 2 ? "Ida y vuelta" : "Partido único"}${r.nueva ? " · solapa: " + _nrHtml(r.titulo) : ""}</small></div>
+      <input type="color" value="${r.color}" oninput="NR_EX[${i}].color=this.value;NR_EX[${i}].tocada=true;">
+      <input type="text" maxlength="12" value="${_nrHtml(r.pill)}" oninput="NR_EX[${i}].pill=this.value;NR_EX[${i}].tocada=true;">
+      <label class="nr-toggle" style="margin:0 !important;"><input type="checkbox" ${r.visible?"checked":""} onchange="NR_EX[${i}].visible=this.checked;NR_EX[${i}].tocada=true;"> Visible</label>
+    </div>`).join("");
+}
+async function nrGuardarExistentes(){
+  const tocadas = NR_EX.filter(r => r.tocada);
+  if(!tocadas.length){ alert("No hay cambios para guardar."); return; }
+  try {
+    const cfg = await leerConfigSitio();
+    cfg.rondas = cfg.rondas || [];
+    tocadas.forEach(r => {
+      const prev = cfg.rondas.find(x => x.nombre === r.nombre);
+      const nuevo = Object.assign({}, prev || { nombre:r.nombre, zonas:r.zonas }, { visible:r.visible, color:r.color, pill:r.pill });
+      cfg.rondas = cfg.rondas.filter(x => x.nombre !== r.nombre).concat([nuevo]);
+    });
+    await guardarConfigSitio(cfg);
+    await regenerarFotoSegundaFase();
+    tocadas.forEach(r => { r.tocada = false; });
+    alert("Guardado. El sitio lo muestra en menos de un minuto.");
+  } catch(e){ alert("No se pudo guardar: " + e.message); }
 }
 
 function poblarSelectoresZona(){
@@ -1290,6 +1697,7 @@ function goPanel(id){
   if(id==="foro-admin") cargarReportesForo();
   if(id==="sugerencias") cargarSugerencias();
   if(id==="sancionados") cargarSancionados();
+  if(id==="rondas") nrAbrir();
 }
 
 async function cargarSugerencias(){
@@ -4672,6 +5080,13 @@ function hsActualizar(){
 
   const ps = (FIXTURE[zona] && FIXTURE[zona][fecha]) || [];
   if(!ps.length) return;
+  // Frases de rachas ya elegidas (config-sitio.json): se leen una vez y se vuelve a pintar.
+  if(_hsRachasCfg === null){
+    _hsRachasCfg = undefined;
+    leerConfigSitio().then(c => { _hsRachasCfg = c.rachas || {}; hsActualizar(); })
+      .catch(e => { console.error(e); _hsRachasCfg = {}; _hsRachasError = true; hsActualizar(); });
+  }
+  _hsRachasTocadas = false;
 
   // Show bulk form with all matches
   if(bulkForm) bulkForm.style.display = "";
@@ -4712,6 +5127,7 @@ function hsActualizar(){
           <input type="text" id="hs-c4-${i}" value="${c4}" placeholder="Cuarto árbitro" oninput="acInput(this,'arbitros','hs-c4-${i}');marcarModificado(${i})" autocomplete="off">
           <div class="autocomplete-list" id="ac-hs-c4-${i}"></div>
         </div>
+        <div style="grid-column:1/-1;">${hsRachasHTML(zona, fecha, p, i)}</div>
       </div>
     </div>`;
   }).join("");
@@ -4723,12 +5139,110 @@ function hsActualizar(){
 const _hsModificados = new Set();
 function marcarModificado(idx){ _hsModificados.add(idx); }
 
+// ── Rachas para la previa del partido (ℹ️ en el sitio) ──
+// El admin ve 5 frases sugeridas por partido (solo acá, privadas) y tilda las que se muestran.
+// Se guardan como texto en config-sitio.json (rachas[clave del partido]) — la previa del sitio
+// solo aparece con el partido programado, así que el texto queda al día con el que se elige.
+let _hsRachasCfg = null, _hsRachasError = false, _hsRachasTocadas = false;
+const RACHA_ZONAS_NEUTRALES = /^Final Primer Ascenso/i;
+function _rachaOrdenZona(z){
+  if(/^Zona [A-D]$/.test(z)) return 1;
+  if(/^(Nonagonal|Reválida) [AB]$/.test(z)) return 2;
+  return 3;
+}
+// Partidos jugados de un equipo, del más viejo al más nuevo: {gf, gc, ctx:'L'|'V'|'N'}.
+function _rachaPartidos(nombre){
+  const out = [];
+  Object.entries(FIXTURE).forEach(([z, fechas]) => Object.entries(fechas).forEach(([f, ms]) => ms.forEach(m => {
+    if(m.local !== nombre && m.visitante !== nombre) return;
+    if(m.goles_local == null || m.goles_visitante == null || m.estado === "en_curso") return;
+    const loc = m.local === nombre;
+    out.push({ gf: loc ? m.goles_local : m.goles_visitante, gc: loc ? m.goles_visitante : m.goles_local,
+      ctx: RACHA_ZONAS_NEUTRALES.test(z) ? "N" : (loc ? "L" : "V"),
+      k: m.dia || ("0000-" + String(_rachaOrdenZona(z)*100 + Number(f)).padStart(5,"0")) });
+  })));
+  return out.sort((a,b) => a.k.localeCompare(b.k));
+}
+function _rachaCuenta(lista, pred){
+  let n = 0;
+  for(let i = lista.length-1; i >= 0 && pred(lista[i]); i--) n++;
+  return n;
+}
+// Rachas de un equipo: general y en el contexto del partido (local / visitante).
+function _rachasEquipo(nombre, ctx){
+  const todos = _rachaPartidos(nombre);
+  const out = [];
+  const pl = n => n === 1 ? "partido" : "partidos";
+  [[todos, ""], [todos.filter(p => p.ctx === ctx), ctx === "L" ? " como local" : " como visitante"]].forEach(([lista, suf], esCtx) => {
+    if(!lista.length) return;
+    const c = pred => _rachaCuenta(lista, pred);
+    const gan = c(p => p.gf > p.gc), inv = c(p => p.gf >= p.gc), sg = c(p => p.gf <= p.gc), per = c(p => p.gf < p.gc);
+    const valla = c(p => p.gc === 0), recibe = c(p => p.gc > 0), conv = c(p => p.gf > 0), sinConv = c(p => p.gf === 0);
+    const todo = n => n === lista.length && n >= 4;
+    const add = (n, min, txt) => { if(n >= min) out.push({ eq:nombre, txt, score: n/min + (esCtx ? .25 : 0) + (todo(n) ? .3 : 0) }); };
+    add(gan, 3, todo(gan) ? `Ganó los ${gan} partidos que jugó${suf}` : `Ganó sus últimos ${gan} ${pl(gan)}${suf}`);
+    if(inv > gan) add(inv, 3, todo(inv) ? `No perdió en ninguno de sus ${inv} partidos${suf}` : `Lleva ${inv} ${pl(inv)} sin perder${suf}`);
+    add(per, 3, `Perdió sus últimos ${per} ${pl(per)}${suf}`);
+    if(sg > per) add(sg, 3, todo(sg) ? `No ganó en ninguno de sus ${sg} partidos${suf}` : `Lleva ${sg} ${pl(sg)} sin ganar${suf}`);
+    add(valla, 2, `Lleva ${valla} ${pl(valla)} sin recibir goles${suf}`);
+    add(recibe, 4, `Recibió goles en sus últimos ${recibe} ${pl(recibe)}${suf}`);
+    add(conv, 4, `Convirtió en sus últimos ${conv} ${pl(conv)}${suf}`);
+    add(sinConv, 2, `Lleva ${sinConv} ${pl(sinConv)} sin convertir${suf}`);
+  });
+  return out;
+}
+function sugerirRachas(local, visitante){
+  return _rachasEquipo(local, "L").concat(_rachasEquipo(visitante, "V"))
+    .sort((a,b) => b.score - a.score).slice(0, 5);
+}
+function _rachaClave(zona, fecha, p){ return `${zona}_${fecha}_${p.local}_${p.visitante}`; }
+function hsRachasHTML(zona, fecha, p, i){
+  const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+  if(_hsRachasCfg == null) return `<label>🔥 Rachas para la previa</label><div style="font-size:12px;color:var(--muted);">Cargando...</div>`;
+  const elegidas = _hsRachasCfg[_rachaClave(zona, fecha, p)] || [];
+  const sug = sugerirRachas(p.local, p.visitante);
+  // Las ya elegidas que hoy no salen sugeridas (la racha cambió) se muestran igual, tildadas.
+  const lista = elegidas.filter(e => !sug.some(s => s.eq === e.eq && s.txt === e.txt)).concat(sug);
+  const filas = lista.map((r,k) => {
+    const on = elegidas.some(e => e.eq === r.eq && e.txt === r.txt);
+    const img = escudoData[r.eq] ? `<img src="${escudoData[r.eq]}" style="width:18px;height:18px;object-fit:contain;">` : "";
+    return `<label style="display:flex;align-items:center;gap:.5rem;font-size:13px;color:var(--text);margin:.2rem 0;cursor:pointer;">
+      <input type="checkbox" class="hs-racha-${i}" data-eq="${esc(r.eq)}" data-txt="${esc(r.txt)}" ${on?"checked":""} onchange="_hsRachasTocadas=true" style="width:15px;height:15px;accent-color:var(--accent);">
+      ${img}<b style="font-weight:600;">${esc(r.eq)}:</b> ${esc(r.txt)}</label>`;
+  }).join("");
+  return `<label>🔥 Rachas para la previa <span style="font-weight:400;">(solo las tildadas se ven en el sitio)</span></label>
+    ${_hsRachasError ? `<div style="font-size:12px;color:#e57373;">No se pudieron leer las rachas guardadas.</div>` : ""}
+    ${filas || `<div style="font-size:12px;color:var(--muted);">Ninguna racha llamativa para este partido.</div>`}`;
+}
+// Guarda las rachas tildadas de todos los partidos de la lista (si se tocó alguna).
+async function hsGuardarRachas(zona, fecha, ps){
+  if(!_hsRachasTocadas || _hsRachasError) return false;
+  const cfg = await leerConfigSitio();
+  cfg.rachas = cfg.rachas || {};
+  ps.forEach((p,i) => {
+    const sel = [...document.querySelectorAll(`.hs-racha-${i}`)].filter(c => c.checked).map(c => ({ eq:c.dataset.eq, txt:c.dataset.txt }));
+    const k = _rachaClave(zona, fecha, p);
+    if(sel.length) cfg.rachas[k] = sel; else delete cfg.rachas[k];
+  });
+  await guardarConfigSitio(cfg);
+  _hsRachasCfg = cfg.rachas;
+  _hsRachasTocadas = false;
+  return true;
+}
+
 async function hsGuardarTodo(){
   const zona = document.getElementById("hs-zona").value;
   const fecha = document.getElementById("hs-fecha").value;
   if(!zona||!fecha){ alert("Seleccioná zona y fecha."); return; }
   const ps = (FIXTURE[zona]&&FIXTURE[zona][fecha])||[];
-  if(!_hsModificados.size){ alert("No hay cambios para guardar."); return; }
+  if(!_hsModificados.size && !_hsRachasTocadas){ alert("No hay cambios para guardar."); return; }
+  let rachasOk = false;
+  try { rachasOk = await hsGuardarRachas(zona, fecha, ps); }
+  catch(e){ alert("No se pudieron guardar las rachas: " + e.message); }
+  if(!_hsModificados.size){
+    if(rachasOk){ regenerarFotoSegundaFase(); alert("✓ Rachas guardadas."); }
+    return;
+  }
 
   let saved = 0;
   for(const i of _hsModificados){

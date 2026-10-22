@@ -14,21 +14,24 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-// Nonagonal/Reválida (grupos) + las zonas de playoff del Primer Ascenso que se van sembrando
-// desde el admin (ver seedCuartosPlayoff() en admin/index.html) — sin agregarlas acá, la foto
-// las descarta aunque ya estén cargadas y programadas en Supabase, y la home nunca las ve
-// (el fallback en vivo solo se dispara si la foto FALLA, no si simplemente le faltan zonas).
-const GRUPOS2 = [
-  "Nonagonal A", "Nonagonal B", "Reválida A", "Reválida B",
-  "Cuartos Primer Ascenso - Ida", "Cuartos Primer Ascenso - Vuelta",
-  "Semifinal Primer Ascenso - Ida", "Semifinal Primer Ascenso - Vuelta",
-  "Final Primer Ascenso",
-  "Dieciseisavos Segundo Ascenso - Ida", "Dieciseisavos Segundo Ascenso - Vuelta",
-  "Octavos Segundo Ascenso - Ida", "Octavos Segundo Ascenso - Vuelta",
-  "Desempate Descenso",
-];
-const ZONAS_FILTRO = `(${GRUPOS2.map(z => `"${z}"`).join(",")})`;
+// Todas las zonas menos Primera Fase (Zona A-D, cerrada y con su propia foto fija): así una
+// ronda nueva creada desde el admin ("Nueva ronda") entra sola, sin tocar esta lista.
+const ZONAS_PRIMERA_FASE = ["Zona A", "Zona B", "Zona C", "Zona D"];
+const ZONAS_FILTRO = `not.in.(${ZONAS_PRIMERA_FASE.map(z => `"${z}"`).join(",")})`;
 const SNAPSHOT_PATH = "segunda-fase-snapshot.json";
+// Configuración editada desde el admin (rondas: color/texto/visibilidad/solapa; frases de
+// rachas por partido). Viaja dentro de la foto para no sumar un pedido por visita.
+const CONFIG_PATH = "config-sitio.json";
+
+async function leerConfigSitio() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/escudos/${CONFIG_PATH}`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
 
 async function sbGet(path, params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}?${params}`, {
@@ -60,14 +63,14 @@ async function sbGetTodo(path, params) {
 }
 
 async function buildAndUploadSnapshot() {
-  const [fixtureRows, partidosRows, eventosGoles, eventosResumen] = await Promise.all([
+  const [fixtureRows, partidosRows, eventosGoles, eventosResumen, cfg] = await Promise.all([
     sbGet(
       "fixture",
-      `select=zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro,estado,fotmob_url,minuto_actual&zona=in.${ZONAS_FILTRO}`
+      `select=zona,fecha,equipo_local,equipo_visitante,goles_local,goles_visitante,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro,estado,fotmob_url,minuto_actual&zona=${ZONAS_FILTRO}`
     ),
     sbGet(
       "partidos",
-      `select=id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro&zona=in.${ZONAS_FILTRO}`
+      `select=id,zona,fecha,equipo_local_nombre,equipo_visitante_nombre,fixture_id,dia,hora,stream_url,estadio,arbitro,juez1,juez2,cuarto_arbitro&zona=${ZONAS_FILTRO}`
     ),
     sbGet(
       "eventos",
@@ -77,6 +80,7 @@ async function buildAndUploadSnapshot() {
       "eventos",
       `select=tipo,planillas(jugadores(nombre,nombre_display),equipos(nombre))&tipo=in.(gol,gol_penal,gol_tiro_libre,asistencia)`
     ),
+    leerConfigSitio(),
   ]);
 
   const partidoById = {};
@@ -142,7 +146,7 @@ async function buildAndUploadSnapshot() {
   // renderGoleadoresResumen() en index.html, que nunca filtró por zona).
   const gol = eventosResumen;
 
-  const snapshot = { ts: Date.now(), fichas, meta, pl, gol };
+  const snapshot = { ts: Date.now(), fichas, meta, pl, gol, cfg: cfg || {} };
   const body = JSON.stringify(snapshot);
 
   const uploadResp = await fetch(`${SUPABASE_URL}/storage/v1/object/escudos/${SNAPSHOT_PATH}`, {

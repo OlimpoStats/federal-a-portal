@@ -1022,6 +1022,8 @@ button.sim-eq:hover{background:rgba(232,196,74,.07);}
 .info-h5-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;}
 /* Historial en la categoría + últimos enfrentamientos (dentro del modal "Info del partido") */
 .im-sec{padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
+.im-racha{display:flex;align-items:center;gap:.55rem;font-size:13px;padding:.22rem 0;}
+.im-racha img{width:20px;height:20px;object-fit:contain;flex-shrink:0;}
 .im-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.4rem;}
 .im-two-col{display:flex;gap:1.6rem;flex-wrap:wrap;}
 .im-col-hist{width:290px;flex-shrink:0;display:flex;flex-direction:column;}
@@ -1743,7 +1745,19 @@ function viaVercel(url){
 function _tFoto(){ return Math.floor(Date.now() / 20000); }
 
 // Carga datos reales desde Supabase y los mezcla con el fixture local
+// Solo para cuando falla la foto (que ya trae la config): se pide una vez por visita.
+const CONFIG_SITIO_URL = viaVercel("https://fnbxddmnotzqoquizfit.supabase.co/storage/v1/object/public/escudos/config-sitio.json");
+let _cfgPedida = false;
+async function cargarConfigSitioSuelta(){
+  if(_cfgPedida) return;
+  _cfgPedida = true;
+  try {
+    const r = await fetch(`${CONFIG_SITIO_URL}&t=${_tFoto()}`, { cache:'no-store' });
+    if(r.ok) aplicarConfigSitio(await r.json());
+  } catch(e){}
+}
 async function cargarPartidosDesdeDB(){
+  cargarConfigSitioSuelta();
   try {
     // Primera Fase (Zona A-D) ya no se consulta acá — esa fase está cerrada y no vuelve a
     // jugarse, se carga una sola vez desde una foto estática (ver cargarFase1DesdeSnapshot()).
@@ -2721,6 +2735,51 @@ function letraZona(z){ return (z || "").replace("Zona ","").trim(); }
 function zonaConfig(z){
   return ZONA_COLORES[z] || { color: "#888888", text: "#111111", code: letraZona(z) };
 }
+// Configuración editada desde el admin ("Rondas" → config-sitio.json, viaja dentro de la foto
+// de Segunda Fase). Cada ronda: {zonas:[...], visible, color, pill, nueva, juntas, titulo, sub}.
+// Las rondas creadas desde el admin (nueva:true) suman su propia solapa en Resultados; en las
+// que ya existían solo se pisan color/texto y se pueden ocultar de la home.
+const _HOME_ESTADOS_BASE = HOME_ESTADOS.slice();
+const _ZONA_COLORES_BASE = Object.assign({}, ZONA_COLORES);
+let CFG_SITIO = {};
+function _textoSobreColor(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if(!m) return '#111111';
+  const n = parseInt(m[1],16), r = n>>16, g = (n>>8)&255, b = n&255;
+  return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#111111' : '#ffffff';
+}
+function aplicarConfigSitio(cfg){
+  if(!cfg || typeof cfg !== 'object') return;
+  CFG_SITIO = cfg;
+  const rondas = Array.isArray(cfg.rondas) ? cfg.rondas : [];
+  Object.keys(ZONA_COLORES).forEach(k => { if(!(k in _ZONA_COLORES_BASE)) delete ZONA_COLORES[k]; });
+  Object.assign(ZONA_COLORES, _ZONA_COLORES_BASE);
+  const ocultas = new Set();
+  rondas.forEach(r => (r.zonas || []).forEach(z => {
+    const base = _ZONA_COLORES_BASE[z] || {};
+    const color = r.color || base.color || '#888888';
+    const ida = /- Ida$/.test(z), vta = /- Vuelta$/.test(z);
+    ZONA_COLORES[z] = Object.assign({}, base, {
+      color, text: r.color ? _textoSobreColor(color) : (base.text || _textoSobreColor(color)),
+      code: base.code || ((r.pill || z).slice(0,3) + (ida ? 'I' : vta ? 'V' : '')),
+      pillLabel: r.pill || base.pillLabel,
+    });
+    if(r.visible === false) ocultas.add(z);
+  }));
+  HOME_ESTADOS.length = 0;
+  _HOME_ESTADOS_BASE.forEach(e => {
+    const fuentes = e.fuentes.filter(f => !ocultas.has(f.zona));
+    if(fuentes.length) HOME_ESTADOS.push(Object.assign({}, e, { fuentes }));
+  });
+  rondas.filter(r => r.nueva && r.visible !== false && (r.zonas || []).length).forEach(r => {
+    const sub = r.sub || '';
+    if(r.zonas.length === 1 || r.juntas !== false){
+      HOME_ESTADOS.push({ titulo: r.titulo || r.nombre, sub, porDia: true, fuentes: r.zonas.map(z => ({zona:z, fecha:1})) });
+    } else {
+      r.zonas.forEach(z => HOME_ESTADOS.push({ titulo: `${r.titulo || r.nombre} - ${/- Vuelta$/.test(z) ? 'Vuelta' : 'Ida'}`, sub, fuentes: [{zona:z, fecha:1}] }));
+    }
+  });
+}
 function horaOrden(h){
   if(!h) return 9999;
   const m = String(h).match(/^(\d{1,2}):(\d{2})$/);
@@ -3214,7 +3273,14 @@ async function verInfoPartido(fichaKey){
     ${renderUltimosH2HHTML(ultimos)}
   </div></div>` : '';
 
+  // Rachas elegidas desde el admin al programar el partido (config-sitio.json).
+  const rachas = ((CFG_SITIO.rachas || {})[fichaKey] || []).filter(r => r && r.txt);
+  const rachasHTML = rachas.length ? `<div class="im-sec"><div class="im-sec-title">Rachas</div>
+    ${rachas.map(r => `<div class="im-racha">${ESCUDOS[r.eq] ? `<img src="${ESCUDOS[r.eq]}" alt="">` : ''}<span>${r.txt}</span></div>`).join('')}
+  </div>` : '';
+
   cont.innerHTML = `${banner}
+  ${rachasHTML}
   ${histSecHTML}
   <div class="info-modal-h5">
     ${seccionEquipo(m.local)}
@@ -5138,7 +5204,7 @@ function renderPartidos2(){
   rows.sort((a,b)=>{
     // Las zonas van en el orden de la solapa SIEMPRE (Semis antes que 16vos, pedido del
     // usuario), y dentro de cada una por día y hora.
-    const kz = ordenFuente[a.zona] - ordenFuente[b.zona];
+    const kz = estado.porDia ? 0 : ordenFuente[a.zona] - ordenFuente[b.zona];
     if(kz !== 0) return kz;
     const ad = a.meta.dia || "9999-99-99", bd = b.meta.dia || "9999-99-99";
     const kd = ad.localeCompare(bd);
@@ -7068,7 +7134,8 @@ function _guardarCache(){
     });
     localStorage.setItem(_CACHE_KEY, JSON.stringify({
       ts: Date.now(), fichas,
-      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW, snapLm: _SNAP_LASTMOD
+      meta: PARTIDO_META, esc: ESCUDOS, pl: PLANILLA_CARGADA, gol: _GOLEADORES_RAW, snapLm: _SNAP_LASTMOD,
+      cfg: CFG_SITIO
     }));
   } catch(e){}
 }
@@ -7103,6 +7170,7 @@ function _aplicarCache(d){
     Object.entries(d.esc||{}).forEach(([n,u]) => { ESCUDOS[n] = viaVercel(u); });
     Object.assign(PLANILLA_CARGADA, d.pl||{});
     if(d.gol){ _GOLEADORES_RAW = d.gol; _SNAP_LASTMOD = d.snapLm || null; }
+    if(d.cfg) aplicarConfigSitio(d.cfg);
   } catch(e){}
 }
 
