@@ -2275,7 +2275,7 @@ function faseRank(z){
 // Todas las zonas con partidos en el fixture (Primera Fase, Segunda Fase y playoffs).
 function zonasFixture(){ return Object.keys(FIXTURE); }
 // Partidos en cancha neutral: no cuentan como local/visitante para nadie.
-function esZonaNeutral(z){ return z === 'Desempate Descenso' || /^Final Primer Ascenso.*Ida/i.test(z); }
+function esZonaNeutral(z){ return z === 'Desempate Descenso' || /^Final Primer Ascenso/i.test(z); }
 function fechaLabel(z, f){ const code = zonaConfig(z).code || ''; return code ? `${code} F${f}` : `F${f}`; }
 // Fecha "absoluta" cruzando fases: la Segunda Fase reinicia su numeración de fechas en 1,
 // así que un fecha=1 de Nonagonal/Reválida no puede compararse directo contra un fecha=18
@@ -2372,6 +2372,13 @@ const HOME_ESTADOS = [
       {zona:'Semifinal Primer Ascenso - Vuelta', fecha:1},
       {zona:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1},
     ]},
+  { titulo:'Final y Octavos - Ida', sub:'Primer y Segundo Ascenso — 2026', fuentes: [
+      {zona:'Final Primer Ascenso', fecha:1},
+      {zona:'Octavos Segundo Ascenso - Ida', fecha:1},
+    ]},
+  { titulo:'Octavos - Vuelta', sub:'Segundo Ascenso — 2026', fuentes: [
+      {zona:'Octavos Segundo Ascenso - Vuelta', fecha:1},
+    ]},
 ];
 let _homeEstado = null; // índice elegido con las flechas (null = automático)
 // Busca en FIXTURE (ya alimentado desde Supabase) el partido de ida y el de vuelta entre
@@ -2410,6 +2417,21 @@ function refrescarPlayoffNona(cuartosPorId){
     PLAYOFF_NONA[cr.id].vuelta = res.vuelta;
   });
 }
+// Final (partido único, cancha neutral): goles y penales desde la zona "Final Primer Ascenso",
+// vistos desde equipo1/equipo2 sin depender de quién quedó como local. Solo cuenta terminada.
+function refrescarPlayoffNonaFinal(e1, e2){
+  const F = PLAYOFF_NONA.FINAL;
+  F.gl = F.gv = F.penalesA = F.penalesB = null;
+  if(!e1 || !e2) return;
+  const fila = ((FIXTURE['Final Primer Ascenso'] || {})['1'] || [])
+    .find(m => (m.local===e1.n && m.visitante===e2.n) || (m.local===e2.n && m.visitante===e1.n));
+  if(!fila || fila.gl==null || fila.gv==null || fila.estado==='en_curso' || fila.estado==='programado') return;
+  const inv = fila.local!==e1.n;
+  F.gl = inv ? fila.gv : fila.gl;
+  F.gv = inv ? fila.gl : fila.gv;
+  const pen = fila.gl===fila.gv ? penalesDe(fila) : null;
+  if(pen){ F.penalesA = inv ? pen[1] : pen[0]; F.penalesB = inv ? pen[0] : pen[1]; }
+}
 function refrescarPlayoffNonaSemis(semisPorId){
   CRUCES_SEMIS_NONAGONAL.forEach(sf=>{
     const s = semisPorId && semisPorId[sf.id];
@@ -2426,6 +2448,7 @@ function refrescarPlayoffNonaSemis(semisPorId){
 // ronda todavía no existe en el fixture.
 const ZONAS_SEGUNDO_ASCENSO = {
   'sa-16': { ida:'Dieciseisavos Segundo Ascenso - Ida', vuelta:'Dieciseisavos Segundo Ascenso - Vuelta', fecha:1 },
+  'sa-8':  { ida:'Octavos Segundo Ascenso - Ida', vuelta:'Octavos Segundo Ascenso - Vuelta', fecha:1 },
 };
 function llaveRealSegundoAscenso(ronda, nombreMejor, nombrePeor){
   const z = ZONAS_SEGUNDO_ASCENSO[ronda];
@@ -2494,6 +2517,7 @@ function calcBracketNonagonal(datos){
 
   const [sf1, sf2] = semis;
   const equipo1 = sf1.ganador, equipo2 = sf2.ganador;
+  refrescarPlayoffNonaFinal(equipo1, equipo2);
   const fin = PLAYOFF_NONA.FINAL;
   let resuelto=false, ganador=null;
   if(fin.gl!=null && fin.gv!=null){
@@ -2629,6 +2653,9 @@ const ZONA_COLORES = {
   "Semifinal Primer Ascenso - Vuelta": { color: "#e8c44a", text: "#1a1500", code: "SV", pillLabel: "SEMI" },
   "Dieciseisavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "16I", pillLabel: "16°-REV" },
   "Dieciseisavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "16V", pillLabel: "16°-REV" },
+  "Final Primer Ascenso": { color: "#e8c44a", text: "#1a1500", code: "F", pillLabel: "FINAL" },
+  "Octavos Segundo Ascenso - Ida": { color: "#4fc3f7", text: "#04202b", code: "8I", pillLabel: "8°-REV" },
+  "Octavos Segundo Ascenso - Vuelta": { color: "#4fc3f7", text: "#04202b", code: "8V", pillLabel: "8°-REV" },
 };
 
 function getMetaKey(z,f,local,visit){return `${z}_${f}_${local}_${visit}`;}
@@ -4537,21 +4564,30 @@ function _filaOrdenCruces(it, pos, elim){
   </div>`;
 }
 
-// Eliminados en 16vos del Segundo Ascenso: solo cuando la vuelta ya terminó (ni en vivo ni
-// programada). Los perdedores de Semis no entran acá porque se reenganchan.
-function calcEliminados16vos(tablaMerito, bracket){
+// Eliminados del Segundo Ascenso (16vos y Octavos): solo cuando la vuelta ya terminó (ni en
+// vivo ni programada). Los perdedores de Semis del Primer Ascenso no entran acá porque se
+// reenganchan.
+function calcEliminadosSA(tablaMerito, bracket){
   const elim = new Set();
-  const z = ZONAS_SEGUNDO_ASCENSO['sa-16'];
-  const vueltas = (FIXTURE[z.vuelta] && FIXTURE[z.vuelta][String(z.fecha)]) || [];
-  armarCrucesDesdeOrden(calcLista16vos(tablaMerito, bracket)).forEach(c=>{
-    const m = c.mejor && c.mejor.n, p = c.peor && c.peor.n;
-    if(!m || !p) return;
-    const fila = vueltas.find(x => (x.local===m && x.visitante===p) || (x.local===p && x.visitante===m));
-    if(!fila || fila.estado==='en_curso' || fila.estado==='programado') return;
-    const real = llaveRealSegundoAscenso('sa-16', m, p);
-    if(!real || !real.resultado.resuelto) return;
-    elim.add(real.resultado.ganadorEsMejor ? p : m);
-  });
+  const marcar = (ronda, cruces) => {
+    const z = ZONAS_SEGUNDO_ASCENSO[ronda];
+    const vueltas = (FIXTURE[z.vuelta] && FIXTURE[z.vuelta][String(z.fecha)]) || [];
+    cruces.forEach(c=>{
+      const m = c.mejor && c.mejor.n, p = c.peor && c.peor.n;
+      if(!m || !p) return;
+      const fila = vueltas.find(x => (x.local===m && x.visitante===p) || (x.local===p && x.visitante===m));
+      if(!fila || fila.estado==='en_curso' || fila.estado==='programado') return;
+      const real = llaveRealSegundoAscenso(ronda, m, p);
+      if(!real || !real.resultado.resuelto) return;
+      elim.add(real.resultado.ganadorEsMejor ? p : m);
+    });
+  };
+  marcar('sa-16', armarCrucesDesdeOrden(calcLista16vos(tablaMerito, bracket)));
+  if(FIXTURE[ZONAS_SEGUNDO_ASCENSO['sa-8'].ida]){
+    let oct = [];
+    try { oct = calcCrucesParciales().octavos; } catch(e){ oct = []; }
+    marcar('sa-8', oct);
+  }
   return elim;
 }
 
@@ -4561,7 +4597,7 @@ function renderOrdenCruces(bracket, tablaMerito){
   if(!cont) return;
   const items = calcOrdenParaCruces(bracket, tablaMerito);
   let elim = null;
-  try { elim = calcEliminados16vos(tablaMerito, bracket); } catch(e){ elim = null; }
+  try { elim = calcEliminadosSA(tablaMerito, bracket); } catch(e){ elim = null; }
   const col = (desde) => items.slice(desde, desde+9).map((it,i)=>_filaOrdenCruces(it, desde+i+1, elim)).join('');
   cont.innerHTML = `<div class="oc-col">${col(0)}</div><div class="oc-col">${col(9)}</div><div class="oc-col">${col(18)}</div>`;
 }
@@ -4691,15 +4727,30 @@ function _filaCruceParcial(eq){
 function _cardCruceParcial(l){
   return `<div class="llave-card llave-card-v llave-card-p16">${_filaCruceParcial(l.mejor)}${_filaCruceParcial(l.peor)}</div>`;
 }
+// Octavos ya cargados en el fixture: misma tarjeta, con el marcador I/V/G real (como los 16vos).
+function _cardOctavosReal(l){
+  const real = l.mejor && l.peor ? llaveRealSegundoAscenso('sa-8', l.mejor.n, l.peor.n) : null;
+  if(!real) return _cardCruceParcial(l);
+  const r = real.resultado.resuelto ? real.resultado : null;
+  const fila = (eq, gIda, gVta, glob, gano) => _filaCruceParcial(eq).replace(/<\/div>$/, `${_marcadorLado(gIda, gVta, glob, gano)}</div>`);
+  return `<div class="llave-card llave-card-v llave-card-p16">
+    ${fila(l.mejor, real.ida.golMejor, real.vuelta.golMejor, r ? r.globalMejor : null, !!(r && r.ganadorEsMejor))}
+    ${fila(l.peor, real.ida.golPeor, real.vuelta.golPeor, r ? r.globalPeor : null, !!(r && !r.ganadorEsMejor))}
+  </div>`;
+}
 function renderCrucesParciales(){
   const wrap = document.getElementById('cruces-parciales-wrap');
   if(!wrap) return;
-  const yaSembrada = Object.keys(FIXTURE).some(z=>/^(Final Primer Ascenso|Octavos Segundo Ascenso)/i.test(z));
+  // Con los Octavos ya cargados en el fixture dejan de ser parciales: se muestran los cruces
+  // reales con su marcador y sin el subtítulo "Cruces parciales".
+  const sembrada = !!FIXTURE[ZONAS_SEGUNDO_ASCENSO['sa-8'].ida];
   let cp = null;
-  try { cp = yaSembrada ? null : calcCrucesParciales(); } catch(e){ cp = null; }
+  try { cp = calcCrucesParciales(); } catch(e){ cp = null; }
   if(!cp || !cp.hayDatos){ wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(_cardCruceParcial).join('');
+  const sub = wrap.querySelector('.cp-sub');
+  if(sub) sub.style.display = sembrada ? 'none' : '';
+  document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(sembrada ? _cardOctavosReal : _cardCruceParcial).join('');
 }
 
 // Lado de un cruce del camino por el segundo ascenso — tarjeta compacta de una sola fila,

@@ -556,8 +556,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:.35rem;font-
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:.35rem;">Programación de partidos</h2>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem;">Seleccioná zona y fecha para ver todos los partidos juntos y cargar la programación de una sola vez.</p>
       <div id="hs-seed-cuartos-wrap" style="margin-bottom:1rem;">
-        <button class="btn btn-primary" onclick="seedSemis16vos()">⚡ Cargar Semis (Primer Ascenso) + 16vos (Segundo Ascenso)</button>
-        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Semifinal Primer Ascenso - Ida/Vuelta" y "Dieciseisavos Segundo Ascenso - Ida/Vuelta" con los cruces ya definidos. No hace nada si ya existen.</p>
+        <button class="btn btn-primary" onclick="seedFinalOctavos()">⚡ Cargar Final (Primer Ascenso) + Octavos (Segundo Ascenso)</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:.3rem;">Botón de uso único: crea las zonas "Final Primer Ascenso" y "Octavos Segundo Ascenso - Ida/Vuelta" con los cruces ya definidos. No hace nada si ya existen.</p>
       </div>
       <div class="card">
         <div class="card-body">
@@ -1176,6 +1176,40 @@ async function seedSemis16vos(){
   const {error} = await sb.from("fixture").insert(filas);
   if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
   alert("Listo — se cargaron los 28 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
+  await cargarFixture();
+  regenerarFotoSegundaFase();
+}
+
+// Botón de uso único (Programación) para sembrar la Final del Primer Ascenso (partido único en
+// cancha neutral; el "local" es solo nominal) y los Octavos del Segundo Ascenso, ida y vuelta
+// (el mejor ubicado visita en la ida y es local en la vuelta). Cruces sacados de la home con
+// Semis y 16vos ya jugados.
+async function seedFinalOctavos(){
+  if(FIXTURE["Final Primer Ascenso"] || FIXTURE["Octavos Segundo Ascenso - Ida"]){
+    alert("Ya existen las zonas de la Final / Octavos, no se vuelven a insertar.");
+    return;
+  }
+  if(!confirm("Esto va a cargar la Final del Primer Ascenso y los 7 cruces de Octavos del Segundo Ascenso (ida y vuelta, 15 partidos). ¿Continuar?")) return;
+  const filas = [
+    {zona:"Final Primer Ascenso", fecha:1, equipo_local:"San Martín (F)", equipo_visitante:"Cipolletti"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sp. Las Parejas", equipo_visitante:"Alvarado"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Gimnasia (CDU)", equipo_visitante:"Olimpo"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Boca Unidos", equipo_visitante:"Gimnasia (Ch)"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Juv. Antoniana", equipo_visitante:"Sol de América (F)"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Sarmiento (LB)", equipo_visitante:"Atenas (RC)"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Villa Mitre", equipo_visitante:"Douglas Haig"},
+    {zona:"Octavos Segundo Ascenso - Ida", fecha:1, equipo_local:"Argentino (MM)", equipo_visitante:"Kimberley"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Alvarado", equipo_visitante:"Sp. Las Parejas"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Olimpo", equipo_visitante:"Gimnasia (CDU)"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Gimnasia (Ch)", equipo_visitante:"Boca Unidos"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Sol de América (F)", equipo_visitante:"Juv. Antoniana"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Atenas (RC)", equipo_visitante:"Sarmiento (LB)"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Douglas Haig", equipo_visitante:"Villa Mitre"},
+    {zona:"Octavos Segundo Ascenso - Vuelta", fecha:1, equipo_local:"Kimberley", equipo_visitante:"Argentino (MM)"},
+  ];
+  const {error} = await sb.from("fixture").insert(filas);
+  if(error){ alert("Error al insertar: "+error.message); console.error(error); return; }
+  alert("Listo — se cargaron los 15 partidos. Ya podés programarlos desde acá arriba (Zona/Fecha) o cargar resultados como cualquier otro partido.");
   await cargarFixture();
   regenerarFotoSegundaFase();
 }
