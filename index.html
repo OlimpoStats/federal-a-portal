@@ -541,6 +541,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 #sa-rondas-cont .bnc-mirror-cont{margin-bottom:.5rem;}
 .cp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem;}
 .cp-rank{font-size:11px;color:var(--muted);min-width:24px;flex-shrink:0;}
+/* Cruces parciales en versión chica: 4 por fila y tarjetas más bajas. */
+.preview16-cont.cp-chico{grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem .6rem;}
+.cp-chico .llave-card-p16{padding:.15rem .45rem;}
+.cp-chico .llave-card-p16 .llave-fila{padding:0;}
+.cp-chico .llave-card-p16 .llave-fila+.llave-fila{margin-top:.1rem;padding-top:.15rem;}
+.cp-chico .llave-nombre{font-size:12px;}
+.cp-chico .me{width:18px;height:18px;}
+.cp-chico .me img{width:18px;height:18px;}
+.cp-chico .cp-rank{font-size:10px;min-width:20px;}
+@media (max-width:1100px){ .preview16-cont.cp-chico{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:480px){ .preview16-cont.cp-chico{grid-template-columns:minmax(0,1fr);} }
 .preview16-cont{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem 1rem;}
 @media (max-width:900px){ .preview16-cont{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:600px){ .preview16-cont{grid-template-columns:minmax(0,1fr);} }
@@ -1348,9 +1359,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
           <div id="preview16-cont" class="preview16-cont"></div>
         </div>
         <div id="cruces-parciales-wrap" style="display:none;">
-          <p class="sec" style="color:#fff;margin-bottom:.2rem;">Octavos de Final</p>
-          <p class="cp-sub">Cruces parciales</p>
-          <div id="cp-octavos-cont" class="preview16-cont"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;">
+            <div>
+              <p class="sec" style="color:#fff;margin-bottom:.2rem;" id="cp-titulo">Octavos de Final</p>
+              <p class="cp-sub">Cruces parciales</p>
+            </div>
+            <div onclick="goPage('simulador',document.querySelector('.ni[onclick*=simulador]'));" style="width:110px;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:.35rem;background:linear-gradient(90deg,#ffe27a,#e8a83a);border:none;border-radius:6px;padding:.4rem .6rem;color:#111;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(232,196,74,.35);">🧮 Simulador</div>
+          </div>
+          <div id="cp-octavos-cont" class="preview16-cont cp-chico"></div>
         </div>
         <div id="orden-cruces-wrap">
           <div class="oc-toggle" onclick="toggleOrdenCruces()">
@@ -4718,24 +4734,38 @@ function renderPreview16(nonARows, nonBRows, revARows, revBRows, contId='preview
 function _liderParcialLlave(zonas, mejor, peor){
   if(!zonas || !mejor || !peor || !mejor.n || !peor.n) return null;
   const g = _golesLlaveDesdeFixture(zonas.ida, zonas.vuelta, zonas.fecha, mejor.n, peor.n);
-  if(g.ida.golMejor==null || g.ida.golPeor==null) return null;
-  const m = g.ida.golMejor + (g.vuelta.golMejor||0), p = g.ida.golPeor + (g.vuelta.golPeor||0);
+  // Sin goles cargados cuenta como 0-0: pasa el mejor ubicado.
+  const m = (g.ida.golMejor||0) + (g.vuelta.golMejor||0), p = (g.ida.golPeor||0) + (g.vuelta.golPeor||0);
   return m >= p ? mejor : peor;
 }
+// Ronda siguiente a la última cargada en el fixture, con cada llave en juego resuelta a favor
+// del que va adelante (Semis y Final del Primer Ascenso incluidas, porque sus perdedores se
+// reenganchan). La Final del Primer Ascenso es partido único: sin ganador mientras esté empatada.
 function calcCrucesParciales(){
+  const ORDEN = ['sa-16','sa-8','sa-4','sa-2','sa-1'];
+  const sembradas = _rondasSASembradas();
+  const actual = sembradas.length ? sembradas[sembradas.length-1] : 'sa-16';
+  const sig = ORDEN[ORDEN.indexOf(actual)+1];
+  if(!sig) return null;
   // calcSimulacion lee/limpia SIM_PICKS: se guardan las elecciones del Simulador y se reponen al final.
   const guardado = {};
   Object.keys(SIM_PICKS).forEach(r=>{ guardado[r] = new Set(SIM_PICKS[r]); delete SIM_PICKS[r]; });
   try {
-    const base = calcSimulacion();
-    const zSemis = PLAYOFF_NONA_ZONAS.SF1, z16 = ZONAS_SEGUNDO_ASCENSO['sa-16'];
     const lideres = (llaves, zonas) => llaves.filter(l=>!l.real).map(l=>_liderParcialLlave(zonas, l.mejor, l.peor)).filter(Boolean).map(e=>e.n);
-    const pSemis = lideres(base.sf, zSemis), p16 = lideres(base.rondasSA['sa-16'].cruces, z16);
-    SIM_PICKS['pa-sf'] = new Set(pSemis);
-    SIM_PICKS['sa-16'] = new Set(p16);
-    const sim = calcSimulacion();
-    return { hayDatos: pSemis.length + p16.length > 0 || base.sf.some(l=>l.real) || base.rondasSA['sa-16'].cruces.some(l=>l.real),
-             octavos: sim.rondasSA['sa-8'].cruces };
+    let sim = calcSimulacion();
+    SIM_PICKS['pa-sf'] = new Set(lideres(sim.sf, PLAYOFF_NONA_ZONAS.SF1));
+    sim = calcSimulacion();
+    if(!sim.fin.real && sim.fin.mejor && sim.fin.peor){
+      const fila = ((FIXTURE['Final Primer Ascenso'] || {})['1'] || [])
+        .find(m => [m.local, m.visitante].includes(sim.fin.mejor.n) && [m.local, m.visitante].includes(sim.fin.peor.n));
+      if(fila && fila.gl!=null && fila.gv!=null && fila.gl!==fila.gv) SIM_PICKS['pa-f'] = new Set([fila.gl>fila.gv ? fila.local : fila.visitante]);
+    }
+    for(const r of ORDEN.slice(0, ORDEN.indexOf(sig))){
+      sim = calcSimulacion();
+      SIM_PICKS[r] = new Set(lideres(sim.rondasSA[r].cruces, ZONAS_SEGUNDO_ASCENSO[r]));
+    }
+    sim = calcSimulacion();
+    return { ronda: sig, hayDatos: true, octavos: sim.rondasSA[sig].cruces };
   } finally {
     Object.keys(SIM_PICKS).forEach(r=>{ delete SIM_PICKS[r]; });
     Object.assign(SIM_PICKS, guardado);
@@ -4825,13 +4855,13 @@ function _cardRondaSA(ronda, l){
 function renderCrucesParciales(){
   const wrap = document.getElementById('cruces-parciales-wrap');
   if(!wrap) return;
-  // Con los Octavos ya cargados en el fixture dejan de ser parciales: pasan a la sección del
-  // Segundo Ascenso (renderRondasSA) y esta se oculta.
-  const sembrada = !!FIXTURE[ZONAS_SEGUNDO_ASCENSO['sa-8'].ida];
+  // Siempre la ronda que sigue a la última cargada (Octavos, Cuartos, ...).
   let cp = null;
-  try { cp = sembrada ? null : calcCrucesParciales(); } catch(e){ cp = null; }
+  try { cp = calcCrucesParciales(); } catch(e){ cp = null; }
   if(!cp || !cp.hayDatos){ wrap.style.display = 'none'; return; }
   wrap.style.display = '';
+  const tit = document.getElementById('cp-titulo');
+  if(tit) tit.textContent = NOMBRE_RONDA_SA[cp.octavos.length] || '';
   document.getElementById('cp-octavos-cont').innerHTML = cp.octavos.map(_cardCruceParcial).join('');
 }
 
